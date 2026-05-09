@@ -1,10 +1,9 @@
 import streamlit as st
-import google.generativeai as genai
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- 2. CSS DEFINITIVO (FOCO EM ALINHAMENTO À ESQUERDA) ---
+# --- 2. CSS DEFINITIVO: LINHAS 100% E ALINHAMENTO ---
 st.markdown("""
     <style>
         /* 1. Fundo total da lateral */
@@ -12,14 +11,23 @@ st.markdown("""
             background-color: #1e2327 !important;
         }
 
-        /* 2. Remover o padding do container da sidebar e forçar largura total */
+        /* 2. REMOVER PADDING DO CONTAINER PRINCIPAL (Isso faz a linha chegar na borda) */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-            padding: 0px !important;
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+            padding-top: 0px !important;
             gap: 0px !important;
-            width: 100% !important;
         }
 
-        /* 3. Título do Menu */
+        /* Forçar todos os sub-containers a ocuparem 100% sem margens */
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+        }
+
+        /* 3. Título do Menu (Adicionamos padding aqui já que tiramos do container pai) */
         .sidebar-header {
             color: #afb1b3 !important;
             font-size: 11px !important;
@@ -27,9 +35,10 @@ st.markdown("""
             padding: 25px 20px 10px 20px !important;
             text-transform: uppercase;
             letter-spacing: 1px;
+            background-color: #1e2327;
         }
 
-        /* 4. RESET TOTAL DOS BOTÕES PARA ALINHAMENTO À ESQUERDA */
+        /* 4. BOTÕES COM LINHA 100% */
         div.stButton {
             width: 100% !important;
             margin: 0px !important;
@@ -41,61 +50,54 @@ st.markdown("""
             border-radius: 0px !important;
             background-color: transparent !important;
             color: #eee !important;
-            padding: 12px 20px !important;
+            padding: 14px 20px !important; /* Espaçamento interno do botão */
             
-            /* ALINHAMENTO REAL À ESQUERDA */
             display: flex !important;
             justify-content: flex-start !important;
             align-items: center !important;
             text-align: left !important;
             
             font-size: 14px !important;
-            font-weight: 400 !important;
             transition: all 0.1s;
+            
+            /* A LINHA QUE OCUPA 100% */
             border-bottom: 1px solid #2c3338 !important;
+            margin: 0px !important;
         }
 
-        /* 5. Ajuste específico para o texto dentro do botão (remover centralização do Streamlit) */
+        /* Ajuste do texto interno para não centralizar nunca */
         div.stButton > button div[data-testid="stMarkdownContainer"] p {
             margin: 0 !important;
             text-align: left !important;
             width: 100% !important;
         }
 
-        /* 6. Efeito Hover (Azul WordPress suave) */
+        /* 5. Efeito Hover e Ativo */
         div.stButton > button:hover {
             background-color: #2c3338 !important;
             color: #72aee6 !important;
         }
 
-        /* 7. Efeito Selecionado (Azul WordPress Vibrante) */
         div.stButton > button:focus, div.stButton > button:active {
             background-color: #2271b1 !important;
             color: white !important;
             box-shadow: none !important;
         }
 
-        /* Esconder ícones e menus padrão */
+        /* Esconder ícones e menus padrão do Streamlit */
         [data-testid="stSidebarNav"] {display: none;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. ESTADO E LOGIN ---
-if 'pagina' not in st.session_state: st.session_state.pagina = "🏠 Minha empresa"
-if 'logado' not in st.session_state: st.session_state.logado = False
-
-if not st.session_state.logado:
-    st.title("🖥️ WP-Admin Style Login")
-    if st.button("Acessar Painel"):
-        st.session_state.logado = True
-        st.rerun()
-    st.stop()
+# --- 3. ESTADO DA SESSÃO ---
+if 'pagina' not in st.session_state:
+    st.session_state.pagina = "🏠 Minha empresa"
 
 # --- 4. MENU LATERAL ---
 with st.sidebar:
     st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
     
-    # Criamos os botões. O texto deve ser idêntico ao que você quer mostrar.
+    # Lista de páginas
     paginas = [
         "🏠 Minha empresa", 
         "👥 Análise de concorrentes", 
@@ -110,25 +112,23 @@ with st.sidebar:
         if st.button(p, key=p):
             st.session_state.pagina = p
 
-    st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
+    # Espaçador e Botão Sair
+    st.markdown("<div style='height: 40px; border-bottom: 1px solid #2c3338;'></div>", unsafe_allow_html=True)
     if st.button("🚪 Sair"):
-        st.session_state.logado = False
-        st.rerun()
+        st.write("Saindo...")
 
 # --- 5. CONTEÚDO PRINCIPAL ---
-# Limpamos o título para não repetir o emoji se não quiser
-titulo_limpo = st.session_state.pagina
+pag = st.session_state.pagina
+st.title(f"{pag}")
 
-st.title(f"{titulo_limpo}")
-st.write(f"Você está visualizando a seção de **{titulo_limpo}**.")
-
-# Exemplo de conteúdo para "Minha Empresa"
-if "Minha empresa" in st.session_state.pagina:
+if "Minha empresa" in pag:
+    st.write(f"Você está visualizando a seção de {pag}")
     st.info("Configure os dados da sua empresa para que a IA gere relatórios personalizados.")
+    
     col1, col2 = st.columns(2)
     with col1:
         st.text_input("Nome da Empresa")
         st.text_area("Descrição do Negócio")
     with col2:
-        st.selectbox("Setor", ["Tecnologia", "Varejo", "Educação", "Saúde"])
+        st.selectbox("Setor", ["Tecnologia", "Varejo", "Serviços"])
         st.button("Salvar Alterações")
