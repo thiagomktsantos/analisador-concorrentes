@@ -62,29 +62,16 @@ st.markdown("""
         .sidebar-header { color: #afb1b3; font-size: 11px; font-weight: 700; padding: 20px; text-transform: uppercase; letter-spacing: 1px; }
         
         [data-testid="stSidebar"] div.stButton > button { 
-            width: 100%; 
-            border-radius: 0px; 
-            background-color: transparent; 
-            color: #eee; 
-            border: none; 
-            border-bottom: 1px solid #2c3338; 
-            text-align: left; 
-            padding: 15px 20px; 
+            width: 100%; border-radius: 0px; background-color: transparent; 
+            color: #eee; border: none; border-bottom: 1px solid #2c3338; 
+            text-align: left; padding: 15px 20px; 
         }
-        [data-testid="stSidebar"] div.stButton > button:hover { 
-            background-color: #2c3338; 
-            color: #72aee6; 
-        }
+        [data-testid="stSidebar"] div.stButton > button:hover { background-color: #2c3338; color: #72aee6; }
         
         .service-tag { 
-            background-color: #2271b1; 
-            color: white; 
-            padding: 4px 10px; 
-            border-radius: 4px; 
-            font-size: 12px; 
-            margin-right: 5px; 
-            display: inline-block;
-            margin-bottom: 5px;
+            background-color: #2271b1; color: white; padding: 4px 10px; 
+            border-radius: 4px; font-size: 12px; margin-right: 5px; 
+            display: inline-block; margin-bottom: 5px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -128,14 +115,12 @@ if st.session_state.pagina == "home":
         emp["tipo"] = st.text_input("Sub-nicho (ex: SaaS, Agência local)", emp["tipo"])
 
     st.write("### 🛠️ Nossos Serviços/Produtos")
-    
     with st.form("form_servico", clear_on_submit=True):
         novo_servico = st.text_input("Adicionar Serviço")
-        btn_adicionar = st.form_submit_button("Adicionar", type="primary")
-        
-        if btn_adicionar and novo_servico:
-            emp["servicos"].append(novo_servico)
-            st.rerun()
+        if st.form_submit_button("Adicionar", type="primary"):
+            if novo_servico:
+                emp["servicos"].append(novo_servico)
+                st.rerun()
     
     if emp["servicos"]:
         tags_html = "".join([f"<span class='service-tag'>{s}</span>" for s in emp["servicos"]])
@@ -146,21 +131,37 @@ elif st.session_state.pagina == "cad":
     st.title("👥 Concorrentes")
     with st.form("cad_concorrente"):
         col1, col2 = st.columns(2)
-        n = col1.text_input("Nome do Concorrente")
+        n = col1.text_input("Nome do Concorrente (Interno)")
         u = col1.text_input("URL do Site")
-        i = col2.text_input("Instagram (ex: @empresa)")
         
-        # ALTERADO: Campo simplificado para aceitar o nome ou @
-        a = col2.text_input(
-            "Identificador para Anúncios", 
-            help="Basta colocar o @ do Instagram ou o nome da Página do Facebook do concorrente. O sistema usará isso para buscar na [Biblioteca de Anúncios](https://www.facebook.com/ads/library/)."
+        # Campo Instagram com o prefixo sugerido
+        i = col2.text_input("Instagram", placeholder="instagram.com/usuario_da_empresa")
+        
+        # Novo campo Nome da Página
+        f = col2.text_input("Nome da Página no Facebook (Exato)")
+        
+        # Campo de Identificador Automático/Manual
+        a = st.text_input(
+            "Identificador Manual para Ads (Opcional)", 
+            help="O sistema tentará usar o Nome da Página ou Instagram. Se a busca na [Biblioteca de Anúncios](https://www.facebook.com/ads/library/) não funcionar, coloque aqui o ID numérico ou nome exato."
         )
         
         if st.form_submit_button("Salvar Concorrente"):
+            # Lógica de auto-preenchimento para o termo de busca dos Ads
+            # Limpa o instagram se o usuário colou o link completo
+            insta_clean = i.replace("https://", "").replace("www.", "").replace("instagram.com/", "").replace("@", "")
+            
+            search_term = a or f or insta_clean or n
+            
             st.session_state.dados["concorrentes"].append({
-                "nome": n, "url": u, "instagram": i, "ads_id": a, "analise_site": ""
+                "nome": n, 
+                "url": u, 
+                "instagram": f"instagram.com/{insta_clean}" if insta_clean else "", 
+                "fb_page": f,
+                "ads_id": search_term, 
+                "analise_site": ""
             })
-            st.success("Cadastrado!")
+            st.success("Concorrente salvo!")
 
 # --- PÁGINA: VISÃO GERAL ---
 elif st.session_state.pagina == "geral":
@@ -169,71 +170,48 @@ elif st.session_state.pagina == "geral":
         st.warning("Cadastre concorrentes primeiro.")
     else:
         df = pd.DataFrame(st.session_state.dados["concorrentes"])
-        st.dataframe(df[["nome", "url", "instagram"]], use_container_width=True)
+        st.dataframe(df[["nome", "url", "instagram", "fb_page"]], use_container_width=True)
+
+# --- PÁGINA: ADS ---
+elif st.session_state.pagina == "ads":
+    st.title("📢 Espionagem de Anúncios")
+    if not st.session_state.dados["concorrentes"]:
+        st.info("Nenhum concorrente cadastrado.")
+    else:
+        for c in st.session_state.dados["concorrentes"]:
+            with st.expander(f"🔍 Anúncios de: {c['nome']}", expanded=True):
+                search_term = c['ads_id']
+                url_ads = f"https://www.facebook.com/ads/library/?q={search_term}&country=BR&media_type=all"
+                
+                st.write(f"**Termo de busca atual:** `{search_term}`")
+                st.link_button(f"Abrir Biblioteca de Anúncios para {c['nome']}", url_ads)
+                
+                st.caption("ℹ️ *Se a página abrir vazia ou com erro, tente editar o concorrente e usar o 'Identificador Manual' com o ID numérico da página do Facebook.*")
 
 # --- PÁGINA: CONFRONTO DE SITES ---
 elif st.session_state.pagina == "sites":
     st.title("🌐 Confronto de Proposta de Valor")
     concs = st.session_state.dados["concorrentes"]
     if concs:
-        escolha = st.selectbox("Selecione o concorrente para comparar", [c["nome"] for c in concs])
+        escolha = st.selectbox("Selecione o concorrente", [c["nome"] for c in concs])
         c_obj = next(c for c in concs if c["nome"] == escolha)
-        
         if st.button(f"Analisar {escolha} vs Minha Empresa"):
-            with st.spinner("Extraindo dados do site e comparando..."):
+            with st.spinner("Analisando..."):
                 downloaded = trafilatura.fetch_url(c_obj["url"])
-                texto_concorrente = trafilatura.extract(downloaded)
-                
-                prompt = f"""
-                Compare o site do concorrente abaixo com os serviços da minha empresa.
-                Site do Concorrente ({c_obj['nome']}): {c_obj['url']}
-                Conteúdo extraído: {texto_concorrente[:2500]}
-                
-                Responda em tópicos:
-                1. O que eles oferecem que nós não oferecemos?
-                2. Qual o tom de voz deles?
-                3. Onde nossa empresa ganha deles tecnicamente?
-                4. Sugestão de melhoria no nosso site para converter mais que eles.
-                """
-                resultado = consultar_ia(prompt)
-                st.markdown(resultado)
+                texto = trafilatura.extract(downloaded)
+                prompt = f"Compare o site {c_obj['url']} (Conteúdo: {texto[:2000]}) com minha empresa."
+                st.markdown(consultar_ia(prompt))
 
-# --- PÁGINA: SOCIAL ---
+# --- OUTRAS PÁGINAS (SOCIAL / INSIGHTS) ---
 elif st.session_state.pagina == "social":
-    st.title("📱 Análise de Presença e Copy")
-    copy_concorrente = st.text_area("Cole aqui uma legenda ou anúncio do concorrente para análise")
-    if st.button("Analisar Copy"):
-        res = consultar_ia(f"Analise esta copy de um concorrente e me diga como posso criar uma versão superior para a minha empresa: {copy_concorrente}")
-        st.markdown(res)
+    st.title("📱 Análise de Copy")
+    copy = st.text_area("Cole a copy aqui")
+    if st.button("Analisar"):
+        st.markdown(consultar_ia(f"Analise e sugira melhorias: {copy}"))
 
-# --- PÁGINA: ADS ---
-elif st.session_state.pagina == "ads":
-    st.title("📢 Espionagem de Anúncios")
-    for c in st.session_state.dados["concorrentes"]:
-        st.subheader(f"🔍 {c['nome']}")
-        
-        # ALTERADO: O link agora usa o parâmetro 'q' que funciona com o nome da página ou @ do Instagram
-        search_term = c['ads_id'] or c['nome']
-        url_ads = f"https://www.facebook.com/ads/library/?q={search_term}&country=BR&media_type=all"
-        
-        st.link_button(f"Ver anúncios de {c['nome']} no Facebook", url_ads)
-
-# --- PÁGINA: INSIGHTS (BATTLE CARDS) ---
 elif st.session_state.pagina == "insights":
-    st.title("💡 IA Battle Cards (Estratégia de Vendas)")
+    st.title("💡 Battle Cards")
     if st.session_state.dados["concorrentes"]:
-        conc_alvo = st.selectbox("Gerar Battle Card contra:", [c["nome"] for c in st.session_state.dados["concorrentes"]])
-        
+        target = st.selectbox("Contra quem?", [c["nome"] for c in st.session_state.dados["concorrentes"]])
         if st.button("Gerar Card"):
-            prompt = f"""
-            Crie um 'Battle Card' de vendas para o meu time comercial.
-            O objetivo é fechar contrato quando o cliente está em dúvida entre a minha empresa e o concorrente {conc_alvo}.
-            
-            Inclua:
-            - Argumentos matadores (Why us?)
-            - Como desqualificar o concorrente de forma ética.
-            - Perguntas de implicação para fazer ao cliente.
-            """
-            st.markdown(consultar_ia(prompt))
-    else:
-        st.info("Adicione concorrentes para gerar cards estratégicos.")
+            st.markdown(consultar_ia(f"Gere um Battle Card de vendas contra o concorrente {target}"))
