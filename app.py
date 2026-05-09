@@ -1,120 +1,134 @@
 import streamlit as st
 import google.generativeai as genai
-import trafilatura
-from duckduckgo_search import DDGS
-import pandas as pd
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- 2. CSS DEFINITIVO (CORREÇÃO DE ALINHAMENTO E ESPAÇAMENTO) ---
+# --- 2. CSS DEFINITIVO (FOCO EM ALINHAMENTO À ESQUERDA) ---
 st.markdown("""
     <style>
-        /* Fundo total da barra lateral */
+        /* 1. Fundo total da lateral */
         [data-testid="stSidebar"] {
             background-color: #1e2327 !important;
         }
 
-        /* CORREÇÃO DO ESPAÇAMENTO NO TOPO (Evita cobrir o título) */
+        /* 2. Remover o padding do container da sidebar e forçar largura total */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-            padding-top: 20px !important; 
+            padding: 0px !important;
             gap: 0px !important;
-        }
-
-        /* FORÇAR LARGURA TOTAL DO CONTEÚDO INTERNO */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
             width: 100% !important;
-            max-width: 100% !important;
         }
 
-        /* TÍTULO "PAINEL DE CONTROLE" */
+        /* 3. Título do Menu */
         .sidebar-header {
             color: #afb1b3 !important;
-            font-size: 12px !important;
-            font-weight: bold;
-            padding: 10px 20px !important;
+            font-size: 11px !important;
+            font-weight: 700;
+            padding: 25px 20px 10px 20px !important;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 10px;
         }
 
-        /* ESTILO DOS BOTÕES (ALINHAMENTO À ESQUERDA) */
+        /* 4. RESET TOTAL DOS BOTÕES PARA ALINHAMENTO À ESQUERDA */
+        div.stButton {
+            width: 100% !important;
+            margin: 0px !important;
+        }
+
         div.stButton > button {
             width: 100% !important;
             border: none !important;
             border-radius: 0px !important;
-            background-color: transparent !important; /* Fundo transparente para estilo clean */
-            color: #eee !important; 
+            background-color: transparent !important;
+            color: #eee !important;
             padding: 12px 20px !important;
             
-            /* ALINHAMENTO À ESQUERDA - O SEGREDO ESTÁ AQUI */
+            /* ALINHAMENTO REAL À ESQUERDA */
             display: flex !important;
-            justify-content: flex-start !important; 
+            justify-content: flex-start !important;
+            align-items: center !important;
             text-align: left !important;
             
-            font-size: 15px !important;
-            transition: all 0.2s;
-            margin: 0px !important;
+            font-size: 14px !important;
+            font-weight: 400 !important;
+            transition: all 0.1s;
             border-bottom: 1px solid #2c3338 !important;
         }
 
-        /* Efeito Hover */
+        /* 5. Ajuste específico para o texto dentro do botão (remover centralização do Streamlit) */
+        div.stButton > button div[data-testid="stMarkdownContainer"] p {
+            margin: 0 !important;
+            text-align: left !important;
+            width: 100% !important;
+        }
+
+        /* 6. Efeito Hover (Azul WordPress suave) */
         div.stButton > button:hover {
             background-color: #2c3338 !important;
             color: #72aee6 !important;
         }
 
-        /* Botão Ativo (Simulação) */
-        div.stButton > button:focus {
+        /* 7. Efeito Selecionado (Azul WordPress Vibrante) */
+        div.stButton > button:focus, div.stButton > button:active {
             background-color: #2271b1 !important;
             color: white !important;
             box-shadow: none !important;
         }
 
-        /* Esconder o menu nativo do Streamlit */
+        /* Esconder ícones e menus padrão */
         [data-testid="stSidebarNav"] {display: none;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. INICIALIZAÇÃO DA IA E ESTADO ---
-if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-pro')
-else:
-    st.error("Configure sua API KEY nos Secrets.")
-    st.stop()
-
-if 'pagina' not in st.session_state: st.session_state.pagina = "Minha empresa"
+# --- 3. ESTADO E LOGIN ---
+if 'pagina' not in st.session_state: st.session_state.pagina = "🏠 Minha empresa"
 if 'logado' not in st.session_state: st.session_state.logado = False
 
-# --- 4. TELA DE LOGIN ---
 if not st.session_state.logado:
-    st.title("🖥️ Login Dashboard")
+    st.title("🖥️ WP-Admin Style Login")
     if st.button("Acessar Painel"):
         st.session_state.logado = True
         st.rerun()
     st.stop()
 
-# --- 5. MENU LATERAL ---
+# --- 4. MENU LATERAL ---
 with st.sidebar:
-    # Título que não será mais coberto
-    st.markdown('<div class="sidebar-header">PAINEL DE CONTROLE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
     
-    # Botões agora perfeitamente alinhados à esquerda
-    if st.button("🏠 Minha empresa"): st.session_state.pagina = "Minha empresa"
-    if st.button("👥 Análise de concorrentes"): st.session_state.pagina = "Análise de concorrentes"
-    if st.button("📊 Geral"): st.session_state.pagina = "Geral"
-    if st.button("🌐 Análise de sites"): st.session_state.pagina = "Análise de sites"
-    if st.button("📱 Análise de redes sociais"): st.session_state.pagina = "Análise de redes sociais"
-    if st.button("📢 Análise de anúncios"): st.session_state.pagina = "Análise de anúncios"
-    if st.button("💡 Insights"): st.session_state.pagina = "Insights"
+    # Criamos os botões. O texto deve ser idêntico ao que você quer mostrar.
+    paginas = [
+        "🏠 Minha empresa", 
+        "👥 Análise de concorrentes", 
+        "📊 Geral", 
+        "🌐 Análise de sites", 
+        "📱 Análise de redes sociais", 
+        "📢 Análise de anúncios", 
+        "💡 Insights"
+    ]
 
-    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+    for p in paginas:
+        if st.button(p, key=p):
+            st.session_state.pagina = p
+
+    st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
     if st.button("🚪 Sair"):
         st.session_state.logado = False
         st.rerun()
 
-# --- 6. CONTEÚDO ---
-pag = st.session_state.pagina
-st.title(f"{pag}")
-st.write(f"Você está na página: **{pag}**")
+# --- 5. CONTEÚDO PRINCIPAL ---
+# Limpamos o título para não repetir o emoji se não quiser
+titulo_limpo = st.session_state.pagina
+
+st.title(f"{titulo_limpo}")
+st.write(f"Você está visualizando a seção de **{titulo_limpo}**.")
+
+# Exemplo de conteúdo para "Minha Empresa"
+if "Minha empresa" in st.session_state.pagina:
+    st.info("Configure os dados da sua empresa para que a IA gere relatórios personalizados.")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.text_input("Nome da Empresa")
+        st.text_area("Descrição do Negócio")
+    with col2:
+        st.selectbox("Setor", ["Tecnologia", "Varejo", "Educação", "Saúde"])
+        st.button("Salvar Alterações")
