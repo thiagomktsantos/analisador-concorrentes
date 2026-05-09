@@ -4,7 +4,7 @@ import trafilatura
 import pandas as pd
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Dashboard Pro - IA Concorrentes", layout="wide")
+st.set_page_config(page_title="IA Competitive Intelligence", layout="wide")
 
 # --- 2. CONFIGURAÇÃO DA IA ---
 if "GEMINI_API_KEY" in st.secrets:
@@ -19,7 +19,7 @@ if 'dados' not in st.session_state:
         "minha_empresa": {
             "nome": "", 
             "setor": "Marketing", 
-            "tipo": "Agência de Marketing", 
+            "tipo": "Agência", 
             "servicos": [] 
         },
         "concorrentes": [],
@@ -28,20 +28,27 @@ if 'dados' not in st.session_state:
 if 'logado' not in st.session_state:
     st.session_state.logado = False
 
-if 'pagina' not in st.session_state:
-    st.session_state.pagina = "🏠 Minha empresa"
-
 # --- 4. FUNÇÕES AUXILIARES ---
 def consultar_ia(prompt):
-    if model is None: return "Erro: Chave API Gemini não configurada."
-    try: return model.generate_content(prompt).text
-    except Exception as e: return f"IA indisponível: {str(e)}"
+    if model is None: return "Erro: Chave API não configurada."
+    try:
+        # Adiciona contexto da minha empresa em todas as chamadas
+        contexto = f"""
+        CONTEXTO DA MINHA EMPRESA:
+        Nome: {st.session_state.dados['minha_empresa']['nome']}
+        Setor: {st.session_state.dados['minha_empresa']['setor']}
+        Serviços: {', '.join(st.session_state.dados['minha_empresa']['servicos'])}
+        ---
+        """
+        full_prompt = contexto + prompt
+        return model.generate_content(full_prompt).text
+    except Exception as e: return f"Erro na IA: {str(e)}"
 
 # --- 5. TELA DE LOGIN ---
 if not st.session_state.logado:
     cols = st.columns([1, 2, 1])
     with cols[1]:
-        st.title("🔐 Login Administrador")
+        st.title("🔐 Login Dashboard")
         user = st.text_input("Usuário")
         pw = st.text_input("Senha", type="password")
         if st.button("Acessar Painel"):
@@ -49,161 +56,149 @@ if not st.session_state.logado:
             st.rerun()
     st.stop()
 
-# --- 6. CSS CUSTOMIZADO (WP-STYLE) ---
+# --- 6. CSS CUSTOMIZADO ---
 st.markdown("""
     <style>
         [data-testid="stSidebar"] { background-color: #1e2327 !important; }
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { padding: 0px !important; gap: 0px !important; }
-        [data-testid="stSidebar"] .element-container { width: 100% !important; margin: 0px !important; }
-        .sidebar-header {
-            color: #afb1b3 !important; font-size: 11px !important; font-weight: 700;
-            padding: 40px 20px 20px 20px !important; text-transform: uppercase;
-            letter-spacing: 1px; background-color: #1e2327 !important; margin: 0px !important; display: block !important;
-        }
-        div.stButton { width: 100% !important; margin: 0px !important; }
-        div.stButton > button {
-            width: 100% !important; height: 55px !important; border: none !important;
-            border-radius: 0px !important; background-color: transparent !important;
-            color: #eee !important; padding: 0px 20px !important; font-size: 15px !important;
-            border-bottom: 1px solid #2c3338 !important; margin: 0px !important;
-            display: flex !important; align-items: center !important; justify-content: flex-start !important;
-        }
-        div.stButton > button > div { justify-content: flex-start !important; text-align: left !important; width: 100% !important; }
-        div.stButton > button:hover { background-color: #2c3338 !important; color: #72aee6 !important; }
-        [data-testid="stSidebarNav"] { display: none; }
-        
-        .service-tag {
-            background-color: #2c3338; color: white; padding: 5px 15px;
-            border-radius: 20px; display: inline-block; margin: 5px; border: 1px solid #444;
-        }
+        .sidebar-header { color: #afb1b3; font-size: 11px; font-weight: 700; padding: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        div.stButton > button { width: 100%; border-radius: 0px; background-color: transparent; color: #eee; border: none; border-bottom: 1px solid #2c3338; text-align: left; padding: 15px 20px; }
+        div.stButton > button:hover { background-color: #2c3338; color: #72aee6; }
+        .service-tag { background-color: #2271b1; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-right: 5px; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- 7. MENU LATERAL ---
 with st.sidebar:
-    st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
-    paginas = {
-        "🏠 Minha empresa": "minha_empresa",
-        "👥 Análise de concorrentes": "concorrentes",
-        "📊 Geral": "geral",
-        "🌐 Análise de sites": "sites",
-        "📱 Análise de redes sociais": "social",
-        "📢 Análise de anúncios": "ads",
-        "💡 Insights": "insights"
-    }
-    for label, key in paginas.items():
-        if st.session_state.pagina == label:
-             st.markdown(f"<style>#btn_{key} {{ background-color: #2271b1 !important; color: white !important; }}</style>", unsafe_allow_html=True)
-        if st.button(label, key=f"btn_{key}"):
-            st.session_state.pagina = label
-            st.rerun()
+    st.markdown('<div class="sidebar-header">Configurações</div>', unsafe_allow_html=True)
+    btn_home = st.button("🏠 Minha Empresa")
+    btn_cad = st.button("➕ Cadastrar Concorrente")
+    
+    st.markdown('<div class="sidebar-header">Análise Comparativa</div>', unsafe_allow_html=True)
+    btn_geral = st.button("📊 Visão Geral")
+    btn_sites = st.button("🌐 Confronto de Sites")
+    btn_social = st.button("📱 Social & Copy")
+    btn_ads = st.button("📢 Biblioteca de Ads")
+    
+    st.markdown('<div class="sidebar-header">Estratégia</div>', unsafe_allow_html=True)
+    btn_insights = st.button("💡 IA Battle Cards")
 
-    st.markdown("<div style='height: 50px; border-bottom: 1px solid #2c3338;'></div>", unsafe_allow_html=True)
-    if st.button("🚪 Sair", key="btn_logout"):
-        st.session_state.logado = False
-        st.rerun()
+    if btn_home: st.session_state.pagina = "home"
+    if btn_cad: st.session_state.pagina = "cad"
+    if btn_geral: st.session_state.pagina = "geral"
+    if btn_sites: st.session_state.pagina = "sites"
+    if btn_social: st.session_state.pagina = "social"
+    if btn_ads: st.session_state.pagina = "ads"
+    if btn_insights: st.session_state.pagina = "insights"
+
+if 'pagina' not in st.session_state: st.session_state.pagina = "home"
 
 # --- 8. LÓGICA DAS PÁGINAS ---
-pg = st.session_state.pagina
 
-if pg == "🏠 Minha empresa":
-    st.title("🏢 Minha Empresa")
+# --- PÁGINA: MINHA EMPRESA ---
+if st.session_state.pagina == "home":
+    st.title("🏢 Configuração: Minha Empresa")
     emp = st.session_state.dados["minha_empresa"]
     
     col1, col2 = st.columns(2)
-    st.session_state.dados["minha_empresa"]["nome"] = col1.text_input("Nome da sua Empresa", emp.get("nome", ""))
-    
-    # 1. SELEÇÃO DE SETOR
-    opcoes_setor = ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Financeiro", "Alimentação", "Indústria", "Outros"]
-    current_setor = emp.get("setor", "Marketing")
-    idx_setor = opcoes_setor.index(current_setor) if current_setor in opcoes_setor else 0
-    setor_sel = col1.selectbox("Setor", opcoes_setor, index=idx_setor)
-    st.session_state.dados["minha_empresa"]["setor"] = setor_sel
+    with col1:
+        emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
+        emp["setor"] = st.selectbox("Setor", ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Indústria"], index=0)
+    with col2:
+        emp["tipo"] = st.text_input("Sub-nicho (ex: SaaS, Agência local)", emp["tipo"])
 
-    # 2. SELEÇÃO DE TIPO DINÂMICO
-    if setor_sel == "Marketing":
-        opcoes_tipo = ["Agência de Marketing", "Consultoria", "Infoprodutos", "B2B", "B2C", "Outros"]
-    else:
-        opcoes_tipo = ["Agência", "SaaS / Software", "E-commerce", "Consultoria", "B2B", "B2C", "Outros"]
-    
-    current_tipo = emp.get("tipo", "")
-    idx_tipo = opcoes_tipo.index(current_tipo) if current_tipo in opcoes_tipo else 0
-    st.session_state.dados["minha_empresa"]["tipo"] = col2.selectbox("Tipo de Empresa", opcoes_tipo, index=idx_tipo)
-
-    # 3. GERENCIADOR DE SERVIÇOS
-    st.write("---")
-    st.subheader("🛠️ Nossos Serviços")
-    
-    col_add, col_btn = st.columns([4, 1])
-    novo_servico = col_add.text_input("Adicionar novo serviço", key="input_servico")
-    if col_btn.button("➕ Adicionar", use_container_width=True):
-        if novo_servico and novo_servico not in emp["servicos"]:
-            st.session_state.dados["minha_empresa"]["servicos"].append(novo_servico)
+    st.write("### 🛠️ Nossos Serviços/Produtos")
+    novo_servico = st.text_input("Adicionar Serviço")
+    if st.button("Adicionar"):
+        if novo_servico:
+            emp["servicos"].append(novo_servico)
             st.rerun()
+    
+    for s in emp["servicos"]:
+        st.markdown(f"<span class='service-tag'>{s}</span>", unsafe_allow_html=True)
 
-    if emp["servicos"]:
-        for idx, serv in enumerate(emp["servicos"]):
-            c_serv, c_del = st.columns([8, 1])
-            c_serv.markdown(f"<div class='service-tag'>{serv}</div>", unsafe_allow_html=True)
-            if c_del.button("🗑️", key=f"del_serv_{idx}"):
-                st.session_state.dados["minha_empresa"]["servicos"].pop(idx)
-                st.rerun()
-
-    st.write("---")
-    if st.button("💾 Salvar Alterações"):
-        st.success("Dados salvos com sucesso!")
-
-elif pg == "👥 Análise de concorrentes":
+# --- PÁGINA: CADASTRO DE CONCORRENTES ---
+elif st.session_state.pagina == "cad":
     st.title("👥 Cadastro de Concorrentes")
-    with st.form("form_c"):
-        n = st.text_input("Nome")
-        u = st.text_input("URL Site")
-        i = st.text_input("Instagram")
-        f = st.text_input("Facebook")
-        a = st.text_input("ID Ads")
-        if st.form_submit_button("Adicionar"):
+    with st.form("cad_concorrente"):
+        col1, col2 = st.columns(2)
+        n = col1.text_input("Nome do Concorrente")
+        u = col1.text_input("URL do Site")
+        i = col2.text_input("Instagram (arroba)")
+        a = col2.text_input("ID/Nome na Ads Library")
+        if st.form_submit_button("Salvar Concorrente"):
             st.session_state.dados["concorrentes"].append({
-                "nome": n, "url": u, "instagram": i, "facebook": f, "ads_id": a,
-                "analise_site": "", "social": ""
+                "nome": n, "url": u, "instagram": i, "ads_id": a, "analise_site": ""
             })
-            st.rerun()
-    for idx, c in enumerate(st.session_state.dados["concorrentes"]):
-        with st.expander(f"📌 {c['nome']}"):
-            st.write(f"IG: {c['instagram']} | FB: {c['facebook']}")
-            if st.button("Remover", key=f"rm_{idx}"):
-                st.session_state.dados["concorrentes"].pop(idx)
-                st.rerun()
+            st.success("Cadastrado!")
 
-elif pg == "📊 Geral":
-    st.title("📊 Geral")
-    if st.session_state.dados["concorrentes"]:
-        st.table(pd.DataFrame(st.session_state.dados["concorrentes"])[["nome", "url", "instagram", "facebook"]])
+# --- PÁGINA: VISÃO GERAL ---
+elif st.session_state.pagina == "geral":
+    st.title("📊 Painel de Comparação")
+    if not st.session_state.dados["concorrentes"]:
+        st.warning("Cadastre concorrentes primeiro.")
+    else:
+        df = pd.DataFrame(st.session_state.dados["concorrentes"])
+        st.dataframe(df[["nome", "url", "instagram"]], use_container_width=True)
 
-elif pg == "🌐 Análise de sites":
-    st.title("🌐 Análise de Sites")
+# --- PÁGINA: CONFRONTO DE SITES ---
+elif st.session_state.pagina == "sites":
+    st.title("🌐 Confronto de Proposta de Valor")
     concs = st.session_state.dados["concorrentes"]
     if concs:
-        sel = st.selectbox("Concorrente", [c["nome"] for c in concs])
-        c_obj = next(item for item in concs if item["nome"] == sel)
-        if st.button("Analisar"):
-            with st.spinner("IA lendo..."):
-                txt = trafilatura.extract(trafilatura.fetch_url(c_obj["url"]))
-                res = consultar_ia(f"Analise: {txt[:2000]}") if txt else "Erro ao ler site."
-                c_obj["analise_site"] = res
-                st.markdown(res)
+        escolha = st.selectbox("Selecione o concorrente para comparar", [c["nome"] for c in concs])
+        c_obj = next(c for c in concs if c["nome"] == escolha)
+        
+        if st.button(f"Analisar {escolha} vs Minha Empresa"):
+            with st.spinner("Extraindo dados do site e comparando..."):
+                downloaded = trafilatura.fetch_url(c_obj["url"])
+                texto_concorrente = trafilatura.extract(downloaded)
+                
+                prompt = f"""
+                Compare o site do concorrente abaixo com os serviços da minha empresa.
+                Site do Concorrente ({c_obj['nome']}): {c_obj['url']}
+                Conteúdo extraído: {texto_concorrente[:2500]}
+                
+                Responda em tópicos:
+                1. O que eles oferecem que nós não oferecemos?
+                2. Qual o tom de voz deles?
+                3. Onde nossa empresa ganha deles tecnicamente?
+                4. Sugestão de melhoria no nosso site para converter mais que eles.
+                """
+                resultado = consultar_ia(prompt)
+                st.markdown(resultado)
 
-elif pg == "📱 Análise de redes sociais":
-    st.title("📱 Redes Sociais")
-    copy = st.text_area("Cole a copy aqui")
-    if st.button("Analisar"):
-        st.markdown(consultar_ia(f"Analise esta copy: {copy}"))
+# --- PÁGINA: SOCIAL ---
+elif st.session_state.pagina == "social":
+    st.title("📱 Análise de Presença e Copy")
+    copy_concorrente = st.text_area("Cole aqui uma legenda ou anúncio do concorrente para análise")
+    if st.button("Analisar Copy"):
+        res = consultar_ia(f"Analise esta copy de um concorrente e me diga como posso criar uma versão superior para a minha empresa: {copy_concorrente}")
+        st.markdown(res)
 
-elif pg == "📢 Análise de anúncios":
-    st.title("📢 Ads")
+# --- PÁGINA: ADS ---
+elif st.session_state.pagina == "ads":
+    st.title("📢 Espionagem de Anúncios")
     for c in st.session_state.dados["concorrentes"]:
-        st.link_button(f"Anúncios de {c['nome']}", f"https://www.facebook.com/ads/library/?q={c['ads_id'] or c['nome']}&country=BR")
+        st.subheader(f"🔍 {c['nome']}")
+        url_ads = f"https://www.facebook.com/ads/library/?q={c['ads_id'] or c['nome']}&country=BR&media_type=all"
+        st.link_button(f"Ver anúncios de {c['nome']} no Facebook", url_ads)
 
-elif pg == "💡 Insights":
-    st.title("💡 Insights")
-    if st.button("Gerar Plano"):
-        st.markdown(consultar_ia(f"Gere um plano estratégico para superar os concorrentes {st.session_state.dados['concorrentes']} com base na minha empresa {st.session_state.dados['minha_empresa']}"))
+# --- PÁGINA: INSIGHTS (BATTLE CARDS) ---
+elif st.session_state.pagina == "insights":
+    st.title("💡 IA Battle Cards (Estratégia de Vendas)")
+    if st.session_state.dados["concorrentes"]:
+        conc_alvo = st.selectbox("Gerar Battle Card contra:", [c["nome"] for c in st.session_state.dados["concorrentes"]])
+        
+        if st.button("Gerar Card"):
+            prompt = f"""
+            Crie um 'Battle Card' de vendas para o meu time comercial.
+            O objetivo é fechar contrato quando o cliente está em dúvida entre a minha empresa e o concorrente {conc_alvo}.
+            
+            Inclua:
+            - Argumentos matadores (Why us?)
+            - Como desqualificar o concorrente de forma ética.
+            - Perguntas de implicação para fazer ao cliente.
+            """
+            st.markdown(consultar_ia(prompt))
+    else:
+        st.info("Adicione concorrentes para gerar cards estratégicos.")
