@@ -1,141 +1,177 @@
 import streamlit as st
 import google.generativeai as genai
 import trafilatura
+from duckduckgo_search import DDGS
 import pandas as pd
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Competitor Dashboard", layout="wide")
+# --- 1. CONFIGURAÇÃO DA PÁGINA ---
+st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- CSS DEFINITIVO: LARGURA TOTAL (Borda a Borda) ---
+# --- 2. CSS DEFINITIVO (ESTILO WORDPRESS ADMIN) ---
+# Este bloco remove as margens do Streamlit e força a largura total
 st.markdown("""
     <style>
-        /* 1. RESET TOTAL DA SIDEBAR: Remove todos os paddings internos */
-        [data-testid="stSidebar"] > div:first-child {
-            padding: 0px !important;
+        /* Fundo total da barra lateral */
+        [data-testid="stSidebar"] {
+            background-color: #1e2327 !important;
+            min-width: 260px !important;
         }
+
+        /* CORREÇÃO DE LARGURA: Força os containers internos a ocuparem 100% */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
             padding: 0px !important;
             gap: 0px !important;
-        }
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
-            padding: 0px !important;
+            width: 100% !important;
         }
         
-        /* 2. FUNDO CHUMBO UNIFICADO */
-        [data-testid="stSidebar"], [data-testid="stSidebar"] .st-emotion-cache-17l6985 {
-            background-color: #1e2327 !important;
+        /* Remove o 'fit-content' que causava o erro visual que você encontrou */
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
+            width: 100% !important;
+            max-width: 100% !important;
         }
 
-        /* 3. CABEÇALHO DO PAINEL (Borda a Borda) */
+        /* Cabeçalho do Menu */
         .sidebar-header {
-            color: #ffffff !important;
+            color: #afb1b3 !important;
             font-size: 11px !important;
-            font-weight: 700;
-            padding: 35px 25px 20px 25px;
-            background-color: #1e2327 !important;
+            font-weight: bold;
+            padding: 20px 20px 10px 20px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            border-bottom: 1px solid #3c434a;
-            width: 100%;
-            margin: 0px !important;
+            letter-spacing: 1px;
         }
 
-        /* 4. BOTÕES DO MENU: 100% LARGURA REAL */
+        /* ESTILO DOS BOTÕES (MENU) */
         div.stButton > button {
             width: 100% !important;
             border: none !important;
             border-radius: 0px !important;
-            background-color: #1e2327 !important;
-            color: #ffffff !important;
-            padding: 18px 25px !important;
+            background-color: #1e2327 !important; 
+            color: #eee !important; 
+            padding: 12px 20px !important;
             text-align: left !important;
             font-size: 14px !important;
             display: block !important;
+            transition: all 0.2s;
             margin: 0px !important;
-            
-            /* Linha divisória 100% largura */
-            border-bottom: 1px solid #3c434a !important; 
+            border-bottom: 1px solid #2c3338 !important;
         }
 
-        /* 5. HOVER E ESTADO SELECIONADO */
+        /* Efeito Hover */
         div.stButton > button:hover {
             background-color: #2c3338 !important;
-            color: #ffffff !important;
+            color: #72aee6 !important; /* Azul claro ao passar o mouse */
         }
 
+        /* Efeito Ativo/Foco */
         div.stButton > button:focus, div.stButton > button:active {
-            background-color: #2271b1 !important;
-            color: white !important;
+            background-color: #2271b1 !important; 
+            color: #ffffff !important;
             box-shadow: none !important;
         }
 
-        /* Esconder ícones nativos e navegação do Streamlit */
+        /* Esconder o menu de navegação nativo do Streamlit */
         [data-testid="stSidebarNav"] {display: none;}
-        .st-emotion-cache-6qob1r {display: none;}
-
-        /* Botão Sair com destaque vermelho sutil */
-        .exit-btn div.stButton > button {
-            margin-top: 40px !important;
-            border-top: 1px solid #3c434a !important;
-            color: #ff6b6b !important;
+        
+        /* Ajuste do conteúdo principal para não colar no topo */
+        .main .block-container {
+            padding-top: 2rem !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# --- INICIALIZAÇÃO DA IA ---
+# --- 3. INICIALIZAÇÃO DA IA ---
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('gemini-pro')
 else:
-    st.error("API KEY faltando.")
+    st.error("Configure sua API KEY nos Secrets do Streamlit.")
     st.stop()
 
-# --- ESTADO DA SESSÃO ---
+# --- 4. ESTADO DA SESSÃO ---
 if 'pagina' not in st.session_state:
-    st.session_state.pagina = "🏠 Minha empresa"
+    st.session_state.pagina = "Minha empresa"
+if 'dados' not in st.session_state:
+    st.session_state.dados = {"minha_empresa": {"nome": "", "setor": "", "descricao": ""}, "concorrentes": []}
 if 'logado' not in st.session_state:
     st.session_state.logado = False
-if 'dados' not in st.session_state:
-    st.session_state.dados = {"minha_empresa": {}, "concorrentes": []}
 
-# --- LOGIN ---
+# --- 5. TELA DE LOGIN ---
 if not st.session_state.logado:
-    st.title("🖥️ Login Dashboard")
-    if st.button("Acessar Painel"):
-        st.session_state.logado = True
-        st.rerun()
+    st.title("🖥️ Acesso ao Painel")
+    col1, col2 = st.columns([1,2])
+    with col1:
+        if st.button("Fazer Login"):
+            st.session_state.logado = True
+            st.rerun()
     st.stop()
 
-# --- MENU LATERAL (BOTÕES 100% WIDTH) ---
+# --- 6. MENU LATERAL (SIDEBAR) ---
 with st.sidebar:
-    # Título do Painel
-    st.markdown('<div class="sidebar-header">PAINEL DE CONTROLE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
     
-    # Itens do Menu
-    if st.button("🏠 Minha empresa"): st.session_state.pagina = "🏠 Minha empresa"
-    if st.button("👥 Análise de concorrentes"): st.session_state.pagina = "👥 Análise de concorrentes"
-    
-    # Sub-itens (A hierarquia é feita com espaços de largura fixa)
-    if st.button("     📊 Geral"): st.session_state.pagina = "📊 Geral"
-    if st.button("     🌐 Análise de sites"): st.session_state.pagina = "🌐 Análise de sites"
-    if st.button("     📱 Análise de redes sociais"): st.session_state.pagina = "📱 Análise de redes sociais"
-    if st.button("     📢 Análise de anúncios"): st.session_state.pagina = "📢 Análise de anúncios"
-    
-    if st.button("💡 Insights"): st.session_state.pagina = "💡 Insights"
+    # Botões de navegação
+    if st.button("🏠 Minha empresa"): st.session_state.pagina = "Minha empresa"
+    if st.button("👥 Análise de concorrentes"): st.session_state.pagina = "Análise de concorrentes"
+    if st.button("📊 Geral"): st.session_state.pagina = "Geral"
+    if st.button("🌐 Análise de sites"): st.session_state.pagina = "Análise de sites"
+    if st.button("📱 Análise de redes sociais"): st.session_state.pagina = "Análise de redes sociais"
+    if st.button("📢 Análise de anúncios"): st.session_state.pagina = "Análise de anúncios"
+    if st.button("💡 Insights"): st.session_state.pagina = "Insights"
 
-    # Botão Sair
-    st.markdown('<div class="exit-btn">', unsafe_allow_html=True)
+    # Rodapé do Menu
+    st.markdown("<br><br><hr style='border-color: #3c434a'>", unsafe_allow_html=True)
     if st.button("🚪 Sair"):
         st.session_state.logado = False
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- CONTEÚDO DAS PÁGINAS ---
+# --- 7. LÓGICA DE CONTEÚDO DAS PÁGINAS ---
 pag = st.session_state.pagina
-st.title(f"📍 {pag}")
 
-# Lógica das páginas continua abaixo...
-if "Minha empresa" in pag:
-    st.info("Formulário da Minha Empresa")
-elif "Análise de concorrentes" in pag:
-    st.write("Cadastro de Concorrentes")
+# Container principal para o conteúdo
+with st.container():
+    if pag == "Minha empresa":
+        st.header("🏢 Configurações da Minha Empresa")
+        st.write("Preencha os dados abaixo para personalizar as análises.")
+        
+        nome = st.text_input("Nome da Empresa", st.session_state.dados["minha_empresa"]["nome"])
+        setor = st.text_input("Setor de Atuação", st.session_state.dados["minha_empresa"]["setor"])
+        desc = st.text_area("Descrição Curta", st.session_state.dados["minha_empresa"]["descricao"])
+        
+        if st.button("Salvar Dados"):
+            st.session_state.dados["minha_empresa"] = {"nome": nome, "setor": setor, "descricao": desc}
+            st.success("Dados salvos com sucesso!")
+
+    elif pag == "Análise de concorrentes":
+        st.header("👥 Gestão de Concorrentes")
+        st.info("Adicione os sites ou nomes dos concorrentes para monitoramento.")
+        # Lógica de cadastro de concorrentes...
+
+    elif pag == "Geral":
+        st.header("📊 Visão Geral do Mercado")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Empresa", st.session_state.dados["minha_empresa"]["nome"] or "Não definida")
+        col2.metric("Concorrentes", len(st.session_state.dados["concorrentes"]))
+        col3.metric("Status", "Ativo", delta="IA Online")
+
+    elif pag == "Análise de sites":
+        st.header("🌐 Auditoria de Sites")
+        url = st.text_input("Insira a URL para analisar")
+        if st.button("Analisar com IA"):
+            with st.spinner("Extraindo dados e gerando insights..."):
+                # Aqui entraria sua lógica de trafilatura e gemini
+                st.write("Resultado da análise aparecerá aqui.")
+
+    elif pag == "Análise de anúncios":
+        st.header("📢 Biblioteca de Anúncios")
+        st.write("Acompanhe as campanhas ativas dos seus concorrentes.")
+
+    elif pag == "Insights":
+        st.header("💡 Relatório Estratégico")
+        st.write("Análise consolidada baseada em todos os dados coletados.")
+
+# Feedback da página atual no final da sidebar
+st.sidebar.markdown(f"""
+    <div style='position: fixed; bottom: 10px; left: 20px; color: #666; font-size: 11px;'>
+        Página: {pag}
+    </div>
+""", unsafe_allow_html=True)
