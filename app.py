@@ -3,7 +3,7 @@ import streamlit as st
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- 2. CSS AJUSTADO (FOCO NO PRIMEIRO BOTÃO) ---
+# --- 2. CSS DEFINITIVO (SEM ESPAÇOS ENTRE BOTÕES) ---
 st.markdown("""
     <style>
         /* 1. Fundo da lateral */
@@ -11,39 +11,38 @@ st.markdown("""
             background-color: #1e2327 !important;
         }
 
-        /* 2. ZERAR ESPAÇOS LATERAIS (Para linha 100%) */
+        /* 2. REMOVER ESPAÇOS ENTRE OS BOTÕES (GAP ZERO) */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-            padding: 0px !important;
             gap: 0px !important;
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+            padding-top: 0px !important;
         }
         
+        /* Forçar todos os containers internos a não terem margem ou padding */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
-            width: 100% !important;
-            max-width: 100% !important;
+            margin: 0px !important;
             padding: 0px !important;
         }
 
-        /* 3. TÍTULO DO PAINEL */
+        /* 3. TÍTULO DO PAINEL (O padding-bottom cria o espaço para o primeiro botão) */
         .sidebar-header {
             color: #afb1b3 !important;
             font-size: 11px !important;
             font-weight: 700;
-            padding: 35px 20px 10px 20px !important; 
+            /* 25px de padding inferior protege o título do hover do primeiro botão */
+            padding: 40px 20px 25px 20px !important; 
             text-transform: uppercase;
             letter-spacing: 1px;
             background-color: #1e2327;
+            margin: 0px !important;
         }
 
-        /* 4. AJUSTE DO PRIMEIRO BOTÃO (O SEGREDO ESTÁ AQUI) */
-        /* Adicionamos uma margem no topo APENAS do primeiro botão para ele não encostar no título */
-        div.stButton:nth-of-type(1) {
-            margin-top: 15px !important;
-        }
-
-        /* 5. ESTILO GERAL DOS BOTÕES */
+        /* 4. ESTILO DOS BOTÕES (LINHAS COLADAS) */
         div.stButton {
             width: 100% !important;
             margin: 0px !important;
+            padding: 0px !important;
         }
 
         div.stButton > button {
@@ -61,7 +60,7 @@ st.markdown("""
             justify-content: flex-start !important;
         }
 
-        /* SUA DESCOBERTA: Alinhamento à esquerda corrigindo o Flex interno */
+        /* SUA DESCOBERTA: Alinhamento à esquerda (Justify-content) */
         div.stButton > button > div {
             justify-content: flex-start !important;
             text-align: left !important;
@@ -74,7 +73,7 @@ st.markdown("""
             text-align: left !important;
         }
 
-        /* 6. HOVER E ESTADO ATIVO */
+        /* 5. HOVER E ESTADO ATIVO */
         div.stButton > button:hover {
             background-color: #2c3338 !important;
             color: #72aee6 !important;
@@ -113,9 +112,10 @@ with st.sidebar:
         if st.button(p, key=f"btn_{p}"):
             st.session_state.pagina = p
 
+    # Botão Sair (com linha de separação)
     st.markdown("<div style='height: 80px; border-bottom: 1px solid #2c3338;'></div>", unsafe_allow_html=True)
     if st.button("🚪 Sair", key="btn_sair"):
-        st.write("Logout")
+        st.write("Saindo...")
 
 # --- 5. CONTEÚDO PRINCIPAL ---
 st.title(st.session_state.pagina)
