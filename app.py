@@ -32,7 +32,6 @@ if 'logado' not in st.session_state:
 def consultar_ia(prompt):
     if model is None: return "Erro: Chave API não configurada."
     try:
-        # Adiciona contexto da minha empresa em todas as chamadas
         contexto = f"""
         CONTEXTO DA MINHA EMPRESA:
         Nome: {st.session_state.dados['minha_empresa']['nome']}
@@ -61,15 +60,41 @@ st.markdown("""
     <style>
         [data-testid="stSidebar"] { background-color: #1e2327 !important; }
         .sidebar-header { color: #afb1b3; font-size: 11px; font-weight: 700; padding: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        div.stButton > button { width: 100%; border-radius: 0px; background-color: transparent; color: #eee; border: none; border-bottom: 1px solid #2c3338; text-align: left; padding: 15px 20px; }
-        div.stButton > button:hover { background-color: #2c3338; color: #72aee6; }
-        .service-tag { background-color: #2271b1; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-right: 5px; }
+        
+        /* Estilo apenas para botões da Sidebar */
+        [data-testid="stSidebar"] div.stButton > button { 
+            width: 100%; 
+            border-radius: 0px; 
+            background-color: transparent; 
+            color: #eee; 
+            border: none; 
+            border-bottom: 1px solid #2c3338; 
+            text-align: left; 
+            padding: 15px 20px; 
+        }
+        [data-testid="stSidebar"] div.stButton > button:hover { 
+            background-color: #2c3338; 
+            color: #72aee6; 
+        }
+        
+        /* Tags de serviço */
+        .service-tag { 
+            background-color: #2271b1; 
+            color: white; 
+            padding: 4px 10px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            margin-right: 5px; 
+            display: inline-block;
+            margin-bottom: 5px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # --- 7. MENU LATERAL ---
 with st.sidebar:
-    st.markdown('<div class="sidebar-header">Configurações</div>', unsafe_allow_html=True)
+    # ALTERADO: Título de "Configurações" para "Dados Principais"
+    st.markdown('<div class="sidebar-header">Dados Principais</div>', unsafe_allow_html=True)
     btn_home = st.button("🏠 Minha Empresa")
     btn_cad = st.button("➕ Cadastrar Concorrente")
     
@@ -94,7 +119,6 @@ if 'pagina' not in st.session_state: st.session_state.pagina = "home"
 
 # --- 8. LÓGICA DAS PÁGINAS ---
 
-# --- PÁGINA: MINHA EMPRESA ---
 if st.session_state.pagina == "home":
     st.title("🏢 Configuração: Minha Empresa")
     emp = st.session_state.dados["minha_empresa"]
@@ -107,14 +131,21 @@ if st.session_state.pagina == "home":
         emp["tipo"] = st.text_input("Sub-nicho (ex: SaaS, Agência local)", emp["tipo"])
 
     st.write("### 🛠️ Nossos Serviços/Produtos")
-    novo_servico = st.text_input("Adicionar Serviço")
-    if st.button("Adicionar"):
-        if novo_servico:
+    
+    # ALTERADO: Uso de formulário para permitir o "Enter" e botão com cor (primary)
+    with st.form("form_servico", clear_on_submit=True):
+        novo_servico = st.text_input("Adicionar Serviço")
+        btn_adicionar = st.form_submit_button("Adicionar", type="primary")
+        
+        if btn_adicionar and novo_servico:
             emp["servicos"].append(novo_servico)
             st.rerun()
     
-    for s in emp["servicos"]:
-        st.markdown(f"<span class='service-tag'>{s}</span>", unsafe_allow_html=True)
+    # Exibição das tags
+    if emp["servicos"]:
+        cols_tags = st.container()
+        tags_html = "".join([f"<span class='service-tag'>{s}</span>" for s in emp["servicos"]])
+        st.markdown(tags_html, unsafe_allow_html=True)
 
 # --- PÁGINA: CADASTRO DE CONCORRENTES ---
 elif st.session_state.pagina == "cad":
