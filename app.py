@@ -141,32 +141,32 @@ if st.session_state.pagina == "home":
         tags_html = "".join([f"<span class='service-tag'>{s}</span>" for s in emp["servicos"]])
         st.markdown(tags_html, unsafe_allow_html=True)
 
-# --- PÁGINA: CONCORRENTES (CADASTRO) ---
+# --- PÁGINA: CONCORRENTES ---
 elif st.session_state.pagina == "cad":
     st.title("👥 Concorrentes")
     with st.form("cad_concorrente"):
         col1, col2 = st.columns(2)
         n = col1.text_input("Nome do Concorrente")
         u = col1.text_input("URL do Site")
-        i = col2.text_input("Instagram (arroba)")
+        i = col2.text_input("Instagram (ex: @empresa)")
         
-        # ALTERADO: Link adicionado dentro do parâmetro 'help'
+        # ALTERADO: Campo simplificado para aceitar o nome ou @
         a = col2.text_input(
-            "ID/Nome na Ads Library", 
-            help="Para obter esse dado, acesse a [Biblioteca de Anúncios](https://www.facebook.com/ads/library/), pesquise pelo concorrente e copie o nome exato da página ou o ID numérico que aparece nos filtros da URL."
+            "Identificador para Anúncios", 
+            help="Basta colocar o @ do Instagram ou o nome da Página do Facebook do concorrente. O sistema usará isso para buscar na [Biblioteca de Anúncios](https://www.facebook.com/ads/library/)."
         )
         
         if st.form_submit_button("Salvar Concorrente"):
             st.session_state.dados["concorrentes"].append({
                 "nome": n, "url": u, "instagram": i, "ads_id": a, "analise_site": ""
             })
-            st.success("Cadastrado com sucesso!")
+            st.success("Cadastrado!")
 
 # --- PÁGINA: VISÃO GERAL ---
 elif st.session_state.pagina == "geral":
     st.title("📊 Painel de Comparação")
     if not st.session_state.dados["concorrentes"]:
-        st.warning("Cadastre concorrentes primeiro na aba 'Concorrentes'.")
+        st.warning("Cadastre concorrentes primeiro.")
     else:
         df = pd.DataFrame(st.session_state.dados["concorrentes"])
         st.dataframe(df[["nome", "url", "instagram"]], use_container_width=True)
@@ -211,7 +211,11 @@ elif st.session_state.pagina == "ads":
     st.title("📢 Espionagem de Anúncios")
     for c in st.session_state.dados["concorrentes"]:
         st.subheader(f"🔍 {c['nome']}")
-        url_ads = f"https://www.facebook.com/ads/library/?q={c['ads_id'] or c['nome']}&country=BR&media_type=all"
+        
+        # ALTERADO: O link agora usa o parâmetro 'q' que funciona com o nome da página ou @ do Instagram
+        search_term = c['ads_id'] or c['nome']
+        url_ads = f"https://www.facebook.com/ads/library/?q={search_term}&country=BR&media_type=all"
+        
         st.link_button(f"Ver anúncios de {c['nome']} no Facebook", url_ads)
 
 # --- PÁGINA: INSIGHTS (BATTLE CARDS) ---
