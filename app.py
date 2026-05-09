@@ -1,131 +1,136 @@
 import streamlit as st
+import google.generativeai as genai
+from streamlit_option_menu import option_menu
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- 2. CSS ---
+# --- 2. CSS DEFINITIVO: LINHA 100%, SEM SOBREPOSIÇÃO E ALINHADO À ESQUERDA ---
 st.markdown("""
     <style>
-        /* 1. Fundo da lateral */
+        /* Fundo da barra lateral */
         [data-testid="stSidebar"] {
-            background-color: #1e2327 !important;
+            background-color: #2c3338 !important;
         }
 
-        /* 2. ZERAR TUDO: Remove os paddings que criam o "vão" lateral */
+        /* ZERAR PADDING DA SIDEBAR: Isso faz o menu encostar nas bordas (100% horizontal) */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
             padding: 0px !important;
             gap: 0px !important;
         }
-        
-        /* Forçar largura 100% em todos os containers de elementos */
-        [data-testid="stSidebar"] .element-container, 
-        [data-testid="stSidebar"] .stVerticalBlock > div {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 0px !important;
-            margin: 0px !important;
-        }
 
-        /* 3. TÍTULO: Blindado com Z-INDEX e Padding */
-        .sidebar-header {
+        /* TÍTULO DO MENU: Com respiro para não ser coberto */
+        .menu-title {
             color: #afb1b3 !important;
-            font-size: 11px !important;
-            font-weight: 700;
-            padding: 40px 20px 15px 20px !important; 
+            font-weight: bold;
             text-transform: uppercase;
+            font-size: 11px;
+            padding: 40px 20px 20px 20px !important; /* Mais espaço no topo e base */
             letter-spacing: 1px;
-            background-color: #1e2327 !important;
-            position: relative !important;
-            z-index: 99 !important; 
-            margin-bottom: 5px !important; 
-            display: block !important;
+            background-color: #2c3338;
         }
 
-        /* 4. BOTÕES: Alinhamento total à esquerda e largura 100% */
-        div.stButton {
-            width: 100% !important;
-            margin: 0px !important;
-        }
-
-        div.stButton > button {
-            width: 100% !important;
-            border: none !important;
-            border-radius: 0px !important;
-            background-color: transparent !important;
-            color: #eee !important;
-            padding: 16px 20px !important; /* Padding padrão dos outros botões */
-            font-size: 15px !important;
-            transition: background 0.1s;
-            border-bottom: 1px solid #2c3338 !important;
-            margin: 0px !important;
-            display: flex !important;
-            justify-content: flex-start !important;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* AJUSTE APENAS NO PRIMEIRO ELEMENTO (BOTÃO) */
-        [data-testid="stSidebar"] div.stButton:first-of-type button {
-            padding-top: 18px !important; /* Aumenta um pouco para compensar o visual */
-        }
-
-        /* CORREÇÃO DO JUSTIFY-CENTER */
-        div.stButton > button > div {
-            justify-content: flex-start !important;
-            text-align: left !important;
-            width: 100% !important;
-            display: flex !important;
-        }
-
-        div.stButton > button div[data-testid="stMarkdownContainer"] p {
+        /* AJUSTE DO CONTAINER DO MENU PARA LARGURA TOTAL */
+        .nav-link-container {
             margin: 0 !important;
+        }
+
+        /* Forçar alinhamento à esquerda nos itens do option_menu */
+        .nav-link {
             text-align: left !important;
+            padding: 12px 20px !important;
+            border-radius: 0px !important;
+            margin: 0px !important;
         }
-
-        /* 5. HOVER */
-        div.stButton > button:hover {
-            background-color: #2c3338 !important;
-            color: #72aee6 !important;
-        }
-
-        /* Estado Selecionado / Ativo */
-        div.stButton > button:focus, div.stButton > button:active {
-            background-color: #2271b1 !important;
-            color: white !important;
-            box-shadow: none !important;
-        }
-
-        /* Ocultar elementos nativos do Streamlit */
-        [data-testid="stSidebarNav"] {display: none;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. ESTADO DA SESSÃO ---
-if 'pagina' not in st.session_state:
-    st.session_state.pagina = "🏠 Minha empresa"
+# --- 3. CONFIGURAÇÃO DA IA E SESSÃO ---
+if "GEMINI_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+else:
+    st.error("API Key não encontrada nos Secrets.")
+    st.stop()
 
-# --- 4. MENU LATERAL ---
+if 'logado' not in st.session_state:
+    st.session_state.logado = False
+
+# --- 4. TELA DE LOGIN ---
+if not st.session_state.logado:
+    st.title("🖥️ WP-Admin Login")
+    if st.button("Fazer Login"):
+        st.session_state.logado = True
+        st.rerun()
+    st.stop()
+
+# --- 5. MENU LATERAL (option_menu) ---
 with st.sidebar:
-    st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
+    # Título protegido
+    st.markdown('<div class="menu-title">Painel de Controle</div>', unsafe_allow_html=True)
     
-    paginas = [
-        "🏠 Minha empresa", 
-        "👥 Análise de concorrentes", 
-        "📊 Geral", 
-        "🌐 Análise de sites", 
-        "📱 Análise de redes sociais", 
-        "📢 Análise de anúncios", 
-        "💡 Insights"
-    ]
+    selected = option_menu(
+        menu_title=None,
+        options=[
+            "Minha empresa", 
+            "Análise de concorrentes", 
+            "Geral", 
+            "Análise de sites", 
+            "Análise de redes sociais", 
+            "Análise de anúncios", 
+            "Insights"
+        ],
+        icons=["house", "people", "speedometer2", "browser-chrome", "instagram", "megaphone", "lightbulb"],
+        menu_icon="cast", 
+        default_index=0,
+        styles={
+            "container": {
+                "padding": "0!important", 
+                "background-color": "#2c3338",
+                "border-radius": "0px"
+            },
+            "icon": {"color": "#a7aaad", "font-size": "16px"}, 
+            "nav-link": {
+                "font-size": "14px", 
+                "color": "#eee",
+                "text-align": "left", 
+                "margin": "0px", 
+                "border-bottom": "1px solid #3c434a",
+                "border-radius": "0px"
+            },
+            "nav-link-selected": {
+                "background-color": "#2271b1", # Azul WordPress
+                "font-weight": "normal"
+            },
+        }
+    )
 
-    for p in paginas:
-        if st.button(p, key=f"btn_{p}"):
-            st.session_state.pagina = p
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Sair"):
+        st.session_state.logado = False
+        st.rerun()
 
-    # Espaçador e Botão Sair
-    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
-    if st.button("🚪 Sair", key="btn_sair"):
-        st.write("Saindo...")
+# --- 6. LÓGICA DE CARREGAMENTO DAS PÁGINAS ---
+# O 'selected' atualiza automaticamente ao clicar, o Streamlit recarrega a página sozinho.
 
-# --- 5. CONTEÚDO PRINCIPAL ---
-st.title(st.session_state.pagina)
+if selected == "Minha empresa":
+    st.title("🏢 Configurações da Empresa")
+    st.write("Aqui você configura os dados do seu negócio.")
+
+elif selected == "Análise de concorrentes":
+    st.title("👥 Gerenciar Concorrentes")
+    st.info("Adicione concorrentes para monitorar.")
+
+elif selected == "Geral":
+    st.title("📊 Dashboard Geral")
+
+elif selected == "Análise de sites":
+    st.title("🌐 Auditoria de Sites")
+
+elif selected == "Análise de redes sociais":
+    st.title("📱 Monitoramento Social")
+
+elif selected == "Análise de anúncios":
+    st.title("📢 Biblioteca de Ads")
+
+elif selected == "Insights":
+    st.title("💡 Inteligência Estratégica")
