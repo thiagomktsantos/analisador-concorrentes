@@ -20,6 +20,8 @@ if 'dados' not in st.session_state:
             "nome": "", 
             "setor": "Marketing", 
             "tipo": "Agência", 
+            "instagram": "",
+            "fb_page": "",
             "servicos": [] 
         },
         "concorrentes": [],
@@ -36,6 +38,7 @@ def consultar_ia(prompt):
         CONTEXTO DA MINHA EMPRESA:
         Nome: {st.session_state.dados['minha_empresa']['nome']}
         Setor: {st.session_state.dados['minha_empresa']['setor']}
+        Redes: {st.session_state.dados['minha_empresa']['instagram']}, {st.session_state.dados['minha_empresa']['fb_page']}
         Serviços: {', '.join(st.session_state.dados['minha_empresa']['servicos'])}
         ---
         """
@@ -77,6 +80,12 @@ st.markdown("""
             display: flex; align-items: center; height: 100%; 
             padding-top: 28px; color: #555; font-weight: bold; 
         }
+        .section-box {
+            padding: 20px;
+            border: 1px solid #e6e9ef;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -99,17 +108,27 @@ if 'pagina' not in st.session_state: st.session_state.pagina = "home"
 
 # --- 8. LÓGICA DAS PÁGINAS ---
 
-# --- PÁGINA: MINHA EMPRESA (RESTAURADA) ---
+# --- PÁGINA: MINHA EMPRESA ---
 if st.session_state.pagina == "home":
     st.title("🏢 Minha Empresa")
     emp = st.session_state.dados["minha_empresa"]
     
+    st.markdown("#### 📄 Informações Gerais")
     col1, col2 = st.columns(2)
-    with col1:
-        emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
-        emp["setor"] = st.selectbox("Setor", ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Indústria"], index=0)
-    with col2:
-        emp["tipo"] = st.text_input("Sub-nicho (ex: SaaS, Agência local)", emp["tipo"])
+    emp["nome"] = col1.text_input("Nome da Empresa", emp["nome"])
+    emp["setor"] = col1.selectbox("Setor", ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Indústria"], index=0)
+    emp["tipo"] = col2.text_input("Sub-nicho (ex: SaaS, Agência local)", emp["tipo"])
+
+    st.markdown("#### 📱 Redes Sociais")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        c_pref, c_in = st.columns([1.2, 3])
+        c_pref.markdown('<div class="insta-prefix">instagram.com/</div>', unsafe_allow_html=True)
+        # Limpa o valor para exibição
+        val_insta = emp["instagram"].replace("instagram.com/", "")
+        emp["instagram"] = "instagram.com/" + c_in.text_input("Instagram", value=val_insta, key="my_insta")
+    
+    emp["fb_page"] = col_b.text_input("Nome da Página no Facebook", emp["fb_page"])
 
     st.write("### 🛠️ Nossos Serviços/Produtos")
     with st.form("form_servico", clear_on_submit=True):
@@ -126,66 +145,75 @@ if st.session_state.pagina == "home":
 # --- PÁGINA: CONCORRENTES ---
 elif st.session_state.pagina == "cad":
     st.title("👥 Concorrentes")
+    
     with st.form("cad_concorrente", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        n = col1.text_input("Nome do Concorrente (Interno)")
-        u = col1.text_input("URL do Site")
+        st.markdown("#### 📄 Informações Básicas")
+        c1, c2 = st.columns(2)
+        n = c1.text_input("Nome do Concorrente (Interno)")
+        u = c2.text_input("URL do Site")
         
-        # Instagram com prefixo externo
-        col_prefix, col_input = col2.columns([1.2, 3])
-        col_prefix.markdown('<div class="insta-prefix">instagram.com/</div>', unsafe_allow_html=True)
-        insta_user = col_input.text_input("Instagram")
+        st.markdown("---")
+        st.markdown("#### 📱 Redes Sociais")
+        c3, c4 = st.columns(2)
         
-        f = col2.text_input("Nome da Página no Facebook (Exato)")
+        with c3:
+            col_prefix, col_input = st.columns([1.2, 3])
+            col_prefix.markdown('<div class="insta-prefix">instagram.com/</div>', unsafe_allow_html=True)
+            insta_user = col_input.text_input("Instagram", key="conc_insta")
+        
+        f = c4.text_input("Nome da Página no Facebook")
         
         a = st.text_input("Identificador Manual para Ads (Opcional)", 
-                         help="Se vazio, o sistema usará o Nome da Página ou Instagram.")
+                         help="Use se o nome da página for muito diferente do nome da empresa.")
         
-        if st.form_submit_button("Salvar Concorrente"):
+        if st.form_submit_button("Salvar Concorrente", type="primary"):
             if n:
                 term_insta = insta_user.replace("@", "").strip()
-                # Lógica de auto-preenchimento no salvamento
                 search_term = a or f or term_insta or n
                 
                 st.session_state.dados["concorrentes"].append({
-                    "nome": n, "url": u, 
+                    "nome": n, 
+                    "url": u, 
                     "instagram": f"instagram.com/{term_insta}" if term_insta else "", 
-                    "fb_page": f, "ads_id": search_term
+                    "fb_page": f, 
+                    "ads_id": search_term
                 })
-                st.success(f"Salvo! Ads ID definido como: {search_term}")
+                st.success(f"Concorrente '{n}' cadastrado!")
             else:
                 st.error("O nome é obrigatório.")
+
+# --- PÁGINA: VISÃO GERAL ---
+elif st.session_state.pagina == "geral":
+    st.title("📊 Painel de Comparação")
+    if not st.session_state.dados["concorrentes"]:
+        st.warning("Cadastre concorrentes primeiro.")
+    else:
+        df = pd.DataFrame(st.session_state.dados["concorrentes"])
+        st.dataframe(df[["nome", "url", "instagram", "fb_page"]], use_container_width=True)
 
 # --- PÁGINA: BIBLIOTECA DE ADS ---
 elif st.session_state.pagina == "ads":
     st.title("📢 Biblioteca de Ads")
-    if not st.session_state.dados["concorrentes"]:
+    concs = st.session_state.dados["concorrentes"]
+    if not concs:
         st.info("Cadastre concorrentes primeiro.")
     else:
-        for c in st.session_state.dados["concorrentes"]:
+        for c in concs:
             with st.expander(f"🔍 {c['nome']}", expanded=True):
                 search_term = c['ads_id']
                 url_ads = f"https://www.facebook.com/ads/library/?q={search_term}&country=BR&media_type=all"
-                st.link_button(f"Abrir anúncios de {c['nome']}", url_ads)
+                st.write(f"**Buscando anúncios para:** `{search_term}`")
+                st.link_button(f"Abrir Biblioteca de Anúncios", url_ads)
 
-# --- OUTRAS PÁGINAS (COMPATIBILIDADE) ---
-elif st.session_state.pagina == "geral":
-    st.title("📊 Visão Geral")
-    if st.session_state.dados["concorrentes"]:
-        st.table(pd.DataFrame(st.session_state.dados["concorrentes"])[["nome", "url", "instagram"]])
-    else: st.warning("Sem dados.")
-
-elif st.session_state.pagina == "sites":
-    st.title("🌐 Confronto de Sites")
-    concs = st.session_state.dados["concorrentes"]
-    if concs:
-        target = st.selectbox("Selecione", [c["nome"] for c in concs])
-        if st.button("Analisar"):
-            st.write("Simulando análise de IA...")
-
+# --- PÁGINA: IA BATTLE CARDS ---
 elif st.session_state.pagina == "insights":
     st.title("💡 IA Battle Cards")
-    if st.session_state.dados["concorrentes"]:
-        target = st.selectbox("Contra quem?", [c["nome"] for c in st.session_state.dados["concorrentes"]])
-        if st.button("Gerar Card"):
-            st.markdown(consultar_ia(f"Gere um Battle Card contra {target}"))
+    concs = st.session_state.dados["concorrentes"]
+    if concs:
+        target = st.selectbox("Gerar card contra:", [c["nome"] for c in concs])
+        if st.button("Gerar Card Estratégico", type="primary"):
+            with st.spinner("IA criando estratégia..."):
+                res = consultar_ia(f"Crie um Battle Card de vendas focado em vencer o concorrente {target}. Use as redes sociais deles para comparar tom de voz.")
+                st.markdown(res)
+    else:
+        st.info("Adicione concorrentes para gerar cards.")
