@@ -93,7 +93,6 @@ st.markdown("""
 with st.sidebar:
     st.markdown('<div class="sidebar-header">Dados Principais</div>', unsafe_allow_html=True)
     btn_home = st.button("🏠 Minha Empresa")
-    # ALTERADO: Nome simplificado para "Concorrentes"
     btn_cad = st.button("👥 Concorrentes")
     
     st.markdown('<div class="sidebar-header">Análise Comparativa</div>', unsafe_allow_html=True)
@@ -144,7 +143,6 @@ if st.session_state.pagina == "home":
 
 # --- PÁGINA: CONCORRENTES (CADASTRO) ---
 elif st.session_state.pagina == "cad":
-    # ALTERADO: Nome simplificado
     st.title("👥 Concorrentes")
     with st.form("cad_concorrente"):
         col1, col2 = st.columns(2)
@@ -152,10 +150,10 @@ elif st.session_state.pagina == "cad":
         u = col1.text_input("URL do Site")
         i = col2.text_input("Instagram (arroba)")
         
-        # ALTERADO: Adicionado parâmetro 'help' para a bolinha de interrogação com explicação
+        # ALTERADO: Link adicionado dentro do parâmetro 'help'
         a = col2.text_input(
             "ID/Nome na Ads Library", 
-            help="Para obter esse dado, acesse a Biblioteca de Anúncios do Facebook, pesquise pelo concorrente e copie o nome exato da página ou o ID numérico que aparece nos filtros da URL."
+            help="Para obter esse dado, acesse a [Biblioteca de Anúncios](https://www.facebook.com/ads/library/), pesquise pelo concorrente e copie o nome exato da página ou o ID numérico que aparece nos filtros da URL."
         )
         
         if st.form_submit_button("Salvar Concorrente"):
