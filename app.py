@@ -18,7 +18,7 @@ if 'dados' not in st.session_state:
     st.session_state.dados = {
         "minha_empresa": {
             "nome": "", "setor": "Marketing", "tipo": "", 
-            "instagram": "", "fb_page": "", "servicos": [] 
+            "instagram": "@", "fb_page": "", "servicos": [] 
         },
         "concorrentes": [],
     }
@@ -31,7 +31,7 @@ def consultar_ia(prompt):
     if model is None: return "Erro: Chave API não configurada."
     try:
         emp = st.session_state.dados['minha_empresa']
-        contexto = f"Empresa: {emp['nome']} | Setor: {emp['setor']} | Serviços: {', '.join(emp['servicos'])}\n---\n"
+        contexto = f"Empresa: {emp['nome']} | Setor: {emp['setor']} | Instagram: {emp['instagram']}\n---\n"
         return model.generate_content(contexto + prompt).text
     except Exception as e: return f"Erro: {str(e)}"
 
@@ -59,12 +59,6 @@ st.markdown("""
             background-color: #2271b1; color: white; padding: 4px 10px; 
             border-radius: 4px; font-size: 12px; margin-right: 5px; 
             display: inline-block; margin-bottom: 5px;
-        }
-        /* Estilo para o @ travado ao lado do input */
-        .at-symbol {
-            display: flex; align-items: center; justify-content: flex-end;
-            height: 100%; padding-top: 28px; font-size: 18px;
-            color: #2271b1; font-weight: bold; margin-right: -15px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -98,12 +92,10 @@ if st.session_state.pagina == "home":
     st.markdown("---")
     st.subheader("📱 Redes Sociais")
     col_a, col_b = st.columns(2)
-    with col_a:
-        c_at, c_in = st.columns([0.3, 4])
-        c_at.markdown('<div class="at-symbol">@</div>', unsafe_allow_html=True)
-        # Remove @ inicial se já existir para não duplicar na exibição
-        val_i = emp["instagram"].replace("@", "")
-        emp["instagram"] = "@" + c_in.text_input("Instagram (@empresa)", value=val_i, key="my_insta")
+    
+    # Instagram com @ preenchido e garantido
+    insta_val = emp["instagram"] if emp["instagram"].startswith("@") else "@" + emp["instagram"]
+    emp["instagram"] = col_a.text_input("Instagram (@empresa)", value=insta_val)
     
     emp["fb_page"] = col_b.text_input("Nome da Página no Facebook", emp["fb_page"])
 
@@ -131,10 +123,9 @@ elif st.session_state.pagina == "cad":
         st.markdown("---")
         st.subheader("📱 Redes Sociais")
         c3, c4 = st.columns(2)
-        with c3:
-            col_at, col_in = st.columns([0.3, 4])
-            col_at.markdown('<div class="at-symbol">@</div>', unsafe_allow_html=True)
-            insta_handle = col_in.text_input("Instagram (@empresa)", key="conc_insta")
+        
+        # Instagram com @ preenchido
+        insta_handle = c3.text_input("Instagram (@empresa)", value="@")
         
         fb_p = c4.text_input("Nome da Página no Facebook")
         
@@ -142,12 +133,16 @@ elif st.session_state.pagina == "cad":
         
         if st.form_submit_button("Salvar Concorrente", type="primary"):
             if n:
-                # Limpeza e definição do termo de busca para Ads
-                handle = insta_handle.replace("@", "").strip()
-                search_term = ads_manual or fb_p or handle or n
+                # Garante que o handle comece com @ e limpa espaços
+                clean_handle = insta_handle.strip()
+                if clean_handle == "@": clean_handle = "" # Se for só o @, considera vazio
+                elif not clean_handle.startswith("@"): clean_handle = "@" + clean_handle
+                
+                # Termo de busca para Ads (remove o @ para a URL do Facebook)
+                search_term = ads_manual or fb_p or clean_handle.replace("@", "") or n
                 
                 st.session_state.dados["concorrentes"].append({
-                    "nome": n, "url": u, "instagram": f"@{handle}" if handle else "",
+                    "nome": n, "url": u, "instagram": clean_handle,
                     "fb_page": fb_p, "ads_id": search_term
                 })
                 st.success(f"Concorrente {n} cadastrado!")
