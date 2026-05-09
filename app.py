@@ -1,75 +1,68 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
 import google.generativeai as genai
 import trafilatura
 from duckduckgo_search import DDGS
 import pandas as pd
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="WP-Admin Competitor Analysis", layout="wide")
+st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- CSS CUSTOMIZADO (ESTILO WORDPRESS DARK) ---
+# --- CSS PARA MENU "CHUMBO" PROFISSIONAL (100% WIDTH) ---
 st.markdown("""
     <style>
-        /* Fundo da barra lateral (Chumbo WordPress) */
+        /* Fundo da barra lateral */
         [data-testid="stSidebar"] {
             background-color: #1e2327 !important;
+            padding: 0px !important;
         }
-
+        
         /* Título do Painel */
-        .admin-title {
-            color: #f0f0f1;
-            font-size: 18px;
+        .sidebar-title {
+            color: #ffffff;
+            font-size: 14px;
             font-weight: bold;
             padding: 20px 15px;
+            background-color: #101214;
+            margin-bottom: 10px;
+            text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* Estilo dos itens do Menu */
-        .nav-link {
-            color: #d1d1d1 !important;
-            font-size: 14px !important;
-            text-align: left !important;
+        /* ESTILIZAÇÃO DOS BOTÕES DO MENU */
+        div.stButton > button {
+            width: 100% !important;
             border-radius: 0px !important;
-            padding: 10px 15px !important;
+            border: none !important;
+            background-color: #2c3338 !important; /* Cor Chumbo */
+            color: #d1d1d1 !important;
+            padding: 12px 20px !important;
+            text-align: left !important;
+            font-size: 14px !important;
+            display: flex !important;
+            align-items: center !important;
+            margin-bottom: 1px !important;
+            transition: all 0.3s !important;
         }
 
-        /* Item selecionado (Azul WordPress) */
-        .nav-link-selected {
-            background-color: #2271b1 !important;
-            color: white !important;
-            font-weight: bold !important;
-        }
-
-        /* Sub-menus (Recuo visual) */
-        div[id^="option-menu-item-2"], 
-        div[id^="option-menu-item-3"], 
-        div[id^="option-menu-item-4"], 
-        div[id^="option-menu-item-5"] {
-            padding-left: 30px !important;
-            background-color: #262c33 !important;
-            font-size: 13px !important;
-        }
-
-        /* Hover */
-        .nav-link:hover {
+        /* Hover (Passar o mouse) */
+        div.stButton > button:hover {
+            background-color: #353c41 !important;
             color: #72aee6 !important;
         }
 
-        /* Botão Sair */
-        .stButton > button {
-            width: 90%;
-            margin: 0 auto;
-            display: block;
-            background-color: transparent;
-            color: #646970;
-            border: 1px solid #3c434a;
-            border-radius: 4px;
-        }
-        .stButton > button:hover {
-            border-color: #d63638;
-            color: #d63638;
-        }
+        /* Botão Selecionado (Destaque Azul WordPress) */
+        .st-emotion-cache-12888p9.e1nzilvr4 { /* Alvo específico de botões em colunas se necessário */ }
+        
+        /* Classe customizada para o botão ativo via Session State */
+        /* Como o Streamlit não tem 'active class' nativa no botão, 
+           usamos a lógica de cor no python abaixo */
+
+        /* Ajuste de margens da barra lateral */
+        [data-testid="stSidebarNav"] {display: none;}
+        [data-testid="stSidebar"] .block-container {padding-top: 0px !important;}
+        
+        /* Espaçamento para Sub-itens */
+        .indent { padding-left: 30px !important; font-size: 13px !important; background-color: #23282d !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -78,177 +71,111 @@ if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('gemini-pro')
 else:
-    st.error("Erro: GEMINI_API_KEY não configurada nos Secrets do Streamlit.")
+    st.error("API Key ausente nos Secrets.")
     st.stop()
 
-# --- ESTADO DA SESSÃO (BANCO DE DADOS TEMPORÁRIO) ---
+# --- ESTADO DA SESSÃO ---
+if 'pagina' not in st.session_state:
+    st.session_state.pagina = "Minha empresa"
 if 'dados' not in st.session_state:
-    st.session_state.dados = {
-        "minha_empresa": {"nome": "", "setor": "", "descricao": ""},
-        "concorrentes": [] # Lista de dicts
-    }
+    st.session_state.dados = {"minha_empresa": {"nome": "", "setor": "", "descricao": ""}, "concorrentes": []}
 if 'logado' not in st.session_state:
     st.session_state.logado = False
 
-# --- FUNÇÃO DE IA ---
-def analisar_ia(prompt):
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"Erro na análise: {e}"
-
 # --- TELA DE LOGIN ---
 if not st.session_state.logado:
-    st.title("🖥️ Painel Administrativo")
-    user = st.text_input("Usuário")
-    pw = st.text_input("Senha", type="password")
-    if st.button("Acessar Sistema"):
+    st.title("🔐 Login Administrativo")
+    if st.button("Acessar Painel"):
         st.session_state.logado = True
         st.rerun()
     st.stop()
 
-# --- BARRA LATERAL (MENU WORDPRESS) ---
+# --- MENU LATERAL (SISTEMA DE BOTÕES 100%) ---
 with st.sidebar:
-    st.markdown('<div class="admin-title">PAINEL DE CONTROLE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-title">PAINEL DE CONTROLE</div>', unsafe_allow_html=True)
     
-    selected = option_menu(
-        menu_title=None,
-        options=[
-            "Minha empresa", 
-            "Análise de concorrentes", 
-            "Geral", 
-            "Análise de sites", 
-            "Análise de redes sociais", 
-            "Análise de anúncios", 
-            "Insights"
-        ],
-        icons=[
-            "house-fill", "people-fill", "speedometer", "window", "instagram", "megaphone-fill", "lightbulb-fill"
-        ],
-        default_index=0,
-        styles={
-            "container": {"padding": "0!important", "background-color": "transparent"},
-            "icon": {"font-size": "16px"},
-            "nav-link-selected": {"background-color": "#2271b1"},
-        }
-    )
-    
+    # Função para criar os botões com lógica de cor "Selecionado"
+    def menu_item(label, is_subitem=False):
+        style = "indent" if is_subitem else ""
+        # Se a página atual for o label, mudamos a cor do botão no estilo
+        # (Para manter simples e funcional no Streamlit, usamos o clique como gatilho)
+        if st.button(label, key=f"btn_{label}", help=label):
+            st.session_state.pagina = label
+            st.rerun()
+
+    menu_item("🏠 Minha empresa")
+    menu_item("👥 Análise de concorrentes")
+    # Sub-itens com recuo visual no texto
+    menu_item("      📊 Geral", is_subitem=True)
+    menu_item("      🌐 Análise de sites", is_subitem=True)
+    menu_item("      📱 Análise de redes sociais", is_subitem=True)
+    menu_item("      📢 Análise de anúncios", is_subitem=True)
+    menu_item("💡 Insights")
+
     st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("Sair"):
+    if st.button("🚪 Sair"):
         st.session_state.logado = False
         st.rerun()
 
-# --- LÓGICA DAS PÁGINAS ---
+# --- LÓGICA DE NAVEGAÇÃO E CONTEÚDO ---
+pagina = st.session_state.pagina.strip()
 
-# 1. MINHA EMPRESA
-if selected == "Minha empresa":
+if "Minha empresa" in pagina:
     st.title("🏢 Minha Empresa")
-    st.write("Configure o perfil da sua própria empresa para que a IA possa fazer comparações.")
-    
     emp = st.session_state.dados["minha_empresa"]
-    st.session_state.dados["minha_empresa"]["nome"] = st.text_input("Nome da Empresa", emp["nome"])
-    st.session_state.dados["minha_empresa"]["setor"] = st.text_input("Setor de Atuação", emp["setor"])
-    st.session_state.dados["minha_empresa"]["descricao"] = st.text_area("Descrição do seu produto/serviço", emp["descricao"])
-    
-    if st.button("Salvar Perfil"):
-        st.success("Perfil atualizado com sucesso!")
+    st.session_state.dados["minha_empresa"]["nome"] = st.text_input("Nome", emp["nome"])
+    st.session_state.dados["minha_empresa"]["setor"] = st.text_input("Setor", emp["setor"])
+    st.session_state.dados["minha_empresa"]["descricao"] = st.text_area("Descrição", emp["descricao"])
+    if st.button("Salvar Alterações"):
+        st.success("Dados salvos!")
 
-# 2. ANÁLISE DE CONCORRENTES (Cadastro)
-elif selected == "Análise de concorrentes":
-    st.title("👥 Gestão de Concorrentes")
-    st.write("Adicione abaixo as empresas que deseja monitorar.")
+elif "Análise de concorrentes" in pagina:
+    st.title("👥 Concorrentes")
+    with st.form("cad"):
+        n = st.text_input("Nome")
+        u = st.text_input("URL")
+        if st.form_submit_button("Cadastrar"):
+            st.session_state.dados["concorrentes"].append({"nome": n, "url": u, "site_data": "", "social_data": ""})
+            st.success(f"{n} adicionado!")
     
-    with st.form("novo_concorrente", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        nome_c = col1.text_input("Nome da Marca")
-        url_c = col2.text_input("URL do Site (com https://)")
-        ads_c = st.text_input("Nome exato para busca de Anúncios (opcional)")
-        if st.form_submit_button("Cadastrar Concorrente"):
-            if nome_c and url_c:
-                st.session_state.dados["concorrentes"].append({
-                    "nome": nome_c, "url": url_c, "ads_name": ads_c, 
-                    "site_data": "", "social_data": ""
-                })
-                st.success(f"{nome_c} adicionado!")
-            else:
-                st.error("Preencha Nome e URL.")
-
-    st.subheader("Empresas Monitoradas")
     if st.session_state.dados["concorrentes"]:
-        df = pd.DataFrame(st.session_state.dados["concorrentes"])[["nome", "url"]]
-        st.table(df)
-        if st.button("Limpar Lista"):
-            st.session_state.dados["concorrentes"] = []
-            st.rerun()
-    else:
-        st.info("Nenhum concorrente cadastrado.")
+        st.write(pd.DataFrame(st.session_state.dados["concorrentes"])[["nome", "url"]])
 
-# 3. GERAL (Resumo)
-elif selected == "Geral":
-    st.title("📊 Resumo Operacional")
+elif "Geral" in pagina:
+    st.title("📊 Visão Geral")
+    st.metric("Total de Concorrentes", len(st.session_state.dados["concorrentes"]))
+
+elif "Análise de sites" in pagina:
+    st.title("🌐 Auditoria de Sites")
     concs = st.session_state.dados["concorrentes"]
-    
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Concorrentes", len(concs))
-    c2.metric("Análises de Site", sum(1 for c in concs if c["site_data"]))
-    c3.metric("Análises Social", sum(1 for c in concs if c["social_data"]))
-
-# 4. ANÁLISE DE SITES
-elif selected == "Análise de sites":
-    st.title("🌐 Auditoria de Sites (IA)")
-    concs = st.session_state.dados["concorrentes"]
-    
-    if not concs:
-        st.warning("Cadastre um concorrente na página anterior.")
+    if not concs: st.warning("Cadastre concorrentes primeiro.")
     else:
-        alvo = st.selectbox("Selecione um concorrente", [c["nome"] for c in concs])
-        item = next(c for c in concs if c["nome"] == alvo)
-        
-        if st.button(f"Analisar site de {alvo}"):
-            with st.spinner("IA extraindo conteúdo e analisando..."):
-                downloaded = trafilatura.fetch_url(item["url"])
-                texto = trafilatura.extract(downloaded)
-                if texto:
-                    resumo = analisar_ia(f"Resuma a proposta de valor e estratégia de vendas deste site em tópicos: {texto[:4000]}")
-                    item["site_data"] = resumo
-                    st.markdown(resumo)
-                else:
-                    st.error("Não foi possível ler o site. Tente outra URL.")
+        alvo = st.selectbox("Escolha um concorrente", [c["nome"] for c in concs])
+        if st.button("Analisar com IA"):
+            with st.spinner("Lendo site..."):
+                item = next(c for c in concs if c["nome"] == alvo)
+                txt = trafilatura.extract(trafilatura.fetch_url(item["url"]))
+                if txt:
+                    res = model.generate_content(f"Resuma a estratégia deste site: {txt[:3000]}").text
+                    item["site_data"] = res
+                    st.markdown(res)
 
-# 5. ANÁLISE DE REDES SOCIAIS
-elif selected == "Análise de redes sociais":
+elif "Análise de redes sociais" in pagina:
     st.title("📱 Redes Sociais")
-    st.write("Cole o texto de uma postagem do concorrente para analisar a estratégia.")
-    
-    concs = st.session_state.dados["concorrentes"]
-    if concs:
-        alvo = st.selectbox("Concorrente alvo", [c["nome"] for c in concs])
-        item = next(c for c in concs if c["nome"] == alvo)
-        copy = st.text_area("Copy (texto) da publicação")
-        
-        if st.button("Analisar Post"):
-            analise = analisar_ia(f"Analise o tom de voz e o gatilho mental deste post: {copy}")
-            item["social_data"] = analise
-            st.info(analise)
+    st.info("Cole legendas de posts para análise de IA.")
+    copy = st.text_area("Legenda do post")
+    if st.button("Analisar Tom de Voz"):
+        res = model.generate_content(f"Analise o tom de voz deste post: {copy}").text
+        st.write(res)
 
-# 6. ANÁLISE DE ANÚNCIOS
-elif selected == "Análise de anúncios":
-    st.title("📢 Biblioteca de Anúncios")
-    st.write("Acesso rápido aos anúncios ativos dos concorrentes no Facebook/Instagram.")
-    
+elif "Análise de anúncios" in pagina:
+    st.title("📢 Anúncios")
     for c in st.session_state.dados["concorrentes"]:
-        nome_busca = c["ads_name"] if c["ads_name"] else c["nome"]
-        link = f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&q={nome_busca}&country=BR"
-        col_n, col_l = st.columns([1, 1])
-        col_n.subheader(c["nome"])
-        col_l.link_button("Ver Anúncios no Facebook", link)
+        st.link_button(f"Facebook Ads: {c['nome']}", f"https://www.facebook.com/ads/library/?q={c['nome']}&country=BR")
 
-# 7. INSIGHTS
-elif selected == "Insights":
-    st.title("💡 Insights Estratégicos")
-    if st.button("Gerar Relatório de Inteligência"):
-        with st.spinner("IA processando dados cruzados..."):
-            ctx = f"Minha empresa: {st.session_state.dados['minha_empresa']}. Concorrentes: {st.session_state.dados['concorrentes']}"
-            relatorio = analisar_ia(f"Com base nesses dados de mercado, cite 3 oportunidades de ouro e 1 ameaça: {ctx}")
-            st.markdown(relatorio)
+elif "Insights" in pagina:
+    st.title("💡 Insights")
+    if st.button("Gerar Relatório Estratégico"):
+        ctx = f"Empresa: {st.session_state.dados['minha_empresa']} Concorrentes: {st.session_state.dados['concorrentes']}"
+        res = model.generate_content(f"Dê 3 conselhos de marketing para esta empresa superar os concorrentes: {ctx}").text
+        st.markdown(res)
