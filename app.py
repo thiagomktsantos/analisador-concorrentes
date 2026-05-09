@@ -61,7 +61,6 @@ st.markdown("""
         [data-testid="stSidebar"] { background-color: #1e2327 !important; }
         .sidebar-header { color: #afb1b3; font-size: 11px; font-weight: 700; padding: 20px; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Estilo apenas para botões da Sidebar */
         [data-testid="stSidebar"] div.stButton > button { 
             width: 100%; 
             border-radius: 0px; 
@@ -77,7 +76,6 @@ st.markdown("""
             color: #72aee6; 
         }
         
-        /* Tags de serviço */
         .service-tag { 
             background-color: #2271b1; 
             color: white; 
@@ -93,10 +91,10 @@ st.markdown("""
 
 # --- 7. MENU LATERAL ---
 with st.sidebar:
-    # ALTERADO: Título de "Configurações" para "Dados Principais"
     st.markdown('<div class="sidebar-header">Dados Principais</div>', unsafe_allow_html=True)
     btn_home = st.button("🏠 Minha Empresa")
-    btn_cad = st.button("➕ Cadastrar Concorrente")
+    # ALTERADO: Nome simplificado para "Concorrentes"
+    btn_cad = st.button("👥 Concorrentes")
     
     st.markdown('<div class="sidebar-header">Análise Comparativa</div>', unsafe_allow_html=True)
     btn_geral = st.button("📊 Visão Geral")
@@ -120,7 +118,7 @@ if 'pagina' not in st.session_state: st.session_state.pagina = "home"
 # --- 8. LÓGICA DAS PÁGINAS ---
 
 if st.session_state.pagina == "home":
-    st.title("🏢 Configuração: Minha Empresa")
+    st.title("🏢 Minha Empresa")
     emp = st.session_state.dados["minha_empresa"]
     
     col1, col2 = st.columns(2)
@@ -132,7 +130,6 @@ if st.session_state.pagina == "home":
 
     st.write("### 🛠️ Nossos Serviços/Produtos")
     
-    # ALTERADO: Uso de formulário para permitir o "Enter" e botão com cor (primary)
     with st.form("form_servico", clear_on_submit=True):
         novo_servico = st.text_input("Adicionar Serviço")
         btn_adicionar = st.form_submit_button("Adicionar", type="primary")
@@ -141,32 +138,37 @@ if st.session_state.pagina == "home":
             emp["servicos"].append(novo_servico)
             st.rerun()
     
-    # Exibição das tags
     if emp["servicos"]:
-        cols_tags = st.container()
         tags_html = "".join([f"<span class='service-tag'>{s}</span>" for s in emp["servicos"]])
         st.markdown(tags_html, unsafe_allow_html=True)
 
-# --- PÁGINA: CADASTRO DE CONCORRENTES ---
+# --- PÁGINA: CONCORRENTES (CADASTRO) ---
 elif st.session_state.pagina == "cad":
-    st.title("👥 Cadastro de Concorrentes")
+    # ALTERADO: Nome simplificado
+    st.title("👥 Concorrentes")
     with st.form("cad_concorrente"):
         col1, col2 = st.columns(2)
         n = col1.text_input("Nome do Concorrente")
         u = col1.text_input("URL do Site")
         i = col2.text_input("Instagram (arroba)")
-        a = col2.text_input("ID/Nome na Ads Library")
+        
+        # ALTERADO: Adicionado parâmetro 'help' para a bolinha de interrogação com explicação
+        a = col2.text_input(
+            "ID/Nome na Ads Library", 
+            help="Para obter esse dado, acesse a Biblioteca de Anúncios do Facebook, pesquise pelo concorrente e copie o nome exato da página ou o ID numérico que aparece nos filtros da URL."
+        )
+        
         if st.form_submit_button("Salvar Concorrente"):
             st.session_state.dados["concorrentes"].append({
                 "nome": n, "url": u, "instagram": i, "ads_id": a, "analise_site": ""
             })
-            st.success("Cadastrado!")
+            st.success("Cadastrado com sucesso!")
 
 # --- PÁGINA: VISÃO GERAL ---
 elif st.session_state.pagina == "geral":
     st.title("📊 Painel de Comparação")
     if not st.session_state.dados["concorrentes"]:
-        st.warning("Cadastre concorrentes primeiro.")
+        st.warning("Cadastre concorrentes primeiro na aba 'Concorrentes'.")
     else:
         df = pd.DataFrame(st.session_state.dados["concorrentes"])
         st.dataframe(df[["nome", "url", "instagram"]], use_container_width=True)
