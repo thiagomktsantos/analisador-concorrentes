@@ -7,7 +7,7 @@ import pandas as pd
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- CSS DEFINITIVO: FUNDO CHUMBO E TEXTO BRANCO ---
+# --- CSS DEFINITIVO: DESIGN CHUMBO INTEGRADO COM DIVISORES ---
 st.markdown("""
     <style>
         /* 1. Fundo total da barra lateral */
@@ -15,22 +15,22 @@ st.markdown("""
             background-color: #1e2327 !important;
         }
 
-        /* 2. Remover espaços extras no topo e laterais do menu */
+        /* 2. Remover o fundo preto do topo e zerar paddings */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-            padding-top: 0px !important;
             gap: 0px !important;
+            padding-top: 0px !important;
         }
 
-        /* 3. Título do Painel */
+        /* 3. Título do Painel (Removendo o fundo preto) */
         .sidebar-header {
             color: #ffffff !important;
-            font-size: 14px !important;
-            font-weight: bold;
-            padding: 25px 20px;
-            background-color: #101214;
-            margin-bottom: 5px;
+            font-size: 13px !important;
+            font-weight: 700;
+            padding: 30px 20px 15px 20px;
+            background-color: #1e2327 !important; /* Mesma cor do fundo */
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid #3c434a; /* Linha abaixo do título */
         }
 
         /* 4. ESTILO DOS BOTÕES (MENU) */
@@ -38,39 +38,42 @@ st.markdown("""
             width: 100% !important;
             border: none !important;
             border-radius: 0px !important;
-            background-color: #1e2327 !important; /* Cor Chumbo igual ao fundo */
+            background-color: #1e2327 !important; /* Chumbo */
             color: #ffffff !important; /* Texto Branco */
-            padding: 12px 25px !important;
+            padding: 15px 25px !important;
             text-align: left !important;
-            font-size: 15px !important;
+            font-size: 14px !important;
             display: block !important;
-            transition: background 0.2s !important;
             margin: 0px !important;
+            
+            /* DIVISOR: Linha horizontal fina entre botões */
+            border-bottom: 1px solid #2d3339 !important; 
         }
 
-        /* 5. Efeito Hover (ao passar o mouse) */
+        /* 5. Hover (ao passar o mouse) */
         div.stButton > button:hover {
-            background-color: #2c3338 !important; /* Um tom de chumbo levemente mais claro */
-            color: #ffffff !important;
-            border: none !important;
+            background-color: #2c3338 !important;
+            color: #72aee6 !important;
+            border-bottom: 1px solid #2d3339 !important;
         }
 
-        /* 6. Efeito Ativo/Foco (quando clicado) */
+        /* 6. Botão Ativo (Destaque para a página atual) */
         div.stButton > button:focus, div.stButton > button:active {
-            background-color: #2271b1 !important; /* Azul WordPress para indicar onde você está */
-            color: #ffffff !important;
+            background-color: #2271b1 !important;
+            color: white !important;
             box-shadow: none !important;
         }
 
-        /* 7. Estilo específico para Sub-itens (indentação) */
-        .indent-text {
-            padding-left: 20px;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-
-        /* Esconder menu padrão do Streamlit na lateral */
+        /* Esconder ícones e menu padrão */
         [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Ajuste do botão Sair (Remover linha debaixo dele se quiser) */
+        .exit-btn div.stButton > button {
+            margin-top: 40px !important;
+            border-top: 1px solid #3c434a !important;
+            border-bottom: none !important;
+            color: #ff4b4b !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -79,7 +82,7 @@ if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('gemini-pro')
 else:
-    st.error("Configure sua API KEY nos Secrets do Streamlit.")
+    st.error("Configure sua API KEY.")
     st.stop()
 
 # --- ESTADO DA SESSÃO ---
@@ -92,17 +95,18 @@ if 'logado' not in st.session_state:
 
 # --- LOGIN ---
 if not st.session_state.logado:
-    st.title("🖥️ Login Dashboard")
-    if st.button("Acessar Painel"):
+    st.title("🖥️ Acesso ao Sistema")
+    if st.button("Entrar no Painel"):
         st.session_state.logado = True
         st.rerun()
     st.stop()
 
-# --- MENU LATERAL (BOTÕES CHUMBO 100% WIDTH) ---
+# --- MENU LATERAL ---
 with st.sidebar:
-    st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
+    # Título sem fundo preto
+    st.markdown('<div class="sidebar-header">PAINEL DE CONTROLE</div>', unsafe_allow_html=True)
     
-    # Lista de itens do menu
+    # Botões com divisores automáticos via CSS
     if st.button("🏠 Minha empresa"): st.session_state.pagina = "Minha empresa"
     if st.button("👥 Análise de concorrentes"): st.session_state.pagina = "Análise de concorrentes"
     if st.button("📊 Geral"): st.session_state.pagina = "Geral"
@@ -111,37 +115,26 @@ with st.sidebar:
     if st.button("📢 Análise de anúncios"): st.session_state.pagina = "Análise de anúncios"
     if st.button("💡 Insights"): st.session_state.pagina = "Insights"
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # Botão Sair com estilo diferente
+    st.markdown('<div class="exit-btn">', unsafe_allow_html=True)
     if st.button("🚪 Sair"):
         st.session_state.logado = False
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- CONTEÚDO DAS PÁGINAS ---
 pag = st.session_state.pagina
+st.title(f"📍 {pag}")
 
 if pag == "Minha empresa":
-    st.title("🏢 Minha Empresa")
-    # Campos de input aqui...
+    st.info("Preencha os dados da sua empresa aqui.")
+    # Coloque seus inputs aqui...
 
 elif pag == "Análise de concorrentes":
-    st.title("👥 Gestão de Concorrentes")
-    # Cadastro de concorrentes aqui...
+    st.write("Gerencie sua lista de concorrentes.")
+    # Coloque sua lógica de cadastro aqui...
 
 elif pag == "Geral":
-    st.title("📊 Visão Geral")
-    st.write(f"Concorrentes cadastrados: {len(st.session_state.dados['concorrentes'])}")
+    st.metric("Total Monitorado", len(st.session_state.dados["concorrentes"]))
 
-elif pag == "Análise de sites":
-    st.title("🌐 Análise de Sites")
-    # Lógica de IA...
-
-elif pag == "Análise de anúncios":
-    st.title("📢 Anúncios Ativos")
-    # Links para Facebook Ads...
-
-elif pag == "Insights":
-    st.title("💡 Insights Estratégicos")
-    # Relatório Final...
-
-# Rodapé ou Informação da página atual
-st.sidebar.markdown(f"<div style='color: #666; padding: 20px; font-size: 12px;'>Página atual: {pag}</div>", unsafe_allow_html=True)
+# ... (Repetir para as outras páginas)
