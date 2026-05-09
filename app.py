@@ -3,7 +3,7 @@ import streamlit as st
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- 2. CSS "WP-ULTIMATE" (FIX DE TAMANHO E ALINHAMENTO) ---
+# --- 2. CSS AJUSTADO (FOCO NO PRIMEIRO BOTÃO) ---
 st.markdown("""
     <style>
         /* 1. Fundo da lateral */
@@ -11,7 +11,7 @@ st.markdown("""
             background-color: #1e2327 !important;
         }
 
-        /* 2. ZERAR TUDO: Remove os espaços automáticos para as linhas serem 100% */
+        /* 2. ZERAR ESPAÇOS LATERAIS (Para linha 100%) */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
             padding: 0px !important;
             gap: 0px !important;
@@ -21,7 +21,6 @@ st.markdown("""
             width: 100% !important;
             max-width: 100% !important;
             padding: 0px !important;
-            margin: 0px !important;
         }
 
         /* 3. TÍTULO DO PAINEL */
@@ -29,21 +28,19 @@ st.markdown("""
             color: #afb1b3 !important;
             font-size: 11px !important;
             font-weight: 700;
-            padding: 40px 20px 10px 20px !important; 
+            padding: 35px 20px 10px 20px !important; 
             text-transform: uppercase;
             letter-spacing: 1px;
             background-color: #1e2327;
-            display: block !important;
         }
 
-        /* 4. ESPAÇADOR DE SEGURANÇA (Evita que o hover suba no título) */
-        .menu-spacer {
-            height: 15px;
-            background-color: #1e2327;
-            border-bottom: 1px solid #2c3338; /* Linha que separa o título dos botões */
+        /* 4. AJUSTE DO PRIMEIRO BOTÃO (O SEGREDO ESTÁ AQUI) */
+        /* Adicionamos uma margem no topo APENAS do primeiro botão para ele não encostar no título */
+        div.stButton:nth-of-type(1) {
+            margin-top: 15px !important;
         }
 
-        /* 5. BOTÕES: Tamanho Unificado e Alinhamento à Esquerda */
+        /* 5. ESTILO GERAL DOS BOTÕES */
         div.stButton {
             width: 100% !important;
             margin: 0px !important;
@@ -51,22 +48,20 @@ st.markdown("""
 
         div.stButton > button {
             width: 100% !important;
-            height: 55px !important; /* FORÇAR ALTURA IGUAL PARA TODOS */
             border: none !important;
             border-radius: 0px !important;
             background-color: transparent !important;
             color: #eee !important;
-            padding: 0px 20px !important; /* Padding lateral apenas, altura controlada pelo height */
+            padding: 14px 20px !important;
             font-size: 15px !important;
             transition: all 0.1s;
             border-bottom: 1px solid #2c3338 !important;
             margin: 0px !important;
             display: flex !important;
             justify-content: flex-start !important;
-            align-items: center !important;
         }
 
-        /* A SUA DESCOBERTA: Corrigindo o justify-center interno do Streamlit */
+        /* SUA DESCOBERTA: Alinhamento à esquerda corrigindo o Flex interno */
         div.stButton > button > div {
             justify-content: flex-start !important;
             text-align: left !important;
@@ -102,13 +97,8 @@ if 'pagina' not in st.session_state:
 
 # --- 4. MENU LATERAL ---
 with st.sidebar:
-    # 1. Título
     st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
     
-    # 2. Espaçador (O "pulo do gato" para proteger o título e manter o tamanho do botão)
-    st.markdown('<div class="menu-spacer"></div>', unsafe_allow_html=True)
-    
-    # 3. Botões
     paginas = [
         "🏠 Minha empresa", 
         "👥 Análise de concorrentes", 
@@ -123,10 +113,9 @@ with st.sidebar:
         if st.button(p, key=f"btn_{p}"):
             st.session_state.pagina = p
 
-    # Botão Sair
-    st.markdown("<div style='height: 60px; border-bottom: 1px solid #2c3338;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 80px; border-bottom: 1px solid #2c3338;'></div>", unsafe_allow_html=True)
     if st.button("🚪 Sair", key="btn_sair"):
-        st.write("Saindo...")
+        st.write("Logout")
 
 # --- 5. CONTEÚDO PRINCIPAL ---
 st.title(st.session_state.pagina)
