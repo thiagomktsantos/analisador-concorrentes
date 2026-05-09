@@ -3,39 +3,40 @@ import streamlit as st
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pro", layout="wide")
 
-# --- 2. CSS DEFINITIVO (CORRIGINDO O JUSTIFY-CONTENT) ---
+# --- 2. CSS "WP-ULTIMATE" (LINHAS TOTAIS E TÍTULO REPOSICIONADO) ---
 st.markdown("""
     <style>
-        /* 1. Fundo total da lateral */
+        /* 1. Fundo da lateral */
         [data-testid="stSidebar"] {
             background-color: #1e2327 !important;
         }
 
-        /* 2. Remover paddings laterais da sidebar para a linha ocupar 100% */
+        /* 2. ZERAR TUDO: Remove todos os espaços internos que o Streamlit cria */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-            padding-left: 0px !important;
-            padding-right: 0px !important;
-            padding-top: 0px !important;
+            padding: 0px !important;
             gap: 0px !important;
         }
-
-        /* Forçar largura total em todos os sub-containers */
+        
+        /* Forçar os blocos a ocuparem 100% da largura */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
             width: 100% !important;
             max-width: 100% !important;
+            padding: 0px !important;
         }
 
-        /* 3. Título do Menu */
+        /* 3. TÍTULO: Agora com espaço suficiente para não ser coberto */
         .sidebar-header {
             color: #afb1b3 !important;
             font-size: 11px !important;
             font-weight: 700;
-            padding: 25px 20px 10px 20px !important;
+            padding: 30px 20px 15px 20px !important; /* Aumentei o topo para 30px */
             text-transform: uppercase;
             letter-spacing: 1px;
+            background-color: #101214; /* Fundo levemente mais escuro para o título */
+            margin-bottom: 0px;
         }
 
-        /* 4. RESET DOS BOTÕES E ALINHAMENTO À ESQUERDA (Sua descoberta aplicada aqui) */
+        /* 4. BOTÕES: ALINHAMENTO TOTAL À ESQUERDA (Sua descoberta aplicada) */
         div.stButton {
             width: 100% !important;
             margin: 0px !important;
@@ -48,43 +49,43 @@ st.markdown("""
             background-color: transparent !important;
             color: #eee !important;
             padding: 14px 20px !important;
-            font-size: 14px !important;
+            font-size: 15px !important;
             transition: all 0.1s;
-            border-bottom: 1px solid #2c3338 !important;
+            border-bottom: 1px solid #2c3338 !important; /* Linha de fora a fora */
             margin: 0px !important;
-            
-            /* Garante que o botão em si seja um container flex alinhado à esquerda */
             display: flex !important;
-            justify-content: flex-start !important; 
+            justify-content: flex-start !important;
         }
 
-        /* AQUI ESTÁ A SUA DESCOBERTA: 
-           Alvejamos o DIV interno que o Streamlit usa para centralizar o conteúdo */
+        /* RESOLVENDO O PROBLEMA DO JUSTIFY-CENTER (Sua descoberta) */
+        /* Alvejamos o container interno flex do botão */
         div.stButton > button > div {
             justify-content: flex-start !important;
             text-align: left !important;
             width: 100% !important;
+            display: flex !important;
         }
 
-        /* Ajuste do parágrafo interno (Markdown) */
+        /* Forçar o texto (markdown) a também não centralizar */
         div.stButton > button div[data-testid="stMarkdownContainer"] p {
             margin: 0 !important;
             text-align: left !important;
         }
 
-        /* 5. Efeitos Visuais */
+        /* 5. HOVER E ESTADO ATIVO */
         div.stButton > button:hover {
             background-color: #2c3338 !important;
             color: #72aee6 !important;
         }
 
+        /* Botão Ativo / Clicado */
         div.stButton > button:focus, div.stButton > button:active {
             background-color: #2271b1 !important;
             color: white !important;
             box-shadow: none !important;
         }
 
-        /* Esconder ícones e menus padrão */
+        /* Ocultar elementos nativos */
         [data-testid="stSidebarNav"] {display: none;}
     </style>
 """, unsafe_allow_html=True)
@@ -95,6 +96,7 @@ if 'pagina' not in st.session_state:
 
 # --- 4. MENU LATERAL ---
 with st.sidebar:
+    # Cabeçalho agora com fundo escuro e respiro no topo
     st.markdown('<div class="sidebar-header">Painel de Controle</div>', unsafe_allow_html=True)
     
     paginas = [
@@ -108,13 +110,14 @@ with st.sidebar:
     ]
 
     for p in paginas:
-        if st.button(p, key=p):
+        if st.button(p, key=f"btn_{p}"):
             st.session_state.pagina = p
 
-    st.markdown("<div style='height: 40px; border-bottom: 1px solid #2c3338;'></div>", unsafe_allow_html=True)
-    if st.button("🚪 Sair"):
-        st.write("Logout")
+    # Espaço para o botão sair no final
+    st.markdown("<div style='height: 60px; border-bottom: 1px solid #2c3338;'></div>", unsafe_allow_html=True)
+    if st.button("🚪 Sair", key="btn_sair"):
+        st.write("Saindo...")
 
 # --- 5. CONTEÚDO ---
 st.title(st.session_state.pagina)
-st.write(f"Conteúdo da página {st.session_state.pagina} aqui.")
+st.write(f"Bem-vindo à seção: {st.session_state.pagina}")
