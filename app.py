@@ -13,18 +13,22 @@ if "GEMINI_API_KEY" in st.secrets:
 else:
     model = None
 
-# --- 3. ESTADO DA SESSÃO (COM CORREÇÃO PARA CAMPOS FALTANTES) ---
+# --- 3. ESTADO DA SESSÃO (COM NOVOS CAMPOS) ---
 if 'dados' not in st.session_state:
     st.session_state.dados = {
-        "minha_empresa": {"nome": "", "setor": "", "tipo": "", "descricao": ""},
+        "minha_empresa": {
+            "nome": "", 
+            "setor": "Tecnologia", 
+            "tipo": "B2B", 
+            "descricao": "",
+            "servicos": [] # Lista para os serviços
+        },
         "concorrentes": [],
     }
 else:
-    # Garantia extra: Se a sessão já existir mas faltar um campo novo, nós adicionamos agora
-    if "tipo" not in st.session_state.dados["minha_empresa"]:
-        st.session_state.dados["minha_empresa"]["tipo"] = ""
-    if "setor" not in st.session_state.dados["minha_empresa"]:
-        st.session_state.dados["minha_empresa"]["setor"] = ""
+    # Garantia de compatibilidade com versões anteriores
+    if "servicos" not in st.session_state.dados["minha_empresa"]:
+        st.session_state.dados["minha_empresa"]["servicos"] = []
 
 if 'logado' not in st.session_state:
     st.session_state.logado = False
@@ -72,6 +76,17 @@ st.markdown("""
         div.stButton > button > div { justify-content: flex-start !important; text-align: left !important; width: 100% !important; }
         div.stButton > button:hover { background-color: #2c3338 !important; color: #72aee6 !important; }
         [data-testid="stSidebarNav"] { display: none; }
+        
+        /* Estilo para a lista de serviços */
+        .service-tag {
+            background-color: #2c3338;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 5px;
+            border: 1px solid #444;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -106,16 +121,50 @@ if pg == "🏠 Minha empresa":
     st.title("🏢 Minha Empresa")
     emp = st.session_state.dados["minha_empresa"]
     
+    # --- DADOS BÁSICOS ---
     col1, col2 = st.columns(2)
-    # Usando .get() como precaução extra contra KeyError
     st.session_state.dados["minha_empresa"]["nome"] = col1.text_input("Nome da sua Empresa", emp.get("nome", ""))
-    st.session_state.dados["minha_empresa"]["setor"] = col1.text_input("Setor", emp.get("setor", ""))
-    st.session_state.dados["minha_empresa"]["tipo"] = col2.text_input("Tipo de Empresa (ex: B2B, SaaS)", emp.get("tipo", ""))
     
-    st.session_state.dados["minha_empresa"]["descricao"] = st.text_area("Descrição", emp.get("descricao", ""))
-    if st.button("Salvar Dados"):
-        st.success("Salvo!")
+    # Setor Selecionável
+    opcoes_setor = ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Financeiro", "Alimentação", "Indústria", "Outros"]
+    index_setor = opcoes_setor.index(emp["setor"]) if emp["setor"] in opcoes_setor else 0
+    st.session_state.dados["minha_empresa"]["setor"] = col1.selectbox("Setor", opcoes_setor, index=index_setor)
+    
+    # Tipo Selecionável
+    opcoes_tipo = ["Agência", "B2B", "B2C", "SaaS / Software", "E-commerce", "Consultoria", "Infoprodutos", "Outros"]
+    index_tipo = opcoes_tipo.index(emp["tipo"]) if emp["tipo"] in opcoes_tipo else 0
+    st.session_state.dados["minha_empresa"]["tipo"] = col2.selectbox("Tipo de Empresa", opcoes_tipo, index=index_tipo)
 
+    # --- GERENCIADOR DE SERVIÇOS ---
+    st.write("---")
+    st.subheader("🛠️ Nossos Serviços")
+    
+    col_add, col_btn = st.columns([4, 1])
+    novo_servico = col_add.text_input("Adicionar novo serviço (ex: Gestão de Tráfego)", key="input_servico")
+    if col_btn.button("➕ Adicionar", use_container_width=True):
+        if novo_servico and novo_servico not in emp["servicos"]:
+            st.session_state.dados["minha_empresa"]["servicos"].append(novo_servico)
+            st.rerun()
+
+    # Exibição e Remoção de Serviços
+    if emp["servicos"]:
+        st.write("Serviços listados:")
+        for idx, serv in enumerate(emp["servicos"]):
+            c_serv, c_del = st.columns([8, 1])
+            c_serv.markdown(f"<div class='service-tag'>{serv}</div>", unsafe_allow_html=True)
+            if c_del.button("🗑️", key=f"del_serv_{idx}"):
+                st.session_state.dados["minha_empresa"]["servicos"].pop(idx)
+                st.rerun()
+    else:
+        st.info("Nenhum serviço adicionado ainda.")
+
+    st.write("---")
+    st.session_state.dados["minha_empresa"]["descricao"] = st.text_area("Descrição da Empresa (IA usará isso para comparar)", emp.get("descricao", ""))
+    
+    if st.button("💾 Salvar Alterações"):
+        st.success("Dados salvos com sucesso!")
+
+# --- (Restante das páginas mantido conforme lógica anterior) ---
 elif pg == "👥 Análise de concorrentes":
     st.title("👥 Cadastro de Concorrentes")
     with st.form("form_c"):
@@ -130,7 +179,6 @@ elif pg == "👥 Análise de concorrentes":
                 "analise_site": "", "social": ""
             })
             st.rerun()
-
     for idx, c in enumerate(st.session_state.dados["concorrentes"]):
         with st.expander(f"📌 {c['nome']}"):
             st.write(f"IG: {c['instagram']} | FB: {c['facebook']}")
@@ -170,4 +218,4 @@ elif pg == "📢 Análise de anúncios":
 elif pg == "💡 Insights":
     st.title("💡 Insights")
     if st.button("Gerar Plano"):
-        st.markdown(consultar_ia(f"Gere um plano de ação para {st.session_state.dados}"))
+        st.markdown(consultar_ia(f"Gere um plano de ação detalhado considerando minha empresa {st.session_state.dados['minha_empresa']} e os concorrentes {st.session_state.dados['concorrentes']}"))
