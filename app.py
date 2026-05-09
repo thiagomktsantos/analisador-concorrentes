@@ -23,15 +23,16 @@ if 'dados' not in st.session_state:
         "concorrentes": [],
     }
 
-if 'logado' not in st.session_state:
-    st.session_state.logado = False
+if 'logado' not in st.session_state: st.session_state.logado = False
+if 'pagina' not in st.session_state: st.session_state.pagina = "home"
+if 'show_form' not in st.session_state: st.session_state.show_form = False
 
 # --- 4. FUNÇÕES AUXILIARES ---
 def consultar_ia(prompt):
     if model is None: return "Erro: Chave API não configurada."
     try:
         emp = st.session_state.dados['minha_empresa']
-        contexto = f"Empresa: {emp['nome']} | Setor: {emp['setor']} | Instagram: {emp['instagram']}\n---\n"
+        contexto = f"Empresa: {emp['nome']} | Setor: {emp['setor']}\n---\n"
         return model.generate_content(contexto + prompt).text
     except Exception as e: return f"Erro: {str(e)}"
 
@@ -42,143 +43,3 @@ if not st.session_state.logado:
         st.title("🔐 Login Dashboard")
         if st.button("Acessar Painel"):
             st.session_state.logado = True
-            st.rerun()
-    st.stop()
-
-# --- 6. CSS CUSTOMIZADO ---
-st.markdown("""
-    <style>
-        [data-testid="stSidebar"] { background-color: #1e2327 !important; }
-        .sidebar-header { color: #afb1b3; font-size: 11px; font-weight: 700; padding: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        [data-testid="stSidebar"] div.stButton > button { 
-            width: 100%; border-radius: 0px; background-color: transparent; 
-            color: #eee; border: none; border-bottom: 1px solid #2c3338; 
-            text-align: left; padding: 15px 20px; 
-        }
-        .service-tag { 
-            background-color: #2271b1; color: white; padding: 4px 10px; 
-            border-radius: 4px; font-size: 12px; margin-right: 5px; 
-            display: inline-block; margin-bottom: 5px;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- 7. MENU LATERAL ---
-with st.sidebar:
-    st.markdown('<div class="sidebar-header">Dados Principais</div>', unsafe_allow_html=True)
-    if st.button("🏠 Minha Empresa"): st.session_state.pagina = "home"
-    if st.button("👥 Concorrentes"): st.session_state.pagina = "cad"
-    st.markdown('<div class="sidebar-header">Análise</div>', unsafe_allow_html=True)
-    if st.button("📊 Visão Geral"): st.session_state.pagina = "geral"
-    if st.button("🌐 Confronto de Sites"): st.session_state.pagina = "sites"
-    if st.button("📢 Biblioteca de Ads"): st.session_state.pagina = "ads"
-    if st.button("💡 IA Battle Cards"): st.session_state.pagina = "insights"
-
-if 'pagina' not in st.session_state: st.session_state.pagina = "home"
-
-# --- 8. LÓGICA DAS PÁGINAS ---
-
-# --- PÁGINA: MINHA EMPRESA ---
-if st.session_state.pagina == "home":
-    st.title("🏢 Minha Empresa")
-    emp = st.session_state.dados["minha_empresa"]
-    
-    st.subheader("📄 Informações Gerais")
-    col1, col2 = st.columns(2)
-    emp["nome"] = col1.text_input("Nome da Empresa", emp["nome"])
-    emp["setor"] = col1.selectbox("Setor", ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Indústria"], index=0)
-    emp["tipo"] = col2.text_input("Sub-nicho", emp["tipo"])
-
-    st.markdown("---")
-    st.subheader("📱 Redes Sociais")
-    col_a, col_b = st.columns(2)
-    
-    # Instagram com @ preenchido e garantido
-    insta_val = emp["instagram"] if emp["instagram"].startswith("@") else "@" + emp["instagram"]
-    emp["instagram"] = col_a.text_input("Instagram (@empresa)", value=insta_val)
-    
-    emp["fb_page"] = col_b.text_input("Nome da Página no Facebook", emp["fb_page"])
-
-    st.markdown("---")
-    st.subheader("🛠️ Nossos Serviços")
-    with st.form("form_servico", clear_on_submit=True):
-        novo = st.text_input("Adicionar Serviço (Enter)")
-        if st.form_submit_button("Adicionar", type="primary") and novo:
-            emp["servicos"].append(novo)
-            st.rerun()
-    
-    if emp["servicos"]:
-        st.markdown("".join([f"<span class='service-tag'>{s}</span>" for s in emp["servicos"]]), unsafe_allow_html=True)
-
-# --- PÁGINA: CONCORRENTES ---
-elif st.session_state.pagina == "cad":
-    st.title("👥 Concorrentes")
-    
-    with st.form("cad_concorrente", clear_on_submit=True):
-        st.subheader("📄 Identificação")
-        c1, c2 = st.columns(2)
-        n = c1.text_input("Nome do Concorrente")
-        u = c2.text_input("URL do Site")
-        
-        st.markdown("---")
-        st.subheader("📱 Redes Sociais")
-        c3, c4 = st.columns(2)
-        
-        # Instagram com @ preenchido
-        insta_handle = c3.text_input("Instagram (@empresa)", value="@")
-        
-        fb_p = c4.text_input("Nome da Página no Facebook")
-        
-        ads_manual = st.text_input("ID Manual para Ads (Opcional)", help="Use se a busca automática falhar.")
-        
-        if st.form_submit_button("Salvar Concorrente", type="primary"):
-            if n:
-                # Garante que o handle comece com @ e limpa espaços
-                clean_handle = insta_handle.strip()
-                if clean_handle == "@": clean_handle = "" # Se for só o @, considera vazio
-                elif not clean_handle.startswith("@"): clean_handle = "@" + clean_handle
-                
-                # Termo de busca para Ads (remove o @ para a URL do Facebook)
-                search_term = ads_manual or fb_p or clean_handle.replace("@", "") or n
-                
-                st.session_state.dados["concorrentes"].append({
-                    "nome": n, "url": u, "instagram": clean_handle,
-                    "fb_page": fb_p, "ads_id": search_term
-                })
-                st.success(f"Concorrente {n} cadastrado!")
-            else:
-                st.error("O nome é obrigatório.")
-
-# --- PÁGINA: BIBLIOTECA DE ADS ---
-elif st.session_state.pagina == "ads":
-    st.title("📢 Biblioteca de Ads")
-    concs = st.session_state.dados["concorrentes"]
-    if not concs:
-        st.info("Cadastre concorrentes primeiro.")
-    else:
-        for c in concs:
-            with st.expander(f"🔍 {c['nome']}", expanded=True):
-                term = c['ads_id']
-                url = f"https://www.facebook.com/ads/library/?q={term}&country=BR&media_type=all"
-                st.write(f"Buscando por: **{term}**")
-                st.link_button(f"Abrir Biblioteca de Ads", url)
-
-# --- PÁGINA: VISÃO GERAL ---
-elif st.session_state.pagina == "geral":
-    st.title("📊 Painel Comparativo")
-    if st.session_state.dados["concorrentes"]:
-        df = pd.DataFrame(st.session_state.dados["concorrentes"])
-        st.dataframe(df[["nome", "url", "instagram", "fb_page"]], use_container_width=True)
-    else:
-        st.warning("Sem dados.")
-
-# --- PÁGINA: IA BATTLE CARDS ---
-elif st.session_state.pagina == "insights":
-    st.title("💡 IA Battle Cards")
-    if st.session_state.dados["concorrentes"]:
-        target = st.selectbox("Gerar card contra:", [c["nome"] for c in st.session_state.dados["concorrentes"]])
-        if st.button("Gerar Estratégia", type="primary"):
-            with st.spinner("Criando Battle Card..."):
-                st.markdown(consultar_ia(f"Gere um battle card focado em vencer o concorrente {target}."))
-    else:
-        st.info("Adicione concorrentes.")
