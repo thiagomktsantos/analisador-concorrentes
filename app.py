@@ -324,14 +324,24 @@ section.main div.stButton > button:hover {
     color: #111827 !important;
 }
 
-section.main div.stButton > button[kind="primary"] {
+section.main div.stButton > button[kind="primary"],
+section.main div.stFormSubmitButton > button,
+section.main div.stFormSubmitButton > button[kind="primary"] {
     background: #111827 !important;
     color: #ffffff !important;
     border: none !important;
 }
 
-section.main div.stButton > button[kind="primary"]:hover {
+section.main div.stButton > button[kind="primary"]:hover,
+section.main div.stFormSubmitButton > button:hover {
     background: #1f2937 !important;
+}
+
+/* Override Streamlit red/purple primary everywhere */
+section.main button[data-baseweb="button"][kind="primary"] {
+    background: #111827 !important;
+    color: #ffffff !important;
+    border: none !important;
 }
 
 /* ============ SECTION HEADERS (form) ============ */
@@ -596,21 +606,43 @@ if st.session_state.pagina == "home":
             st.markdown("<h1 style=\"font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif\">Minha Empresa</h1>", unsafe_allow_html=True)
         with h2:
             if tem_dados:
-                st.markdown("<div style='padding-top:18px'/>", unsafe_allow_html=True)
-                if st.button("❌ Cancelar", use_container_width=True):
+                st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
+                if st.button("Cancelar", use_container_width=True):
                     st.session_state.editar_empresa = False
                     st.rerun()
 
-        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Informações Gerais</div>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+        SUBNICHOS = {
+            "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
+            "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
+            "Varejo": ["E-commerce", "Moda", "Eletrônicos", "Alimentos", "Farmácia", "Pet Shop", "Decoração", "Esportes"],
+            "Saúde": ["Clínica Médica", "Odontologia", "Psicologia", "Nutrição", "Fisioterapia", "Academia", "Farmácia", "Estética"],
+            "Educação": ["Escola", "Curso Online", "Coaching", "Consultoria", "Idiomas", "Pré-vestibular", "Creche", "Faculdade"],
+            "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
+        }
 
-        emp["nome"] = col1.text_input("Nome da Empresa", emp["nome"])
-        emp["setor"] = col1.selectbox("Setor", ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Indústria"])
-        emp["tipo"] = col2.text_input("Sub-nicho", emp["tipo"])
+        def sec_header(label):
+            st.markdown(f"<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">{label}</div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Localização</div>", unsafe_allow_html=True)
+        def divider():
+            st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+
+        # ── Linha 1: somente Nome
+        sec_header("Informações Gerais")
+        emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
+
+        # ── Linha 2: Setor + Sub-nicho (selecionável)
+        col_s, col_t = st.columns(2)
+        setor_opcoes = list(SUBNICHOS.keys())
+        setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+        emp["setor"] = col_s.selectbox("Setor", setor_opcoes, index=setor_idx)
+        subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+        tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+        emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
+
+        divider()
+
+        # ── Localização
+        sec_header("Localização")
         loc1, loc2 = st.columns(2)
         estados = list(ESTADOS_CIDADES.keys())
         estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
@@ -619,35 +651,38 @@ if st.session_state.pagina == "home":
         cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
         emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
 
-        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Redes Sociais</div>", unsafe_allow_html=True)
-        col_a, col_b = st.columns(2)
-        emp["instagram"] = col_a.text_input("Instagram", value=emp["instagram"])
-        emp["fb_page"] = col_b.text_input("Facebook", emp["fb_page"])
+        divider()
 
-        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Website</div>", unsafe_allow_html=True)
-        site_digitado = st.text_input("Site", emp["site"])
+        # ── Redes Sociais + Site — 3 colunas na mesma linha
+        sec_header("Presença Digital")
+        col_ig, col_fb, col_site = st.columns(3)
+        emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
+        emp["fb_page"] = col_fb.text_input("Facebook", emp["fb_page"])
+        site_digitado = col_site.text_input("Site", emp["site"])
         emp["site"] = limpar_site(site_digitado)
 
-        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Serviços</div>", unsafe_allow_html=True)
-        with st.form("form_servico", clear_on_submit=True):
-            novo = st.text_input("Adicionar Serviço")
-            enviar = st.form_submit_button("Adicionar", type="primary")
-            if enviar and novo:
-                emp["servicos"].append(novo)
-                st.rerun()
+        divider()
+
+        # ── Serviços
+        sec_header("Serviços")
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        col_inp, col_btn = st.columns([5, 1])
+        novo_servico = col_inp.text_input("Novo serviço", label_visibility="collapsed", placeholder="Ex: Tráfego Pago")
+        adicionar = col_btn.button("＋ Adicionar", use_container_width=True)
+        if adicionar and novo_servico.strip():
+            emp["servicos"].append(novo_servico.strip())
+            st.rerun()
 
         if emp["servicos"]:
             tags_html = "".join([
-                f"<span style='background:#f1f5f9;color:#1e40af;border:1px solid #bfdbfe;padding:5px 14px;border-radius:20px;font-size:14px;margin-right:8px;display:inline-block;margin-bottom:8px;font-family:DM Sans,sans-serif'>{s}</span>"
+                f"<span style='background:#f1f5f9;color:#1e40af;border:1px solid #bfdbfe;padding:5px 14px;border-radius:20px;font-size:14px;margin-right:8px;display:inline-block;margin-bottom:8px;font-family:DM Sans,sans-serif'>{s} <span onclick=\"\" style='cursor:pointer;margin-left:4px;color:#93c5fd'>✕</span></span>"
                 for s in emp["servicos"]
             ])
             st.markdown(tags_html, unsafe_allow_html=True)
 
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-        if st.button("💾 Salvar Empresa", type="primary"):
+        divider()
+
+        if st.button("Salvar Empresa", use_container_width=False):
             if emp["nome"].strip():
                 st.session_state.editar_empresa = False
                 st.success("Empresa salva com sucesso!")
