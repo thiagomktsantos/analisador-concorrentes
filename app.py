@@ -4,7 +4,6 @@ import google.generativeai as genai
 import pandas as pd
 import trafilatura
 import re
-from urllib.parse import urlparse
 
 # ---------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -67,9 +66,15 @@ def limpar_site(url):
 
     url = url.strip()
 
-    url = re.sub(r"^https?:\/\/", "", url)
-    url = re.sub(r"^www\.", "", url)
+    # REMOVE HTTP / HTTPS
+    url = re.sub(
+        r"^https?:\/\/",
+        "",
+        url,
+        flags=re.IGNORECASE
+    )
 
+    # REMOVE BARRA FINAL
     url = url.rstrip("/")
 
     return url
@@ -97,14 +102,11 @@ def obter_instagram_handle(valor):
 
     valor = valor.strip()
 
-    valor = valor.replace(
-        "https://instagram.com/",
-        ""
-    )
-
-    valor = valor.replace(
-        "https://www.instagram.com/",
-        ""
+    valor = re.sub(
+        r"^https?:\/\/(www\.)?instagram\.com\/",
+        "",
+        valor,
+        flags=re.IGNORECASE
     )
 
     valor = valor.replace("@", "")
@@ -121,14 +123,11 @@ def obter_facebook_handle(valor):
 
     valor = valor.strip()
 
-    valor = valor.replace(
-        "https://facebook.com/",
-        ""
-    )
-
-    valor = valor.replace(
-        "https://www.facebook.com/",
-        ""
+    valor = re.sub(
+        r"^https?:\/\/(www\.)?facebook\.com\/",
+        "",
+        valor,
+        flags=re.IGNORECASE
     )
 
     valor = valor.strip("/")
@@ -536,7 +535,6 @@ elif st.session_state.pagina == "cad":
                         "ads_id": search_term
                     }
 
-                    # EDIÇÃO
                     if st.session_state.editando_concorrente is not None:
 
                         st.session_state.dados[
@@ -549,7 +547,6 @@ elif st.session_state.pagina == "cad":
                             f"{n} atualizado com sucesso!"
                         )
 
-                    # NOVO
                     else:
 
                         st.session_state.dados[
@@ -584,10 +581,6 @@ elif st.session_state.pagina == "cad":
             with cols[i % 3]:
 
                 avatar = gerar_avatar(c["nome"])
-
-                # FOTO DE PERFIL INSTAGRAM
-                # Instagram bloqueia scraping direto
-                # então usamos fallback com avatar textual
 
                 card_html = f"""
                 <html>
