@@ -1275,7 +1275,7 @@ elif st.session_state.pagina == "insights":
         st.info("Adicione concorrentes para gerar insights estratégicos.")
 
 # ---------------------------------------------------
-# REDES SOCIAIS (ex Redes & Engajamento)
+# REDES SOCIAIS
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
@@ -1296,6 +1296,7 @@ elif st.session_state.pagina == "redes":
     else:
         metricas = st.session_state.metricas_redes
 
+        # Inicializa métricas
         for empresa in todas:
             k = empresa["key"]
             if k not in metricas:
@@ -1304,98 +1305,131 @@ elif st.session_state.pagina == "redes":
                     "fb_seguidores": 0, "fb_posts": 0, "fb_engajamento": 0.0,
                 }
 
-            tem_ig = bool(empresa["instagram"])
-            tem_fb = bool(empresa["facebook"])
+        # SVG icons
+        ig_svg = """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="igt" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="url(#igt)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>"""
+        fb_svg = """<svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>"""
 
-            if not tem_ig and not tem_fb:
-                continue
+        # ── ABAS
+        aba_ig, aba_fb = st.tabs(["📸  Instagram", "🔵  Facebook"])
 
-            is_minha = empresa["tipo"] == "minha"
-            badge_cor = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt_cor = "#1d4ed8" if is_minha else "#6b7280"
-            badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
-            badge_label = "Minha Empresa" if is_minha else "Concorrente"
-            avatar = gerar_avatar(empresa["nome"])
+        # ════════════════════════════════════
+        # ABA INSTAGRAM
+        # ════════════════════════════════════
+        with aba_ig:
+            st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
-            st.markdown(f"""
-            <div style='display:flex;align-items:center;gap:12px;margin:8px 0 14px 0'>
-                <div style='width:38px;height:38px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
-                <div style='font-size:17px;font-weight:600;color:#111827'>{empresa['nome']}</div>
-                <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_label}</span>
-            </div>
-            """, unsafe_allow_html=True)
-
-            redes_cols = []
-            if tem_ig:
-                redes_cols.append("instagram")
-            if tem_fb:
-                redes_cols.append("facebook")
-
-            cols = st.columns(len(redes_cols))
-
-            for idx, rede in enumerate(redes_cols):
-                with cols[idx]:
-                    if rede == "instagram":
-                        handle = empresa["instagram"]
-                        icon_svg = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="igr" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="url(#igr)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>"""
-                        label = "Instagram"
-                        prefix = "ig"
-                    else:
-                        handle = empresa["facebook"]
-                        icon_svg = """<svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>"""
-                        label = "Facebook"
-                        prefix = "fb"
+            empresas_ig = [e for e in todas if bool(e["instagram"])]
+            if not empresas_ig:
+                st.info("Nenhuma empresa com Instagram cadastrado.")
+            else:
+                for empresa in empresas_ig:
+                    k = empresa["key"]
+                    is_minha = empresa["tipo"] == "minha"
+                    badge_cor = "#eff6ff" if is_minha else "#f3f4f6"
+                    badge_txt_cor = "#1d4ed8" if is_minha else "#6b7280"
+                    badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
+                    badge_label = "Minha Empresa" if is_minha else "Concorrente"
+                    avatar = gerar_avatar(empresa["nome"])
 
                     st.markdown(f"""
-                    <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px 8px 18px;margin-bottom:4px'>
-                        <div style='display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f3f4f6'>
-                            {icon_svg}
-                            <span style='font-size:14px;font-weight:600;color:#111827'>{label}</span>
-                            <span style='font-size:12px;color:#9ca3af;margin-left:auto'>{handle}</span>
-                        </div>
+                    <div style='display:flex;align-items:center;gap:12px;margin:12px 0 10px 0'>
+                        <div style='width:36px;height:36px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                        <div style='font-size:16px;font-weight:600;color:#111827'>{empresa['nome']}</div>
+                        <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_label}</span>
+                        <span style='margin-left:auto;font-size:13px;color:#9ca3af'>{empresa['instagram']}</span>
                     </div>
                     """, unsafe_allow_html=True)
 
                     c1, c2, c3 = st.columns(3)
-                    metricas[k][f"{prefix}_seguidores"] = c1.number_input(
+                    metricas[k]["ig_seguidores"] = c1.number_input(
                         "👥 Seguidores", min_value=0, step=100,
-                        value=metricas[k][f"{prefix}_seguidores"],
-                        key=f"{k}_{prefix}_seg"
+                        value=metricas[k]["ig_seguidores"],
+                        key=f"{k}_ig_seg"
                     )
-                    metricas[k][f"{prefix}_posts"] = c2.number_input(
+                    metricas[k]["ig_posts"] = c2.number_input(
                         "📝 Posts", min_value=0, step=1,
-                        value=metricas[k][f"{prefix}_posts"],
-                        key=f"{k}_{prefix}_posts"
+                        value=metricas[k]["ig_posts"],
+                        key=f"{k}_ig_posts"
                     )
-                    metricas[k][f"{prefix}_engajamento"] = c3.number_input(
+                    metricas[k]["ig_engajamento"] = c3.number_input(
                         "❤️ Engaj. %", min_value=0.0, step=0.1, format="%.2f",
-                        value=metricas[k][f"{prefix}_engajamento"],
-                        key=f"{k}_{prefix}_eng"
+                        value=metricas[k]["ig_engajamento"],
+                        key=f"{k}_ig_eng"
                     )
+                    st.markdown("<div style='margin:16px 0 4px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-            st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+                # Tabela comparativa Instagram
+                st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin:20px 0 10px 0'>Comparativo Instagram</div>", unsafe_allow_html=True)
+                rows_ig = []
+                for empresa in empresas_ig:
+                    k = empresa["key"]
+                    m = metricas.get(k, {})
+                    rows_ig.append({
+                        "Empresa": empresa["nome"],
+                        "Seguidores": m.get("ig_seguidores", 0),
+                        "Posts": m.get("ig_posts", 0),
+                        "Engaj. %": m.get("ig_engajamento", 0.0),
+                    })
+                if rows_ig:
+                    st.dataframe(pd.DataFrame(rows_ig), use_container_width=True, hide_index=True)
 
-        st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Comparativo Geral</div>", unsafe_allow_html=True)
+        # ════════════════════════════════════
+        # ABA FACEBOOK
+        # ════════════════════════════════════
+        with aba_fb:
+            st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
-        rows = []
-        for empresa in todas:
-            k = empresa["key"]
-            m = metricas.get(k, {})
-            tem_ig = bool(empresa["instagram"])
-            tem_fb = bool(empresa["facebook"])
-            if not tem_ig and not tem_fb:
-                continue
-            row = {"Empresa": empresa["nome"]}
-            if tem_ig:
-                row["IG Seguidores"] = m.get("ig_seguidores", 0)
-                row["IG Posts"] = m.get("ig_posts", 0)
-                row["IG Engaj. %"] = m.get("ig_engajamento", 0.0)
-            if tem_fb:
-                row["FB Seguidores"] = m.get("fb_seguidores", 0)
-                row["FB Posts"] = m.get("fb_posts", 0)
-                row["FB Engaj. %"] = m.get("fb_engajamento", 0.0)
-            rows.append(row)
+            empresas_fb = [e for e in todas if bool(e["facebook"])]
+            if not empresas_fb:
+                st.info("Nenhuma empresa com Facebook cadastrado.")
+            else:
+                for empresa in empresas_fb:
+                    k = empresa["key"]
+                    is_minha = empresa["tipo"] == "minha"
+                    badge_cor = "#eff6ff" if is_minha else "#f3f4f6"
+                    badge_txt_cor = "#1d4ed8" if is_minha else "#6b7280"
+                    badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
+                    badge_label = "Minha Empresa" if is_minha else "Concorrente"
+                    avatar = gerar_avatar(empresa["nome"])
 
-        if rows:
-            df_redes = pd.DataFrame(rows).fillna("—")
-            st.dataframe(df_redes, use_container_width=True, hide_index=True)
+                    st.markdown(f"""
+                    <div style='display:flex;align-items:center;gap:12px;margin:12px 0 10px 0'>
+                        <div style='width:36px;height:36px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                        <div style='font-size:16px;font-weight:600;color:#111827'>{empresa['nome']}</div>
+                        <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_label}</span>
+                        <span style='margin-left:auto;font-size:13px;color:#9ca3af'>{empresa['facebook']}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    c1, c2, c3 = st.columns(3)
+                    metricas[k]["fb_seguidores"] = c1.number_input(
+                        "👥 Seguidores", min_value=0, step=100,
+                        value=metricas[k]["fb_seguidores"],
+                        key=f"{k}_fb_seg"
+                    )
+                    metricas[k]["fb_posts"] = c2.number_input(
+                        "📝 Posts", min_value=0, step=1,
+                        value=metricas[k]["fb_posts"],
+                        key=f"{k}_fb_posts"
+                    )
+                    metricas[k]["fb_engajamento"] = c3.number_input(
+                        "❤️ Engaj. %", min_value=0.0, step=0.1, format="%.2f",
+                        value=metricas[k]["fb_engajamento"],
+                        key=f"{k}_fb_eng"
+                    )
+                    st.markdown("<div style='margin:16px 0 4px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+
+                # Tabela comparativa Facebook
+                st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin:20px 0 10px 0'>Comparativo Facebook</div>", unsafe_allow_html=True)
+                rows_fb = []
+                for empresa in empresas_fb:
+                    k = empresa["key"]
+                    m = metricas.get(k, {})
+                    rows_fb.append({
+                        "Empresa": empresa["nome"],
+                        "Seguidores": m.get("fb_seguidores", 0),
+                        "Posts": m.get("fb_posts", 0),
+                        "Engaj. %": m.get("fb_engajamento", 0.0),
+                    })
+                if rows_fb:
+                    st.dataframe(pd.DataFrame(rows_fb), use_container_width=True, hide_index=True)
