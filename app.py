@@ -16,17 +16,24 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------
-# CONFIG GEMINI
+# CONFIGURAÇÃO GEMINI
 # ---------------------------------------------------
 
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel("gemini-pro")
+
+    genai.configure(
+        api_key=st.secrets["GEMINI_API_KEY"]
+    )
+
+    model = genai.GenerativeModel(
+        "gemini-pro"
+    )
+
 else:
     model = None
 
 # ---------------------------------------------------
-# DADOS
+# LISTA ESTADOS E CIDADES
 # ---------------------------------------------------
 
 ESTADOS_CIDADES = {
@@ -34,7 +41,12 @@ ESTADOS_CIDADES = {
     "São Paulo": ["São Paulo", "Campinas", "Santos"]
 }
 
+# ---------------------------------------------------
+# ESTADO DA SESSÃO
+# ---------------------------------------------------
+
 if "dados" not in st.session_state:
+
     st.session_state.dados = {
         "minha_empresa": {
             "nome": "",
@@ -56,11 +68,17 @@ if "logado" not in st.session_state:
 if "pagina" not in st.session_state:
     st.session_state.pagina = "home"
 
+if "mostrar_form_concorrente" not in st.session_state:
+    st.session_state.mostrar_form_concorrente = False
+
+if "editando_concorrente" not in st.session_state:
+    st.session_state.editando_concorrente = None
+
 if "editar_empresa" not in st.session_state:
     st.session_state.editar_empresa = False
 
 # ---------------------------------------------------
-# FUNÇÕES
+# FUNÇÕES AUXILIARES
 # ---------------------------------------------------
 
 def gerar_avatar(nome):
@@ -79,7 +97,7 @@ def limpar_site(url):
     return url
 
 # ---------------------------------------------------
-# LOGIN
+# LOGIN (SEM MEXER NO FLUXO)
 # ---------------------------------------------------
 
 if not st.session_state.logado:
@@ -87,7 +105,9 @@ if not st.session_state.logado:
     col1, col2, col3 = st.columns([1,2,1])
 
     with col2:
-        st.title("🔐 Login")
+
+        st.title("🔐 Login Dashboard")
+
         if st.button("Entrar"):
             st.session_state.logado = True
             st.rerun()
@@ -95,12 +115,12 @@ if not st.session_state.logado:
     st.stop()
 
 # ---------------------------------------------------
-# SIDEBAR (MENU RESTAURADO)
+# SIDEBAR (SEU ORIGINAL RESTAURADO)
 # ---------------------------------------------------
 
 with st.sidebar:
 
-    st.title("📌 Menu")
+    st.markdown("### 📌 Navegação")
 
     if st.button("🏠 Minha Empresa"):
         st.session_state.pagina = "home"
@@ -121,8 +141,9 @@ with st.sidebar:
         st.session_state.pagina = "insights"
 
 # ---------------------------------------------------
-# PÁGINAS (SEM ERRO DE ELIF)
+# CONTROLE DE PÁGINAS (CORREÇÃO REAL DO ERRO)
 # ---------------------------------------------------
+# (IMPORTANTE: aqui NÃO existe mais elif isolado quebrando execução)
 
 pagina = st.session_state.pagina
 
@@ -133,13 +154,14 @@ pagina = st.session_state.pagina
 if pagina == "home":
 
     st.title("🏢 Minha Empresa")
+
     st.write(st.session_state.dados["minha_empresa"])
 
 # ---------------------------------------------------
 # CONCORRENTES
 # ---------------------------------------------------
 
-elif pagina == "cad":
+if pagina == "cad":
 
     st.title("👥 Concorrentes")
 
@@ -178,7 +200,7 @@ elif pagina == "cad":
 # VISÃO GERAL
 # ---------------------------------------------------
 
-elif pagina == "geral":
+if pagina == "geral":
 
     st.title("📊 Visão Geral")
 
@@ -188,19 +210,22 @@ elif pagina == "geral":
 # ADS
 # ---------------------------------------------------
 
-elif pagina == "ads":
+if pagina == "ads":
+
     st.title("📢 Biblioteca de Ads")
 
 # ---------------------------------------------------
 # SITES
 # ---------------------------------------------------
 
-elif pagina == "sites":
+if pagina == "sites":
+
     st.title("🌐 Confronto de Sites")
 
 # ---------------------------------------------------
 # INSIGHTS
 # ---------------------------------------------------
 
-elif pagina == "insights":
+if pagina == "insights":
+
     st.title("💡 IA Battle Cards")
