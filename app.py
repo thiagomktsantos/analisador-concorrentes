@@ -299,7 +299,7 @@ if not st.session_state.logado:
     st.stop()
 
 # ---------------------------------------------------
-# CSS
+# CSS GLOBAL
 # ---------------------------------------------------
 
 st.markdown("""
@@ -318,13 +318,38 @@ st.markdown("""
     letter-spacing: 1px;
 }
 
+[data-testid="stSidebar"] div.stButton > button {
+    width: 100%;
+    border-radius: 0px !important;
+    background-color: transparent !important;
+    color: #eee !important;
+    border: none !important;
+    border-bottom: 1px solid #2c3338 !important;
+    text-align: left !important;
+    padding: 15px 20px !important;
+    min-height: auto !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    white-space: normal !important;
+    box-shadow: none !important;
+}
+
+.card-box {
+    background: #1f2937;
+    border-radius: 18px;
+    padding: 25px;
+    border: 1px solid #2d3748;
+    color: white;
+    margin-bottom: 20px;
+}
+
 .card-concorrente {
     background: #1f2937;
     border: 1px solid #2d3748;
     border-radius: 18px;
     padding: 22px;
     color: white;
-    min-height: 340px;
+    min-height: 360px;
     margin-bottom: 20px;
 }
 
@@ -346,6 +371,50 @@ st.markdown("""
     margin-bottom:12px;
     font-size:15px;
     word-break:break-word;
+}
+
+.service-tag {
+    background-color: #2271b1;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-right: 5px;
+    display: inline-block;
+    margin-bottom: 5px;
+}
+
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999999;
+}
+
+.popup-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1f2937;
+    width: 500px;
+    border-radius: 16px;
+    padding: 30px;
+    z-index: 9999999;
+    border: 1px solid #374151;
+    color: white;
+}
+
+.popup-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.popup-text {
+    color: #cbd5e1;
+    margin-bottom: 25px;
+    line-height: 1.5;
 }
 
 </style>
@@ -386,21 +455,277 @@ with st.sidebar:
         trocar_pagina("insights")
 
 # ---------------------------------------------------
+# POPUP ALERTA
+# ---------------------------------------------------
+
+if st.session_state.mostrar_alerta_saida:
+
+    st.markdown("""
+    <div class="popup-overlay"></div>
+
+    <div class="popup-box">
+
+        <div class="popup-title">
+            ⚠️ Cancelar edição?
+        </div>
+
+        <div class="popup-text">
+            Você possui uma edição aberta de concorrente.
+            Se sair agora as alterações não salvas serão perdidas.
+        </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    p1, p2, p3 = st.columns([1, 1, 1])
+
+    with p2:
+
+        if st.button(
+            "✅ Sair e cancelar edição",
+            use_container_width=True
+        ):
+
+            st.session_state.mostrar_form_concorrente = False
+            st.session_state.editando_concorrente = None
+            st.session_state.mostrar_alerta_saida = False
+
+            st.session_state.pagina = (
+                st.session_state.pagina_destino
+            )
+
+            st.rerun()
+
+        if st.button(
+            "❌ Continuar editando",
+            use_container_width=True
+        ):
+
+            st.session_state.mostrar_alerta_saida = False
+            st.rerun()
+
+# ---------------------------------------------------
+# HOME
+# ---------------------------------------------------
+
+if st.session_state.pagina == "home":
+
+    st.title("🏢 Minha Empresa")
+
+    emp = st.session_state.dados["minha_empresa"]
+
+    if not st.session_state.editar_empresa:
+
+        st.markdown(
+            f"""
+            <div class="card-box">
+
+            <h2>{emp['nome'] or 'Minha Empresa'}</h2>
+
+            <p><b>Setor:</b> {emp['setor']}</p>
+
+            <p><b>Sub-nicho:</b> {emp['tipo']}</p>
+
+            <p><b>Estado:</b> {emp['estado']}</p>
+
+            <p><b>Cidade:</b> {emp['cidade']}</p>
+
+            <p><b>Instagram:</b> {emp['instagram']}</p>
+
+            <p><b>Facebook:</b> {emp['fb_page']}</p>
+
+            <p><b>Site:</b> {emp['site']}</p>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if emp["servicos"]:
+
+            st.markdown(
+                "".join([
+                    f"<span class='service-tag'>{s}</span>"
+                    for s in emp["servicos"]
+                ]),
+                unsafe_allow_html=True
+            )
+
+        if st.button(
+            "✏️ Editar Empresa",
+            type="primary"
+        ):
+
+            st.session_state.editar_empresa = True
+            st.rerun()
+
+    else:
+
+        st.subheader("📄 Informações Gerais")
+
+        col1, col2 = st.columns(2)
+
+        emp["nome"] = col1.text_input(
+            "Nome da Empresa",
+            emp["nome"]
+        )
+
+        emp["setor"] = col1.selectbox(
+            "Setor",
+            [
+                "Marketing",
+                "Tecnologia",
+                "Varejo",
+                "Saúde",
+                "Educação",
+                "Indústria"
+            ]
+        )
+
+        emp["tipo"] = col2.text_input(
+            "Sub-nicho",
+            emp["tipo"]
+        )
+
+        st.markdown("---")
+
+        st.subheader("📍 Localização")
+
+        loc1, loc2 = st.columns(2)
+
+        estados = list(ESTADOS_CIDADES.keys())
+
+        estado_index = 0
+
+        if emp["estado"] in estados:
+            estado_index = estados.index(emp["estado"])
+
+        emp["estado"] = loc1.selectbox(
+            "Estado",
+            estados,
+            index=estado_index
+        )
+
+        cidades = ESTADOS_CIDADES.get(
+            emp["estado"],
+            []
+        )
+
+        cidade_index = 0
+
+        if emp["cidade"] in cidades:
+            cidade_index = cidades.index(emp["cidade"])
+
+        emp["cidade"] = loc2.selectbox(
+            "Cidade",
+            cidades,
+            index=cidade_index
+        )
+
+        st.markdown("---")
+
+        st.subheader("📱 Redes Sociais")
+
+        col_a, col_b = st.columns(2)
+
+        emp["instagram"] = col_a.text_input(
+            "Instagram",
+            value=emp["instagram"]
+        )
+
+        emp["fb_page"] = col_b.text_input(
+            "Facebook",
+            emp["fb_page"]
+        )
+
+        st.markdown("---")
+
+        st.subheader("🌐 Website")
+
+        site_digitado = st.text_input(
+            "Site",
+            emp["site"]
+        )
+
+        emp["site"] = limpar_site(
+            site_digitado
+        )
+
+        st.markdown("---")
+
+        st.subheader("🛠️ Serviços")
+
+        with st.form("form_servico", clear_on_submit=True):
+
+            novo = st.text_input("Adicionar Serviço")
+
+            enviar = st.form_submit_button(
+                "Adicionar",
+                type="primary"
+            )
+
+            if enviar and novo:
+
+                emp["servicos"].append(novo)
+
+                st.rerun()
+
+        if emp["servicos"]:
+
+            st.markdown(
+                "".join([
+                    f"<span class='service-tag'>{s}</span>"
+                    for s in emp["servicos"]
+                ]),
+                unsafe_allow_html=True
+            )
+
+        c1, c2 = st.columns(2)
+
+        with c1:
+
+            if st.button(
+                "💾 Salvar",
+                type="primary",
+                use_container_width=True
+            ):
+
+                st.session_state.editar_empresa = False
+                st.success("Empresa atualizada!")
+                st.rerun()
+
+        with c2:
+
+            if st.button(
+                "❌ Cancelar",
+                use_container_width=True
+            ):
+
+                st.session_state.editar_empresa = False
+                st.rerun()
+
+# ---------------------------------------------------
 # CONCORRENTES
 # ---------------------------------------------------
 
-if st.session_state.pagina == "cad":
+elif st.session_state.pagina == "cad":
 
-    st.title("👥 Concorrentes")
+    top1, top2 = st.columns([8, 2])
 
-    if st.button(
-        "➕ Adicionar Concorrente",
-        type="primary"
-    ):
+    with top1:
+        st.title("👥 Concorrentes")
 
-        st.session_state.mostrar_form_concorrente = True
-        st.session_state.editando_concorrente = None
-        st.rerun()
+    with top2:
+
+        if st.button(
+            "➕ Adicionar",
+            use_container_width=True
+        ):
+
+            st.session_state.mostrar_form_concorrente = True
+            st.session_state.editando_concorrente = None
+
+            st.rerun()
 
     st.markdown("---")
 
@@ -472,14 +797,14 @@ if st.session_state.pagina == "cad":
                 )
             )
 
-            b1, b2 = st.columns(2)
+            col1, col2 = st.columns(2)
 
-            salvar = b1.form_submit_button(
+            salvar = col1.form_submit_button(
                 "Salvar",
                 type="primary"
             )
 
-            cancelar = b2.form_submit_button(
+            cancelar = col2.form_submit_button(
                 "Cancelar"
             )
 
@@ -487,6 +812,7 @@ if st.session_state.pagina == "cad":
 
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
+
                 st.rerun()
 
             if salvar:
@@ -618,3 +944,121 @@ if st.session_state.pagina == "cad":
                         ].pop(i)
 
                         st.rerun()
+
+    else:
+
+        st.info("Nenhum concorrente cadastrado.")
+
+# ---------------------------------------------------
+# VISÃO GERAL
+# ---------------------------------------------------
+
+elif st.session_state.pagina == "geral":
+
+    st.title("📊 Visão Geral")
+
+    concorrentes = st.session_state.dados["concorrentes"]
+
+    if concorrentes:
+
+        df = pd.DataFrame(concorrentes)
+
+        st.dataframe(
+            df[
+                [
+                    "nome",
+                    "url",
+                    "instagram",
+                    "fb_page"
+                ]
+            ],
+            use_container_width=True
+        )
+
+    else:
+
+        st.warning("Sem dados.")
+
+# ---------------------------------------------------
+# ADS
+# ---------------------------------------------------
+
+elif st.session_state.pagina == "ads":
+
+    st.title("📢 Biblioteca de Ads")
+
+    concs = st.session_state.dados["concorrentes"]
+
+    if not concs:
+
+        st.info("Cadastre concorrentes.")
+
+    else:
+
+        for c in concs:
+
+            with st.expander(
+                f"🔍 {c['nome']}",
+                expanded=True
+            ):
+
+                term = c["ads_id"]
+
+                url = f"https://www.facebook.com/ads/library/?q={term}&country=BR&media_type=all"
+
+                st.write(f"Buscando por: {term}")
+
+                st.link_button(
+                    "Abrir Biblioteca de Ads",
+                    url
+                )
+
+# ---------------------------------------------------
+# CONFRONTO DE SITES
+# ---------------------------------------------------
+
+elif st.session_state.pagina == "sites":
+
+    st.title("🌐 Confronto de Sites")
+
+    st.info("Módulo em desenvolvimento.")
+
+# ---------------------------------------------------
+# IA BATTLE CARDS
+# ---------------------------------------------------
+
+elif st.session_state.pagina == "insights":
+
+    st.title("💡 IA Battle Cards")
+
+    concorrentes = st.session_state.dados["concorrentes"]
+
+    if concorrentes:
+
+        target = st.selectbox(
+            "Gerar estratégia contra:",
+            [c["nome"] for c in concorrentes]
+        )
+
+        if st.button(
+            "Gerar Estratégia",
+            type="primary"
+        ):
+
+            with st.spinner(
+                "Criando Battle Card..."
+            ):
+
+                resposta = consultar_ia(
+                    f"""
+                    Gere um battle card
+                    focado em vencer o
+                    concorrente {target}.
+                    """
+                )
+
+                st.markdown(resposta)
+
+    else:
+
+        st.info("Adicione concorrentes.")
