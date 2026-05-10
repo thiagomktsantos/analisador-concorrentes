@@ -91,7 +91,6 @@ if "dados" not in st.session_state:
 
 empresa = st.session_state.dados["minha_empresa"]
 
-# GARANTE NOVOS CAMPOS
 campos_padrao = {
     "estado": "",
     "cidade": "",
@@ -118,7 +117,9 @@ if "mostrar_form_concorrente" not in st.session_state:
 if "editando_concorrente" not in st.session_state:
     st.session_state.editando_concorrente = None
 
-# NOVO CONTROLE DE ALERTA
+if "editar_empresa" not in st.session_state:
+    st.session_state.editar_empresa = False
+
 if "mostrar_alerta_saida" not in st.session_state:
     st.session_state.mostrar_alerta_saida = False
 
@@ -144,7 +145,6 @@ def limpar_site(url):
 
     url = url.strip().lower()
 
-    # REMOVE HTTP / HTTPS
     url = re.sub(
         r"^https?:\/\/",
         "",
@@ -152,7 +152,6 @@ def limpar_site(url):
         flags=re.IGNORECASE
     )
 
-    # REMOVE WWW
     url = re.sub(
         r"^www\.",
         "",
@@ -160,10 +159,8 @@ def limpar_site(url):
         flags=re.IGNORECASE
     )
 
-    # REMOVE ACENTOS
     url = remover_acentos(url)
 
-    # REMOVE CARACTERES ESPECIAIS INVÁLIDOS
     url = re.sub(
         r"[^a-z0-9\.\-]",
         "",
@@ -225,9 +222,8 @@ def obter_facebook_handle(valor):
 
     return valor
 
-
 # ---------------------------------------------------
-# CONTROLE DE NAVEGAÇÃO
+# CONTROLE NAVEGAÇÃO
 # ---------------------------------------------------
 
 def trocar_pagina(destino):
@@ -250,10 +246,9 @@ def trocar_pagina(destino):
 
         st.session_state.pagina = destino
 
-        # FECHA FORMULÁRIOS AUTOMATICAMENTE
         st.session_state.mostrar_form_concorrente = False
         st.session_state.editando_concorrente = None
-
+        st.session_state.editar_empresa = False
 
 # ---------------------------------------------------
 # FUNÇÃO IA
@@ -304,7 +299,7 @@ if not st.session_state.logado:
     st.stop()
 
 # ---------------------------------------------------
-# CSS GLOBAL
+# CSS
 # ---------------------------------------------------
 
 st.markdown("""
@@ -339,23 +334,13 @@ st.markdown("""
     box-shadow: none !important;
 }
 
-[data-testid="stSidebar"] div.stButton > button:hover {
-    background-color: #2c3338 !important;
-    border: none !important;
-    transform: none !important;
-}
-
-.add-button button {
-    background: #2271b1 !important;
-    border-radius: 10px !important;
-    color: white !important;
-    border: none !important;
-    font-weight: 600 !important;
-    height: 45px !important;
-}
-
-.add-button button:hover {
-    background: #2f89d1 !important;
+.card-box {
+    background: #1f2937;
+    border-radius: 18px;
+    padding: 25px;
+    border: 1px solid #2d3748;
+    color: white;
+    margin-bottom: 20px;
 }
 
 .service-tag {
@@ -369,20 +354,44 @@ st.markdown("""
     margin-bottom: 5px;
 }
 
-.alert-box {
-    background: #3b1d1d;
-    border: 1px solid #ff4b4b;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999999;
+}
+
+.popup-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1f2937;
+    width: 500px;
+    border-radius: 16px;
+    padding: 30px;
+    z-index: 9999999;
+    border: 1px solid #374151;
     color: white;
+}
+
+.popup-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.popup-text {
+    color: #cbd5e1;
+    margin-bottom: 25px;
+    line-height: 1.5;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# MENU LATERAL
+# SIDEBAR
 # ---------------------------------------------------
 
 with st.sidebar:
@@ -416,27 +425,34 @@ with st.sidebar:
         trocar_pagina("insights")
 
 # ---------------------------------------------------
-# ALERTA DE SAÍDA DA EDIÇÃO
+# POPUP ALERTA
 # ---------------------------------------------------
 
 if st.session_state.mostrar_alerta_saida:
 
-    st.markdown(
-        """
-        <div class="alert-box">
-        ⚠️ Você possui uma edição de concorrente aberta.
-        Deseja realmente sair e cancelar a edição?
+    st.markdown("""
+    <div class="popup-overlay"></div>
+
+    <div class="popup-box">
+
+        <div class="popup-title">
+            ⚠️ Cancelar edição?
         </div>
-        """,
-        unsafe_allow_html=True
-    )
 
-    a1, a2 = st.columns(2)
+        <div class="popup-text">
+            Você possui uma edição aberta de concorrente.
+            Se sair agora as alterações não salvas serão perdidas.
+        </div>
 
-    with a1:
+    </div>
+    """, unsafe_allow_html=True)
+
+    p1, p2, p3 = st.columns([1, 1, 1])
+
+    with p2:
 
         if st.button(
-            "✅ Sim, sair e cancelar edição",
+            "✅ Sair e cancelar edição",
             use_container_width=True
         ):
 
@@ -450,16 +466,12 @@ if st.session_state.mostrar_alerta_saida:
 
             st.rerun()
 
-    with a2:
-
         if st.button(
             "❌ Continuar editando",
             use_container_width=True
         ):
 
             st.session_state.mostrar_alerta_saida = False
-            st.session_state.pagina_destino = None
-
             st.rerun()
 
 # ---------------------------------------------------
@@ -472,130 +484,195 @@ if st.session_state.pagina == "home":
 
     emp = st.session_state.dados["minha_empresa"]
 
-    st.subheader("📄 Informações Gerais")
-
-    col1, col2 = st.columns(2)
-
-    emp["nome"] = col1.text_input(
-        "Nome da Empresa",
-        emp["nome"]
-    )
-
-    emp["setor"] = col1.selectbox(
-        "Setor",
-        [
-            "Marketing",
-            "Tecnologia",
-            "Varejo",
-            "Saúde",
-            "Educação",
-            "Indústria"
-        ]
-    )
-
-    emp["tipo"] = col2.text_input(
-        "Sub-nicho",
-        emp["tipo"]
-    )
-
-    st.markdown("---")
-
-    st.subheader("📍 Localização")
-
-    loc1, loc2 = st.columns(2)
-
-    estados = list(ESTADOS_CIDADES.keys())
-
-    estado_index = 0
-
-    if emp["estado"] in estados:
-        estado_index = estados.index(emp["estado"])
-
-    emp["estado"] = loc1.selectbox(
-        "Estado",
-        estados,
-        index=estado_index
-    )
-
-    cidades = ESTADOS_CIDADES.get(
-        emp["estado"],
-        []
-    )
-
-    cidade_index = 0
-
-    if emp["cidade"] in cidades:
-        cidade_index = cidades.index(emp["cidade"])
-
-    emp["cidade"] = loc2.selectbox(
-        "Cidade",
-        cidades,
-        index=cidade_index
-    )
-
-    st.markdown("---")
-
-    st.subheader("📱 Redes Sociais")
-
-    col_a, col_b = st.columns(2)
-
-    emp["instagram"] = col_a.text_input(
-        "Instagram",
-        value=emp["instagram"]
-    )
-
-    emp["fb_page"] = col_b.text_input(
-        "Facebook",
-        emp["fb_page"]
-    )
-
-    st.markdown("---")
-
-    st.subheader("🌐 Website")
-
-    site_digitado = st.text_input(
-        "Site",
-        emp["site"]
-    )
-
-    emp["site"] = limpar_site(
-        site_digitado
-    )
-
-    if site_digitado != emp["site"]:
-
-        st.warning(
-            f"URL ajustada automaticamente para: {emp['site']}"
-        )
-
-    st.markdown("---")
-
-    st.subheader("🛠️ Serviços")
-
-    with st.form("form_servico", clear_on_submit=True):
-
-        novo = st.text_input("Adicionar Serviço")
-
-        enviar = st.form_submit_button(
-            "Adicionar",
-            type="primary"
-        )
-
-        if enviar and novo:
-
-            emp["servicos"].append(novo)
-
-            st.rerun()
-
-    if emp["servicos"]:
+    if not st.session_state.editar_empresa:
 
         st.markdown(
-            "".join([
-                f"<span class='service-tag'>{s}</span>"
-                for s in emp["servicos"]
-            ]),
+            f"""
+            <div class="card-box">
+
+            <h2>{emp['nome'] or 'Minha Empresa'}</h2>
+
+            <p><b>Setor:</b> {emp['setor']}</p>
+
+            <p><b>Sub-nicho:</b> {emp['tipo']}</p>
+
+            <p><b>Estado:</b> {emp['estado']}</p>
+
+            <p><b>Cidade:</b> {emp['cidade']}</p>
+
+            <p><b>Instagram:</b> {emp['instagram']}</p>
+
+            <p><b>Facebook:</b> {emp['fb_page']}</p>
+
+            <p><b>Site:</b> {emp['site']}</p>
+
+            </div>
+            """,
             unsafe_allow_html=True
         )
+
+        if emp["servicos"]:
+
+            st.markdown(
+                "".join([
+                    f"<span class='service-tag'>{s}</span>"
+                    for s in emp["servicos"]
+                ]),
+                unsafe_allow_html=True
+            )
+
+        if st.button(
+            "✏️ Editar Empresa",
+            type="primary"
+        ):
+
+            st.session_state.editar_empresa = True
+            st.rerun()
+
+    else:
+
+        st.subheader("📄 Informações Gerais")
+
+        col1, col2 = st.columns(2)
+
+        emp["nome"] = col1.text_input(
+            "Nome da Empresa",
+            emp["nome"]
+        )
+
+        emp["setor"] = col1.selectbox(
+            "Setor",
+            [
+                "Marketing",
+                "Tecnologia",
+                "Varejo",
+                "Saúde",
+                "Educação",
+                "Indústria"
+            ]
+        )
+
+        emp["tipo"] = col2.text_input(
+            "Sub-nicho",
+            emp["tipo"]
+        )
+
+        st.markdown("---")
+
+        st.subheader("📍 Localização")
+
+        loc1, loc2 = st.columns(2)
+
+        estados = list(ESTADOS_CIDADES.keys())
+
+        estado_index = 0
+
+        if emp["estado"] in estados:
+            estado_index = estados.index(emp["estado"])
+
+        emp["estado"] = loc1.selectbox(
+            "Estado",
+            estados,
+            index=estado_index
+        )
+
+        cidades = ESTADOS_CIDADES.get(
+            emp["estado"],
+            []
+        )
+
+        cidade_index = 0
+
+        if emp["cidade"] in cidades:
+            cidade_index = cidades.index(emp["cidade"])
+
+        emp["cidade"] = loc2.selectbox(
+            "Cidade",
+            cidades,
+            index=cidade_index
+        )
+
+        st.markdown("---")
+
+        st.subheader("📱 Redes Sociais")
+
+        col_a, col_b = st.columns(2)
+
+        emp["instagram"] = col_a.text_input(
+            "Instagram",
+            value=emp["instagram"]
+        )
+
+        emp["fb_page"] = col_b.text_input(
+            "Facebook",
+            emp["fb_page"]
+        )
+
+        st.markdown("---")
+
+        st.subheader("🌐 Website")
+
+        site_digitado = st.text_input(
+            "Site",
+            emp["site"]
+        )
+
+        emp["site"] = limpar_site(
+            site_digitado
+        )
+
+        st.markdown("---")
+
+        st.subheader("🛠️ Serviços")
+
+        with st.form("form_servico", clear_on_submit=True):
+
+            novo = st.text_input("Adicionar Serviço")
+
+            enviar = st.form_submit_button(
+                "Adicionar",
+                type="primary"
+            )
+
+            if enviar and novo:
+
+                emp["servicos"].append(novo)
+
+                st.rerun()
+
+        if emp["servicos"]:
+
+            st.markdown(
+                "".join([
+                    f"<span class='service-tag'>{s}</span>"
+                    for s in emp["servicos"]
+                ]),
+                unsafe_allow_html=True
+            )
+
+        c1, c2 = st.columns(2)
+
+        with c1:
+
+            if st.button(
+                "💾 Salvar",
+                type="primary",
+                use_container_width=True
+            ):
+
+                st.session_state.editar_empresa = False
+                st.success("Empresa atualizada!")
+                st.rerun()
+
+        with c2:
+
+            if st.button(
+                "❌ Cancelar",
+                use_container_width=True
+            ):
+
+                st.session_state.editar_empresa = False
+                st.rerun()
 
 # ---------------------------------------------------
 # CONCORRENTES
@@ -610,27 +687,15 @@ elif st.session_state.pagina == "cad":
 
     with top2:
 
-        st.markdown(
-            '<div class="add-button">',
-            unsafe_allow_html=True
-        )
-
-        add_clicked = st.button(
+        if st.button(
             "➕ Adicionar",
             use_container_width=True
-        )
+        ):
 
-        st.markdown(
-            '</div>',
-            unsafe_allow_html=True
-        )
+            st.session_state.mostrar_form_concorrente = True
+            st.session_state.editando_concorrente = None
 
-    if add_clicked:
-
-        st.session_state.mostrar_form_concorrente = True
-        st.session_state.editando_concorrente = None
-
-        st.rerun()
+            st.rerun()
 
     st.markdown("---")
 
@@ -722,63 +787,49 @@ elif st.session_state.pagina == "cad":
 
             if salvar:
 
-                if n:
+                clean_handle = obter_instagram_handle(
+                    insta_handle
+                )
 
-                    clean_handle = obter_instagram_handle(
-                        insta_handle
-                    )
+                fb_clean = obter_facebook_handle(
+                    fb_p
+                )
 
-                    fb_clean = obter_facebook_handle(
-                        fb_p
-                    )
+                site_clean = limpar_site(u)
 
-                    site_clean = limpar_site(u)
+                search_term = (
+                    ads_manual
+                    or fb_clean
+                    or clean_handle.replace("@", "")
+                    or n
+                )
 
-                    search_term = (
-                        ads_manual
-                        or fb_clean
-                        or clean_handle.replace("@", "")
-                        or n
-                    )
+                dados_novos = {
+                    "nome": n,
+                    "url": site_clean,
+                    "instagram": clean_handle,
+                    "fb_page": fb_clean,
+                    "ads_id": search_term
+                }
 
-                    dados_novos = {
-                        "nome": n,
-                        "url": site_clean,
-                        "instagram": clean_handle,
-                        "fb_page": fb_clean,
-                        "ads_id": search_term
-                    }
+                if st.session_state.editando_concorrente is not None:
 
-                    if st.session_state.editando_concorrente is not None:
-
-                        st.session_state.dados[
-                            "concorrentes"
-                        ][
-                            st.session_state.editando_concorrente
-                        ] = dados_novos
-
-                        st.success(
-                            f"{n} atualizado com sucesso!"
-                        )
-
-                    else:
-
-                        st.session_state.dados[
-                            "concorrentes"
-                        ].append(dados_novos)
-
-                        st.success(
-                            f"{n} cadastrado com sucesso!"
-                        )
-
-                    st.session_state.mostrar_form_concorrente = False
-                    st.session_state.editando_concorrente = None
-
-                    st.rerun()
+                    st.session_state.dados[
+                        "concorrentes"
+                    ][
+                        st.session_state.editando_concorrente
+                    ] = dados_novos
 
                 else:
 
-                    st.error("Nome obrigatório.")
+                    st.session_state.dados[
+                        "concorrentes"
+                    ].append(dados_novos)
+
+                st.session_state.mostrar_form_concorrente = False
+                st.session_state.editando_concorrente = None
+
+                st.rerun()
 
     concorrentes = st.session_state.dados["concorrentes"]
 
@@ -792,138 +843,46 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
-                card_html = f"""
-                <html>
-                <head>
+                st.markdown(
+                    f"""
+                    <div class="card-box">
 
-                <style>
+                    <div style="
+                        display:flex;
+                        align-items:center;
+                        gap:15px;
+                        margin-bottom:20px;
+                    ">
 
-                body {{
-                    margin: 0;
-                    padding: 0;
-                    background: transparent;
-                    font-family: Arial, sans-serif;
-                }}
+                        <div style="
+                            width:60px;
+                            height:60px;
+                            border-radius:50%;
+                            background:linear-gradient(135deg,#9333ea,#ec4899);
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-size:22px;
+                            font-weight:bold;
+                        ">
+                            {avatar}
+                        </div>
 
-                .card {{
-                    background: #1f2937;
-                    border: 1px solid #2d3748;
-                    border-radius: 18px;
-                    padding: 22px;
-                    color: white;
-                    min-height: 300px;
-                    box-sizing: border-box;
-                }}
-
-                .topo {{
-                    display: flex;
-                    align-items: center;
-                    gap: 14px;
-                    margin-bottom: 24px;
-                }}
-
-                .avatar {{
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    background: linear-gradient(
-                        135deg,
-                        #9333ea,
-                        #ec4899
-                    );
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 22px;
-                    font-weight: bold;
-                    color: white;
-                    flex-shrink: 0;
-                }}
-
-                .nome {{
-                    font-size: 22px;
-                    font-weight: 700;
-                    color: white;
-                    line-height: 1.2;
-                }}
-
-                .info {{
-                    font-size: 15px;
-                    color: #cbd5e1;
-                    margin-bottom: 14px;
-                    word-break: break-word;
-                    line-height: 1.5;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }}
-
-                .logo {{
-                    width: 20px;
-                    height: 20px;
-                    object-fit: contain;
-                    flex-shrink: 0;
-                }}
-
-                </style>
-                </head>
-
-                <body>
-
-                    <div class="card">
-
-                        <div class="topo">
-
-                            <div class="avatar">
-                                {avatar}
-                            </div>
-
-                            <div class="nome">
+                        <div>
+                            <h3 style="margin:0;">
                                 {c['nome']}
-                            </div>
-
-                        </div>
-
-                        <div class="info">
-                            🌐
-                            <span>{c['url'] if c['url'] else 'Sem site'}</span>
-                        </div>
-
-                        <div class="info">
-
-                            <img
-                                class="logo"
-                                src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png"
-                            >
-
-                            <span>
-                                {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                            </span>
-
-                        </div>
-
-                        <div class="info">
-
-                            <img
-                                class="logo"
-                                src="https://cdn-icons-png.flaticon.com/512/733/733547.png"
-                            >
-
-                            <span>
-                                {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
-                            </span>
-
+                            </h3>
                         </div>
 
                     </div>
 
-                </body>
-                </html>
-                """
+                    <p>🌐 {c['url']}</p>
+                    <p>📸 {c['instagram']}</p>
+                    <p>📘 {c['fb_page']}</p>
 
-                components.html(
-                    card_html,
-                    height=320
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
                 b1, b2 = st.columns(2)
