@@ -336,10 +336,9 @@ st.markdown("""
 
 .card-box {
     background: #1f2937;
-    border-radius: 18px 18px 0 0;
-    padding: 16px 18px 18px 18px;
+    border-radius: 18px;
+    padding: 16px 18px 14px 18px;
     border: 1px solid #2d3748;
-    border-bottom: none;
     color: white;
     margin-bottom: 0;
 }
@@ -382,35 +381,37 @@ st.markdown("""
     font-size: 14px;
 }
 
-/* remove margem entre card e botões */
-div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"] {
-    padding: 0 !important;
-    margin: 0 !important;
+.card-divider {
+    border: none;
+    border-top: 1px solid #374151;
+    margin: 14px -18px 10px -18px;
 }
 
-/* botões colados ao card */
-.card-buttons > div[data-testid="stHorizontalBlock"] {
-    gap: 0 !important;
-    margin: 0 !important;
+/* iguala altura das colunas dos cards */
+[data-testid="stHorizontalBlock"]:has(.card-box) {
+    align-items: stretch !important;
 }
 
-.card-buttons div.stButton > button {
-    border-radius: 0 !important;
-    border-top: none !important;
-    border-color: #2d3748 !important;
-    background: #111827 !important;
-    color: #e5e7eb !important;
-    margin: 0 !important;
-    width: 100% !important;
+[data-testid="stHorizontalBlock"]:has(.card-box) > [data-testid="column"] {
+    display: flex !important;
+    flex-direction: column !important;
 }
 
-.card-buttons div.stButton:first-child > button {
-    border-bottom-left-radius: 14px !important;
+[data-testid="stHorizontalBlock"]:has(.card-box) > [data-testid="column"] > [data-testid="stVerticalBlock"] {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
-.card-buttons div.stButton:last-child > button {
-    border-bottom-right-radius: 14px !important;
-    border-left: none !important;
+/* card ocupa todo espaço disponível */
+[data-testid="stHorizontalBlock"]:has(.card-box) .card-box {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.stButton > button {
+    border-radius: 8px !important;
 }
 
 .service-tag {
@@ -909,35 +910,34 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
-                st.markdown(
-                    f"""
-                    <div class="card-box">
-                        <div class="card-header">
-                            <div class="card-avatar">{avatar}</div>
-                            <h3 class="card-name">{c['nome']}</h3>
+                with st.container():
+                    st.markdown(
+                        f"""
+                        <div class="card-box">
+                            <div class="card-header">
+                                <div class="card-avatar">{avatar}</div>
+                                <h3 class="card-name">{c['nome']}</h3>
+                            </div>
+                            <div class="card-info">
+                                <p>🌐 {c['url'] or '—'}</p>
+                                <p>📸 {c['instagram'] or '—'}</p>
+                                <p>📘 {c['fb_page'] or '—'}</p>
+                            </div>
+                            <hr class="card-divider"/>
                         </div>
-                        <div class="card-info">
-                            <p>🌐 {c['url'] or '—'}</p>
-                            <p>📸 {c['instagram'] or '—'}</p>
-                            <p>📘 {c['fb_page'] or '—'}</p>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                st.markdown('<div class="card-buttons">', unsafe_allow_html=True)
-                b1, b2 = st.columns(2)
-                with b1:
-                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
-                        st.session_state.editando_concorrente = i
-                        st.session_state.mostrar_form_concorrente = False
-                        st.rerun()
-                with b2:
-                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
-                        st.session_state.dados["concorrentes"].pop(i)
-                        st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    b1, b2 = st.columns(2)
+                    with b1:
+                        if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
+                            st.session_state.editando_concorrente = i
+                            st.session_state.mostrar_form_concorrente = False
+                            st.rerun()
+                    with b2:
+                        if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
+                            st.session_state.dados["concorrentes"].pop(i)
+                            st.rerun()
 
     else:
 
