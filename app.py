@@ -1291,12 +1291,40 @@ elif st.session_state.pagina == "redes":
     for i, c in enumerate(concorrentes):
         todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c.get("instagram", ""), "facebook": c.get("fb_page", ""), "tipo": "concorrente"})
 
+    # CSS: abas centralizadas + estilo das tabs
+    st.markdown("""
+    <style>
+    div[data-testid="stTabs"] > div:first-child {
+        justify-content: center !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        gap: 0 !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        font-family: 'DM Sans', sans-serif !important;
+        padding: 10px 32px !important;
+        color: #9ca3af !important;
+        border-bottom: 2px solid transparent !important;
+        margin-bottom: -2px !important;
+        gap: 8px !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #111827 !important;
+        border-bottom: 2px solid #111827 !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"]:hover {
+        color: #374151 !important;
+        background: transparent !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     if not todas:
         st.info("Cadastre sua empresa e concorrentes para visualizar métricas.")
     else:
         metricas = st.session_state.metricas_redes
 
-        # Inicializa métricas
         for empresa in todas:
             k = empresa["key"]
             if k not in metricas:
@@ -1305,18 +1333,29 @@ elif st.session_state.pagina == "redes":
                     "fb_seguidores": 0, "fb_posts": 0, "fb_engajamento": 0.0,
                 }
 
-        # SVG icons
-        ig_svg = """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="igt" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="url(#igt)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>"""
-        fb_svg = """<svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>"""
+        # SVGs das marcas
+        IG_LOGO = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="igl" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect width="24" height="24" rx="6" ry="6" fill="url(#igl)"/><circle cx="12" cy="12" r="5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="18" cy="6" r="1.4" fill="white"/></svg>"""
+        FB_LOGO = """<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="6" fill="#1877F2"/><path d="M21.5 16H18v12H13.5V16H11v-4h2.5v-2.4C13.5 7.1 15 5.5 18.3 5.5c1.3 0 2.7.2 2.7.2V9h-1.5c-1.5 0-2 .9-2 1.9V12H21l-.5 4z" fill="white"/></svg>"""
 
         # ── ABAS
-        aba_ig, aba_fb = st.tabs(["📸  Instagram", "🔵  Facebook"])
+        aba_ig, aba_fb = st.tabs(["  Instagram  ", "  Facebook  "])
 
         # ════════════════════════════════════
         # ABA INSTAGRAM
         # ════════════════════════════════════
         with aba_ig:
-            st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+            st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
+
+            # Cabeçalho da rede
+            st.markdown(f"""
+            <div style='display:flex;align-items:center;gap:12px;margin-bottom:24px;padding:16px 20px;background:linear-gradient(135deg,#fdf2f8,#fce7f3);border:1px solid #f9a8d4;border-radius:12px'>
+                {IG_LOGO}
+                <div>
+                    <div style='font-size:17px;font-weight:700;color:#831843;font-family:DM Sans,sans-serif'>Instagram</div>
+                    <div style='font-size:12px;color:#be185d;margin-top:1px;font-family:DM Sans,sans-serif'>Métricas de presença e engajamento</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             empresas_ig = [e for e in todas if bool(e["instagram"])]
             if not empresas_ig:
@@ -1330,13 +1369,16 @@ elif st.session_state.pagina == "redes":
                     badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
                     badge_label = "Minha Empresa" if is_minha else "Concorrente"
                     avatar = gerar_avatar(empresa["nome"])
+                    handle = empresa["instagram"] or "—"
 
                     st.markdown(f"""
-                    <div style='display:flex;align-items:center;gap:12px;margin:12px 0 10px 0'>
-                        <div style='width:36px;height:36px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
-                        <div style='font-size:16px;font-weight:600;color:#111827'>{empresa['nome']}</div>
-                        <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_label}</span>
-                        <span style='margin-left:auto;font-size:13px;color:#9ca3af'>{empresa['instagram']}</span>
+                    <div style='display:flex;align-items:center;gap:14px;margin:12px 0 12px 0;padding:14px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:10px'>
+                        <div style='width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                        <div style='flex:1;min-width:0'>
+                            <div style='font-size:15px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif'>{empresa['nome']}</div>
+                            <div style='font-size:13px;color:#9ca3af;margin-top:1px;font-family:DM Sans,sans-serif'>{handle}</div>
+                        </div>
+                        <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap'>{badge_label}</span>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1356,9 +1398,8 @@ elif st.session_state.pagina == "redes":
                         value=metricas[k]["ig_engajamento"],
                         key=f"{k}_ig_eng"
                     )
-                    st.markdown("<div style='margin:16px 0 4px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+                    st.markdown("<div style='margin:4px 0 12px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-                # Tabela comparativa Instagram
                 st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin:20px 0 10px 0'>Comparativo Instagram</div>", unsafe_allow_html=True)
                 rows_ig = []
                 for empresa in empresas_ig:
@@ -1366,6 +1407,7 @@ elif st.session_state.pagina == "redes":
                     m = metricas.get(k, {})
                     rows_ig.append({
                         "Empresa": empresa["nome"],
+                        "Handle": empresa["instagram"],
                         "Seguidores": m.get("ig_seguidores", 0),
                         "Posts": m.get("ig_posts", 0),
                         "Engaj. %": m.get("ig_engajamento", 0.0),
@@ -1377,7 +1419,18 @@ elif st.session_state.pagina == "redes":
         # ABA FACEBOOK
         # ════════════════════════════════════
         with aba_fb:
-            st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+            st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
+
+            # Cabeçalho da rede
+            st.markdown(f"""
+            <div style='display:flex;align-items:center;gap:12px;margin-bottom:24px;padding:16px 20px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:12px'>
+                {FB_LOGO}
+                <div>
+                    <div style='font-size:17px;font-weight:700;color:#1e3a5f;font-family:DM Sans,sans-serif'>Facebook</div>
+                    <div style='font-size:12px;color:#1d4ed8;margin-top:1px;font-family:DM Sans,sans-serif'>Métricas de presença e engajamento</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             empresas_fb = [e for e in todas if bool(e["facebook"])]
             if not empresas_fb:
@@ -1391,13 +1444,16 @@ elif st.session_state.pagina == "redes":
                     badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
                     badge_label = "Minha Empresa" if is_minha else "Concorrente"
                     avatar = gerar_avatar(empresa["nome"])
+                    handle = empresa["facebook"] or "—"
 
                     st.markdown(f"""
-                    <div style='display:flex;align-items:center;gap:12px;margin:12px 0 10px 0'>
-                        <div style='width:36px;height:36px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
-                        <div style='font-size:16px;font-weight:600;color:#111827'>{empresa['nome']}</div>
-                        <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_label}</span>
-                        <span style='margin-left:auto;font-size:13px;color:#9ca3af'>{empresa['facebook']}</span>
+                    <div style='display:flex;align-items:center;gap:14px;margin:12px 0 12px 0;padding:14px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:10px'>
+                        <div style='width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                        <div style='flex:1;min-width:0'>
+                            <div style='font-size:15px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif'>{empresa['nome']}</div>
+                            <div style='font-size:13px;color:#9ca3af;margin-top:1px;font-family:DM Sans,sans-serif'>{handle}</div>
+                        </div>
+                        <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap'>{badge_label}</span>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1417,9 +1473,8 @@ elif st.session_state.pagina == "redes":
                         value=metricas[k]["fb_engajamento"],
                         key=f"{k}_fb_eng"
                     )
-                    st.markdown("<div style='margin:16px 0 4px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+                    st.markdown("<div style='margin:4px 0 12px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-                # Tabela comparativa Facebook
                 st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin:20px 0 10px 0'>Comparativo Facebook</div>", unsafe_allow_html=True)
                 rows_fb = []
                 for empresa in empresas_fb:
@@ -1427,6 +1482,7 @@ elif st.session_state.pagina == "redes":
                     m = metricas.get(k, {})
                     rows_fb.append({
                         "Empresa": empresa["nome"],
+                        "Página": empresa["facebook"],
                         "Seguidores": m.get("fb_seguidores", 0),
                         "Posts": m.get("fb_posts", 0),
                         "Engaj. %": m.get("fb_engajamento", 0.0),
