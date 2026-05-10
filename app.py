@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import google.generativeai as genai
 import pandas as pd
 import trafilatura
@@ -157,31 +158,7 @@ st.markdown("""
     background: #2f89d1 !important;
 }
 
-/* CARD */
-
-.card-concorrente {
-    background: #1f2937;
-    padding: 22px;
-    border-radius: 16px;
-    border: 1px solid #2d3748;
-    margin-bottom: 14px;
-    min-height: 210px;
-}
-
-.nome-card {
-    font-size: 22px;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 18px;
-}
-
-.info-card {
-    color: #cbd5e1;
-    margin-bottom: 10px;
-    font-size: 15px;
-    line-height: 1.5;
-    word-break: break-word;
-}
+/* TAG */
 
 .service-tag {
     background-color: #2271b1;
@@ -192,16 +169,6 @@ st.markdown("""
     margin-right: 5px;
     display: inline-block;
     margin-bottom: 5px;
-}
-
-/* REMOVE ESTILO DE CODE */
-
-code {
-    white-space: pre-wrap !important;
-}
-
-pre {
-    white-space: pre-wrap !important;
 }
 
 </style>
@@ -475,32 +442,74 @@ elif st.session_state.pagina == "cad":
             with cols[i % 3]:
 
                 card_html = f"""
-                <div class="card-concorrente">
+                <html>
+                <head>
+                <style>
 
-                    <div class="nome-card">
-                        {c['nome']}
+                body {{
+                    margin: 0;
+                    padding: 0;
+                    background: transparent;
+                    font-family: Arial, sans-serif;
+                }}
+
+                .card {{
+                    background: #1f2937;
+                    border: 1px solid #2d3748;
+                    border-radius: 18px;
+                    padding: 22px;
+                    color: white;
+                    min-height: 200px;
+                    box-sizing: border-box;
+                }}
+
+                .nome {{
+                    font-size: 22px;
+                    font-weight: 700;
+                    margin-bottom: 20px;
+                    color: white;
+                }}
+
+                .info {{
+                    font-size: 15px;
+                    color: #cbd5e1;
+                    margin-bottom: 12px;
+                    word-break: break-word;
+                    line-height: 1.5;
+                }}
+
+                </style>
+                </head>
+
+                <body>
+
+                    <div class="card">
+
+                        <div class="nome">
+                            {c['nome']}
+                        </div>
+
+                        <div class="info">
+                            🌐 {c['url'] if c['url'] else 'Sem site'}
+                        </div>
+
+                        <div class="info">
+                            📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
+                        </div>
+
+                        <div class="info">
+                            👍 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
+                        </div>
+
                     </div>
 
-                    <div class="info-card">
-                        🌐 {c['url'] if c['url'] else 'Sem site'}
-                    </div>
-
-                    <div class="info-card">
-                        📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                    </div>
-
-                    <div class="info-card">
-                        👍 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
-                    </div>
-
-                </div>
+                </body>
+                </html>
                 """
 
-                # ESSA É A CORREÇÃO PRINCIPAL
-                st.components.v1.html(
+                components.html(
                     card_html,
-                    height=230,
-                    scrolling=False
+                    height=230
                 )
 
                 if st.button(
