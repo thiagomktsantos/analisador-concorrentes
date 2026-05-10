@@ -353,85 +353,35 @@ st.markdown("""
     color: #ffffff !important;
 }
 
-/* ============ CARDS CONCORRENTES ============ */
+/* ============ BOTÕES PRINCIPAIS (fora da sidebar) ============ */
 
-.conc-card {
-    background: transparent;
-    padding: 20px 20px 8px 20px;
-}
-
-/* botões dentro do card ficam com estilo escuro */
-.conc-card ~ div button,
-[data-testid="stVerticalBlock"] > div > [data-testid="stHorizontalBlock"] button {
-    background: #233050 !important;
-    color: #cbd5e1 !important;
-    border: 1px solid #2d3f5e !important;
+/* Botões secundários — Editar / Remover / Adicionar */
+section.main div.stButton > button {
     border-radius: 8px !important;
-    font-size: 13px !important;
-    margin-bottom: 4px !important;
-}
-
-.conc-card ~ div button:hover {
-    background: #2d3f5e !important;
-    color: #f1f5f9 !important;
-}
-
-.card-avatar {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #9333ea, #ec4899);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    font-weight: bold;
-    color: white !important;
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-.card-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 14px;
-}
-
-.card-name {
-    margin: 0;
-    padding: 0;
-    font-size: 18px;
-    color: #f1f5f9 !important;
-    line-height: 1.3;
-    word-break: break-word;
-}
-
-.card-info p {
-    margin: 5px 0;
-    color: #94a3b8 !important;
-    font-size: 14px;
-}
-
-/* ============ BOTÃO EDITAR (estilo neutro, não-primary) ============ */
-
-.btn-editar-empresa > button {
-    background-color: #334155 !important;
-    color: #f1f5f9 !important;
-    border: 1px solid #475569 !important;
-    border-radius: 8px !important;
-    padding: 8px 18px !important;
     font-size: 14px !important;
     font-weight: 500 !important;
+    border: 1px solid #d1d5db !important;
+    background: #ffffff !important;
+    color: #374151 !important;
     box-shadow: none !important;
-    transition: background-color 0.15s ease !important;
+    transition: all 0.15s ease !important;
 }
 
-.btn-editar-empresa > button:hover {
-    background-color: #475569 !important;
-    border-color: #64748b !important;
+section.main div.stButton > button:hover {
+    background: #f3f4f6 !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
+}
+
+/* Botão primary (Salvar, Adicionar no topo) */
+section.main div.stButton > button[kind="primary"] {
+    background: #4f46e5 !important;
     color: #ffffff !important;
+    border: none !important;
+}
+
+section.main div.stButton > button[kind="primary"]:hover {
+    background: #4338ca !important;
 }
 
 /* ============ CARD MINHA EMPRESA ============ */
@@ -844,12 +794,9 @@ if st.session_state.pagina == "home":
             st.title("🏢 Minha Empresa")
         with h2:
             st.markdown("<div style='padding-top:18px'/>", unsafe_allow_html=True)
-            # Botão com classe CSS neutra (sem type="primary")
-            st.markdown('<div class="btn-editar-empresa">', unsafe_allow_html=True)
             if st.button("✏️ Editar Empresa", use_container_width=True):
                 st.session_state.editar_empresa = True
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown("---")
 
@@ -885,6 +832,7 @@ if st.session_state.pagina == "home":
                 border-radius:16px;
                 padding:28px 32px;
                 box-shadow:0 4px 24px rgba(0,0,0,0.3);
+                max-width:780px;
             }}
             .top {{ display:flex; align-items:center; gap:18px; margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid #2d3f5e; }}
             .avatar {{
@@ -954,7 +902,7 @@ if st.session_state.pagina == "home":
         </html>
         """
 
-        altura = 280 + (40 if emp["servicos"] else 0)
+        altura = 260 + (len(emp["servicos"]) > 0) * 60
         components.html(card_html, height=altura, scrolling=False)
 
 # ---------------------------------------------------
@@ -1120,56 +1068,67 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
-                # Wrapper container — CSS vai pintar o stVerticalBlock pai via JS
-                with st.container():
+                card_html = f"""<!DOCTYPE html><html><head><style>
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                body {{ background:transparent; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }}
+                .card {{
+                    background:#1a2235;
+                    border:1px solid #2d3f5e;
+                    border-radius:14px;
+                    padding:20px;
+                    box-shadow:0 4px 20px rgba(0,0,0,0.3);
+                }}
+                .header {{
+                    display:flex; align-items:center; gap:12px; margin-bottom:16px;
+                    padding-bottom:14px; border-bottom:1px solid #243354;
+                }}
+                .avatar {{
+                    width:46px; height:46px; border-radius:50%;
+                    background:linear-gradient(135deg,#9333ea,#ec4899);
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:17px; font-weight:700; color:#fff; flex-shrink:0;
+                }}
+                .name {{ font-size:16px; font-weight:600; color:#f1f5f9; }}
+                .info-row {{
+                    display:flex; align-items:center; gap:8px;
+                    margin-bottom:8px;
+                }}
+                .info-icon {{ font-size:14px; width:18px; flex-shrink:0; }}
+                .info-label {{ font-size:11px; color:#64748b; display:block; margin-bottom:1px; }}
+                .info-value {{ font-size:13px; color:#94a3b8; }}
+                </style></head><body>
+                <div class="card">
+                    <div class="header">
+                        <div class="avatar">{avatar}</div>
+                        <span class="name">{c['nome']}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">🌐</span>
+                        <div><span class="info-label">Site</span><span class="info-value">{c['url'] or '—'}</span></div>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">📸</span>
+                        <div><span class="info-label">Instagram</span><span class="info-value">{c['instagram'] or '—'}</span></div>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">📘</span>
+                        <div><span class="info-label">Facebook</span><span class="info-value">{c['fb_page'] or '—'}</span></div>
+                    </div>
+                </div>
+                </body></html>"""
 
-                    # Injeta JS que sobe pelo DOM e aplica a classe ao bloco pai
-                    st.markdown(
-                        f"""
-                        <div class="conc-card" id="conc-card-{i}">
-                            <div class="card-header">
-                                <div class="card-avatar">{avatar}</div>
-                                <h3 class="card-name">{c['nome']}</h3>
-                            </div>
-                            <div class="card-info">
-                                <p>🌐 {c['url'] or '—'}</p>
-                                <p>📸 {c['instagram'] or '—'}</p>
-                                <p>📘 {c['fb_page'] or '—'}</p>
-                            </div>
-                            <div class="conc-btn-row">
-                                <!-- placeholder visual — botões reais abaixo -->
-                            </div>
-                        </div>
-                        <script>
-                        (function() {{
-                            var el = document.getElementById('conc-card-{i}');
-                            if (!el) return;
-                            // sobe até o bloco de coluna do Streamlit e aplica fundo
-                            var parent = el.closest('[data-testid="stVerticalBlock"]');
-                            if (parent) {{
-                                parent.style.background = '#1a2235';
-                                parent.style.border = '1px solid #2d3f5e';
-                                parent.style.borderRadius = '16px';
-                                parent.style.padding = '0';
-                                parent.style.overflow = 'hidden';
-                                parent.style.boxShadow = '0 4px 20px rgba(0,0,0,0.25)';
-                            }}
-                        }})();
-                        </script>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                components.html(card_html, height=210, scrolling=False)
 
-                    b1, b2 = st.columns(2)
-                    with b1:
-                        if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
-                            st.session_state.editando_concorrente = i
-                            st.session_state.mostrar_form_concorrente = False
-                            st.rerun()
-                    with b2:
-                        if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
-                            st.session_state.dados["concorrentes"].pop(i)
-                            st.rerun()
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
+                        st.session_state.editando_concorrente = i
+                        st.session_state.mostrar_form_concorrente = False
+                        st.rerun()
+                with b2:
+                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
+                        st.session_state.dados["concorrentes"].pop(i)
+                        st.rerun()
 
     else:
 
