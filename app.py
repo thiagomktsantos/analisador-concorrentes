@@ -264,7 +264,24 @@ html, body, [class*="css"] {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    color: #374151;
+    color: #2d3748;
+}
+
+/* Nav item dot accent */
+[data-testid="stSidebar"] div.stButton > button::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3d4a5e;
+    margin-right: 10px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    transition: background 0.12s;
+}
+[data-testid="stSidebar"] div.stButton > button:hover::before {
+    background: #6366f1;
 }
 
 [data-testid="stSidebar"] div.stButton {
@@ -275,23 +292,27 @@ html, body, [class*="css"] {
     width: 100% !important;
     border-radius: 6px !important;
     background-color: transparent !important;
-    color: #9ca3af !important;
+    color: #6b7280 !important;
     border: none !important;
     text-align: left !important;
-    padding: 9px 14px !important;
+    padding: 9px 14px 9px 14px !important;
     min-height: auto !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
     font-weight: 400 !important;
     white-space: normal !important;
     box-shadow: none !important;
     transition: all 0.12s ease !important;
     font-family: 'DM Sans', sans-serif !important;
+    letter-spacing: 0.1px !important;
 }
 
 [data-testid="stSidebar"] div.stButton > button:hover {
-    background-color: #1a2030 !important;
+    background-color: #161c26 !important;
     color: #e5e7eb !important;
 }
+
+/* Sidebar icons via data-attribute mapping */
+[data-testid="stSidebar"] div.stButton:nth-child(1) > button::before { content: "⬡"; margin-right: 8px; font-size: 13px; opacity: 0.6; }
 
 /* ============ MAIN CONTENT ============ */
 section.main .block-container {
@@ -352,6 +373,19 @@ section.main div.stButton > button[kind="primary"] {
 
 section.main div.stButton > button[kind="primary"]:hover {
     background: #1f2937 !important;
+}
+
+/* ============ SECTION HEADERS (form) ============ */
+.form-section-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 20px 0 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 16px;
+    font-family: 'DM Sans', sans-serif;
 }
 
 /* ============ FORMULÁRIOS ============ */
@@ -496,31 +530,44 @@ div[data-testid="stDataFrame"] {
 with st.sidebar:
     st.markdown("""
     <div class="sidebar-logo">
-        <div class="sidebar-logo-text">🎯 CI Dashboard</div>
+        <div class="sidebar-logo-text">CI Dashboard</div>
         <div class="sidebar-logo-sub">Competitive Intelligence</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-section">Dados Principais</div>', unsafe_allow_html=True)
 
-    if st.button("🏠  Minha Empresa"):
+    st.markdown("""
+    <style>
+    .sb-nav-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 14px; border-radius: 6px;
+        color: #9ca3af; font-size: 14px; font-family: 'DM Sans', sans-serif;
+        font-weight: 400; cursor: default; margin-bottom: 1px;
+        transition: background 0.12s;
+    }
+    .sb-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    if st.button("Minha Empresa"):
         trocar_pagina("home")
 
-    if st.button("👥  Concorrentes"):
+    if st.button("Concorrentes"):
         trocar_pagina("cad")
 
     st.markdown('<div class="sidebar-section">Análise</div>', unsafe_allow_html=True)
 
-    if st.button("📊  Visão Geral"):
+    if st.button("Visão Geral"):
         trocar_pagina("geral")
 
-    if st.button("🌐  Confronto de Sites"):
+    if st.button("Confronto de Sites"):
         trocar_pagina("sites")
 
-    if st.button("📢  Biblioteca de Ads"):
+    if st.button("Biblioteca de Ads"):
         trocar_pagina("ads")
 
-    if st.button("💡  IA Battle Cards"):
+    if st.button("IA Battle Cards"):
         trocar_pagina("insights")
 
 # ---------------------------------------------------
@@ -582,7 +629,7 @@ if st.session_state.pagina == "home":
 
         h1, h2 = st.columns([8, 2])
         with h1:
-            st.title("🏢 Minha Empresa")
+            st.markdown("<h1 style=\"font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif\">Minha Empresa</h1>", unsafe_allow_html=True)
         with h2:
             if tem_dados:
                 st.markdown("<div style='padding-top:18px'/>", unsafe_allow_html=True)
@@ -590,16 +637,16 @@ if st.session_state.pagina == "home":
                     st.session_state.editar_empresa = False
                     st.rerun()
 
-        st.markdown("---")
-        st.subheader("📄 Informações Gerais")
+        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Informações Gerais</div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
 
         emp["nome"] = col1.text_input("Nome da Empresa", emp["nome"])
         emp["setor"] = col1.selectbox("Setor", ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Indústria"])
         emp["tipo"] = col2.text_input("Sub-nicho", emp["tipo"])
 
-        st.markdown("---")
-        st.subheader("📍 Localização")
+        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Localização</div>", unsafe_allow_html=True)
         loc1, loc2 = st.columns(2)
         estados = list(ESTADOS_CIDADES.keys())
         estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
@@ -608,19 +655,19 @@ if st.session_state.pagina == "home":
         cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
         emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
 
-        st.markdown("---")
-        st.subheader("📱 Redes Sociais")
+        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Redes Sociais</div>", unsafe_allow_html=True)
         col_a, col_b = st.columns(2)
         emp["instagram"] = col_a.text_input("Instagram", value=emp["instagram"])
         emp["fb_page"] = col_b.text_input("Facebook", emp["fb_page"])
 
-        st.markdown("---")
-        st.subheader("🌐 Website")
+        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Website</div>", unsafe_allow_html=True)
         site_digitado = st.text_input("Site", emp["site"])
         emp["site"] = limpar_site(site_digitado)
 
-        st.markdown("---")
-        st.subheader("🛠️ Serviços")
+        st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+        st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Serviços</div>", unsafe_allow_html=True)
         with st.form("form_servico", clear_on_submit=True):
             novo = st.text_input("Adicionar Serviço")
             enviar = st.form_submit_button("Adicionar", type="primary")
@@ -819,13 +866,13 @@ elif st.session_state.pagina == "cad":
             concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
 
         with st.form("cad_concorrente", clear_on_submit=False):
-            st.subheader("📄 Identificação")
+            st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Identificação</div>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
             u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
 
-            st.markdown("---")
-            st.subheader("📱 Redes Sociais")
+            st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+            st.markdown("<div style=\"font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif\">Redes Sociais</div>", unsafe_allow_html=True)
             c3, c4 = st.columns(2)
             insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
             fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
