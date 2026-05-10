@@ -710,17 +710,14 @@ if st.session_state.pagina == "home":
         if emp['estado']:
             loc += (', ' if loc else '') + emp['estado']
 
-        servicos_tags = ""
+        # Serviços como tags na terceira coluna
         if emp["servicos"]:
-            tags = "".join([
-                f"<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:5px 14px;border-radius:20px;font-size:13px;margin-right:8px;display:inline-block;margin-bottom:8px'>{s}</span>"
+            servicos_col_html = "".join([
+                f"<div class='tag'>{s}</div>"
                 for s in emp["servicos"]
             ])
-            servicos_tags = f"""
-            <div style='margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6'>
-                <div style='font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:12px'>Serviços</div>
-                {tags}
-            </div>"""
+        else:
+            servicos_col_html = "<span class='val' style='color:#9ca3af'>—</span>"
 
         card_html = f"""<!DOCTYPE html>
 <html>
@@ -761,8 +758,8 @@ if st.session_state.pagina == "home":
 .sub {{ font-size: 14px; color: #9ca3af; }}
 .grid {{
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 48px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0 36px;
 }}
 .sec-title {{
     font-size: 11px;
@@ -789,6 +786,17 @@ if st.session_state.pagina == "home":
 }}
 .lbl {{ font-size: 12px; color: #9ca3af; display: block; margin-bottom: 2px; }}
 .val {{ font-size: 15px; color: #111827; font-weight: 500; }}
+.tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+.tag {{
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}}
 </style>
 </head>
 <body>
@@ -801,13 +809,6 @@ if st.session_state.pagina == "home":
         </div>
     </div>
     <div class="grid">
-        <div>
-            <div class="sec-title">Localização</div>
-            <div class="row">
-                <span class="ico">📍</span>
-                <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
-            </div>
-        </div>
         <div>
             <div class="sec-title">Presença Digital</div>
             <div class="row">
@@ -823,19 +824,23 @@ if st.session_state.pagina == "home":
                 <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
             </div>
         </div>
+        <div>
+            <div class="sec-title">Localização</div>
+            <div class="row">
+                <span class="ico">📍</span>
+                <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
+            </div>
+        </div>
+        <div>
+            <div class="sec-title">Serviços</div>
+            <div class="tags-wrap">{servicos_col_html}</div>
+        </div>
     </div>
-    {servicos_tags}
 </div>
 </body>
 </html>"""
 
-        n_servicos = len(emp["servicos"])
-        if n_servicos > 0:
-            linhas = max(1, -(-n_servicos // 3))
-            altura = 320 + 80 + linhas * 52
-        else:
-            altura = 320
-        components.html(card_html, height=altura, scrolling=False)
+        components.html(card_html, height=320, scrolling=False)
 
 # ---------------------------------------------------
 # CONCORRENTES
