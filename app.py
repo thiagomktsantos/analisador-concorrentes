@@ -1,8 +1,6 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import google.generativeai as genai
 import pandas as pd
-import trafilatura
 import re
 import unicodedata
 
@@ -16,59 +14,31 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO GEMINI
+# GEMINI
 # ---------------------------------------------------
 
 if "GEMINI_API_KEY" in st.secrets:
 
-    genai.configure(
-        api_key=st.secrets["GEMINI_API_KEY"]
-    )
-
-    model = genai.GenerativeModel(
-        "gemini-pro"
-    )
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel("gemini-pro")
 
 else:
-
     model = None
 
 # ---------------------------------------------------
-# LISTA ESTADOS E CIDADES
+# ESTADOS / CIDADES
 # ---------------------------------------------------
 
 ESTADOS_CIDADES = {
-    "Acre": ["Rio Branco", "Cruzeiro do Sul"],
-    "Alagoas": ["Maceió", "Arapiraca"],
-    "Amapá": ["Macapá", "Santana"],
-    "Amazonas": ["Manaus", "Parintins"],
-    "Bahia": ["Salvador", "Feira de Santana"],
-    "Ceará": ["Fortaleza", "Juazeiro do Norte", "Sobral"],
-    "Distrito Federal": ["Brasília"],
-    "Espírito Santo": ["Vitória", "Vila Velha"],
-    "Goiás": ["Goiânia", "Anápolis"],
-    "Maranhão": ["São Luís", "Imperatriz"],
-    "Mato Grosso": ["Cuiabá", "Rondonópolis"],
-    "Mato Grosso do Sul": ["Campo Grande", "Dourados"],
-    "Minas Gerais": ["Belo Horizonte", "Uberlândia"],
-    "Pará": ["Belém", "Santarém"],
-    "Paraíba": ["João Pessoa", "Campina Grande"],
-    "Paraná": ["Curitiba", "Londrina"],
-    "Pernambuco": ["Recife", "Caruaru"],
-    "Piauí": ["Teresina", "Parnaíba"],
-    "Rio de Janeiro": ["Rio de Janeiro", "Niterói"],
-    "Rio Grande do Norte": ["Natal", "Mossoró"],
-    "Rio Grande do Sul": ["Porto Alegre", "Caxias do Sul"],
-    "Rondônia": ["Porto Velho", "Ji-Paraná"],
-    "Roraima": ["Boa Vista"],
-    "Santa Catarina": ["Florianópolis", "Joinville"],
     "São Paulo": ["São Paulo", "Campinas", "Santos"],
-    "Sergipe": ["Aracaju"],
-    "Tocantins": ["Palmas"]
+    "Rio de Janeiro": ["Rio de Janeiro", "Niterói"],
+    "Minas Gerais": ["Belo Horizonte", "Uberlândia"],
+    "Bahia": ["Salvador", "Feira de Santana"],
+    "Paraná": ["Curitiba", "Londrina"],
 }
 
 # ---------------------------------------------------
-# ESTADO DA SESSÃO
+# STATE
 # ---------------------------------------------------
 
 if "dados" not in st.session_state:
@@ -85,341 +55,84 @@ if "dados" not in st.session_state:
             "site": "",
             "servicos": []
         },
-
         "concorrentes": []
     }
 
 empresa = st.session_state.dados["minha_empresa"]
 
-campos_padrao = {
-    "estado": "",
-    "cidade": "",
-    "instagram": "@",
-    "fb_page": "",
-    "site": "",
-    "servicos": []
-}
-
-for campo, valor in campos_padrao.items():
-
-    if campo not in empresa:
-        empresa[campo] = valor
-
-if "logado" not in st.session_state:
-    st.session_state.logado = False
-
 if "pagina" not in st.session_state:
     st.session_state.pagina = "home"
 
-if "mostrar_form_concorrente" not in st.session_state:
-    st.session_state.mostrar_form_concorrente = False
-
-if "editando_concorrente" not in st.session_state:
-    st.session_state.editando_concorrente = None
+if "logado" not in st.session_state:
+    st.session_state.logado = True
 
 if "editar_empresa" not in st.session_state:
     st.session_state.editar_empresa = False
 
+if "editando_concorrente" not in st.session_state:
+    st.session_state.editando_concorrente = None
+
 # ---------------------------------------------------
-# FUNÇÕES AUXILIARES
+# FUNÇÕES
 # ---------------------------------------------------
-
-def remover_acentos(texto):
-
-    return ''.join(
-        c for c in unicodedata.normalize('NFD', texto)
-        if unicodedata.category(c) != 'Mn'
-    )
-
 
 def limpar_site(url):
-
     if not url:
         return ""
+    url = url.lower()
+    url = re.sub(r"https?://", "", url)
+    url = re.sub(r"www\.", "", url)
+    return url.strip()
 
-    url = url.strip().lower()
-
-    url = re.sub(
-        r"^https?:\/\/",
-        "",
-        url,
-        flags=re.IGNORECASE
-    )
-
-    url = re.sub(
-        r"^www\.",
-        "",
-        url,
-        flags=re.IGNORECASE
-    )
-
-    url = remover_acentos(url)
-
-    url = re.sub(
-        r"[^a-z0-9\.\-]",
-        "",
-        url
-    )
-
-    return url
-
-
-def gerar_avatar(nome):
-
-    nome = nome.strip().upper()
-
+def avatar(nome):
     if not nome:
         return "?"
-
-    partes = nome.split()
-
-    if len(partes) == 1:
-        return partes[0][0]
-
-    return partes[0][0] + partes[1][0]
-
-
-def obter_instagram_handle(valor):
-
-    if not valor:
-        return ""
-
-    valor = valor.strip()
-
-    valor = re.sub(
-        r"^https?:\/\/(www\.)?instagram\.com\/",
-        "",
-        valor,
-        flags=re.IGNORECASE
-    )
-
-    valor = valor.strip("/")
-
-    return valor
-
-
-def obter_facebook_handle(valor):
-
-    if not valor:
-        return ""
-
-    valor = valor.strip()
-
-    valor = re.sub(
-        r"^https?:\/\/(www\.)?facebook\.com\/",
-        "",
-        valor,
-        flags=re.IGNORECASE
-    )
-
-    valor = valor.strip("/")
-
-    return valor
+    p = nome.split()
+    return (p[0][0] + (p[1][0] if len(p) > 1 else "")).upper()
 
 # ---------------------------------------------------
-# FUNÇÃO IA
-# ---------------------------------------------------
-
-def consultar_ia(prompt):
-
-    if model is None:
-        return "Erro: Chave API não configurada."
-
-    try:
-
-        emp = st.session_state.dados["minha_empresa"]
-
-        contexto = f"""
-Empresa: {emp['nome']}
-Setor: {emp['setor']}
-Instagram: {emp['instagram']}
-"""
-
-        resposta = model.generate_content(
-            contexto + "\n" + prompt
-        )
-
-        return resposta.text
-
-    except Exception as e:
-        return f"Erro: {str(e)}"
-
-# ---------------------------------------------------
-# LOGIN
-# ---------------------------------------------------
-
-if not st.session_state.logado:
-
-    cols = st.columns([1, 2, 1])
-
-    with cols[1]:
-
-        st.title("🔐 Login Dashboard")
-
-        if st.button("Acessar Painel"):
-
-            st.session_state.logado = True
-
-            st.rerun()
-
-    st.stop()
-
-# ---------------------------------------------------
-# CSS GLOBAL
+# CSS (MENU LIMPO)
 # ---------------------------------------------------
 
 st.markdown("""
 <style>
 
-html, body, [class*="css"] {
-    font-family: 'Segoe UI', sans-serif;
-    background: #f3f4f6;
-}
-
 [data-testid="stSidebar"] {
-    background: linear-gradient(
-        180deg,
-        #161b22 0%,
-        #111827 100%
-    ) !important;
-    border-right: 1px solid #1f2937;
+    background: #111827;
 }
-
-/* MENU */
 
 [data-testid="stSidebar"] .stButton > button {
     width: 100%;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #d1d5db !important;
-    text-align: left !important;
-    padding: 14px 18px !important;
-    border-radius: 12px !important;
-    font-size: 16px !important;
-    transition: 0.2s;
+    background: transparent;
+    border: none;
+    color: #d1d5db;
+    text-align: left;
+    padding: 12px;
+    font-size: 15px;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: #1f2937 !important;
-    color: white !important;
-}
-
-[data-testid="stSidebar"] .stButton > button:focus {
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-.sidebar-header {
-    color: #9ca3af;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 24px 18px 10px 18px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* CARD */
-
-.conc-card {
-    background: white;
-    border-radius: 24px;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 25px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-}
-
-.conc-banner {
-    height: 180px;
-    background: linear-gradient(
-        135deg,
-        #0f172a,
-        #1e293b
-    );
-}
-
-.conc-content {
-    padding: 24px;
-    margin-top: -50px;
-}
-
-.conc-avatar {
-    width: 78px;
-    height: 78px;
-    border-radius: 50%;
-    background: linear-gradient(
-        135deg,
-        #9333ea,
-        #ec4899
-    );
-    border: 5px solid white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #1f2937;
     color: white;
-    font-size: 26px;
-    font-weight: 700;
-}
-
-.conc-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #111827;
-    margin-top: 16px;
-    margin-bottom: 20px;
-}
-
-.conc-info {
-    color: #4b5563;
-    font-size: 15px;
-    margin-bottom: 12px;
-    word-break: break-word;
-}
-
-.card-box {
-    background: white;
-    border-radius: 18px;
-    padding: 25px;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 20px;
-}
-
-.service-tag {
-    background-color: #2271b1;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin-right: 5px;
-    display: inline-block;
-    margin-bottom: 5px;
+    border-radius: 10px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# MENU LATERAL
+# MENU
 # ---------------------------------------------------
 
 with st.sidebar:
 
-    st.markdown(
-        '<div class="sidebar-header">Dados Principais</div>',
-        unsafe_allow_html=True
-    )
+    st.title("Menu")
 
     if st.button("🏠 Minha Empresa"):
         st.session_state.pagina = "home"
 
     if st.button("👥 Concorrentes"):
         st.session_state.pagina = "cad"
-
-    st.markdown(
-        '<div class="sidebar-header">Análise</div>',
-        unsafe_allow_html=True
-    )
 
     if st.button("📊 Visão Geral"):
         st.session_state.pagina = "geral"
@@ -441,61 +154,46 @@ if st.session_state.pagina == "home":
 
     st.title("🏢 Minha Empresa")
 
-    emp = st.session_state.dados["minha_empresa"]
+    emp = empresa
 
-    st.markdown(
-        f"""
-        <div class="card-box">
+    st.text_input("Nome", key="nome_empresa", value=emp["nome"])
+    emp["nome"] = st.session_state["nome_empresa"]
 
-            <h2>{emp['nome'] or 'Minha Empresa'}</h2>
+    st.selectbox("Setor", ["Marketing","Tecnologia"], key="setor")
+    emp["setor"] = st.session_state["setor"]
 
-            <p><b>Setor:</b> {emp['setor']}</p>
-
-            <p><b>Sub-nicho:</b> {emp['tipo']}</p>
-
-            <p><b>Estado:</b> {emp['estado']}</p>
-
-            <p><b>Cidade:</b> {emp['cidade']}</p>
-
-            <p><b>Instagram:</b> {emp['instagram']}</p>
-
-            <p><b>Facebook:</b> {emp['fb_page']}</p>
-
-            <p><b>Site:</b> {emp['site']}</p>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.text_input("Instagram", key="insta", value=emp["instagram"])
+    emp["instagram"] = st.session_state["insta"]
 
 # ---------------------------------------------------
-# CONCORRENTES
+# CONCORRENTES (CORRIGIDO)
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "cad":
 
-    top1, top2 = st.columns([8, 2])
+    st.title("👥 Concorrentes")
 
-    with top1:
-        st.title("👥 Concorrentes")
+    nome = st.text_input("Nome")
+    site = st.text_input("Site")
 
-    with top2:
+    if st.button("Adicionar"):
 
-        if st.button(
-            "➕ Adicionar",
-            use_container_width=True
-        ):
+        st.session_state.dados["concorrentes"].append({
+            "nome": nome,
+            "url": limpar_site(site),
+            "instagram": "",
+            "fb_page": ""
+        })
 
-            st.session_state.mostrar_form_concorrente = True
-            st.session_state.editando_concorrente = None
+        st.rerun()
 
-            st.rerun()
-
-    st.markdown("---")
+    st.divider()
 
     concorrentes = st.session_state.dados["concorrentes"]
 
-    if concorrentes:
+    if not concorrentes:
+        st.info("Nenhum concorrente cadastrado.")
+    else:
 
         cols = st.columns(2)
 
@@ -503,73 +201,23 @@ elif st.session_state.pagina == "cad":
 
             with cols[i % 2]:
 
-                avatar = gerar_avatar(c["nome"])
+                with st.container():
 
-                st.markdown(
-                    f"""
-                    <div class="conc-card">
+                    st.markdown("### " + c["nome"])
+                    st.write("🌐", c["url"] or "Sem site")
+                    st.write("📸", c["instagram"] or "Sem Instagram")
+                    st.write("📘", c["fb_page"] or "Sem Facebook")
 
-                        <div class="conc-banner"></div>
+                    c1, c2 = st.columns(2)
 
-                        <div class="conc-content">
+                    with c1:
+                        if st.button("Editar", key=f"e{i}"):
+                            st.session_state.editando_concorrente = i
 
-                            <div class="conc-avatar">
-                                {avatar}
-                            </div>
-
-                            <div class="conc-title">
-                                {c['nome']}
-                            </div>
-
-                            <div class="conc-info">
-                                🌐 {c['url'] if c['url'] else 'Sem site'}
-                            </div>
-
-                            <div class="conc-info">
-                                📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                            </div>
-
-                            <div class="conc-info">
-                                📘 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
-                            </div>
-
-                        </div>
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                c1, c2 = st.columns(2)
-
-                with c1:
-
-                    if st.button(
-                        "✏️ Editar",
-                        key=f"editar_{i}",
-                        use_container_width=True
-                    ):
-
-                        st.session_state.editando_concorrente = i
-                        st.rerun()
-
-                with c2:
-
-                    if st.button(
-                        "🗑️ Remover",
-                        key=f"remove_{i}",
-                        use_container_width=True
-                    ):
-
-                        st.session_state.dados[
-                            "concorrentes"
-                        ].pop(i)
-
-                        st.rerun()
-
-    else:
-
-        st.info("Nenhum concorrente cadastrado.")
+                    with c2:
+                        if st.button("Remover", key=f"r{i}"):
+                            st.session_state.dados["concorrentes"].pop(i)
+                            st.rerun()
 
 # ---------------------------------------------------
 # VISÃO GERAL
@@ -579,27 +227,9 @@ elif st.session_state.pagina == "geral":
 
     st.title("📊 Visão Geral")
 
-    concorrentes = st.session_state.dados["concorrentes"]
+    df = pd.DataFrame(st.session_state.dados["concorrentes"])
 
-    if concorrentes:
-
-        df = pd.DataFrame(concorrentes)
-
-        st.dataframe(
-            df[
-                [
-                    "nome",
-                    "url",
-                    "instagram",
-                    "fb_page"
-                ]
-            ],
-            use_container_width=True
-        )
-
-    else:
-
-        st.warning("Sem dados.")
+    st.dataframe(df)
 
 # ---------------------------------------------------
 # ADS
@@ -609,78 +239,44 @@ elif st.session_state.pagina == "ads":
 
     st.title("📢 Biblioteca de Ads")
 
-    concs = st.session_state.dados["concorrentes"]
+    for c in st.session_state.dados["concorrentes"]:
 
-    if not concs:
+        with st.expander(c["nome"]):
 
-        st.info("Cadastre concorrentes.")
+            st.write("Termo:", c["nome"])
 
-    else:
-
-        for c in concs:
-
-            with st.expander(
-                f"🔍 {c['nome']}",
-                expanded=True
-            ):
-
-                term = c["ads_id"]
-
-                url = f"https://www.facebook.com/ads/library/?q={term}&country=BR&media_type=all"
-
-                st.write(f"Buscando por: {term}")
-
-                st.link_button(
-                    "Abrir Biblioteca de Ads",
-                    url
-                )
+            st.link_button(
+                "Abrir Ads Library",
+                "https://www.facebook.com/ads/library/"
+            )
 
 # ---------------------------------------------------
-# CONFRONTO DE SITES
+# SITES
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "sites":
 
     st.title("🌐 Confronto de Sites")
 
-    st.info("Módulo em desenvolvimento.")
+    st.info("Em desenvolvimento")
 
 # ---------------------------------------------------
-# IA BATTLE CARDS
+# INSIGHTS
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "insights":
 
     st.title("💡 IA Battle Cards")
 
-    concorrentes = st.session_state.dados["concorrentes"]
+    concs = st.session_state.dados["concorrentes"]
 
-    if concorrentes:
+    if concs:
 
-        target = st.selectbox(
-            "Gerar estratégia contra:",
-            [c["nome"] for c in concorrentes]
-        )
+        alvo = st.selectbox("Concorrente", [c["nome"] for c in concs])
 
-        if st.button(
-            "Gerar Estratégia",
-            type="primary"
-        ):
+        if st.button("Gerar"):
 
-            with st.spinner(
-                "Criando Battle Card..."
-            ):
-
-                resposta = consultar_ia(
-                    f"""
-                    Gere um battle card
-                    focado em vencer o
-                    concorrente {target}.
-                    """
-                )
-
-                st.markdown(resposta)
+            st.write("Estratégia contra:", alvo)
 
     else:
-
         st.info("Adicione concorrentes.")
