@@ -558,11 +558,13 @@ if st.session_state.mostrar_alerta_saida:
 
 CARD_CSS = """
 * { margin:0; padding:0; box-sizing:border-box; }
-body {
+html, body {
     background: transparent;
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
+    overflow: visible;
 }
+body { padding-bottom: 8px; }
 """
 
 CARD_FONT_IMPORT = """<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">"""
@@ -782,12 +784,12 @@ if st.session_state.pagina == "home":
 </html>"""
 
         n_servicos = len(emp["servicos"])
-        altura_base = 300
+        # 300 base (header + grid) + 80 (services header padding) + rows*50 per 3 items
         if n_servicos > 0:
-            linhas_servicos = max(1, (n_servicos + 2) // 3)
-            altura = altura_base + 64 + linhas_servicos * 46
+            linhas = max(1, -(-n_servicos // 3))  # ceiling div
+            altura = 320 + 80 + linhas * 52
         else:
-            altura = altura_base
+            altura = 320
         components.html(card_html, height=altura, scrolling=False)
 
 # ---------------------------------------------------
@@ -798,7 +800,10 @@ elif st.session_state.pagina == "cad":
 
     top1, top2 = st.columns([8, 2])
     with top1:
-        st.title("👥 Concorrentes")
+        st.markdown(
+            "<h1 style=\"font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif\">Concorrentes</h1>",
+            unsafe_allow_html=True
+        )
     with top2:
         if st.button("➕ Adicionar", use_container_width=True):
             st.session_state.mostrar_form_concorrente = True
@@ -934,7 +939,7 @@ elif st.session_state.pagina == "cad":
 </body>
 </html>"""
 
-                components.html(card_html, height=248, scrolling=False)
+                components.html(card_html, height=268, scrolling=False)
 
                 b1, b2 = st.columns(2)
                 with b1:
