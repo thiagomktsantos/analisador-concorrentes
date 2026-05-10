@@ -3,6 +3,8 @@ import streamlit.components.v1 as components
 import google.generativeai as genai
 import pandas as pd
 import trafilatura
+import re
+from urllib.parse import urlparse
 
 # ---------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -53,6 +55,86 @@ if "mostrar_form_concorrente" not in st.session_state:
 
 if "editando_concorrente" not in st.session_state:
     st.session_state.editando_concorrente = None
+
+# ---------------------------------------------------
+# FUNÇÕES AUXILIARES
+# ---------------------------------------------------
+
+def limpar_site(url):
+
+    if not url:
+        return ""
+
+    url = url.strip()
+
+    url = re.sub(r"^https?:\/\/", "", url)
+    url = re.sub(r"^www\.", "", url)
+
+    url = url.rstrip("/")
+
+    return url
+
+
+def gerar_avatar(nome):
+
+    nome = nome.strip().upper()
+
+    if not nome:
+        return "?"
+
+    partes = nome.split()
+
+    if len(partes) == 1:
+        return partes[0][0]
+
+    return partes[0][0] + partes[1][0]
+
+
+def obter_instagram_handle(valor):
+
+    if not valor:
+        return ""
+
+    valor = valor.strip()
+
+    valor = valor.replace(
+        "https://instagram.com/",
+        ""
+    )
+
+    valor = valor.replace(
+        "https://www.instagram.com/",
+        ""
+    )
+
+    valor = valor.replace("@", "")
+    valor = valor.strip("/")
+    valor = valor.strip()
+
+    return f"@{valor}" if valor else ""
+
+
+def obter_facebook_handle(valor):
+
+    if not valor:
+        return ""
+
+    valor = valor.strip()
+
+    valor = valor.replace(
+        "https://facebook.com/",
+        ""
+    )
+
+    valor = valor.replace(
+        "https://www.facebook.com/",
+        ""
+    )
+
+    valor = valor.strip("/")
+    valor = valor.strip()
+
+    return valor
 
 # ---------------------------------------------------
 # FUNÇÃO IA
@@ -429,26 +511,28 @@ elif st.session_state.pagina == "cad":
 
                 if n:
 
-                    clean_handle = insta_handle.strip()
+                    clean_handle = obter_instagram_handle(
+                        insta_handle
+                    )
 
-                    if clean_handle == "@":
-                        clean_handle = ""
+                    fb_clean = obter_facebook_handle(
+                        fb_p
+                    )
 
-                    elif not clean_handle.startswith("@"):
-                        clean_handle = "@" + clean_handle
+                    site_clean = limpar_site(u)
 
                     search_term = (
                         ads_manual
-                        or fb_p
+                        or fb_clean
                         or clean_handle.replace("@", "")
                         or n
                     )
 
                     dados_novos = {
                         "nome": n,
-                        "url": u,
+                        "url": site_clean,
                         "instagram": clean_handle,
-                        "fb_page": fb_p,
+                        "fb_page": fb_clean,
                         "ads_id": search_term
                     }
 
@@ -499,6 +583,12 @@ elif st.session_state.pagina == "cad":
 
             with cols[i % 3]:
 
+                avatar = gerar_avatar(c["nome"])
+
+                # FOTO DE PERFIL INSTAGRAM
+                # Instagram bloqueia scraping direto
+                # então usamos fallback com avatar textual
+
                 card_html = f"""
                 <html>
                 <head>
@@ -518,15 +608,40 @@ elif st.session_state.pagina == "cad":
                     border-radius: 18px;
                     padding: 22px;
                     color: white;
-                    min-height: 220px;
+                    min-height: 300px;
                     box-sizing: border-box;
+                }}
+
+                .topo {{
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    margin-bottom: 24px;
+                }}
+
+                .avatar {{
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 50%;
+                    background: linear-gradient(
+                        135deg,
+                        #9333ea,
+                        #ec4899
+                    );
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                    font-weight: bold;
+                    color: white;
+                    flex-shrink: 0;
                 }}
 
                 .nome {{
                     font-size: 22px;
                     font-weight: 700;
-                    margin-bottom: 22px;
                     color: white;
+                    line-height: 1.2;
                 }}
 
                 .info {{
@@ -537,12 +652,14 @@ elif st.session_state.pagina == "cad":
                     line-height: 1.5;
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 10px;
                 }}
 
-                .emoji {{
-                    font-size: 18px;
-                    width: 24px;
+                .logo {{
+                    width: 20px;
+                    height: 20px;
+                    object-fit: contain;
+                    flex-shrink: 0;
                 }}
 
                 </style>
@@ -552,23 +669,47 @@ elif st.session_state.pagina == "cad":
 
                     <div class="card">
 
-                        <div class="nome">
-                            {c['nome']}
+                        <div class="topo">
+
+                            <div class="avatar">
+                                {avatar}
+                            </div>
+
+                            <div class="nome">
+                                {c['nome']}
+                            </div>
+
                         </div>
 
                         <div class="info">
-                            <span class="emoji">🌐</span>
+                            🌐
                             <span>{c['url'] if c['url'] else 'Sem site'}</span>
                         </div>
 
                         <div class="info">
-                            <span class="emoji">📸</span>
-                            <span>{c['instagram'] if c['instagram'] else 'Sem Instagram'}</span>
+
+                            <img
+                                class="logo"
+                                src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png"
+                            >
+
+                            <span>
+                                {c['instagram'] if c['instagram'] else 'Sem Instagram'}
+                            </span>
+
                         </div>
 
                         <div class="info">
-                            <span class="emoji">👍</span>
-                            <span>{c['fb_page'] if c['fb_page'] else 'Sem Facebook'}</span>
+
+                            <img
+                                class="logo"
+                                src="https://cdn-icons-png.flaticon.com/512/733/733547.png"
+                            >
+
+                            <span>
+                                {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
+                            </span>
+
                         </div>
 
                     </div>
@@ -579,7 +720,7 @@ elif st.session_state.pagina == "cad":
 
                 components.html(
                     card_html,
-                    height=250
+                    height=320
                 )
 
                 b1, b2 = st.columns(2)
