@@ -51,6 +51,9 @@ if "pagina" not in st.session_state:
 if "mostrar_form_concorrente" not in st.session_state:
     st.session_state.mostrar_form_concorrente = False
 
+if "editando_concorrente" not in st.session_state:
+    st.session_state.editando_concorrente = None
+
 # ---------------------------------------------------
 # FUNÇÃO IA
 # ---------------------------------------------------
@@ -326,18 +329,32 @@ elif st.session_state.pagina == "cad":
     if add_clicked:
 
         st.session_state.mostrar_form_concorrente = True
+        st.session_state.editando_concorrente = None
 
         st.rerun()
 
     st.markdown("---")
 
-    # FORMULÁRIO
+    # ---------------------------------------------------
+    # FORM NOVO / EDIÇÃO
+    # ---------------------------------------------------
 
-    if st.session_state.mostrar_form_concorrente:
+    if (
+        st.session_state.mostrar_form_concorrente
+        or st.session_state.editando_concorrente is not None
+    ):
+
+        concorrente_edit = None
+
+        if st.session_state.editando_concorrente is not None:
+
+            concorrente_edit = st.session_state.dados[
+                "concorrentes"
+            ][st.session_state.editando_concorrente]
 
         with st.form(
             "cad_concorrente",
-            clear_on_submit=True
+            clear_on_submit=False
         ):
 
             st.subheader("📄 Identificação")
@@ -345,11 +362,19 @@ elif st.session_state.pagina == "cad":
             c1, c2 = st.columns(2)
 
             n = c1.text_input(
-                "Nome do Concorrente"
+                "Nome do Concorrente",
+                value=(
+                    concorrente_edit["nome"]
+                    if concorrente_edit else ""
+                )
             )
 
             u = c2.text_input(
-                "URL do Site"
+                "URL do Site",
+                value=(
+                    concorrente_edit["url"]
+                    if concorrente_edit else ""
+                )
             )
 
             st.markdown("---")
@@ -359,16 +384,27 @@ elif st.session_state.pagina == "cad":
             c3, c4 = st.columns(2)
 
             insta_handle = c3.text_input(
-                "Instagram (@empresa)",
-                value="@"
+                "Instagram",
+                value=(
+                    concorrente_edit["instagram"]
+                    if concorrente_edit else "@"
+                )
             )
 
             fb_p = c4.text_input(
-                "Facebook"
+                "Facebook",
+                value=(
+                    concorrente_edit["fb_page"]
+                    if concorrente_edit else ""
+                )
             )
 
             ads_manual = st.text_input(
-                "ID Manual Ads (Opcional)"
+                "ID Manual Ads (Opcional)",
+                value=(
+                    concorrente_edit["ads_id"]
+                    if concorrente_edit else ""
+                )
             )
 
             col1, col2 = st.columns(2)
@@ -385,6 +421,7 @@ elif st.session_state.pagina == "cad":
             if cancelar:
 
                 st.session_state.mostrar_form_concorrente = False
+                st.session_state.editando_concorrente = None
 
                 st.rerun()
 
@@ -407,21 +444,40 @@ elif st.session_state.pagina == "cad":
                         or n
                     )
 
-                    st.session_state.dados[
-                        "concorrentes"
-                    ].append({
+                    dados_novos = {
                         "nome": n,
                         "url": u,
                         "instagram": clean_handle,
                         "fb_page": fb_p,
                         "ads_id": search_term
-                    })
+                    }
+
+                    # EDIÇÃO
+                    if st.session_state.editando_concorrente is not None:
+
+                        st.session_state.dados[
+                            "concorrentes"
+                        ][
+                            st.session_state.editando_concorrente
+                        ] = dados_novos
+
+                        st.success(
+                            f"{n} atualizado com sucesso!"
+                        )
+
+                    # NOVO
+                    else:
+
+                        st.session_state.dados[
+                            "concorrentes"
+                        ].append(dados_novos)
+
+                        st.success(
+                            f"{n} cadastrado com sucesso!"
+                        )
 
                     st.session_state.mostrar_form_concorrente = False
-
-                    st.success(
-                        f"{n} cadastrado com sucesso!"
-                    )
+                    st.session_state.editando_concorrente = None
 
                     st.rerun()
 
@@ -429,7 +485,9 @@ elif st.session_state.pagina == "cad":
 
                     st.error("Nome obrigatório.")
 
+    # ---------------------------------------------------
     # GRID DE CARDS
+    # ---------------------------------------------------
 
     concorrentes = st.session_state.dados["concorrentes"]
 
@@ -444,6 +502,7 @@ elif st.session_state.pagina == "cad":
                 card_html = f"""
                 <html>
                 <head>
+
                 <style>
 
                 body {{
@@ -459,23 +518,31 @@ elif st.session_state.pagina == "cad":
                     border-radius: 18px;
                     padding: 22px;
                     color: white;
-                    min-height: 200px;
+                    min-height: 220px;
                     box-sizing: border-box;
                 }}
 
                 .nome {{
                     font-size: 22px;
                     font-weight: 700;
-                    margin-bottom: 20px;
+                    margin-bottom: 22px;
                     color: white;
                 }}
 
                 .info {{
                     font-size: 15px;
                     color: #cbd5e1;
-                    margin-bottom: 12px;
+                    margin-bottom: 14px;
                     word-break: break-word;
                     line-height: 1.5;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }}
+
+                .emoji {{
+                    font-size: 18px;
+                    width: 24px;
                 }}
 
                 </style>
@@ -490,15 +557,18 @@ elif st.session_state.pagina == "cad":
                         </div>
 
                         <div class="info">
-                            🌐 {c['url'] if c['url'] else 'Sem site'}
+                            <span class="emoji">🌐</span>
+                            <span>{c['url'] if c['url'] else 'Sem site'}</span>
                         </div>
 
                         <div class="info">
-                            📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
+                            <span class="emoji">📸</span>
+                            <span>{c['instagram'] if c['instagram'] else 'Sem Instagram'}</span>
                         </div>
 
                         <div class="info">
-                            👍 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
+                            <span class="emoji">👍</span>
+                            <span>{c['fb_page'] if c['fb_page'] else 'Sem Facebook'}</span>
                         </div>
 
                     </div>
@@ -509,20 +579,37 @@ elif st.session_state.pagina == "cad":
 
                 components.html(
                     card_html,
-                    height=230
+                    height=250
                 )
 
-                if st.button(
-                    "🗑️ Remover",
-                    key=f"remove_{i}",
-                    use_container_width=True
-                ):
+                b1, b2 = st.columns(2)
 
-                    st.session_state.dados[
-                        "concorrentes"
-                    ].pop(i)
+                with b1:
 
-                    st.rerun()
+                    if st.button(
+                        "✏️ Editar",
+                        key=f"editar_{i}",
+                        use_container_width=True
+                    ):
+
+                        st.session_state.editando_concorrente = i
+                        st.session_state.mostrar_form_concorrente = False
+
+                        st.rerun()
+
+                with b2:
+
+                    if st.button(
+                        "🗑️ Remover",
+                        key=f"remove_{i}",
+                        use_container_width=True
+                    ):
+
+                        st.session_state.dados[
+                            "concorrentes"
+                        ].pop(i)
+
+                        st.rerun()
 
     else:
 
