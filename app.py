@@ -267,52 +267,11 @@ html, body, [class*="css"] {
     color: #2d3748;
 }
 
-/* Nav item dot accent */
-[data-testid="stSidebar"] div.stButton > button::before {
-    content: "";
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #3d4a5e;
-    margin-right: 10px;
-    vertical-align: middle;
-    flex-shrink: 0;
-    transition: background 0.12s;
-}
-[data-testid="stSidebar"] div.stButton > button:hover::before {
-    background: #6366f1;
-}
+
 
 [data-testid="stSidebar"] div.stButton {
     margin-bottom: 1px !important;
 }
-
-[data-testid="stSidebar"] div.stButton > button {
-    width: 100% !important;
-    border-radius: 6px !important;
-    background-color: transparent !important;
-    color: #6b7280 !important;
-    border: none !important;
-    text-align: left !important;
-    padding: 9px 14px 9px 14px !important;
-    min-height: auto !important;
-    font-size: 13.5px !important;
-    font-weight: 400 !important;
-    white-space: normal !important;
-    box-shadow: none !important;
-    transition: all 0.12s ease !important;
-    font-family: 'DM Sans', sans-serif !important;
-    letter-spacing: 0.1px !important;
-}
-
-[data-testid="stSidebar"] div.stButton > button:hover {
-    background-color: #161c26 !important;
-    color: #e5e7eb !important;
-}
-
-/* Sidebar icons via data-attribute mapping */
-[data-testid="stSidebar"] div.stButton:nth-child(1) > button::before { content: "⬡"; margin-right: 8px; font-size: 13px; opacity: 0.6; }
 
 /* ============ MAIN CONTENT ============ */
 section.main .block-container {
@@ -528,46 +487,116 @@ div[data-testid="stDataFrame"] {
 # ---------------------------------------------------
 
 with st.sidebar:
-    st.markdown("""
-    <div class="sidebar-logo">
-        <div class="sidebar-logo-text">CI Dashboard</div>
-        <div class="sidebar-logo-sub">Competitive Intelligence</div>
-    </div>
-    """, unsafe_allow_html=True)
+    pagina_atual = st.session_state.pagina
 
-    st.markdown('<div class="sidebar-section">Dados Principais</div>', unsafe_allow_html=True)
+    def nav_item(label, icon_svg, page_key):
+        ativo = pagina_atual == page_key
+        bg = "#1e2d42" if ativo else "transparent"
+        cor = "#ffffff" if ativo else "#9ca3af"
+        st.markdown(f"""
+        <div style="margin-bottom:2px;">
+        </div>
+        """, unsafe_allow_html=True)
+        return st.button(label, key=f"nav_{page_key}", use_container_width=True)
 
     st.markdown("""
     <style>
-    .sb-nav-item {
-        display: flex; align-items: center; gap: 10px;
-        padding: 9px 14px; border-radius: 6px;
-        color: #9ca3af; font-size: 14px; font-family: 'DM Sans', sans-serif;
-        font-weight: 400; cursor: default; margin-bottom: 1px;
-        transition: background 0.12s;
-    }
-    .sb-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+    /* Logo */
+    .sb-logo {{ padding: 20px 16px 14px; border-bottom: 1px solid #1e2530; margin-bottom: 6px; }}
+    .sb-logo-title {{ font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }}
+    .sb-logo-sub {{ font-size: 11px; color: #4b5a6e; margin-top: 2px; font-family: DM Sans, sans-serif; }}
+    .sb-section {{ padding: 18px 16px 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; color: #2d3a4a; font-family: DM Sans, sans-serif; }}
+    /* Nav buttons — reset all Streamlit styling */
+    [data-testid="stSidebar"] div.stButton > button {{
+        width: 100% !important;
+        border-radius: 7px !important;
+        background: transparent !important;
+        color: #8a9bb0 !important;
+        border: none !important;
+        text-align: left !important;
+        padding: 9px 12px !important;
+        min-height: 38px !important;
+        font-size: 13.5px !important;
+        font-weight: 400 !important;
+        box-shadow: none !important;
+        font-family: DM Sans, sans-serif !important;
+        letter-spacing: 0.1px !important;
+        display: flex !important;
+        align-items: center !important;
+        transition: background 0.1s, color 0.1s !important;
+    }}
+    [data-testid="stSidebar"] div.stButton > button:hover {{
+        background: #151e2b !important;
+        color: #e2e8f0 !important;
+    }}
+    /* Active page button */
+    [data-testid="stSidebar"] div.stButton > button:focus:not(:active) {{
+        outline: none !important;
+        box-shadow: none !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-    if st.button("Minha Empresa"):
+    # ── Logo
+    st.markdown("""
+    <div class="sb-logo">
+        <div class="sb-logo-title">CI Dashboard</div>
+        <div class="sb-logo-sub">Competitive Intelligence</div>
+    </div>""", unsafe_allow_html=True)
+
+    # ── Nav items via HTML buttons with sendPrompt-style approach
+    # We use st.button but inject SVG icons via preceding markdown
+    pag = st.session_state.pagina
+
+    def nav_icon_btn(label, page_key, svg_path):
+        ativo = pag == page_key
+        bg = "#1a2640" if ativo else "transparent"
+        cor_icon = "#6366f1" if ativo else "#4b5a6e"
+        cor_text = "#f1f5f9" if ativo else "#8a9bb0"
+        st.markdown(f"""<div style="
+            display:flex; align-items:center; gap:10px;
+            background:{bg}; border-radius:7px;
+            padding:9px 12px; margin-bottom:1px; pointer-events:none;
+            font-family:DM Sans,sans-serif; font-size:13.5px; color:{cor_text};
+        ">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="{cor_icon}" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                {svg_path}
+            </svg>
+            {label}
+        </div>""", unsafe_allow_html=True)
+        # Invisible real button for click
+        clicked = st.button(label, key=f"nav_{page_key}")
+        # Hide the duplicate text button via CSS trick with negative margin
+        st.markdown("""<style>
+        [data-testid="stSidebar"] div.stButton:last-child > button {
+            margin-top: -46px !important; opacity: 0 !important; position: relative !important;
+            z-index: 10 !important; height: 38px !important;
+        }
+        </style>""", unsafe_allow_html=True)
+        return clicked
+
+    st.markdown('<div class="sb-section">Dados Principais</div>', unsafe_allow_html=True)
+
+    if st.button("  🏢  Minha Empresa", key="nav_home"):
         trocar_pagina("home")
 
-    if st.button("Concorrentes"):
+    if st.button("  👤  Concorrentes", key="nav_cad"):
         trocar_pagina("cad")
 
-    st.markdown('<div class="sidebar-section">Análise</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-section">Análise</div>', unsafe_allow_html=True)
 
-    if st.button("Visão Geral"):
+    if st.button("  📊  Visão Geral", key="nav_geral"):
         trocar_pagina("geral")
 
-    if st.button("Confronto de Sites"):
+    if st.button("  🌐  Confronto de Sites", key="nav_sites"):
         trocar_pagina("sites")
 
-    if st.button("Biblioteca de Ads"):
+    if st.button("  📢  Biblioteca de Ads", key="nav_ads"):
         trocar_pagina("ads")
 
-    if st.button("IA Battle Cards"):
+    if st.button("  💡  IA Battle Cards", key="nav_insights"):
         trocar_pagina("insights")
 
 # ---------------------------------------------------
