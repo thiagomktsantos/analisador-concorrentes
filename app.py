@@ -271,17 +271,122 @@ if not st.session_state.logado:
 st.markdown("""
 <style>
 
-[data-testid="stSidebar"] {
-    background-color: #1e2327 !important;
+html, body, [class*="css"] {
+    font-family: 'Segoe UI', sans-serif;
 }
 
+[data-testid="stSidebar"] {
+    background: linear-gradient(
+        180deg,
+        #161b22 0%,
+        #111827 100%
+    ) !important;
+    border-right: 1px solid #1f2937;
+}
+
+/* REMOVE EFEITO DE BOTÃO MENU */
+
+[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #d1d5db !important;
+    text-align: left !important;
+    padding: 14px 18px !important;
+    border-radius: 12px !important;
+    font-size: 16px !important;
+    transition: all 0.2s ease;
+}
+
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: #1f2937 !important;
+    color: white !important;
+    transform: none !important;
+}
+
+[data-testid="stSidebar"] .stButton > button:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* HEADER MENU */
+
 .sidebar-header {
-    color: #afb1b3;
+    color: #9ca3af;
     font-size: 11px;
     font-weight: 700;
-    padding: 20px;
+    padding: 24px 18px 10px 18px;
     text-transform: uppercase;
     letter-spacing: 1px;
+}
+
+/* CARDS */
+
+.conc-card {
+    background: linear-gradient(
+        180deg,
+        #1f2937 0%,
+        #111827 100%
+    );
+    border: 1px solid #2d3748;
+    border-radius: 24px;
+    padding: 24px;
+    color: white;
+    min-height: 420px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.conc-top-bar {
+    height: 140px;
+    width: 100%;
+    border-radius: 18px;
+    background: linear-gradient(
+        135deg,
+        #111827,
+        #1e293b
+    );
+    margin-bottom: 24px;
+}
+
+.conc-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(
+        135deg,
+        #9333ea,
+        #ec4899
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin-top: -58px;
+    border: 4px solid #1f2937;
+}
+
+.conc-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 14px;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.conc-info {
+    color: #cbd5e1;
+    font-size: 15px;
+    margin-bottom: 12px;
+    word-break: break-word;
+}
+
+.conc-buttons {
+    margin-top: 26px;
 }
 
 .card-box {
@@ -701,112 +806,75 @@ elif st.session_state.pagina == "cad":
 
     if concorrentes:
 
-        cols = st.columns(3)
+        cols = st.columns(2)
 
         for i, c in enumerate(concorrentes):
 
-            with cols[i % 3]:
+            with cols[i % 2]:
 
                 avatar = gerar_avatar(c["nome"])
 
-                with st.container():
+                st.markdown(
+                    f"""
+                    <div class="conc-card">
 
-                    st.markdown("""
-                    <div style="
-                        background:#1f2937;
-                        border:1px solid #2d3748;
-                        border-radius:18px;
-                        padding:22px;
-                        color:white;
-                        min-height:320px;
-                    ">
-                    """, unsafe_allow_html=True)
+                        <div class="conc-top-bar"></div>
 
-                    col_avatar, col_nome = st.columns([1, 3])
+                        <div class="conc-avatar">
+                            {avatar}
+                        </div>
 
-                    with col_avatar:
+                        <div class="conc-title">
+                            {c['nome']}
+                        </div>
 
-                        st.markdown(
-                            f"""
-                            <div style="
-                                width:60px;
-                                height:60px;
-                                border-radius:50%;
-                                background:linear-gradient(135deg,#9333ea,#ec4899);
-                                display:flex;
-                                align-items:center;
-                                justify-content:center;
-                                font-size:22px;
-                                font-weight:bold;
-                                color:white;
-                            ">
-                                {avatar}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                    with col_nome:
-
-                        st.markdown(
-                            f"""
-                            <h3 style="
-                                margin-top:10px;
-                                color:white;
-                            ">
-                                {c['nome']}
-                            </h3>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                    st.markdown(
-                        f"""
-                        <p style="color:#cbd5e1;">
+                        <div class="conc-info">
                             🌐 {c['url'] if c['url'] else 'Sem site'}
-                        </p>
+                        </div>
 
-                        <p style="color:#cbd5e1;">
+                        <div class="conc-info">
                             📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                        </p>
+                        </div>
 
-                        <p style="color:#cbd5e1;">
+                        <div class="conc-info">
                             📘 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
-                        </p>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                        </div>
 
-                    b1, b2 = st.columns(2)
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                    with b1:
+                b1, b2 = st.columns(2)
 
-                        if st.button(
-                            "✏️ Editar",
-                            key=f"editar_{i}",
-                            use_container_width=True
-                        ):
+                with b1:
 
-                            st.session_state.editando_concorrente = i
-                            st.session_state.mostrar_form_concorrente = False
+                    if st.button(
+                        "✏️ Editar",
+                        key=f"editar_{i}",
+                        use_container_width=True
+                    ):
 
-                            st.rerun()
+                        st.session_state.editando_concorrente = i
+                        st.session_state.mostrar_form_concorrente = False
 
-                    with b2:
+                        st.rerun()
 
-                        if st.button(
-                            "🗑️ Remover",
-                            key=f"remove_{i}",
-                            use_container_width=True
-                        ):
+                with b2:
 
-                            st.session_state.dados[
-                                "concorrentes"
-                            ].pop(i)
+                    if st.button(
+                        "🗑️ Remover",
+                        key=f"remove_{i}",
+                        use_container_width=True
+                    ):
 
-                            st.rerun()
+                        st.session_state.dados[
+                            "concorrentes"
+                        ].pop(i)
 
-                    st.markdown("</div>", unsafe_allow_html=True)
+                        st.rerun()
+
+                st.markdown("<br>", unsafe_allow_html=True)
 
     else:
 
