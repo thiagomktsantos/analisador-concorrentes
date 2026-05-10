@@ -554,14 +554,14 @@ with st.sidebar:
         color: #8a95a3 !important;
         border: none !important;
         text-align: left !important;
-        padding: 8px 14px !important;
+        padding: 5px 14px !important;
         min-height: auto !important;
         font-size: 14.5px !important;
         font-weight: 700 !important;
         box-shadow: none !important;
         transition: all 0.15s ease !important;
         font-family: DM Sans, sans-serif !important;
-        line-height: 1.45 !important;
+        line-height: 1.4 !important;
         letter-spacing: -0.1px !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
@@ -591,7 +591,7 @@ with st.sidebar:
     if st.button("📈   Visão Geral"):
         trocar_pagina("geral")
 
-    if st.button("𝕏 ·  🔵 ·  📸   Redes Sociais"):
+    if st.button("📱   Redes Sociais"):
         trocar_pagina("redes")
 
     if st.button("🔍   Confronto de Sites"):
