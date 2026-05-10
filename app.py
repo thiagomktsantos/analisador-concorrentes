@@ -18,10 +18,24 @@ st.set_page_config(
 # CONFIGURAÇÃO GEMINI
 # ---------------------------------------------------
 
+# CORREÇÃO:
+# O erro aconteceu porque estava escrito:
+# st.serets
+# o correto é:
+# st.secrets
+
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.serets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel("gemini-pro")
+
+    genai.configure(
+        api_key=st.secrets["GEMINI_API_KEY"]
+    )
+
+    model = genai.GenerativeModel(
+        "gemini-pro"
+    )
+
 else:
+
     model = None
 
 # ---------------------------------------------------
@@ -80,6 +94,10 @@ if "dados" not in st.session_state:
         "concorrentes": []
     }
 
+# ---------------------------------------------------
+# GARANTE CAMPOS NOVOS
+# ---------------------------------------------------
+
 empresa = st.session_state.dados["minha_empresa"]
 
 if "estado" not in empresa:
@@ -123,7 +141,6 @@ def limpar_site(url):
 
     url = url.strip().lower()
 
-    # REMOVE HTTP/HTTPS
     url = re.sub(
         r"^https?:\/\/",
         "",
@@ -131,7 +148,6 @@ def limpar_site(url):
         flags=re.IGNORECASE
     )
 
-    # REMOVE WWW
     url = re.sub(
         r"^www\.",
         "",
@@ -139,7 +155,7 @@ def limpar_site(url):
         flags=re.IGNORECASE
     )
 
-    # REMOVE ACENTOS E CARACTERES ESPECIAIS
+    # REMOVE ACENTOS
     url = (
         url.replace("á", "a")
         .replace("à", "a")
@@ -310,10 +326,6 @@ st.markdown("""
     border: none !important;
     font-weight: 600 !important;
     height: 45px !important;
-}
-
-.add-button button:hover {
-    background: #2f89d1 !important;
 }
 
 .service-tag {
