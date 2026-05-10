@@ -299,7 +299,7 @@ if not st.session_state.logado:
     st.stop()
 
 # ---------------------------------------------------
-# CSS GLOBAL
+# CSS
 # ---------------------------------------------------
 
 st.markdown("""
@@ -341,36 +341,6 @@ st.markdown("""
     border: 1px solid #2d3748;
     color: white;
     margin-bottom: 20px;
-}
-
-.card-concorrente {
-    background: #1f2937;
-    border: 1px solid #2d3748;
-    border-radius: 18px;
-    padding: 22px;
-    color: white;
-    min-height: 360px;
-    margin-bottom: 20px;
-}
-
-.avatar-concorrente {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg,#9333ea,#ec4899);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-    font-weight:bold;
-    color:white;
-}
-
-.info-concorrente {
-    color:#cbd5e1;
-    margin-bottom:12px;
-    font-size:15px;
-    word-break:break-word;
 }
 
 .service-tag {
@@ -875,41 +845,40 @@ elif st.session_state.pagina == "cad":
 
                 st.markdown(
                     f"""
-                    <div class="card-concorrente">
+                    <div class="card-box">
+
+                    <div style="
+                        display:flex;
+                        align-items:center;
+                        gap:15px;
+                        margin-bottom:20px;
+                    ">
 
                         <div style="
+                            width:60px;
+                            height:60px;
+                            border-radius:50%;
+                            background:linear-gradient(135deg,#9333ea,#ec4899);
                             display:flex;
                             align-items:center;
-                            gap:15px;
-                            margin-bottom:20px;
+                            justify-content:center;
+                            font-size:22px;
+                            font-weight:bold;
                         ">
-
-                            <div class="avatar-concorrente">
-                                {avatar}
-                            </div>
-
-                            <div>
-                                <h3 style="
-                                    margin:0;
-                                    color:white;
-                                ">
-                                    {c['nome']}
-                                </h3>
-                            </div>
-
+                            {avatar}
                         </div>
 
-                        <div class="info-concorrente">
-                            🌐 {c['url'] if c['url'] else 'Sem site'}
+                        <div>
+                            <h3 style="margin:0;">
+                                {c['nome']}
+                            </h3>
                         </div>
 
-                        <div class="info-concorrente">
-                            📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                        </div>
+                    </div>
 
-                        <div class="info-concorrente">
-                            📘 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
-                        </div>
+                    <p>🌐 {c['url']}</p>
+                    <p>📸 {c['instagram']}</p>
+                    <p>📘 {c['fb_page']}</p>
 
                     </div>
                     """,
