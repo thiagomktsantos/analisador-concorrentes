@@ -820,89 +820,76 @@ if st.session_state.pagina == "home":
         else:
             servicos_block = ""
 
-        card_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <style>
-            body {{ margin:0; padding:0; background:transparent; font-family: sans-serif; }}
-            .card {{
-                background:#1a2235;
-                border:1px solid #2d3f5e;
-                border-radius:16px;
-                padding:28px 32px;
-                box-shadow:0 4px 24px rgba(0,0,0,0.3);
-                max-width:780px;
-            }}
-            .top {{ display:flex; align-items:center; gap:18px; margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid #2d3f5e; }}
-            .avatar {{
-                width:64px; height:64px; min-width:64px; border-radius:50%;
-                background:linear-gradient(135deg,#3b82f6,#8b5cf6);
-                display:flex; align-items:center; justify-content:center;
-                font-size:24px; font-weight:bold; color:white; flex-shrink:0;
-            }}
-            .nome {{ margin:0 0 4px 0; font-size:22px; font-weight:700; color:#f1f5f9; }}
-            .subtitulo {{ margin:0; font-size:13px; color:#94a3b8; }}
-            .grid {{ display:grid; grid-template-columns:1fr 1fr; gap:0 40px; }}
-            .grupo-titulo {{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin:0 0 10px 0; padding-bottom:6px; border-bottom:1px solid #1e3a5f; }}
-            .row {{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }}
-            .row-icon {{ font-size:15px; width:20px; flex-shrink:0; margin-top:1px; }}
-            .row-label {{ font-size:11px; color:#64748b; display:block; margin-bottom:1px; }}
-            .row-value {{ font-size:14px; color:#cbd5e1; }}
-        </style>
-        </head>
-        <body>
+        SVG_MAP = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
+        SVG_IG  = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
+        SVG_FB  = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>'
+        SVG_WEB = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+
+        if emp["servicos"]:
+            servicos_tags = "".join([
+                f"<span style='background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:3px 10px;border-radius:20px;font-size:11px;margin-right:5px;display:inline-block;margin-bottom:5px'>{s}</span>"
+                for s in emp["servicos"]
+            ])
+            servicos_block = f"""
+            <div style='margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb'>
+                <div style='font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:8px'>Servicos</div>
+                {servicos_tags}
+            </div>"""
+        else:
+            servicos_block = ""
+
+        card_html = f"""<!DOCTYPE html><html><head><style>
+            *{{margin:0;padding:0;box-sizing:border-box}}
+            body{{background:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}
+            .card{{background:#f9fafb;border:1px solid #e5e7eb;border-radius:14px;padding:24px 28px;max-width:780px}}
+            .top{{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid #f3f4f6}}
+            .avatar{{width:52px;height:52px;min-width:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}}
+            .nome{{font-size:18px;font-weight:700;color:#111827;margin-bottom:2px}}
+            .sub{{font-size:12px;color:#9ca3af}}
+            .grid{{display:grid;grid-template-columns:1fr 1fr;gap:0 32px}}
+            .sec-title{{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#d1d5db;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #f3f4f6}}
+            .row{{display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}}
+            .ico{{width:16px;flex-shrink:0;margin-top:13px}}
+            .lbl{{font-size:10px;color:#9ca3af;display:block;margin-bottom:2px}}
+            .val{{font-size:13px;color:#374151;font-weight:500}}
+        </style></head><body>
         <div class="card">
             <div class="top">
                 <div class="avatar">{avatar}</div>
                 <div>
-                    <h2 class="nome">{emp['nome']}</h2>
-                    <p class="subtitulo">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</p>
+                    <div class="nome">{emp['nome']}</div>
+                    <div class="sub">{emp['setor']}{' &middot; ' + emp['tipo'] if emp['tipo'] else ''}</div>
                 </div>
             </div>
             <div class="grid">
                 <div>
-                    <div class="grupo-titulo">📍 Localização</div>
+                    <div class="sec-title">Localizacao</div>
                     <div class="row">
-                        <span class="row-icon">🗺️</span>
-                        <div>
-                            <span class="row-label">Cidade / Estado</span>
-                            <span class="row-value">{loc or '—'}</span>
-                        </div>
+                        <span class="ico">{SVG_MAP}</span>
+                        <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '&mdash;'}</span></div>
                     </div>
                 </div>
                 <div>
-                    <div class="grupo-titulo">🌐 Presença Digital</div>
+                    <div class="sec-title">Presenca Digital</div>
                     <div class="row">
-                        <span class="row-icon">📸</span>
-                        <div>
-                            <span class="row-label">Instagram</span>
-                            <span class="row-value">{emp['instagram'] or '—'}</span>
-                        </div>
+                        <span class="ico">{SVG_IG}</span>
+                        <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '&mdash;'}</span></div>
                     </div>
                     <div class="row">
-                        <span class="row-icon">📘</span>
-                        <div>
-                            <span class="row-label">Facebook</span>
-                            <span class="row-value">{emp['fb_page'] or '—'}</span>
-                        </div>
+                        <span class="ico">{SVG_FB}</span>
+                        <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '&mdash;'}</span></div>
                     </div>
                     <div class="row">
-                        <span class="row-icon">🔗</span>
-                        <div>
-                            <span class="row-label">Site</span>
-                            <span class="row-value">{emp['site'] or '—'}</span>
-                        </div>
+                        <span class="ico">{SVG_WEB}</span>
+                        <div><span class="lbl">Site</span><span class="val">{emp['site'] or '&mdash;'}</span></div>
                     </div>
                 </div>
             </div>
             {servicos_block}
         </div>
-        </body>
-        </html>
-        """
+        </body></html>"""
 
-        altura = 260 + (len(emp["servicos"]) > 0) * 60
+        altura = 255 + (len(emp["servicos"]) > 0) * 55
         components.html(card_html, height=altura, scrolling=False)
 
 # ---------------------------------------------------
@@ -1068,56 +1055,43 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
+                SVG_IG2  = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
+                SVG_FB2  = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>'
+                SVG_WEB2 = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+
                 card_html = f"""<!DOCTYPE html><html><head><style>
-                * {{ margin:0; padding:0; box-sizing:border-box; }}
-                body {{ background:transparent; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }}
-                .card {{
-                    background:#1a2235;
-                    border:1px solid #2d3f5e;
-                    border-radius:14px;
-                    padding:20px;
-                    box-shadow:0 4px 20px rgba(0,0,0,0.3);
-                }}
-                .header {{
-                    display:flex; align-items:center; gap:12px; margin-bottom:16px;
-                    padding-bottom:14px; border-bottom:1px solid #243354;
-                }}
-                .avatar {{
-                    width:46px; height:46px; border-radius:50%;
-                    background:linear-gradient(135deg,#9333ea,#ec4899);
-                    display:flex; align-items:center; justify-content:center;
-                    font-size:17px; font-weight:700; color:#fff; flex-shrink:0;
-                }}
-                .name {{ font-size:16px; font-weight:600; color:#f1f5f9; }}
-                .info-row {{
-                    display:flex; align-items:center; gap:8px;
-                    margin-bottom:8px;
-                }}
-                .info-icon {{ font-size:14px; width:18px; flex-shrink:0; }}
-                .info-label {{ font-size:11px; color:#64748b; display:block; margin-bottom:1px; }}
-                .info-value {{ font-size:13px; color:#94a3b8; }}
+                *{{margin:0;padding:0;box-sizing:border-box}}
+                body{{background:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}
+                .card{{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:18px}}
+                .header{{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f3f4f6}}
+                .avatar{{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}}
+                .name{{font-size:14px;font-weight:600;color:#111827}}
+                .row{{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}}
+                .ico{{width:15px;flex-shrink:0;margin-top:11px}}
+                .lbl{{font-size:10px;color:#9ca3af;display:block;margin-bottom:1px}}
+                .val{{font-size:12px;color:#374151;font-weight:500}}
                 </style></head><body>
                 <div class="card">
                     <div class="header">
                         <div class="avatar">{avatar}</div>
                         <span class="name">{c['nome']}</span>
                     </div>
-                    <div class="info-row">
-                        <span class="info-icon">🌐</span>
-                        <div><span class="info-label">Site</span><span class="info-value">{c['url'] or '—'}</span></div>
+                    <div class="row">
+                        <span class="ico">{SVG_WEB2}</span>
+                        <div><span class="lbl">Site</span><span class="val">{c['url'] or '&mdash;'}</span></div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-icon">📸</span>
-                        <div><span class="info-label">Instagram</span><span class="info-value">{c['instagram'] or '—'}</span></div>
+                    <div class="row">
+                        <span class="ico">{SVG_IG2}</span>
+                        <div><span class="lbl">Instagram</span><span class="val">{c['instagram'] or '&mdash;'}</span></div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-icon">📘</span>
-                        <div><span class="info-label">Facebook</span><span class="info-value">{c['fb_page'] or '—'}</span></div>
+                    <div class="row">
+                        <span class="ico">{SVG_FB2}</span>
+                        <div><span class="lbl">Facebook</span><span class="val">{c['fb_page'] or '&mdash;'}</span></div>
                     </div>
                 </div>
                 </body></html>"""
 
-                components.html(card_html, height=210, scrolling=False)
+                components.html(card_html, height=200, scrolling=False)
 
                 b1, b2 = st.columns(2)
                 with b1:
