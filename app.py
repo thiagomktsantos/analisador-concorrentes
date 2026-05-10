@@ -80,6 +80,30 @@ if "dados" not in st.session_state:
         "concorrentes": []
     }
 
+# ---------------------------------------------------
+# CORREÇÃO CAMPOS ANTIGOS
+# ---------------------------------------------------
+
+empresa = st.session_state.dados["minha_empresa"]
+
+if "estado" not in empresa:
+    empresa["estado"] = ""
+
+if "cidade" not in empresa:
+    empresa["cidade"] = ""
+
+if "site" not in empresa:
+    empresa["site"] = ""
+
+if "instagram" not in empresa:
+    empresa["instagram"] = "@"
+
+if "fb_page" not in empresa:
+    empresa["fb_page"] = ""
+
+if "servicos" not in empresa:
+    empresa["servicos"] = []
+
 if "logado" not in st.session_state:
     st.session_state.logado = False
 
@@ -101,9 +125,7 @@ def limpar_site(url):
     if not url:
         return ""
 
-    url = url.strip()
-
-    return url
+    return url.strip()
 
 
 def gerar_avatar(nome):
@@ -136,6 +158,9 @@ def obter_instagram_handle(valor):
     )
 
     valor = valor.strip("/")
+
+    if valor.startswith("@"):
+        return valor
 
     return f"@{valor}" if valor else ""
 
@@ -226,8 +251,6 @@ st.markdown("""
     letter-spacing: 1px;
 }
 
-/* MENU */
-
 [data-testid="stSidebar"] div.stButton > button {
     width: 100%;
     border-radius: 0px !important;
@@ -250,8 +273,6 @@ st.markdown("""
     transform: none !important;
 }
 
-/* BOTÃO */
-
 .add-button button {
     background: #2271b1 !important;
     border-radius: 10px !important;
@@ -264,8 +285,6 @@ st.markdown("""
 .add-button button:hover {
     background: #2f89d1 !important;
 }
-
-/* TAG */
 
 .service-tag {
     background-color: #2271b1;
@@ -359,11 +378,10 @@ if st.session_state.pagina == "home":
 
     estados = list(ESTADOS_CIDADES.keys())
 
-    estado_index = (
-        estados.index(emp["estado"])
-        if emp["estado"] in estados
-        else 0
-    )
+    estado_index = 0
+
+    if emp["estado"] in estados:
+        estado_index = estados.index(emp["estado"])
 
     emp["estado"] = loc1.selectbox(
         "Estado",
@@ -376,11 +394,10 @@ if st.session_state.pagina == "home":
         []
     )
 
-    cidade_index = (
-        cidades.index(emp["cidade"])
-        if emp["cidade"] in cidades
-        else 0
-    )
+    cidade_index = 0
+
+    if emp["cidade"] in cidades:
+        cidade_index = cidades.index(emp["cidade"])
 
     emp["cidade"] = loc2.selectbox(
         "Cidade",
