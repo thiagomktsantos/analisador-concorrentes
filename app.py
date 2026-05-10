@@ -5,7 +5,7 @@ import re
 import unicodedata
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO
 # ---------------------------------------------------
 
 st.set_page_config(
@@ -26,20 +26,14 @@ else:
     model = None
 
 # ---------------------------------------------------
-# ESTADOS / CIDADES
+# DADOS
 # ---------------------------------------------------
 
 ESTADOS_CIDADES = {
     "São Paulo": ["São Paulo", "Campinas", "Santos"],
     "Rio de Janeiro": ["Rio de Janeiro", "Niterói"],
-    "Minas Gerais": ["Belo Horizonte", "Uberlândia"],
-    "Bahia": ["Salvador", "Feira de Santana"],
-    "Paraná": ["Curitiba", "Londrina"],
+    "Minas Gerais": ["Belo Horizonte", "Uberlândia"]
 }
-
-# ---------------------------------------------------
-# STATE
-# ---------------------------------------------------
 
 if "dados" not in st.session_state:
 
@@ -58,8 +52,6 @@ if "dados" not in st.session_state:
         "concorrentes": []
     }
 
-empresa = st.session_state.dados["minha_empresa"]
-
 if "pagina" not in st.session_state:
     st.session_state.pagina = "home"
 
@@ -68,9 +60,6 @@ if "logado" not in st.session_state:
 
 if "editar_empresa" not in st.session_state:
     st.session_state.editar_empresa = False
-
-if "editando_concorrente" not in st.session_state:
-    st.session_state.editando_concorrente = None
 
 # ---------------------------------------------------
 # FUNÇÕES
@@ -117,6 +106,24 @@ st.markdown("""
     border-radius: 10px;
 }
 
+/* CARD LIMPO SEM ESCAPE HTML */
+
+.card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 15px;
+}
+
+.badge {
+    background: #2563eb;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -154,26 +161,21 @@ if st.session_state.pagina == "home":
 
     st.title("🏢 Minha Empresa")
 
-    emp = empresa
+    emp = st.session_state.dados["minha_empresa"]
 
-    st.text_input("Nome", key="nome_empresa", value=emp["nome"])
-    emp["nome"] = st.session_state["nome_empresa"]
-
-    st.selectbox("Setor", ["Marketing","Tecnologia"], key="setor")
-    emp["setor"] = st.session_state["setor"]
-
-    st.text_input("Instagram", key="insta", value=emp["instagram"])
-    emp["instagram"] = st.session_state["insta"]
+    emp["nome"] = st.text_input("Nome", emp["nome"])
+    emp["instagram"] = st.text_input("Instagram", emp["instagram"])
+    emp["site"] = st.text_input("Site", emp["site"])
 
 # ---------------------------------------------------
-# CONCORRENTES (CORRIGIDO)
+# CONCORRENTES (CORRIGIDO SEM HTML QUEBRA)
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "cad":
 
     st.title("👥 Concorrentes")
 
-    nome = st.text_input("Nome")
+    nome = st.text_input("Nome concorrente")
     site = st.text_input("Site")
 
     if st.button("Adicionar"):
@@ -193,6 +195,7 @@ elif st.session_state.pagina == "cad":
 
     if not concorrentes:
         st.info("Nenhum concorrente cadastrado.")
+
     else:
 
         cols = st.columns(2)
@@ -201,6 +204,7 @@ elif st.session_state.pagina == "cad":
 
             with cols[i % 2]:
 
+                # CARD NATIVO (SEM HTML)
                 with st.container():
 
                     st.markdown("### " + c["nome"])
@@ -211,11 +215,11 @@ elif st.session_state.pagina == "cad":
                     c1, c2 = st.columns(2)
 
                     with c1:
-                        if st.button("Editar", key=f"e{i}"):
+                        if st.button("Editar", key=f"edit_{i}"):
                             st.session_state.editando_concorrente = i
 
                     with c2:
-                        if st.button("Remover", key=f"r{i}"):
+                        if st.button("Remover", key=f"del_{i}"):
                             st.session_state.dados["concorrentes"].pop(i)
                             st.rerun()
 
@@ -243,7 +247,7 @@ elif st.session_state.pagina == "ads":
 
         with st.expander(c["nome"]):
 
-            st.write("Termo:", c["nome"])
+            st.write("Busca:", c["nome"])
 
             st.link_button(
                 "Abrir Ads Library",
@@ -276,7 +280,7 @@ elif st.session_state.pagina == "insights":
 
         if st.button("Gerar"):
 
-            st.write("Estratégia contra:", alvo)
+            st.success(f"Estratégia gerada contra {alvo}")
 
     else:
         st.info("Adicione concorrentes.")
