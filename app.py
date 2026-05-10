@@ -267,8 +267,6 @@ html, body, [class*="css"] {
     color: #2d3748;
 }
 
-
-
 [data-testid="stSidebar"] div.stButton {
     margin-bottom: 1px !important;
 }
@@ -337,7 +335,6 @@ section.main div.stFormSubmitButton > button:hover {
     background: #1f2937 !important;
 }
 
-/* Override Streamlit red/purple primary everywhere */
 section.main button[data-baseweb="button"][kind="primary"] {
     background: #111827 !important;
     color: #ffffff !important;
@@ -472,8 +469,6 @@ details summary {
     line-height: 1.6;
 }
 
-/* ============ CARD EMPRESA (IFRAME) ============ */
-
 /* ============ SELECTBOX ============ */
 div[data-baseweb="select"] > div {
     border-radius: 7px !important;
@@ -487,6 +482,16 @@ div[data-testid="stDataFrame"] {
     border-radius: 10px !important;
     overflow: hidden !important;
     border: 1px solid #e5e7eb !important;
+}
+
+/* ============ TEXTAREA ============ */
+section.main div[data-testid="stTextArea"] textarea {
+    font-size: 15px !important;
+    border-radius: 7px !important;
+    border: 1px solid #e5e7eb !important;
+    font-family: 'DM Sans', sans-serif !important;
+    color: #111827 !important;
+    resize: vertical !important;
 }
 
 </style>
@@ -544,6 +549,7 @@ with st.sidebar:
 
     if st.button("💡  IA Battle Cards"):
         trocar_pagina("insights")
+
 # ---------------------------------------------------
 # POPUP ALERTA
 # ---------------------------------------------------
@@ -626,18 +632,41 @@ if st.session_state.pagina == "home":
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-        # ── Linha 1: somente Nome
-        sec_header("Informações Gerais")
-        emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
+        # ── Linha principal: 2 colunas lado a lado
+        col_left, col_right = st.columns(2)
 
-        # ── Linha 2: Setor + Sub-nicho (selecionável)
-        col_s, col_t = st.columns(2)
-        setor_opcoes = list(SUBNICHOS.keys())
-        setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
-        emp["setor"] = col_s.selectbox("Setor", setor_opcoes, index=setor_idx)
-        subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-        tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
-        emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
+        with col_left:
+            sec_header("Informações Gerais")
+            emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
+
+            col_s, col_t = st.columns(2)
+            setor_opcoes = list(SUBNICHOS.keys())
+            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+            emp["setor"] = col_s.selectbox("Setor", setor_opcoes, index=setor_idx)
+            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+            tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+            emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
+
+        with col_right:
+            sec_header("Serviços")
+            servicos_text = st.text_area(
+                "Serviços (um por linha)",
+                value="\n".join(emp["servicos"]),
+                height=178,
+                label_visibility="collapsed",
+                placeholder="Ex:\nTráfego Pago\nSEO\nSocial Media"
+            )
+            emp["servicos"] = [s.strip() for s in servicos_text.splitlines() if s.strip()]
+
+        divider()
+
+        # ── Presença Digital (antes de Localização)
+        sec_header("Presença Digital")
+        col_ig, col_fb, col_site = st.columns(3)
+        emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
+        emp["fb_page"] = col_fb.text_input("Facebook", emp["fb_page"])
+        site_digitado = col_site.text_input("Site", emp["site"])
+        emp["site"] = limpar_site(site_digitado)
 
         divider()
 
@@ -650,35 +679,6 @@ if st.session_state.pagina == "home":
         cidades = ESTADOS_CIDADES.get(emp["estado"], [])
         cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
         emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
-
-        divider()
-
-        # ── Redes Sociais + Site — 3 colunas na mesma linha
-        sec_header("Presença Digital")
-        col_ig, col_fb, col_site = st.columns(3)
-        emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
-        emp["fb_page"] = col_fb.text_input("Facebook", emp["fb_page"])
-        site_digitado = col_site.text_input("Site", emp["site"])
-        emp["site"] = limpar_site(site_digitado)
-
-        divider()
-
-        # ── Serviços
-        sec_header("Serviços")
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-        col_inp, col_btn = st.columns([5, 1])
-        novo_servico = col_inp.text_input("Novo serviço", label_visibility="collapsed", placeholder="Ex: Tráfego Pago")
-        adicionar = col_btn.button("＋ Adicionar", use_container_width=True)
-        if adicionar and novo_servico.strip():
-            emp["servicos"].append(novo_servico.strip())
-            st.rerun()
-
-        if emp["servicos"]:
-            tags_html = "".join([
-                f"<span style='background:#f1f5f9;color:#1e40af;border:1px solid #bfdbfe;padding:5px 14px;border-radius:20px;font-size:14px;margin-right:8px;display:inline-block;margin-bottom:8px;font-family:DM Sans,sans-serif'>{s} <span onclick=\"\" style='cursor:pointer;margin-left:4px;color:#93c5fd'>✕</span></span>"
-                for s in emp["servicos"]
-            ])
-            st.markdown(tags_html, unsafe_allow_html=True)
 
         divider()
 
@@ -830,9 +830,8 @@ if st.session_state.pagina == "home":
 </html>"""
 
         n_servicos = len(emp["servicos"])
-        # 300 base (header + grid) + 80 (services header padding) + rows*50 per 3 items
         if n_servicos > 0:
-            linhas = max(1, -(-n_servicos // 3))  # ceiling div
+            linhas = max(1, -(-n_servicos // 3))
             altura = 320 + 80 + linhas * 52
         else:
             altura = 320
