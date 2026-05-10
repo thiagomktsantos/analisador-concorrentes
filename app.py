@@ -118,15 +118,49 @@ st.markdown("""
     letter-spacing: 1px;
 }
 
+/* MENU LATERAL ORIGINAL */
+
 [data-testid="stSidebar"] div.stButton > button {
     width: 100%;
-    border-radius: 0px;
-    background-color: transparent;
-    color: #eee;
-    border: none;
-    border-bottom: 1px solid #2c3338;
-    text-align: left;
-    padding: 15px 20px;
+    border-radius: 0px !important;
+    background-color: transparent !important;
+    color: #eee !important;
+    border: none !important;
+    border-bottom: 1px solid #2c3338 !important;
+    text-align: left !important;
+    padding: 15px 20px !important;
+    min-height: auto !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    white-space: normal !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stSidebar"] div.stButton > button:hover {
+    background-color: #2c3338 !important;
+    border: none !important;
+    transform: none !important;
+}
+
+/* CARD ADICIONAR */
+
+div[data-testid="stVerticalBlock"] div.stButton > button[kind="secondary"] {
+    background: rgba(34,113,177,0.12);
+    border: 2px dashed #2271b1;
+    border-radius: 14px;
+    padding: 35px 20px;
+    min-height: 140px;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    transition: 0.2s;
+    white-space: pre-line;
+}
+
+div[data-testid="stVerticalBlock"] div.stButton > button[kind="secondary"]:hover {
+    border-color: #3b82f6;
+    background: rgba(34,113,177,0.22);
+    transform: translateY(-2px);
 }
 
 .service-tag {
@@ -167,32 +201,11 @@ st.markdown("""
     font-size: 14px;
 }
 
-/* CARD ADICIONAR */
-
-div[data-testid="stButton"] > button[kind="secondary"] {
-    background: rgba(34,113,177,0.12);
-    border: 2px dashed #2271b1;
-    border-radius: 14px;
-    padding: 35px 20px;
-    min-height: 140px;
-    font-size: 22px;
-    font-weight: 700;
-    color: white;
-    transition: 0.2s;
-    white-space: pre-line;
-}
-
-div[data-testid="stButton"] > button[kind="secondary"]:hover {
-    border-color: #3b82f6;
-    background: rgba(34,113,177,0.22);
-    transform: translateY(-2px);
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# MENU LATERAL ORIGINAL
+# MENU LATERAL
 # ---------------------------------------------------
 
 with st.sidebar:
