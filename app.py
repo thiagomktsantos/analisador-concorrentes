@@ -305,6 +305,7 @@ if not st.session_state.logado:
 st.markdown("""
 <style>
 
+/* ============ SIDEBAR ============ */
 [data-testid="stSidebar"] {
     background-color: #1e2327 !important;
 }
@@ -313,9 +314,13 @@ st.markdown("""
     color: #afb1b3;
     font-size: 11px;
     font-weight: 700;
-    padding: 20px;
+    padding: 16px 20px 8px 20px;
     text-transform: uppercase;
     letter-spacing: 1px;
+    display: block;
+    width: 100%;
+    border-top: 1px solid #2c3338;
+    margin-top: 4px;
 }
 
 [data-testid="stSidebar"] div.stButton > button {
@@ -334,51 +339,34 @@ st.markdown("""
     box-shadow: none !important;
 }
 
-/* Estiliza o container nativo do Streamlit como card escuro */
+/* ============ CARDS ============ */
+
+/* container nativo como card escuro */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #1f2937 !important;
     border: 1px solid #2d3748 !important;
-    border-radius: 18px !important;
+    border-radius: 16px !important;
     box-shadow: none !important;
-    height: 100% !important;
+    min-height: 260px !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] > div {
-    height: 100% !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] {
-    height: 100% !important;
+    flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
 }
 
-/* iguala altura de todas as colunas */
-[data-testid="stHorizontalBlock"] {
-    align-items: stretch !important;
-}
-
-[data-testid="stHorizontalBlock"] > [data-testid="column"] {
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-[data-testid="stHorizontalBlock"] > [data-testid="column"] > div {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-[data-testid="stHorizontalBlock"] > [data-testid="column"] > div > [data-testid="stVerticalBlock"] {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
 .card-inner {
     flex: 1;
-    margin-bottom: 8px;
 }
 
 .card-avatar {
@@ -419,11 +407,14 @@ st.markdown("""
     font-size: 14px;
 }
 
-/* alinha botão Adicionar com o título */
-[data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"]:last-child {
+/* ============ BOTÃO ADICIONAR ============ */
+/* empurra o botão para baixo alinhando com base do título */
+[data-testid="stSidebar"] ~ div [data-testid="stHorizontalBlock"]:first-of-type
+    > [data-testid="column"]:last-child
+    > div {
     display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
+    align-items: flex-end !important;
+    padding-bottom: 10px !important;
 }
 
 .service-tag {
@@ -480,6 +471,7 @@ st.markdown("""
 with st.sidebar:
 
     st.markdown(
+        '<hr style="border:none;border-top:1px solid #2c3338;margin:8px 0 0 0"/>'
         '<div class="sidebar-header">Dados Principais</div>',
         unsafe_allow_html=True
     )
@@ -491,6 +483,7 @@ with st.sidebar:
         trocar_pagina("cad")
 
     st.markdown(
+        '<hr style="border:none;border-top:1px solid #2c3338;margin:8px 0 0 0"/>'
         '<div class="sidebar-header">Análise</div>',
         unsafe_allow_html=True
     )
