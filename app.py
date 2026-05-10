@@ -2,7 +2,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import google.generativeai as genai
 import pandas as pd
-import trafilatura
 import re
 import unicodedata
 
@@ -20,17 +19,9 @@ st.set_page_config(
 # ---------------------------------------------------
 
 if "GEMINI_API_KEY" in st.secrets:
-
-    genai.configure(
-        api_key=st.secrets["GEMINI_API_KEY"]
-    )
-
-    model = genai.GenerativeModel(
-        "gemini-pro"
-    )
-
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel("gemini-pro")
 else:
-
     model = None
 
 # ---------------------------------------------------
@@ -72,7 +63,6 @@ ESTADOS_CIDADES = {
 # ---------------------------------------------------
 
 if "dados" not in st.session_state:
-
     st.session_state.dados = {
         "minha_empresa": {
             "nome": "",
@@ -85,7 +75,6 @@ if "dados" not in st.session_state:
             "site": "",
             "servicos": []
         },
-
         "concorrentes": []
     }
 
@@ -101,7 +90,6 @@ campos_padrao = {
 }
 
 for campo, valor in campos_padrao.items():
-
     if campo not in empresa:
         empresa[campo] = valor
 
@@ -131,100 +119,47 @@ if "pagina_destino" not in st.session_state:
 # ---------------------------------------------------
 
 def remover_acentos(texto):
-
     return ''.join(
         c for c in unicodedata.normalize('NFD', texto)
         if unicodedata.category(c) != 'Mn'
     )
 
-
 def limpar_site(url):
-
     if not url:
         return ""
-
     url = url.strip().lower()
-
-    url = re.sub(
-        r"^https?:\/\/",
-        "",
-        url,
-        flags=re.IGNORECASE
-    )
-
-    url = re.sub(
-        r"^www\.",
-        "",
-        url,
-        flags=re.IGNORECASE
-    )
-
+    url = re.sub(r"^https?:\/\/", "", url, flags=re.IGNORECASE)
+    url = re.sub(r"^www\.", "", url, flags=re.IGNORECASE)
     url = remover_acentos(url)
-
-    url = re.sub(
-        r"[^a-z0-9\.\-]",
-        "",
-        url
-    )
-
+    url = re.sub(r"[^a-z0-9\.\-]", "", url)
     return url
 
-
 def gerar_avatar(nome):
-
     nome = nome.strip().upper()
-
     if not nome:
         return "?"
-
     partes = nome.split()
-
     if len(partes) == 1:
         return partes[0][0]
-
     return partes[0][0] + partes[1][0]
 
-
 def obter_instagram_handle(valor):
-
     if not valor:
         return ""
-
     valor = valor.strip()
-
-    valor = re.sub(
-        r"^https?:\/\/(www\.)?instagram\.com\/",
-        "",
-        valor,
-        flags=re.IGNORECASE
-    )
-
+    valor = re.sub(r"^https?:\/\/(www\.)?instagram\.com\/", "", valor, flags=re.IGNORECASE)
     valor = valor.strip("/")
-
     return valor
-
 
 def obter_facebook_handle(valor):
-
     if not valor:
         return ""
-
     valor = valor.strip()
-
-    valor = re.sub(
-        r"^https?:\/\/(www\.)?facebook\.com\/",
-        "",
-        valor,
-        flags=re.IGNORECASE
-    )
-
+    valor = re.sub(r"^https?:\/\/(www\.)?facebook\.com\/", "", valor, flags=re.IGNORECASE)
     valor = valor.strip("/")
-
     return valor
 
-
 def empresa_tem_dados(emp):
-    """Retorna True se a empresa já tem pelo menos o nome preenchido."""
     return bool(emp.get("nome", "").strip())
 
 # ---------------------------------------------------
@@ -232,25 +167,15 @@ def empresa_tem_dados(emp):
 # ---------------------------------------------------
 
 def trocar_pagina(destino):
-
     editando = (
         st.session_state.mostrar_form_concorrente
         or st.session_state.editando_concorrente is not None
     )
-
-    if (
-        st.session_state.pagina == "cad"
-        and destino != "cad"
-        and editando
-    ):
-
+    if st.session_state.pagina == "cad" and destino != "cad" and editando:
         st.session_state.mostrar_alerta_saida = True
         st.session_state.pagina_destino = destino
-
     else:
-
         st.session_state.pagina = destino
-
         st.session_state.mostrar_form_concorrente = False
         st.session_state.editando_concorrente = None
         st.session_state.editar_empresa = False
@@ -260,26 +185,17 @@ def trocar_pagina(destino):
 # ---------------------------------------------------
 
 def consultar_ia(prompt):
-
     if model is None:
         return "Erro: Chave API não configurada."
-
     try:
-
         emp = st.session_state.dados["minha_empresa"]
-
         contexto = f"""
 Empresa: {emp['nome']}
 Setor: {emp['setor']}
 Instagram: {emp['instagram']}
 """
-
-        resposta = model.generate_content(
-            contexto + "\n" + prompt
-        )
-
+        resposta = model.generate_content(contexto + "\n" + prompt)
         return resposta.text
-
     except Exception as e:
         return f"Erro: {str(e)}"
 
@@ -288,234 +204,240 @@ Instagram: {emp['instagram']}
 # ---------------------------------------------------
 
 if not st.session_state.logado:
-
     cols = st.columns([1, 2, 1])
-
     with cols[1]:
-
         st.title("🔐 Login Dashboard")
-
         if st.button("Acessar Painel"):
-
             st.session_state.logado = True
-
             st.rerun()
-
     st.stop()
 
 # ---------------------------------------------------
-# CSS
+# CSS GLOBAL REDESENHADO
 # ---------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* ============ SIDEBAR ============ */
-[data-testid="stSidebar"] {
-    background-color: #1e2327 !important;
+/* ============ IMPORTS ============ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+/* ============ BASE ============ */
+html, body, [class*="css"] {
+    font-family: 'DM Sans', sans-serif !important;
 }
 
-.sidebar-header {
-    color: #afb1b3;
+/* ============ SIDEBAR ============ */
+[data-testid="stSidebar"] {
+    background-color: #0f1117 !important;
+    border-right: 1px solid #1e2530 !important;
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    padding-top: 0 !important;
+}
+
+.sidebar-logo {
+    padding: 22px 20px 16px 20px;
+    border-bottom: 1px solid #1e2530;
+    margin-bottom: 8px;
+}
+
+.sidebar-logo-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: -0.3px;
+}
+
+.sidebar-logo-sub {
     font-size: 11px;
-    font-weight: 700;
-    padding: 10px 20px 4px 20px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: block;
-    width: 100%;
-    border-top: 1px solid #2c3338;
+    color: #4b5563;
     margin-top: 2px;
+    font-weight: 400;
+}
+
+.sidebar-section {
+    padding: 16px 12px 4px 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #374151;
 }
 
 [data-testid="stSidebar"] div.stButton {
-    margin-bottom: 0px !important;
+    margin-bottom: 1px !important;
 }
 
 [data-testid="stSidebar"] div.stButton > button {
-    width: 100%;
-    border-radius: 8px !important;
+    width: 100% !important;
+    border-radius: 6px !important;
     background-color: transparent !important;
-    color: #eee !important;
+    color: #9ca3af !important;
     border: none !important;
     text-align: left !important;
-    padding: 6px 20px !important;
+    padding: 9px 14px !important;
     min-height: auto !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     font-weight: 400 !important;
     white-space: normal !important;
     box-shadow: none !important;
-    transition: background-color 0.15s ease !important;
+    transition: all 0.12s ease !important;
+    font-family: 'DM Sans', sans-serif !important;
 }
 
 [data-testid="stSidebar"] div.stButton > button:hover {
-    background-color: #2c3338 !important;
-    color: #ffffff !important;
+    background-color: #1a2030 !important;
+    color: #e5e7eb !important;
 }
 
-/* ============ BOTÕES PRINCIPAIS (fora da sidebar) ============ */
+/* ============ MAIN CONTENT ============ */
+section.main .block-container {
+    padding: 2rem 2.5rem !important;
+    max-width: 1100px !important;
+}
 
-/* Botões secundários — Editar / Remover / Adicionar */
+/* ============ PAGE HEADER ============ */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 3px;
+}
+
+/* ============ BOTÕES PRINCIPAIS ============ */
 section.main div.stButton > button {
-    border-radius: 8px !important;
+    border-radius: 7px !important;
     font-size: 14px !important;
     font-weight: 500 !important;
     border: 1px solid #d1d5db !important;
     background: #ffffff !important;
     color: #374151 !important;
     box-shadow: none !important;
-    transition: all 0.15s ease !important;
+    padding: 8px 16px !important;
+    transition: all 0.12s ease !important;
+    font-family: 'DM Sans', sans-serif !important;
+    min-height: 38px !important;
 }
 
 section.main div.stButton > button:hover {
-    background: #f3f4f6 !important;
+    background: #f9fafb !important;
     border-color: #9ca3af !important;
     color: #111827 !important;
 }
 
-/* Botão primary (Salvar, Adicionar no topo) */
 section.main div.stButton > button[kind="primary"] {
-    background: #4f46e5 !important;
+    background: #111827 !important;
     color: #ffffff !important;
     border: none !important;
 }
 
 section.main div.stButton > button[kind="primary"]:hover {
-    background: #4338ca !important;
+    background: #1f2937 !important;
 }
 
-/* ============ CARD MINHA EMPRESA ============ */
-
-.empresa-card {
-    background: #1a2235;
-    border: 1px solid #2d3f5e;
-    border-radius: 16px;
-    padding: 28px 32px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-    max-width: 860px;
+/* ============ FORMULÁRIOS ============ */
+section.main div[data-testid="stTextInput"] input,
+section.main div[data-testid="stSelectbox"] select,
+section.main div[data-baseweb="select"] {
+    font-size: 15px !important;
+    border-radius: 7px !important;
+    border: 1px solid #e5e7eb !important;
+    font-family: 'DM Sans', sans-serif !important;
+    color: #111827 !important;
 }
 
-.empresa-top {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #2d3f5e;
+section.main label {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    margin-bottom: 4px !important;
 }
 
-.empresa-avatar {
-    width: 64px;
-    height: 64px;
-    min-width: 64px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-    flex-shrink: 0;
+/* ============ TÍTULOS ============ */
+section.main h1, section.main h2, section.main h3 {
+    font-family: 'DM Sans', sans-serif !important;
+    letter-spacing: -0.4px !important;
 }
 
-.empresa-nome {
-    margin: 0 0 4px 0;
-    padding: 0;
-    font-size: 22px;
-    font-weight: 700;
-    color: #f1f5f9;
+section.main h1 { font-size: 28px !important; font-weight: 600 !important; color: #111827 !important; }
+section.main h2 { font-size: 20px !important; font-weight: 600 !important; color: #111827 !important; margin-top: 28px !important; }
+section.main h3 { font-size: 16px !important; font-weight: 600 !important; color: #374151 !important; }
+
+/* ============ DIVISOR ============ */
+section.main hr {
+    border: none !important;
+    border-top: 1px solid #f3f4f6 !important;
+    margin: 20px 0 !important;
 }
 
-.empresa-subtitulo {
-    margin: 0;
-    font-size: 13px;
-    color: #94a3b8;
+/* ============ INFO/WARNING/SUCCESS ============ */
+div[data-testid="stInfo"] {
+    background: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    color: #0c4a6e !important;
+    padding: 14px 18px !important;
 }
 
-.empresa-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 40px;
+div[data-testid="stWarning"] {
+    background: #fffbeb !important;
+    border: 1px solid #fcd34d !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    padding: 14px 18px !important;
 }
 
-.empresa-grupo {
-    margin-bottom: 0;
+div[data-testid="stSuccess"] {
+    background: #f0fdf4 !important;
+    border: 1px solid #86efac !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    padding: 14px 18px !important;
 }
 
-.empresa-grupo-titulo {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #64748b;
-    margin: 0 0 10px 0;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #1e3a5f;
+div[data-testid="stError"] {
+    background: #fef2f2 !important;
+    border: 1px solid #fca5a5 !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    padding: 14px 18px !important;
 }
 
-.empresa-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 8px;
+/* ============ EXPANDER ============ */
+details summary {
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    padding: 14px 0 !important;
 }
 
-.empresa-row-icon {
-    font-size: 15px;
-    width: 20px;
-    flex-shrink: 0;
-    margin-top: 1px;
-}
-
-.empresa-row-content {}
-
-.empresa-row-label {
-    font-size: 11px;
-    color: #64748b;
-    display: block;
-    margin-bottom: 1px;
-}
-
-.empresa-row-value {
-    font-size: 14px;
-    color: #cbd5e1;
-}
-
-.empresa-servicos {
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid #2d3f5e;
-}
-
-.empresa-servicos-titulo {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #64748b;
-    margin: 0 0 10px 0;
-}
-
-.service-tag {
-    background-color: #1e3a5f;
-    color: #93c5fd;
-    border: 1px solid #2d5a8e;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    margin-right: 6px;
-    display: inline-block;
-    margin-bottom: 6px;
-}
-
-/* ============ POPUP ============ */
-
+/* ============ POPUP OVERLAY ============ */
 .popup-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.5);
     z-index: 999999;
+    backdrop-filter: blur(2px);
 }
 
 .popup-box {
@@ -523,25 +445,45 @@ section.main div.stButton > button[kind="primary"]:hover {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #1f2937;
-    width: 500px;
-    border-radius: 16px;
-    padding: 30px;
+    background: #ffffff;
+    width: 480px;
+    border-radius: 14px;
+    padding: 32px;
     z-index: 9999999;
-    border: 1px solid #374151;
-    color: white;
+    border: 1px solid #e5e7eb;
+    color: #111827;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
 }
 
 .popup-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #111827;
 }
 
 .popup-text {
-    color: #cbd5e1;
-    margin-bottom: 25px;
-    line-height: 1.5;
+    color: #6b7280;
+    margin-bottom: 24px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* ============ CARD EMPRESA (IFRAME) ============ */
+
+/* ============ SELECTBOX ============ */
+div[data-baseweb="select"] > div {
+    border-radius: 7px !important;
+    min-height: 42px !important;
+    font-size: 15px !important;
+    font-family: 'DM Sans', sans-serif !important;
+}
+
+/* ============ DATAFRAME ============ */
+div[data-testid="stDataFrame"] {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    border: 1px solid #e5e7eb !important;
 }
 
 </style>
@@ -552,35 +494,33 @@ section.main div.stButton > button[kind="primary"]:hover {
 # ---------------------------------------------------
 
 with st.sidebar:
+    st.markdown("""
+    <div class="sidebar-logo">
+        <div class="sidebar-logo-text">🎯 CI Dashboard</div>
+        <div class="sidebar-logo-sub">Competitive Intelligence</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown(
-        '<hr style="border:none;border-top:1px solid #2c3338;margin:8px 0 0 0"/>'
-        '<div class="sidebar-header">Dados Principais</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown('<div class="sidebar-section">Dados Principais</div>', unsafe_allow_html=True)
 
-    if st.button("🏠 Minha Empresa"):
+    if st.button("🏠  Minha Empresa"):
         trocar_pagina("home")
 
-    if st.button("👥 Concorrentes"):
+    if st.button("👥  Concorrentes"):
         trocar_pagina("cad")
 
-    st.markdown(
-        '<hr style="border:none;border-top:1px solid #2c3338;margin:8px 0 0 0"/>'
-        '<div class="sidebar-header">Análise</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown('<div class="sidebar-section">Análise</div>', unsafe_allow_html=True)
 
-    if st.button("📊 Visão Geral"):
+    if st.button("📊  Visão Geral"):
         trocar_pagina("geral")
 
-    if st.button("🌐 Confronto de Sites"):
+    if st.button("🌐  Confronto de Sites"):
         trocar_pagina("sites")
 
-    if st.button("📢 Biblioteca de Ads"):
+    if st.button("📢  Biblioteca de Ads"):
         trocar_pagina("ads")
 
-    if st.button("💡 IA Battle Cards"):
+    if st.button("💡  IA Battle Cards"):
         trocar_pagina("insights")
 
 # ---------------------------------------------------
@@ -588,50 +528,44 @@ with st.sidebar:
 # ---------------------------------------------------
 
 if st.session_state.mostrar_alerta_saida:
-
     st.markdown("""
     <div class="popup-overlay"></div>
-
     <div class="popup-box">
-
-        <div class="popup-title">
-            ⚠️ Cancelar edição?
-        </div>
-
+        <div class="popup-title">⚠️ Cancelar edição?</div>
         <div class="popup-text">
-            Você possui uma edição aberta de concorrente.
-            Se sair agora as alterações não salvas serão perdidas.
+            Você possui uma edição aberta de concorrente.<br>
+            Se sair agora, as alterações não salvas serão perdidas.
         </div>
-
     </div>
     """, unsafe_allow_html=True)
 
     p1, p2, p3 = st.columns([1, 1, 1])
-
     with p2:
-
-        if st.button(
-            "✅ Sair e cancelar edição",
-            use_container_width=True
-        ):
-
+        if st.button("✅ Sair e cancelar edição", use_container_width=True):
             st.session_state.mostrar_form_concorrente = False
             st.session_state.editando_concorrente = None
             st.session_state.mostrar_alerta_saida = False
-
-            st.session_state.pagina = (
-                st.session_state.pagina_destino
-            )
-
+            st.session_state.pagina = st.session_state.pagina_destino
             st.rerun()
 
-        if st.button(
-            "❌ Continuar editando",
-            use_container_width=True
-        ):
-
+        if st.button("❌ Continuar editando", use_container_width=True):
             st.session_state.mostrar_alerta_saida = False
             st.rerun()
+
+# ---------------------------------------------------
+# CARD HELPERS
+# ---------------------------------------------------
+
+CARD_CSS = """
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    background: transparent;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+"""
+
+CARD_FONT_IMPORT = """<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">"""
 
 # ---------------------------------------------------
 # HOME — Minha Empresa
@@ -642,10 +576,8 @@ if st.session_state.pagina == "home":
     emp = st.session_state.dados["minha_empresa"]
     tem_dados = empresa_tem_dados(emp)
 
-    # Se não tem dados OU está em modo edição → mostra formulário
     if not tem_dados or st.session_state.editar_empresa:
 
-        # Título com botão cancelar ao lado (só se já tinha dados)
         h1, h2 = st.columns([8, 2])
         with h1:
             st.title("🏢 Minha Empresa")
@@ -657,129 +589,52 @@ if st.session_state.pagina == "home":
                     st.rerun()
 
         st.markdown("---")
-
         st.subheader("📄 Informações Gerais")
-
         col1, col2 = st.columns(2)
 
-        emp["nome"] = col1.text_input(
-            "Nome da Empresa",
-            emp["nome"]
-        )
-
-        emp["setor"] = col1.selectbox(
-            "Setor",
-            [
-                "Marketing",
-                "Tecnologia",
-                "Varejo",
-                "Saúde",
-                "Educação",
-                "Indústria"
-            ]
-        )
-
-        emp["tipo"] = col2.text_input(
-            "Sub-nicho",
-            emp["tipo"]
-        )
+        emp["nome"] = col1.text_input("Nome da Empresa", emp["nome"])
+        emp["setor"] = col1.selectbox("Setor", ["Marketing", "Tecnologia", "Varejo", "Saúde", "Educação", "Indústria"])
+        emp["tipo"] = col2.text_input("Sub-nicho", emp["tipo"])
 
         st.markdown("---")
-
         st.subheader("📍 Localização")
-
         loc1, loc2 = st.columns(2)
-
         estados = list(ESTADOS_CIDADES.keys())
-
-        estado_index = 0
-
-        if emp["estado"] in estados:
-            estado_index = estados.index(emp["estado"])
-
-        emp["estado"] = loc1.selectbox(
-            "Estado",
-            estados,
-            index=estado_index
-        )
-
-        cidades = ESTADOS_CIDADES.get(
-            emp["estado"],
-            []
-        )
-
-        cidade_index = 0
-
-        if emp["cidade"] in cidades:
-            cidade_index = cidades.index(emp["cidade"])
-
-        emp["cidade"] = loc2.selectbox(
-            "Cidade",
-            cidades,
-            index=cidade_index
-        )
+        estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
+        emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
+        cidades = ESTADOS_CIDADES.get(emp["estado"], [])
+        cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
+        emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
 
         st.markdown("---")
-
         st.subheader("📱 Redes Sociais")
-
         col_a, col_b = st.columns(2)
-
-        emp["instagram"] = col_a.text_input(
-            "Instagram",
-            value=emp["instagram"]
-        )
-
-        emp["fb_page"] = col_b.text_input(
-            "Facebook",
-            emp["fb_page"]
-        )
+        emp["instagram"] = col_a.text_input("Instagram", value=emp["instagram"])
+        emp["fb_page"] = col_b.text_input("Facebook", emp["fb_page"])
 
         st.markdown("---")
-
         st.subheader("🌐 Website")
-
-        site_digitado = st.text_input(
-            "Site",
-            emp["site"]
-        )
-
+        site_digitado = st.text_input("Site", emp["site"])
         emp["site"] = limpar_site(site_digitado)
 
         st.markdown("---")
-
         st.subheader("🛠️ Serviços")
-
         with st.form("form_servico", clear_on_submit=True):
-
             novo = st.text_input("Adicionar Serviço")
-
-            enviar = st.form_submit_button(
-                "Adicionar",
-                type="primary"
-            )
-
+            enviar = st.form_submit_button("Adicionar", type="primary")
             if enviar and novo:
-
                 emp["servicos"].append(novo)
-
                 st.rerun()
 
         if emp["servicos"]:
+            tags_html = "".join([
+                f"<span style='background:#f1f5f9;color:#1e40af;border:1px solid #bfdbfe;padding:5px 14px;border-radius:20px;font-size:14px;margin-right:8px;display:inline-block;margin-bottom:8px;font-family:DM Sans,sans-serif'>{s}</span>"
+                for s in emp["servicos"]
+            ])
+            st.markdown(tags_html, unsafe_allow_html=True)
 
-            st.markdown(
-                "".join([
-                    f"<span class='service-tag'>{s}</span>"
-                    for s in emp["servicos"]
-                ]),
-                unsafe_allow_html=True
-            )
-
-        if st.button(
-            "💾 Salvar Empresa",
-            type="primary"
-        ):
-
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        if st.button("💾 Salvar Empresa", type="primary"):
             if emp["nome"].strip():
                 st.session_state.editar_empresa = False
                 st.success("Empresa salva com sucesso!")
@@ -788,7 +643,6 @@ if st.session_state.pagina == "home":
                 st.error("Informe pelo menos o nome da empresa.")
 
     else:
-        # Tem dados e não está editando → exibe card reorganizado
         h1, h2 = st.columns([8, 2])
         with h1:
             st.title("🏢 Minha Empresa")
@@ -801,95 +655,133 @@ if st.session_state.pagina == "home":
         st.markdown("---")
 
         avatar = gerar_avatar(emp["nome"])
-
         loc = emp['cidade'] or ''
         if emp['estado']:
             loc += (', ' if loc else '') + emp['estado']
 
         servicos_tags = ""
         if emp["servicos"]:
-            servicos_tags = "".join([
-                f"<span style='background:#1e3a5f;color:#93c5fd;border:1px solid #2d5a8e;padding:4px 12px;border-radius:20px;font-size:12px;margin-right:6px;display:inline-block;margin-bottom:6px'>{s}</span>"
+            tags = "".join([
+                f"<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:5px 14px;border-radius:20px;font-size:13px;margin-right:8px;display:inline-block;margin-bottom:8px'>{s}</span>"
                 for s in emp["servicos"]
             ])
-            servicos_block = f"""
-            <div style='margin-top:20px;padding-top:16px;border-top:1px solid #2d3f5e'>
-                <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:10px'>🛠️ Serviços</div>
-                {servicos_tags}
+            servicos_tags = f"""
+            <div style='margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6'>
+                <div style='font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:12px'>Serviços</div>
+                {tags}
             </div>"""
-        else:
-            servicos_block = ""
 
-        SVG_MAP = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
-        SVG_IG  = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
-        SVG_FB  = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>'
-        SVG_WEB = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
-
-        if emp["servicos"]:
-            servicos_tags = "".join([
-                f"<span style='background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:3px 10px;border-radius:20px;font-size:11px;margin-right:5px;display:inline-block;margin-bottom:5px'>{s}</span>"
-                for s in emp["servicos"]
-            ])
-            servicos_block = f"""
-            <div style='margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb'>
-                <div style='font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:8px'>Servicos</div>
-                {servicos_tags}
-            </div>"""
-        else:
-            servicos_block = ""
-
-        card_html = f"""<!DOCTYPE html><html><head><style>
-            *{{margin:0;padding:0;box-sizing:border-box}}
-            body{{background:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}
-            .card{{background:#f9fafb;border:1px solid #e5e7eb;border-radius:14px;padding:24px 28px;max-width:780px}}
-            .top{{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid #f3f4f6}}
-            .avatar{{width:52px;height:52px;min-width:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}}
-            .nome{{font-size:18px;font-weight:700;color:#111827;margin-bottom:2px}}
-            .sub{{font-size:12px;color:#9ca3af}}
-            .grid{{display:grid;grid-template-columns:1fr 1fr;gap:0 32px}}
-            .sec-title{{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#d1d5db;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #f3f4f6}}
-            .row{{display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}}
-            .ico{{width:16px;flex-shrink:0;margin-top:13px}}
-            .lbl{{font-size:10px;color:#9ca3af;display:block;margin-bottom:2px}}
-            .val{{font-size:13px;color:#374151;font-weight:500}}
-        </style></head><body>
-        <div class="card">
-            <div class="top">
-                <div class="avatar">{avatar}</div>
-                <div>
-                    <div class="nome">{emp['nome']}</div>
-                    <div class="sub">{emp['setor']}{' &middot; ' + emp['tipo'] if emp['tipo'] else ''}</div>
-                </div>
-            </div>
-            <div class="grid">
-                <div>
-                    <div class="sec-title">Localizacao</div>
-                    <div class="row">
-                        <span class="ico">{SVG_MAP}</span>
-                        <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '&mdash;'}</span></div>
-                    </div>
-                </div>
-                <div>
-                    <div class="sec-title">Presenca Digital</div>
-                    <div class="row">
-                        <span class="ico">{SVG_IG}</span>
-                        <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '&mdash;'}</span></div>
-                    </div>
-                    <div class="row">
-                        <span class="ico">{SVG_FB}</span>
-                        <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '&mdash;'}</span></div>
-                    </div>
-                    <div class="row">
-                        <span class="ico">{SVG_WEB}</span>
-                        <div><span class="lbl">Site</span><span class="val">{emp['site'] or '&mdash;'}</span></div>
-                    </div>
-                </div>
-            </div>
-            {servicos_block}
+        card_html = f"""<!DOCTYPE html>
+<html>
+<head>
+{CARD_FONT_IMPORT}
+<style>
+{CARD_CSS}
+.card {{
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 28px 32px;
+}}
+.top {{
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f3f4f6;
+}}
+.avatar {{
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 50%;
+    background: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+}}
+.nome {{ font-size: 22px; font-weight: 600; color: #111827; margin-bottom: 3px; letter-spacing: -0.4px; }}
+.sub {{ font-size: 14px; color: #9ca3af; }}
+.grid {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 48px;
+}}
+.sec-title {{
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #9ca3af;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3f4f6;
+}}
+.row {{
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}}
+.ico {{
+    font-size: 16px;
+    width: 20px;
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: #6b7280;
+}}
+.lbl {{ font-size: 12px; color: #9ca3af; display: block; margin-bottom: 2px; }}
+.val {{ font-size: 15px; color: #111827; font-weight: 500; }}
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="top">
+        <div class="avatar">{avatar}</div>
+        <div>
+            <div class="nome">{emp['nome']}</div>
+            <div class="sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
         </div>
-        </body></html>"""
+    </div>
+    <div class="grid">
+        <div>
+            <div class="sec-title">Localização</div>
+            <div class="row">
+                <span class="ico">📍</span>
+                <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
+            </div>
+        </div>
+        <div>
+            <div class="sec-title">Presença Digital</div>
+            <div class="row">
+                <span class="ico">📷</span>
+                <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '—'}</span></div>
+            </div>
+            <div class="row">
+                <span class="ico">🔵</span>
+                <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '—'}</span></div>
+            </div>
+            <div class="row">
+                <span class="ico">🌐</span>
+                <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
+            </div>
+        </div>
+    </div>
+    {servicos_tags}
+</div>
+</body>
+</html>"""
 
-        altura = 255 + (len(emp["servicos"]) > 0) * 55
+        n_servicos = len(emp["servicos"])
+        altura_base = 280
+        linhas_servicos = (n_servicos // 4 + (1 if n_servicos % 4 else 0)) if n_servicos else 0
+        altura = altura_base + linhas_servicos * 42 + (60 if n_servicos else 0)
         components.html(card_html, height=altura, scrolling=False)
 
 # ---------------------------------------------------
@@ -899,10 +791,8 @@ if st.session_state.pagina == "home":
 elif st.session_state.pagina == "cad":
 
     top1, top2 = st.columns([8, 2])
-
     with top1:
         st.title("👥 Concorrentes")
-
     with top2:
         if st.button("➕ Adicionar", use_container_width=True):
             st.session_state.mostrar_form_concorrente = True
@@ -911,111 +801,39 @@ elif st.session_state.pagina == "cad":
 
     st.markdown("---")
 
-    if (
-        st.session_state.mostrar_form_concorrente
-        or st.session_state.editando_concorrente is not None
-    ):
+    if (st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None):
 
         concorrente_edit = None
-
         if st.session_state.editando_concorrente is not None:
+            concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
 
-            concorrente_edit = st.session_state.dados[
-                "concorrentes"
-            ][st.session_state.editando_concorrente]
-
-        with st.form(
-            "cad_concorrente",
-            clear_on_submit=False
-        ):
-
+        with st.form("cad_concorrente", clear_on_submit=False):
             st.subheader("📄 Identificação")
-
             c1, c2 = st.columns(2)
-
-            n = c1.text_input(
-                "Nome do Concorrente",
-                value=(
-                    concorrente_edit["nome"]
-                    if concorrente_edit else ""
-                )
-            )
-
-            u = c2.text_input(
-                "URL do Site",
-                value=(
-                    concorrente_edit["url"]
-                    if concorrente_edit else ""
-                )
-            )
+            n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
+            u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
 
             st.markdown("---")
-
             st.subheader("📱 Redes Sociais")
-
             c3, c4 = st.columns(2)
-
-            insta_handle = c3.text_input(
-                "Instagram",
-                value=(
-                    concorrente_edit["instagram"]
-                    if concorrente_edit else "@"
-                )
-            )
-
-            fb_p = c4.text_input(
-                "Facebook",
-                value=(
-                    concorrente_edit["fb_page"]
-                    if concorrente_edit else ""
-                )
-            )
-
-            ads_manual = st.text_input(
-                "ID Manual Ads (Opcional)",
-                value=(
-                    concorrente_edit["ads_id"]
-                    if concorrente_edit else ""
-                )
-            )
+            insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
+            fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
+            ads_manual = st.text_input("ID Manual Ads (Opcional)", value=(concorrente_edit["ads_id"] if concorrente_edit else ""))
 
             col1, col2 = st.columns(2)
-
-            salvar = col1.form_submit_button(
-                "Salvar",
-                type="primary"
-            )
-
-            cancelar = col2.form_submit_button(
-                "Cancelar"
-            )
+            salvar = col1.form_submit_button("Salvar", type="primary")
+            cancelar = col2.form_submit_button("Cancelar")
 
             if cancelar:
-
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
-
                 st.rerun()
 
             if salvar:
-
-                clean_handle = obter_instagram_handle(
-                    insta_handle
-                )
-
-                fb_clean = obter_facebook_handle(
-                    fb_p
-                )
-
+                clean_handle = obter_instagram_handle(insta_handle)
+                fb_clean = obter_facebook_handle(fb_p)
                 site_clean = limpar_site(u)
-
-                search_term = (
-                    ads_manual
-                    or fb_clean
-                    or clean_handle.replace("@", "")
-                    or n
-                )
-
+                search_term = ads_manual or fb_clean or clean_handle.replace("@", "") or n
                 dados_novos = {
                     "nome": n,
                     "url": site_clean,
@@ -1025,73 +843,92 @@ elif st.session_state.pagina == "cad":
                 }
 
                 if st.session_state.editando_concorrente is not None:
-
-                    st.session_state.dados[
-                        "concorrentes"
-                    ][
-                        st.session_state.editando_concorrente
-                    ] = dados_novos
-
+                    st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
                 else:
-
-                    st.session_state.dados[
-                        "concorrentes"
-                    ].append(dados_novos)
+                    st.session_state.dados["concorrentes"].append(dados_novos)
 
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
-
                 st.rerun()
 
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
-
         cols = st.columns(3)
-
         for i, c in enumerate(concorrentes):
-
             with cols[i % 3]:
-
                 avatar = gerar_avatar(c["nome"])
 
-                SVG_IG2  = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
-                SVG_FB2  = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>'
-                SVG_WEB2 = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+                card_html = f"""<!DOCTYPE html>
+<html>
+<head>
+{CARD_FONT_IMPORT}
+<style>
+{CARD_CSS}
+.card {{
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 4px;
+}}
+.header {{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+}}
+.avatar {{
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+}}
+.name {{ font-size: 16px; font-weight: 600; color: #111827; letter-spacing: -0.3px; }}
+.row {{
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 13px;
+}}
+.ico {{ font-size: 16px; width: 20px; flex-shrink: 0; margin-top: 1px; }}
+.lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 2px; }}
+.val {{ font-size: 14px; color: #374151; font-weight: 500; word-break: break-all; }}
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <div class="avatar">{avatar}</div>
+        <span class="name">{c['nome']}</span>
+    </div>
+    <div class="row">
+        <span class="ico">🌐</span>
+        <div><span class="lbl">Site</span><span class="val">{c['url'] or '—'}</span></div>
+    </div>
+    <div class="row">
+        <span class="ico">📷</span>
+        <div><span class="lbl">Instagram</span><span class="val">{c['instagram'] or '—'}</span></div>
+    </div>
+    <div class="row">
+        <span class="ico">🔵</span>
+        <div><span class="lbl">Facebook</span><span class="val">{c['fb_page'] or '—'}</span></div>
+    </div>
+</div>
+</body>
+</html>"""
 
-                card_html = f"""<!DOCTYPE html><html><head><style>
-                *{{margin:0;padding:0;box-sizing:border-box}}
-                body{{background:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}}
-                .card{{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:18px}}
-                .header{{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f3f4f6}}
-                .avatar{{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}}
-                .name{{font-size:14px;font-weight:600;color:#111827}}
-                .row{{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}}
-                .ico{{width:15px;flex-shrink:0;margin-top:11px}}
-                .lbl{{font-size:10px;color:#9ca3af;display:block;margin-bottom:1px}}
-                .val{{font-size:12px;color:#374151;font-weight:500}}
-                </style></head><body>
-                <div class="card">
-                    <div class="header">
-                        <div class="avatar">{avatar}</div>
-                        <span class="name">{c['nome']}</span>
-                    </div>
-                    <div class="row">
-                        <span class="ico">{SVG_WEB2}</span>
-                        <div><span class="lbl">Site</span><span class="val">{c['url'] or '&mdash;'}</span></div>
-                    </div>
-                    <div class="row">
-                        <span class="ico">{SVG_IG2}</span>
-                        <div><span class="lbl">Instagram</span><span class="val">{c['instagram'] or '&mdash;'}</span></div>
-                    </div>
-                    <div class="row">
-                        <span class="ico">{SVG_FB2}</span>
-                        <div><span class="lbl">Facebook</span><span class="val">{c['fb_page'] or '&mdash;'}</span></div>
-                    </div>
-                </div>
-                </body></html>"""
-
-                components.html(card_html, height=200, scrolling=False)
+                components.html(card_html, height=248, scrolling=False)
 
                 b1, b2 = st.columns(2)
                 with b1:
@@ -1103,10 +940,8 @@ elif st.session_state.pagina == "cad":
                     if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
                         st.session_state.dados["concorrentes"].pop(i)
                         st.rerun()
-
     else:
-
-        st.info("Nenhum concorrente cadastrado.")
+        st.info("Nenhum concorrente cadastrado ainda. Clique em **➕ Adicionar** para começar.")
 
 # ---------------------------------------------------
 # VISÃO GERAL
@@ -1115,28 +950,14 @@ elif st.session_state.pagina == "cad":
 elif st.session_state.pagina == "geral":
 
     st.title("📊 Visão Geral")
-
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
-
         df = pd.DataFrame(concorrentes)
-
-        st.dataframe(
-            df[
-                [
-                    "nome",
-                    "url",
-                    "instagram",
-                    "fb_page"
-                ]
-            ],
-            use_container_width=True
-        )
-
+        df.columns = ["Nome", "Site", "Instagram", "Facebook", "Ads ID"]
+        st.dataframe(df[["Nome", "Site", "Instagram", "Facebook"]], use_container_width=True, height=400)
     else:
-
-        st.warning("Sem dados.")
+        st.warning("Nenhum concorrente cadastrado ainda.")
 
 # ---------------------------------------------------
 # ADS
@@ -1145,32 +966,18 @@ elif st.session_state.pagina == "geral":
 elif st.session_state.pagina == "ads":
 
     st.title("📢 Biblioteca de Ads")
-
     concs = st.session_state.dados["concorrentes"]
 
     if not concs:
-
-        st.info("Cadastre concorrentes.")
-
+        st.info("Cadastre concorrentes para acessar a biblioteca de anúncios.")
     else:
-
         for c in concs:
-
-            with st.expander(
-                f"🔍 {c['nome']}",
-                expanded=True
-            ):
-
+            with st.expander(f"🔍  {c['nome']}", expanded=True):
                 term = c["ads_id"]
-
                 url = f"https://www.facebook.com/ads/library/?q={term}&country=BR&media_type=all"
-
-                st.write(f"Buscando por: {term}")
-
-                st.link_button(
-                    "Abrir Biblioteca de Ads",
-                    url
-                )
+                st.markdown(f"<span style='font-size:15px;color:#6b7280'>Buscando por: <strong style='color:#111827'>{term}</strong></span>", unsafe_allow_html=True)
+                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+                st.link_button("Abrir Biblioteca de Ads →", url)
 
 # ---------------------------------------------------
 # CONFRONTO DE SITES
@@ -1179,8 +986,14 @@ elif st.session_state.pagina == "ads":
 elif st.session_state.pagina == "sites":
 
     st.title("🌐 Confronto de Sites")
-
-    st.info("Módulo em desenvolvimento.")
+    st.markdown("""
+    <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:28px 32px;margin-top:8px'>
+        <div style='font-size:18px;font-weight:600;color:#111827;margin-bottom:8px;font-family:DM Sans,sans-serif'>Em desenvolvimento</div>
+        <div style='font-size:15px;color:#6b7280;font-family:DM Sans,sans-serif;line-height:1.6'>
+            Este módulo permitirá comparar sites de concorrentes em termos de SEO, velocidade, conteúdo e estratégia digital.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
 # IA BATTLE CARDS
@@ -1189,35 +1002,17 @@ elif st.session_state.pagina == "sites":
 elif st.session_state.pagina == "insights":
 
     st.title("💡 IA Battle Cards")
-
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
-
         target = st.selectbox(
             "Gerar estratégia contra:",
             [c["nome"] for c in concorrentes]
         )
-
-        if st.button(
-            "Gerar Estratégia",
-            type="primary"
-        ):
-
-            with st.spinner(
-                "Criando Battle Card..."
-            ):
-
-                resposta = consultar_ia(
-                    f"""
-                    Gere um battle card
-                    focado em vencer o
-                    concorrente {target}.
-                    """
-                )
-
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        if st.button("Gerar Estratégia", type="primary"):
+            with st.spinner("Criando Battle Card..."):
+                resposta = consultar_ia(f"Gere um battle card focado em vencer o concorrente {target}.")
                 st.markdown(resposta)
-
     else:
-
-        st.info("Adicione concorrentes.")
+        st.info("Adicione concorrentes para gerar battle cards estratégicos.")
