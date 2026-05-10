@@ -334,13 +334,40 @@ st.markdown("""
     box-shadow: none !important;
 }
 
-.card-box {
-    background: #1f2937;
-    border-radius: 18px;
-    padding: 16px 18px 14px 18px;
-    border: 1px solid #2d3748;
-    color: white;
-    margin-bottom: 0;
+/* Estiliza o container nativo do Streamlit como card escuro */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #1f2937 !important;
+    border: 1px solid #2d3748 !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
+/* iguala altura de todas as colunas */
+[data-testid="stHorizontalBlock"] {
+    align-items: stretch !important;
+}
+
+[data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+[data-testid="stHorizontalBlock"] > [data-testid="column"] > div,
+[data-testid="stHorizontalBlock"] > [data-testid="column"] > div > [data-testid="stVerticalBlock"] {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.card-inner {
+    flex: 1;
+    margin-bottom: 8px;
 }
 
 .card-avatar {
@@ -379,39 +406,6 @@ st.markdown("""
     margin: 5px 0;
     color: #cbd5e1;
     font-size: 14px;
-}
-
-.card-divider {
-    border: none;
-    border-top: 1px solid #374151;
-    margin: 14px -18px 10px -18px;
-}
-
-/* iguala altura das colunas dos cards */
-[data-testid="stHorizontalBlock"]:has(.card-box) {
-    align-items: stretch !important;
-}
-
-[data-testid="stHorizontalBlock"]:has(.card-box) > [data-testid="column"] {
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-[data-testid="stHorizontalBlock"]:has(.card-box) > [data-testid="column"] > [data-testid="stVerticalBlock"] {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* card ocupa todo espaço disponível */
-[data-testid="stHorizontalBlock"]:has(.card-box) .card-box {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-.stButton > button {
-    border-radius: 8px !important;
 }
 
 .service-tag {
@@ -910,10 +904,11 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
-                with st.container():
+                with st.container(border=True):
+
                     st.markdown(
                         f"""
-                        <div class="card-box">
+                        <div class="card-inner">
                             <div class="card-header">
                                 <div class="card-avatar">{avatar}</div>
                                 <h3 class="card-name">{c['nome']}</h3>
@@ -923,11 +918,11 @@ elif st.session_state.pagina == "cad":
                                 <p>📸 {c['instagram'] or '—'}</p>
                                 <p>📘 {c['fb_page'] or '—'}</p>
                             </div>
-                            <hr class="card-divider"/>
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
+
                     b1, b2 = st.columns(2)
                     with b1:
                         if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
