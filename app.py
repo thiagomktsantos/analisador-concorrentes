@@ -340,6 +340,18 @@ st.markdown("""
     border: 1px solid #2d3748 !important;
     border-radius: 18px !important;
     box-shadow: none !important;
+    height: 100% !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] > div {
+    height: 100% !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
 }
 
 /* iguala altura de todas as colunas */
@@ -352,14 +364,13 @@ st.markdown("""
     flex-direction: column !important;
 }
 
-[data-testid="stHorizontalBlock"] > [data-testid="column"] > div,
-[data-testid="stHorizontalBlock"] > [data-testid="column"] > div > [data-testid="stVerticalBlock"] {
+[data-testid="stHorizontalBlock"] > [data-testid="column"] > div {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
 }
 
-[data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] {
+[data-testid="stHorizontalBlock"] > [data-testid="column"] > div > [data-testid="stVerticalBlock"] {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -406,6 +417,13 @@ st.markdown("""
     margin: 5px 0;
     color: #cbd5e1;
     font-size: 14px;
+}
+
+/* alinha botão Adicionar com o título */
+[data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"]:last-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
 }
 
 .service-tag {
@@ -751,12 +769,10 @@ elif st.session_state.pagina == "cad":
         st.title("👥 Concorrentes")
 
     with top2:
-        st.markdown("<div style='margin-top:14px'>", unsafe_allow_html=True)
         if st.button("➕ Adicionar", use_container_width=True):
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("---")
 
