@@ -118,6 +118,13 @@ if "mostrar_form_concorrente" not in st.session_state:
 if "editando_concorrente" not in st.session_state:
     st.session_state.editando_concorrente = None
 
+# NOVO CONTROLE DE ALERTA
+if "mostrar_alerta_saida" not in st.session_state:
+    st.session_state.mostrar_alerta_saida = False
+
+if "pagina_destino" not in st.session_state:
+    st.session_state.pagina_destino = None
+
 # ---------------------------------------------------
 # FUNÇÕES AUXILIARES
 # ---------------------------------------------------
@@ -157,12 +164,6 @@ def limpar_site(url):
     url = remover_acentos(url)
 
     # REMOVE CARACTERES ESPECIAIS INVÁLIDOS
-    # PERMITE APENAS:
-    # letras
-    # números
-    # ponto
-    # hífen
-
     url = re.sub(
         r"[^a-z0-9\.\-]",
         "",
@@ -223,6 +224,36 @@ def obter_facebook_handle(valor):
     valor = valor.strip("/")
 
     return valor
+
+
+# ---------------------------------------------------
+# CONTROLE DE NAVEGAÇÃO
+# ---------------------------------------------------
+
+def trocar_pagina(destino):
+
+    editando = (
+        st.session_state.mostrar_form_concorrente
+        or st.session_state.editando_concorrente is not None
+    )
+
+    if (
+        st.session_state.pagina == "cad"
+        and destino != "cad"
+        and editando
+    ):
+
+        st.session_state.mostrar_alerta_saida = True
+        st.session_state.pagina_destino = destino
+
+    else:
+
+        st.session_state.pagina = destino
+
+        # FECHA FORMULÁRIOS AUTOMATICAMENTE
+        st.session_state.mostrar_form_concorrente = False
+        st.session_state.editando_concorrente = None
+
 
 # ---------------------------------------------------
 # FUNÇÃO IA
@@ -338,6 +369,15 @@ st.markdown("""
     margin-bottom: 5px;
 }
 
+.alert-box {
+    background: #3b1d1d;
+    border: 1px solid #ff4b4b;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: white;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -353,10 +393,10 @@ with st.sidebar:
     )
 
     if st.button("🏠 Minha Empresa"):
-        st.session_state.pagina = "home"
+        trocar_pagina("home")
 
     if st.button("👥 Concorrentes"):
-        st.session_state.pagina = "cad"
+        trocar_pagina("cad")
 
     st.markdown(
         '<div class="sidebar-header">Análise</div>',
@@ -364,16 +404,63 @@ with st.sidebar:
     )
 
     if st.button("📊 Visão Geral"):
-        st.session_state.pagina = "geral"
+        trocar_pagina("geral")
 
     if st.button("🌐 Confronto de Sites"):
-        st.session_state.pagina = "sites"
+        trocar_pagina("sites")
 
     if st.button("📢 Biblioteca de Ads"):
-        st.session_state.pagina = "ads"
+        trocar_pagina("ads")
 
     if st.button("💡 IA Battle Cards"):
-        st.session_state.pagina = "insights"
+        trocar_pagina("insights")
+
+# ---------------------------------------------------
+# ALERTA DE SAÍDA DA EDIÇÃO
+# ---------------------------------------------------
+
+if st.session_state.mostrar_alerta_saida:
+
+    st.markdown(
+        """
+        <div class="alert-box">
+        ⚠️ Você possui uma edição de concorrente aberta.
+        Deseja realmente sair e cancelar a edição?
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    a1, a2 = st.columns(2)
+
+    with a1:
+
+        if st.button(
+            "✅ Sim, sair e cancelar edição",
+            use_container_width=True
+        ):
+
+            st.session_state.mostrar_form_concorrente = False
+            st.session_state.editando_concorrente = None
+            st.session_state.mostrar_alerta_saida = False
+
+            st.session_state.pagina = (
+                st.session_state.pagina_destino
+            )
+
+            st.rerun()
+
+    with a2:
+
+        if st.button(
+            "❌ Continuar editando",
+            use_container_width=True
+        ):
+
+            st.session_state.mostrar_alerta_saida = False
+            st.session_state.pagina_destino = None
+
+            st.rerun()
 
 # ---------------------------------------------------
 # HOME
