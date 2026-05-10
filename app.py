@@ -1014,20 +1014,74 @@ body {{ padding-bottom: 16px; }}
         st.info("Nenhum concorrente cadastrado ainda. Clique em **➕ Adicionar** para começar.")
 
 # ---------------------------------------------------
+# HELPER — CABEÇALHO DE ANÁLISE COM PERÍODO
+# ---------------------------------------------------
+
+def cabecalho_analise(titulo, subtitulo=""):
+    import datetime
+    h1, h2 = st.columns([6, 3])
+    with h1:
+        st.markdown(f"<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>{titulo}</h1>", unsafe_allow_html=True)
+        if subtitulo:
+            st.markdown(f"<div style='font-size:14px;color:#6b7280;margin-top:3px'>{subtitulo}</div>", unsafe_allow_html=True)
+    with h2:
+        periodo = st.selectbox(
+            "Período",
+            ["Últimos 7 dias", "Últimos 30 dias", "Últimos 90 dias", "Últimos 12 meses", "Todo o período"],
+            index=1,
+            label_visibility="collapsed"
+        )
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
+    periodo_map = {
+        "Últimos 7 dias": 7,
+        "Últimos 30 dias": 30,
+        "Últimos 90 dias": 90,
+        "Últimos 12 meses": 365,
+        "Todo o período": None,
+    }
+    dias = periodo_map[periodo]
+    if dias:
+        data_inicio = (datetime.date.today() - datetime.timedelta(days=dias)).strftime("%Y-%m-%d")
+    else:
+        data_inicio = None
+    return periodo, data_inicio
+
+# ---------------------------------------------------
 # VISÃO GERAL
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "geral":
 
-    st.title("📊 Visão Geral")
+    periodo, data_inicio = cabecalho_analise("📊 Visão Geral", "Resumo dos concorrentes cadastrados")
     concorrentes = st.session_state.dados["concorrentes"]
+    emp = st.session_state.dados["minha_empresa"]
 
-    if concorrentes:
+    if not concorrentes:
+        st.warning("Nenhum concorrente cadastrado ainda.")
+    else:
+        # Card resumo minha empresa
+        st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Minha Empresa</div>", unsafe_allow_html=True)
+        col_me = st.columns(1)[0]
+        with col_me:
+            st.markdown(f"""
+            <div style='background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:24px'>
+                <div style='width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{gerar_avatar(emp['nome'])}</div>
+                <div>
+                    <div style='font-size:16px;font-weight:600;color:#111827'>{emp['nome'] or '—'}</div>
+                    <div style='font-size:13px;color:#6b7280'>{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''} · {emp['cidade'] or ''}{', ' + emp['estado'] if emp['estado'] else ''}</div>
+                </div>
+                <div style='margin-left:auto;display:flex;gap:24px'>
+                    <div style='text-align:center'><div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>Instagram</div><div style='font-size:14px;font-weight:500;color:#111827'>{emp['instagram'] or '—'}</div></div>
+                    <div style='text-align:center'><div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>Site</div><div style='font-size:14px;font-weight:500;color:#111827'>{emp['site'] or '—'}</div></div>
+                    <div style='text-align:center'><div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>Serviços</div><div style='font-size:14px;font-weight:500;color:#111827'>{len(emp['servicos'])}</div></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Concorrentes</div>", unsafe_allow_html=True)
         df = pd.DataFrame(concorrentes)
         df.columns = ["Nome", "Site", "Instagram", "Facebook", "Ads ID"]
-        st.dataframe(df[["Nome", "Site", "Instagram", "Facebook"]], use_container_width=True, height=400)
-    else:
-        st.warning("Nenhum concorrente cadastrado ainda.")
+        st.dataframe(df[["Nome", "Site", "Instagram", "Facebook"]], use_container_width=True, height=min(400, 60 + len(concorrentes) * 55))
 
 # ---------------------------------------------------
 # ADS
@@ -1035,19 +1089,62 @@ elif st.session_state.pagina == "geral":
 
 elif st.session_state.pagina == "ads":
 
-    st.title("📢 Biblioteca de Ads")
+    periodo, data_inicio = cabecalho_analise("📢 Biblioteca de Ads", "Anúncios ativos da sua empresa e concorrentes no Facebook")
     concs = st.session_state.dados["concorrentes"]
+    emp = st.session_state.dados["minha_empresa"]
 
-    if not concs:
-        st.info("Cadastre concorrentes para acessar a biblioteca de anúncios.")
+    todas_empresas = []
+    if emp.get("nome"):
+        ads_id_emp = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
+        todas_empresas.append({"nome": emp["nome"], "ads_id": ads_id_emp, "tipo": "minha"})
+    for c in concs:
+        todas_empresas.append({"nome": c["nome"], "ads_id": c["ads_id"], "tipo": "concorrente"})
+
+    if not todas_empresas:
+        st.info("Cadastre sua empresa e concorrentes para visualizar anúncios.")
     else:
-        for c in concs:
-            with st.expander(f"🔍  {c['nome']}", expanded=True):
-                term = c["ads_id"]
-                url = f"https://www.facebook.com/ads/library/?q={term}&country=BR&media_type=all"
-                st.markdown(f"<span style='font-size:15px;color:#6b7280'>Buscando por: <strong style='color:#111827'>{term}</strong></span>", unsafe_allow_html=True)
+        periodo_url_map = {
+            "Últimos 7 dias": "LAST_7_DAYS",
+            "Últimos 30 dias": "LAST_30_DAYS",
+            "Últimos 90 dias": "LAST_90_DAYS",
+            "Últimos 12 meses": "LAST_YEAR",
+            "Todo o período": "ALL",
+        }
+        periodo_url = periodo_url_map.get(periodo, "LAST_30_DAYS")
+
+        cols = st.columns(3)
+        for i, empresa in enumerate(todas_empresas):
+            with cols[i % 3]:
+                term = empresa["ads_id"]
+                nome = empresa["nome"]
+                is_minha = empresa["tipo"] == "minha"
+                url = f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
+
+                badge = "<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Minha Empresa</span>" if is_minha else "<span style='background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Concorrente</span>"
+
+                avatar = gerar_avatar(nome)
+                card = f"""
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 22px;margin-bottom:4px'>
+                    <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f3f4f6'>
+                        <div style='width:38px;height:38px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                        <div style='flex:1;min-width:0'>
+                            <div style='font-size:15px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>{nome}</div>
+                            <div style='margin-top:4px'>{badge}</div>
+                        </div>
+                    </div>
+                    <div style='display:flex;align-items:center;gap:8px;margin-bottom:10px'>
+                        <span style='font-size:13px;color:#6b7280'>Busca:</span>
+                        <span style='font-size:13px;font-weight:600;color:#111827'>{term}</span>
+                    </div>
+                    <div style='display:flex;align-items:center;gap:8px'>
+                        <span style='font-size:13px;color:#6b7280'>Período:</span>
+                        <span style='font-size:13px;font-weight:500;color:#374151'>{periodo}</span>
+                    </div>
+                </div>
+                """
+                st.markdown(card, unsafe_allow_html=True)
+                st.link_button("🔍 Abrir Biblioteca de Ads →", url, use_container_width=True)
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-                st.link_button("Abrir Biblioteca de Ads →", url)
 
 # ---------------------------------------------------
 # CONFRONTO DE SITES
@@ -1055,7 +1152,7 @@ elif st.session_state.pagina == "ads":
 
 elif st.session_state.pagina == "sites":
 
-    st.title("🌐 Confronto de Sites")
+    periodo, data_inicio = cabecalho_analise("🌐 Confronto de Sites", "Análise comparativa da presença digital")
     st.markdown("""
     <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:28px 32px;margin-top:8px'>
         <div style='font-size:18px;font-weight:600;color:#111827;margin-bottom:8px;font-family:DM Sans,sans-serif'>Em desenvolvimento</div>
@@ -1071,18 +1168,23 @@ elif st.session_state.pagina == "sites":
 
 elif st.session_state.pagina == "insights":
 
-    st.title("💡 IA Battle Cards")
+    periodo, data_inicio = cabecalho_analise("💡 IA Battle Cards", "Estratégias geradas por IA para vencer a concorrência")
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
-        target = st.selectbox(
-            "Gerar estratégia contra:",
-            [c["nome"] for c in concorrentes]
-        )
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-        if st.button("Gerar Estratégia", type="primary"):
+        col_sel, col_btn = st.columns([4, 2])
+        with col_sel:
+            target = st.selectbox(
+                "Gerar estratégia contra:",
+                [c["nome"] for c in concorrentes],
+                label_visibility="collapsed"
+            )
+        with col_btn:
+            gerar = st.button("⚡ Gerar Battle Card", type="primary", use_container_width=True)
+
+        if gerar:
             with st.spinner("Criando Battle Card..."):
-                resposta = consultar_ia(f"Gere um battle card focado em vencer o concorrente {target}.")
+                resposta = consultar_ia(f"Gere um battle card focado em vencer o concorrente {target} considerando o período: {periodo}.")
                 st.markdown(resposta)
     else:
         st.info("Adicione concorrentes para gerar battle cards estratégicos.")
