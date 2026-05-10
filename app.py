@@ -25,6 +25,40 @@ else:
     model = None
 
 # ---------------------------------------------------
+# LISTA ESTADOS E CIDADES
+# ---------------------------------------------------
+
+ESTADOS_CIDADES = {
+    "Acre": ["Rio Branco", "Cruzeiro do Sul"],
+    "Alagoas": ["Maceió", "Arapiraca"],
+    "Amapá": ["Macapá", "Santana"],
+    "Amazonas": ["Manaus", "Parintins"],
+    "Bahia": ["Salvador", "Feira de Santana"],
+    "Ceará": ["Fortaleza", "Juazeiro do Norte", "Sobral"],
+    "Distrito Federal": ["Brasília"],
+    "Espírito Santo": ["Vitória", "Vila Velha"],
+    "Goiás": ["Goiânia", "Anápolis"],
+    "Maranhão": ["São Luís", "Imperatriz"],
+    "Mato Grosso": ["Cuiabá", "Rondonópolis"],
+    "Mato Grosso do Sul": ["Campo Grande", "Dourados"],
+    "Minas Gerais": ["Belo Horizonte", "Uberlândia"],
+    "Pará": ["Belém", "Santarém"],
+    "Paraíba": ["João Pessoa", "Campina Grande"],
+    "Paraná": ["Curitiba", "Londrina"],
+    "Pernambuco": ["Recife", "Caruaru"],
+    "Piauí": ["Teresina", "Parnaíba"],
+    "Rio de Janeiro": ["Rio de Janeiro", "Niterói"],
+    "Rio Grande do Norte": ["Natal", "Mossoró"],
+    "Rio Grande do Sul": ["Porto Alegre", "Caxias do Sul"],
+    "Rondônia": ["Porto Velho", "Ji-Paraná"],
+    "Roraima": ["Boa Vista"],
+    "Santa Catarina": ["Florianópolis", "Joinville"],
+    "São Paulo": ["São Paulo", "Campinas", "Santos"],
+    "Sergipe": ["Aracaju"],
+    "Tocantins": ["Palmas"]
+}
+
+# ---------------------------------------------------
 # ESTADO DA SESSÃO
 # ---------------------------------------------------
 
@@ -35,8 +69,11 @@ if "dados" not in st.session_state:
             "nome": "",
             "setor": "Marketing",
             "tipo": "",
+            "estado": "",
+            "cidade": "",
             "instagram": "@",
             "fb_page": "",
+            "site": "",
             "servicos": []
         },
 
@@ -65,17 +102,6 @@ def limpar_site(url):
         return ""
 
     url = url.strip()
-
-    # REMOVE HTTP / HTTPS
-    url = re.sub(
-        r"^https?:\/\/",
-        "",
-        url,
-        flags=re.IGNORECASE
-    )
-
-    # REMOVE BARRA FINAL
-    url = url.rstrip("/")
 
     return url
 
@@ -109,9 +135,7 @@ def obter_instagram_handle(valor):
         flags=re.IGNORECASE
     )
 
-    valor = valor.replace("@", "")
     valor = valor.strip("/")
-    valor = valor.strip()
 
     return f"@{valor}" if valor else ""
 
@@ -131,7 +155,6 @@ def obter_facebook_handle(valor):
     )
 
     valor = valor.strip("/")
-    valor = valor.strip()
 
     return valor
 
@@ -330,24 +353,64 @@ if st.session_state.pagina == "home":
 
     st.markdown("---")
 
+    st.subheader("📍 Localização")
+
+    loc1, loc2 = st.columns(2)
+
+    estados = list(ESTADOS_CIDADES.keys())
+
+    estado_index = (
+        estados.index(emp["estado"])
+        if emp["estado"] in estados
+        else 0
+    )
+
+    emp["estado"] = loc1.selectbox(
+        "Estado",
+        estados,
+        index=estado_index
+    )
+
+    cidades = ESTADOS_CIDADES.get(
+        emp["estado"],
+        []
+    )
+
+    cidade_index = (
+        cidades.index(emp["cidade"])
+        if emp["cidade"] in cidades
+        else 0
+    )
+
+    emp["cidade"] = loc2.selectbox(
+        "Cidade",
+        cidades,
+        index=cidade_index
+    )
+
+    st.markdown("---")
+
     st.subheader("📱 Redes Sociais")
 
     col_a, col_b = st.columns(2)
 
-    insta_val = (
-        emp["instagram"]
-        if emp["instagram"].startswith("@")
-        else "@" + emp["instagram"]
-    )
-
     emp["instagram"] = col_a.text_input(
         "Instagram",
-        value=insta_val
+        value=emp["instagram"]
     )
 
     emp["fb_page"] = col_b.text_input(
         "Facebook",
         emp["fb_page"]
+    )
+
+    st.markdown("---")
+
+    st.subheader("🌐 Website")
+
+    emp["site"] = st.text_input(
+        "Site",
+        emp["site"]
     )
 
     st.markdown("---")
@@ -415,10 +478,6 @@ elif st.session_state.pagina == "cad":
         st.rerun()
 
     st.markdown("---")
-
-    # ---------------------------------------------------
-    # FORM NOVO / EDIÇÃO
-    # ---------------------------------------------------
 
     if (
         st.session_state.mostrar_form_concorrente
@@ -565,10 +624,6 @@ elif st.session_state.pagina == "cad":
                 else:
 
                     st.error("Nome obrigatório.")
-
-    # ---------------------------------------------------
-    # GRID DE CARDS
-    # ---------------------------------------------------
 
     concorrentes = st.session_state.dados["concorrentes"]
 
