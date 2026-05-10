@@ -328,7 +328,6 @@ st.markdown("""
     margin-top: 2px;
 }
 
-/* FIX: reduz espaço entre botões da sidebar */
 [data-testid="stSidebar"] div.stButton {
     margin-bottom: 0px !important;
 }
@@ -354,16 +353,23 @@ st.markdown("""
     color: #ffffff !important;
 }
 
-/* ============ CARDS CONCORRENTES ============ */
+/* ============ CARDS CONCORRENTES — força fundo escuro ============ */
 
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #1a2235 !important;
     border: 1px solid #2d3f5e !important;
     border-radius: 16px !important;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
     min-height: 260px !important;
     display: flex !important;
     flex-direction: column !important;
+}
+
+/* garante que texto dentro dos cards fique visível */
+[data-testid="stVerticalBlockBorderWrapper"] p,
+[data-testid="stVerticalBlockBorderWrapper"] span,
+[data-testid="stVerticalBlockBorderWrapper"] div {
+    color: inherit;
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] > div {
@@ -379,9 +385,7 @@ st.markdown("""
     justify-content: space-between !important;
 }
 
-.card-inner {
-    flex: 1;
-}
+.card-inner { flex: 1; }
 
 .card-avatar {
     width: 52px;
@@ -394,7 +398,7 @@ st.markdown("""
     justify-content: center;
     font-size: 20px;
     font-weight: bold;
-    color: white;
+    color: white !important;
     line-height: 1;
     flex-shrink: 0;
 }
@@ -410,15 +414,35 @@ st.markdown("""
     margin: 0;
     padding: 0;
     font-size: 18px;
-    color: white;
+    color: #f1f5f9 !important;
     line-height: 1.3;
     word-break: break-word;
 }
 
 .card-info p {
     margin: 5px 0;
-    color: #cbd5e1;
+    color: #94a3b8 !important;
     font-size: 14px;
+}
+
+/* ============ BOTÃO EDITAR (estilo neutro, não-primary) ============ */
+
+.btn-editar-empresa > button {
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #475569 !important;
+    border-radius: 8px !important;
+    padding: 8px 18px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    transition: background-color 0.15s ease !important;
+}
+
+.btn-editar-empresa > button:hover {
+    background-color: #475569 !important;
+    border-color: #64748b !important;
+    color: #ffffff !important;
 }
 
 /* ============ CARD MINHA EMPRESA ============ */
@@ -429,14 +453,16 @@ st.markdown("""
     border-radius: 16px;
     padding: 28px 32px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-    max-width: 700px;
+    max-width: 860px;
 }
 
-.empresa-card-header {
+.empresa-top {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #2d3f5e;
 }
 
 .empresa-avatar {
@@ -455,34 +481,96 @@ st.markdown("""
 }
 
 .empresa-nome {
-    margin: 0;
+    margin: 0 0 4px 0;
     padding: 0;
     font-size: 22px;
     font-weight: 700;
-    color: white;
+    color: #f1f5f9;
 }
 
-.empresa-info p {
-    margin: 7px 0;
-    color: #cbd5e1;
-    font-size: 15px;
-}
-
-.empresa-info span {
+.empresa-subtitulo {
+    margin: 0;
+    font-size: 13px;
     color: #94a3b8;
-    margin-right: 6px;
+}
+
+.empresa-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 40px;
+}
+
+.empresa-grupo {
+    margin-bottom: 0;
+}
+
+.empresa-grupo-titulo {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    margin: 0 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #1e3a5f;
+}
+
+.empresa-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.empresa-row-icon {
+    font-size: 15px;
+    width: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.empresa-row-content {}
+
+.empresa-row-label {
+    font-size: 11px;
+    color: #64748b;
+    display: block;
+    margin-bottom: 1px;
+}
+
+.empresa-row-value {
+    font-size: 14px;
+    color: #cbd5e1;
+}
+
+.empresa-servicos {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #2d3f5e;
+}
+
+.empresa-servicos-titulo {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    margin: 0 0 10px 0;
 }
 
 .service-tag {
-    background-color: #2271b1;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 4px;
+    background-color: #1e3a5f;
+    color: #93c5fd;
+    border: 1px solid #2d5a8e;
+    padding: 4px 12px;
+    border-radius: 20px;
     font-size: 12px;
-    margin-right: 5px;
+    margin-right: 6px;
     display: inline-block;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
+
+/* ============ POPUP ============ */
 
 .popup-overlay {
     position: fixed;
@@ -761,15 +849,18 @@ if st.session_state.pagina == "home":
                 st.error("Informe pelo menos o nome da empresa.")
 
     else:
-        # Tem dados e não está editando → exibe card no estilo concorrentes
+        # Tem dados e não está editando → exibe card reorganizado
         h1, h2 = st.columns([8, 2])
         with h1:
             st.title("🏢 Minha Empresa")
         with h2:
             st.markdown("<div style='padding-top:18px'/>", unsafe_allow_html=True)
-            if st.button("✏️ Editar Empresa", type="primary", use_container_width=True):
+            # Botão com classe CSS neutra (sem type="primary")
+            st.markdown('<div class="btn-editar-empresa">', unsafe_allow_html=True)
+            if st.button("✏️ Editar Empresa", use_container_width=True):
                 st.session_state.editar_empresa = True
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown("---")
 
@@ -777,27 +868,75 @@ if st.session_state.pagina == "home":
 
         servicos_html = ""
         if emp["servicos"]:
-            servicos_html = "<div style='margin-top:14px'>" + "".join([
+            tags = "".join([
                 f"<span class='service-tag'>{s}</span>"
                 for s in emp["servicos"]
-            ]) + "</div>"
+            ])
+            servicos_html = f"""
+            <div class="empresa-servicos">
+                <div class="empresa-servicos-titulo">🛠️ Serviços</div>
+                {tags}
+            </div>
+            """
+
+        loc = emp['cidade'] or ''
+        if emp['estado']:
+            loc += (', ' if loc else '') + emp['estado']
 
         st.markdown(
             f"""
             <div class="empresa-card">
-                <div class="empresa-card-header">
+
+                <div class="empresa-top">
                     <div class="empresa-avatar">{avatar}</div>
-                    <h2 class="empresa-nome">{emp['nome']}</h2>
+                    <div>
+                        <h2 class="empresa-nome">{emp['nome']}</h2>
+                        <p class="empresa-subtitulo">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</p>
+                    </div>
                 </div>
-                <div class="empresa-info">
-                    <p><span>🏭</span> <b>Setor:</b> {emp['setor'] or '—'}</p>
-                    <p><span>🎯</span> <b>Sub-nicho:</b> {emp['tipo'] or '—'}</p>
-                    <p><span>📍</span> <b>Localização:</b> {emp['cidade'] or '—'}{', ' + emp['estado'] if emp['estado'] else ''}</p>
-                    <p><span>📸</span> <b>Instagram:</b> {emp['instagram'] or '—'}</p>
-                    <p><span>📘</span> <b>Facebook:</b> {emp['fb_page'] or '—'}</p>
-                    <p><span>🌐</span> <b>Site:</b> {emp['site'] or '—'}</p>
+
+                <div class="empresa-grid">
+
+                    <div class="empresa-grupo">
+                        <div class="empresa-grupo-titulo">📍 Localização</div>
+                        <div class="empresa-row">
+                            <span class="empresa-row-icon">🗺️</span>
+                            <div class="empresa-row-content">
+                                <span class="empresa-row-label">Cidade / Estado</span>
+                                <span class="empresa-row-value">{loc or '—'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empresa-grupo">
+                        <div class="empresa-grupo-titulo">🌐 Presença Digital</div>
+                        <div class="empresa-row">
+                            <span class="empresa-row-icon">📸</span>
+                            <div class="empresa-row-content">
+                                <span class="empresa-row-label">Instagram</span>
+                                <span class="empresa-row-value">{emp['instagram'] or '—'}</span>
+                            </div>
+                        </div>
+                        <div class="empresa-row">
+                            <span class="empresa-row-icon">📘</span>
+                            <div class="empresa-row-content">
+                                <span class="empresa-row-label">Facebook</span>
+                                <span class="empresa-row-value">{emp['fb_page'] or '—'}</span>
+                            </div>
+                        </div>
+                        <div class="empresa-row">
+                            <span class="empresa-row-icon">🔗</span>
+                            <div class="empresa-row-content">
+                                <span class="empresa-row-label">Site</span>
+                                <span class="empresa-row-value">{emp['site'] or '—'}</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
+
                 {servicos_html}
+
             </div>
             """,
             unsafe_allow_html=True
