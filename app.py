@@ -222,6 +222,11 @@ def obter_facebook_handle(valor):
 
     return valor
 
+
+def empresa_tem_dados(emp):
+    """Retorna True se a empresa já tem pelo menos o nome preenchido."""
+    return bool(emp.get("nome", "").strip())
+
 # ---------------------------------------------------
 # CONTROLE NAVEGAÇÃO
 # ---------------------------------------------------
@@ -314,13 +319,18 @@ st.markdown("""
     color: #afb1b3;
     font-size: 11px;
     font-weight: 700;
-    padding: 16px 20px 8px 20px;
+    padding: 10px 20px 4px 20px;
     text-transform: uppercase;
     letter-spacing: 1px;
     display: block;
     width: 100%;
     border-top: 1px solid #2c3338;
-    margin-top: 4px;
+    margin-top: 2px;
+}
+
+/* FIX: reduz espaço entre botões da sidebar */
+[data-testid="stSidebar"] div.stButton {
+    margin-bottom: 0px !important;
 }
 
 [data-testid="stSidebar"] div.stButton > button {
@@ -330,7 +340,7 @@ st.markdown("""
     color: #eee !important;
     border: none !important;
     text-align: left !important;
-    padding: 12px 20px !important;
+    padding: 6px 20px !important;
     min-height: auto !important;
     font-size: 15px !important;
     font-weight: 400 !important;
@@ -344,14 +354,13 @@ st.markdown("""
     color: #ffffff !important;
 }
 
-/* ============ CARDS ============ */
+/* ============ CARDS CONCORRENTES ============ */
 
-/* container nativo como card escuro */
 [data-testid="stVerticalBlockBorderWrapper"] {
-    background: #1f2937 !important;
-    border: 1px solid #2d3748 !important;
+    background: #1a2235 !important;
+    border: 1px solid #2d3f5e !important;
     border-radius: 16px !important;
-    box-shadow: none !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
     min-height: 260px !important;
     display: flex !important;
     flex-direction: column !important;
@@ -412,14 +421,56 @@ st.markdown("""
     font-size: 14px;
 }
 
-/* ============ BOTÃO ADICIONAR ============ */
-/* empurra o botão para baixo alinhando com base do título */
-[data-testid="stSidebar"] ~ div [data-testid="stHorizontalBlock"]:first-of-type
-    > [data-testid="column"]:last-child
-    > div {
-    display: flex !important;
-    align-items: flex-end !important;
-    padding-bottom: 10px !important;
+/* ============ CARD MINHA EMPRESA ============ */
+
+.empresa-card {
+    background: #1a2235;
+    border: 1px solid #2d3f5e;
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    max-width: 700px;
+}
+
+.empresa-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.empresa-avatar {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}
+
+.empresa-nome {
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+}
+
+.empresa-info p {
+    margin: 7px 0;
+    color: #cbd5e1;
+    font-size: 15px;
+}
+
+.empresa-info span {
+    color: #94a3b8;
+    margin-right: 6px;
 }
 
 .service-tag {
@@ -556,61 +607,29 @@ if st.session_state.mostrar_alerta_saida:
             st.rerun()
 
 # ---------------------------------------------------
-# HOME
+# HOME — Minha Empresa
 # ---------------------------------------------------
 
 if st.session_state.pagina == "home":
 
-    st.title("🏢 Minha Empresa")
-
     emp = st.session_state.dados["minha_empresa"]
+    tem_dados = empresa_tem_dados(emp)
 
-    if not st.session_state.editar_empresa:
+    # Se não tem dados OU está em modo edição → mostra formulário
+    if not tem_dados or st.session_state.editar_empresa:
 
-        st.markdown(
-            f"""
-            <div class="card-box">
+        # Título com botão cancelar ao lado (só se já tinha dados)
+        h1, h2 = st.columns([8, 2])
+        with h1:
+            st.title("🏢 Minha Empresa")
+        with h2:
+            if tem_dados:
+                st.markdown("<div style='padding-top:18px'/>", unsafe_allow_html=True)
+                if st.button("❌ Cancelar", use_container_width=True):
+                    st.session_state.editar_empresa = False
+                    st.rerun()
 
-            <h2>{emp['nome'] or 'Minha Empresa'}</h2>
-
-            <p><b>Setor:</b> {emp['setor']}</p>
-
-            <p><b>Sub-nicho:</b> {emp['tipo']}</p>
-
-            <p><b>Estado:</b> {emp['estado']}</p>
-
-            <p><b>Cidade:</b> {emp['cidade']}</p>
-
-            <p><b>Instagram:</b> {emp['instagram']}</p>
-
-            <p><b>Facebook:</b> {emp['fb_page']}</p>
-
-            <p><b>Site:</b> {emp['site']}</p>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        if emp["servicos"]:
-
-            st.markdown(
-                "".join([
-                    f"<span class='service-tag'>{s}</span>"
-                    for s in emp["servicos"]
-                ]),
-                unsafe_allow_html=True
-            )
-
-        if st.button(
-            "✏️ Editar Empresa",
-            type="primary"
-        ):
-
-            st.session_state.editar_empresa = True
-            st.rerun()
-
-    else:
+        st.markdown("---")
 
         st.subheader("📄 Informações Gerais")
 
@@ -698,9 +717,7 @@ if st.session_state.pagina == "home":
             emp["site"]
         )
 
-        emp["site"] = limpar_site(
-            site_digitado
-        )
+        emp["site"] = limpar_site(site_digitado)
 
         st.markdown("---")
 
@@ -731,29 +748,60 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True
             )
 
-        c1, c2 = st.columns(2)
+        if st.button(
+            "💾 Salvar Empresa",
+            type="primary"
+        ):
 
-        with c1:
-
-            if st.button(
-                "💾 Salvar",
-                type="primary",
-                use_container_width=True
-            ):
-
+            if emp["nome"].strip():
                 st.session_state.editar_empresa = False
-                st.success("Empresa atualizada!")
+                st.success("Empresa salva com sucesso!")
+                st.rerun()
+            else:
+                st.error("Informe pelo menos o nome da empresa.")
+
+    else:
+        # Tem dados e não está editando → exibe card no estilo concorrentes
+        h1, h2 = st.columns([8, 2])
+        with h1:
+            st.title("🏢 Minha Empresa")
+        with h2:
+            st.markdown("<div style='padding-top:18px'/>", unsafe_allow_html=True)
+            if st.button("✏️ Editar Empresa", type="primary", use_container_width=True):
+                st.session_state.editar_empresa = True
                 st.rerun()
 
-        with c2:
+        st.markdown("---")
 
-            if st.button(
-                "❌ Cancelar",
-                use_container_width=True
-            ):
+        avatar = gerar_avatar(emp["nome"])
 
-                st.session_state.editar_empresa = False
-                st.rerun()
+        servicos_html = ""
+        if emp["servicos"]:
+            servicos_html = "<div style='margin-top:14px'>" + "".join([
+                f"<span class='service-tag'>{s}</span>"
+                for s in emp["servicos"]
+            ]) + "</div>"
+
+        st.markdown(
+            f"""
+            <div class="empresa-card">
+                <div class="empresa-card-header">
+                    <div class="empresa-avatar">{avatar}</div>
+                    <h2 class="empresa-nome">{emp['nome']}</h2>
+                </div>
+                <div class="empresa-info">
+                    <p><span>🏭</span> <b>Setor:</b> {emp['setor'] or '—'}</p>
+                    <p><span>🎯</span> <b>Sub-nicho:</b> {emp['tipo'] or '—'}</p>
+                    <p><span>📍</span> <b>Localização:</b> {emp['cidade'] or '—'}{', ' + emp['estado'] if emp['estado'] else ''}</p>
+                    <p><span>📸</span> <b>Instagram:</b> {emp['instagram'] or '—'}</p>
+                    <p><span>📘</span> <b>Facebook:</b> {emp['fb_page'] or '—'}</p>
+                    <p><span>🌐</span> <b>Site:</b> {emp['site'] or '—'}</p>
+                </div>
+                {servicos_html}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 # ---------------------------------------------------
 # CONCORRENTES
