@@ -120,12 +120,6 @@ if "editando_concorrente" not in st.session_state:
 if "editar_empresa" not in st.session_state:
     st.session_state.editar_empresa = False
 
-if "mostrar_alerta_saida" not in st.session_state:
-    st.session_state.mostrar_alerta_saida = False
-
-if "pagina_destino" not in st.session_state:
-    st.session_state.pagina_destino = None
-
 # ---------------------------------------------------
 # FUNÇÕES AUXILIARES
 # ---------------------------------------------------
@@ -223,34 +217,6 @@ def obter_facebook_handle(valor):
     return valor
 
 # ---------------------------------------------------
-# CONTROLE NAVEGAÇÃO
-# ---------------------------------------------------
-
-def trocar_pagina(destino):
-
-    editando = (
-        st.session_state.mostrar_form_concorrente
-        or st.session_state.editando_concorrente is not None
-    )
-
-    if (
-        st.session_state.pagina == "cad"
-        and destino != "cad"
-        and editando
-    ):
-
-        st.session_state.mostrar_alerta_saida = True
-        st.session_state.pagina_destino = destino
-
-    else:
-
-        st.session_state.pagina = destino
-
-        st.session_state.mostrar_form_concorrente = False
-        st.session_state.editando_concorrente = None
-        st.session_state.editar_empresa = False
-
-# ---------------------------------------------------
 # FUNÇÃO IA
 # ---------------------------------------------------
 
@@ -318,22 +284,6 @@ st.markdown("""
     letter-spacing: 1px;
 }
 
-[data-testid="stSidebar"] div.stButton > button {
-    width: 100%;
-    border-radius: 0px !important;
-    background-color: transparent !important;
-    color: #eee !important;
-    border: none !important;
-    border-bottom: 1px solid #2c3338 !important;
-    text-align: left !important;
-    padding: 15px 20px !important;
-    min-height: auto !important;
-    font-size: 15px !important;
-    font-weight: 400 !important;
-    white-space: normal !important;
-    box-shadow: none !important;
-}
-
 .card-box {
     background: #1f2937;
     border-radius: 18px;
@@ -341,36 +291,6 @@ st.markdown("""
     border: 1px solid #2d3748;
     color: white;
     margin-bottom: 20px;
-}
-
-.card-concorrente {
-    background: #1f2937;
-    border: 1px solid #2d3748;
-    border-radius: 18px;
-    padding: 22px;
-    color: white;
-    min-height: 360px;
-    margin-bottom: 20px;
-}
-
-.avatar-concorrente {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg,#9333ea,#ec4899);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-    font-weight:bold;
-    color:white;
-}
-
-.info-concorrente {
-    color:#cbd5e1;
-    margin-bottom:12px;
-    font-size:15px;
-    word-break:break-word;
 }
 
 .service-tag {
@@ -384,44 +304,11 @@ st.markdown("""
     margin-bottom: 5px;
 }
 
-.popup-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 999999;
-}
-
-.popup-box {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #1f2937;
-    width: 500px;
-    border-radius: 16px;
-    padding: 30px;
-    z-index: 9999999;
-    border: 1px solid #374151;
-    color: white;
-}
-
-.popup-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 15px;
-}
-
-.popup-text {
-    color: #cbd5e1;
-    margin-bottom: 25px;
-    line-height: 1.5;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# SIDEBAR
+# MENU LATERAL
 # ---------------------------------------------------
 
 with st.sidebar:
@@ -432,10 +319,10 @@ with st.sidebar:
     )
 
     if st.button("🏠 Minha Empresa"):
-        trocar_pagina("home")
+        st.session_state.pagina = "home"
 
     if st.button("👥 Concorrentes"):
-        trocar_pagina("cad")
+        st.session_state.pagina = "cad"
 
     st.markdown(
         '<div class="sidebar-header">Análise</div>',
@@ -443,66 +330,16 @@ with st.sidebar:
     )
 
     if st.button("📊 Visão Geral"):
-        trocar_pagina("geral")
+        st.session_state.pagina = "geral"
 
     if st.button("🌐 Confronto de Sites"):
-        trocar_pagina("sites")
+        st.session_state.pagina = "sites"
 
     if st.button("📢 Biblioteca de Ads"):
-        trocar_pagina("ads")
+        st.session_state.pagina = "ads"
 
     if st.button("💡 IA Battle Cards"):
-        trocar_pagina("insights")
-
-# ---------------------------------------------------
-# POPUP ALERTA
-# ---------------------------------------------------
-
-if st.session_state.mostrar_alerta_saida:
-
-    st.markdown("""
-    <div class="popup-overlay"></div>
-
-    <div class="popup-box">
-
-        <div class="popup-title">
-            ⚠️ Cancelar edição?
-        </div>
-
-        <div class="popup-text">
-            Você possui uma edição aberta de concorrente.
-            Se sair agora as alterações não salvas serão perdidas.
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    p1, p2, p3 = st.columns([1, 1, 1])
-
-    with p2:
-
-        if st.button(
-            "✅ Sair e cancelar edição",
-            use_container_width=True
-        ):
-
-            st.session_state.mostrar_form_concorrente = False
-            st.session_state.editando_concorrente = None
-            st.session_state.mostrar_alerta_saida = False
-
-            st.session_state.pagina = (
-                st.session_state.pagina_destino
-            )
-
-            st.rerun()
-
-        if st.button(
-            "❌ Continuar editando",
-            use_container_width=True
-        ):
-
-            st.session_state.mostrar_alerta_saida = False
-            st.rerun()
+        st.session_state.pagina = "insights"
 
 # ---------------------------------------------------
 # HOME
@@ -520,21 +357,21 @@ if st.session_state.pagina == "home":
             f"""
             <div class="card-box">
 
-            <h2>{emp['nome'] or 'Minha Empresa'}</h2>
+                <h2>{emp['nome'] or 'Minha Empresa'}</h2>
 
-            <p><b>Setor:</b> {emp['setor']}</p>
+                <p><b>Setor:</b> {emp['setor']}</p>
 
-            <p><b>Sub-nicho:</b> {emp['tipo']}</p>
+                <p><b>Sub-nicho:</b> {emp['tipo']}</p>
 
-            <p><b>Estado:</b> {emp['estado']}</p>
+                <p><b>Estado:</b> {emp['estado']}</p>
 
-            <p><b>Cidade:</b> {emp['cidade']}</p>
+                <p><b>Cidade:</b> {emp['cidade']}</p>
 
-            <p><b>Instagram:</b> {emp['instagram']}</p>
+                <p><b>Instagram:</b> {emp['instagram']}</p>
 
-            <p><b>Facebook:</b> {emp['fb_page']}</p>
+                <p><b>Facebook:</b> {emp['fb_page']}</p>
 
-            <p><b>Site:</b> {emp['site']}</p>
+                <p><b>Site:</b> {emp['site']}</p>
 
             </div>
             """,
@@ -691,7 +528,6 @@ if st.session_state.pagina == "home":
             ):
 
                 st.session_state.editar_empresa = False
-                st.success("Empresa atualizada!")
                 st.rerun()
 
         with c2:
@@ -873,77 +709,104 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
-                st.markdown(
-                    f"""
-                    <div class="card-concorrente">
+                with st.container():
 
-                        <div style="
-                            display:flex;
-                            align-items:center;
-                            gap:15px;
-                            margin-bottom:20px;
-                        ">
+                    st.markdown("""
+                    <div style="
+                        background:#1f2937;
+                        border:1px solid #2d3748;
+                        border-radius:18px;
+                        padding:22px;
+                        color:white;
+                        min-height:320px;
+                    ">
+                    """, unsafe_allow_html=True)
 
-                            <div class="avatar-concorrente">
+                    col_avatar, col_nome = st.columns([1, 3])
+
+                    with col_avatar:
+
+                        st.markdown(
+                            f"""
+                            <div style="
+                                width:60px;
+                                height:60px;
+                                border-radius:50%;
+                                background:linear-gradient(135deg,#9333ea,#ec4899);
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                font-size:22px;
+                                font-weight:bold;
+                                color:white;
+                            ">
                                 {avatar}
                             </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
 
-                            <div>
-                                <h3 style="
-                                    margin:0;
-                                    color:white;
-                                ">
-                                    {c['nome']}
-                                </h3>
-                            </div>
+                    with col_nome:
 
-                        </div>
+                        st.markdown(
+                            f"""
+                            <h3 style="
+                                margin-top:10px;
+                                color:white;
+                            ">
+                                {c['nome']}
+                            </h3>
+                            """,
+                            unsafe_allow_html=True
+                        )
 
-                        <div class="info-concorrente">
+                    st.markdown(
+                        f"""
+                        <p style="color:#cbd5e1;">
                             🌐 {c['url'] if c['url'] else 'Sem site'}
-                        </div>
+                        </p>
 
-                        <div class="info-concorrente">
+                        <p style="color:#cbd5e1;">
                             📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                        </div>
+                        </p>
 
-                        <div class="info-concorrente">
+                        <p style="color:#cbd5e1;">
                             📘 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
-                        </div>
+                        </p>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                    b1, b2 = st.columns(2)
 
-                b1, b2 = st.columns(2)
+                    with b1:
 
-                with b1:
+                        if st.button(
+                            "✏️ Editar",
+                            key=f"editar_{i}",
+                            use_container_width=True
+                        ):
 
-                    if st.button(
-                        "✏️ Editar",
-                        key=f"editar_{i}",
-                        use_container_width=True
-                    ):
+                            st.session_state.editando_concorrente = i
+                            st.session_state.mostrar_form_concorrente = False
 
-                        st.session_state.editando_concorrente = i
-                        st.session_state.mostrar_form_concorrente = False
+                            st.rerun()
 
-                        st.rerun()
+                    with b2:
 
-                with b2:
+                        if st.button(
+                            "🗑️ Remover",
+                            key=f"remove_{i}",
+                            use_container_width=True
+                        ):
 
-                    if st.button(
-                        "🗑️ Remover",
-                        key=f"remove_{i}",
-                        use_container_width=True
-                    ):
+                            st.session_state.dados[
+                                "concorrentes"
+                            ].pop(i)
 
-                        st.session_state.dados[
-                            "concorrentes"
-                        ].pop(i)
+                            st.rerun()
 
-                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
 
     else:
 
