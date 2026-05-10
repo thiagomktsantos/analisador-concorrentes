@@ -336,11 +336,12 @@ st.markdown("""
 
 .card-box {
     background: #1f2937;
-    border-radius: 18px;
-    padding: 16px 18px;
+    border-radius: 18px 18px 0 0;
+    padding: 16px 18px 18px 18px;
     border: 1px solid #2d3748;
+    border-bottom: none;
     color: white;
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
 .card-avatar {
@@ -356,6 +357,7 @@ st.markdown("""
     font-weight: bold;
     color: white;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .card-header {
@@ -367,10 +369,11 @@ st.markdown("""
 
 .card-name {
     margin: 0;
-    padding-top: 0;
+    padding: 0;
     font-size: 18px;
     color: white;
     line-height: 1.3;
+    word-break: break-word;
 }
 
 .card-info p {
@@ -379,19 +382,35 @@ st.markdown("""
     font-size: 14px;
 }
 
-/* botões grudados no card */
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"] button[kind="secondary"]) {
-    margin-top: -16px !important;
+/* remove margem entre card e botões */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"] {
     padding: 0 !important;
+    margin: 0 !important;
 }
 
-div[data-testid="column"]:has(> div > button[kind="secondary"]) > div > button {
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
+/* botões colados ao card */
+.card-buttons > div[data-testid="stHorizontalBlock"] {
+    gap: 0 !important;
+    margin: 0 !important;
+}
+
+.card-buttons div.stButton > button {
+    border-radius: 0 !important;
     border-top: none !important;
-    background: #111827 !important;
     border-color: #2d3748 !important;
+    background: #111827 !important;
     color: #e5e7eb !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.card-buttons div.stButton:first-child > button {
+    border-bottom-left-radius: 14px !important;
+}
+
+.card-buttons div.stButton:last-child > button {
+    border-bottom-right-radius: 14px !important;
+    border-left: none !important;
 }
 
 .service-tag {
@@ -737,11 +756,8 @@ elif st.session_state.pagina == "cad":
         st.title("👥 Concorrentes")
 
     with top2:
-        st.markdown("<div style='padding-top:16px'>", unsafe_allow_html=True)
-        if st.button(
-            "➕ Adicionar",
-            use_container_width=True
-        ):
+        st.markdown("<div style='margin-top:14px'>", unsafe_allow_html=True)
+        if st.button("➕ Adicionar", use_container_width=True):
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
             st.rerun()
@@ -910,26 +926,18 @@ elif st.session_state.pagina == "cad":
                     unsafe_allow_html=True
                 )
 
+                st.markdown('<div class="card-buttons">', unsafe_allow_html=True)
                 b1, b2 = st.columns(2)
-
                 with b1:
-                    if st.button(
-                        "✏️ Editar",
-                        key=f"editar_{i}",
-                        use_container_width=True
-                    ):
+                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
                         st.session_state.editando_concorrente = i
                         st.session_state.mostrar_form_concorrente = False
                         st.rerun()
-
                 with b2:
-                    if st.button(
-                        "🗑️ Remover",
-                        key=f"remove_{i}",
-                        use_container_width=True
-                    ):
+                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
                         st.session_state.dados["concorrentes"].pop(i)
                         st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
     else:
 
