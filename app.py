@@ -118,7 +118,7 @@ st.markdown("""
     letter-spacing: 1px;
 }
 
-/* MENU LATERAL ORIGINAL */
+/* MENU ORIGINAL */
 
 [data-testid="stSidebar"] div.stButton > button {
     width: 100%;
@@ -142,25 +142,46 @@ st.markdown("""
     transform: none !important;
 }
 
-/* CARD ADICIONAR */
+/* BOTÃO ADICIONAR */
 
-div[data-testid="stVerticalBlock"] div.stButton > button[kind="secondary"] {
-    background: rgba(34,113,177,0.12);
-    border: 2px dashed #2271b1;
-    border-radius: 14px;
-    padding: 35px 20px;
-    min-height: 140px;
+.add-button button {
+    background: #2271b1 !important;
+    border-radius: 10px !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 600 !important;
+    height: 45px !important;
+}
+
+.add-button button:hover {
+    background: #2f89d1 !important;
+}
+
+/* CARD */
+
+.card-concorrente {
+    background: #1f2937;
+    padding: 22px;
+    border-radius: 16px;
+    border: 1px solid #2d3748;
+    margin-bottom: 15px;
+}
+
+.nome-card {
     font-size: 22px;
     font-weight: 700;
     color: white;
-    transition: 0.2s;
-    white-space: pre-line;
+    margin-bottom: 15px;
 }
 
-div[data-testid="stVerticalBlock"] div.stButton > button[kind="secondary"]:hover {
-    border-color: #3b82f6;
-    background: rgba(34,113,177,0.22);
-    transform: translateY(-2px);
+.info-card {
+    color: #cbd5e1;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.remove-btn {
+    margin-top: 10px;
 }
 
 .service-tag {
@@ -172,33 +193,6 @@ div[data-testid="stVerticalBlock"] div.stButton > button[kind="secondary"]:hover
     margin-right: 5px;
     display: inline-block;
     margin-bottom: 5px;
-}
-
-.card-concorrente {
-    background: #1f2937;
-    padding: 20px;
-    border-radius: 14px;
-    border: 1px solid #2d3748;
-    margin-bottom: 15px;
-    transition: 0.2s;
-}
-
-.card-concorrente:hover {
-    border-color: #2271b1;
-    transform: translateY(-2px);
-}
-
-.nome-card {
-    font-size: 20px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 10px;
-}
-
-.info-card {
-    color: #cbd5e1;
-    margin-bottom: 5px;
-    font-size: 14px;
 }
 
 </style>
@@ -331,15 +325,29 @@ if st.session_state.pagina == "home":
 
 elif st.session_state.pagina == "cad":
 
-    st.title("👥 Concorrentes")
+    # TOPO
 
-    # CARD ADICIONAR
+    top1, top2 = st.columns([8, 2])
 
-    add_clicked = st.button(
-        "➕ Adicionar Concorrente\n\nCadastre empresas para monitorar",
-        key="card_add_concorrente",
-        use_container_width=True
-    )
+    with top1:
+        st.title("👥 Concorrentes")
+
+    with top2:
+
+        st.markdown(
+            '<div class="add-button">',
+            unsafe_allow_html=True
+        )
+
+        add_clicked = st.button(
+            "➕ Adicionar",
+            use_container_width=True
+        )
+
+        st.markdown(
+            '</div>',
+            unsafe_allow_html=True
+        )
 
     if add_clicked:
 
@@ -447,13 +455,11 @@ elif st.session_state.pagina == "cad":
 
                     st.error("Nome obrigatório.")
 
-    # GRID DE CARDS
+    # GRID
 
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
-
-        st.subheader("📌 Concorrentes Cadastrados")
 
         cols = st.columns(3)
 
