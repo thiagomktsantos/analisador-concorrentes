@@ -725,11 +725,13 @@ if st.session_state.pagina == "home":
 {CARD_FONT_IMPORT}
 <style>
 {CARD_CSS}
+body {{ padding-bottom: 16px; }}
 .card {{
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 14px;
     padding: 28px 32px;
+    margin-bottom: 2px;
 }}
 .top {{
     display: flex;
@@ -837,10 +839,21 @@ if st.session_state.pagina == "home":
         </div>
     </div>
 </div>
+<script>
+    function resize() {
+        const h = document.documentElement.scrollHeight;
+        window.parent.postMessage({type: 'streamlit:setFrameHeight', height: h}, '*');
+    }
+    window.addEventListener('load', resize);
+    window.addEventListener('resize', resize);
+</script>
 </body>
 </html>"""
 
-        components.html(card_html, height=320, scrolling=False)
+        n_servicos = len(emp["servicos"])
+        linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
+        altura = 280 + (linhas_tags * 42) + 32
+        components.html(card_html, height=altura, scrolling=False)
 
 # ---------------------------------------------------
 # CONCORRENTES
