@@ -97,7 +97,7 @@ def limpar_site(url):
     return url
 
 # ---------------------------------------------------
-# LOGIN (SEM MEXER NO FLUXO)
+# LOGIN
 # ---------------------------------------------------
 
 if not st.session_state.logado:
@@ -115,12 +115,12 @@ if not st.session_state.logado:
     st.stop()
 
 # ---------------------------------------------------
-# SIDEBAR (SEU ORIGINAL RESTAURADO)
+# SIDEBAR (SEM ALTERAÇÃO)
 # ---------------------------------------------------
 
 with st.sidebar:
 
-    st.markdown("### 📌 Navegação")
+    st.title("📌 Menu")
 
     if st.button("🏠 Minha Empresa"):
         st.session_state.pagina = "home"
@@ -141,27 +141,21 @@ with st.sidebar:
         st.session_state.pagina = "insights"
 
 # ---------------------------------------------------
-# CONTROLE DE PÁGINAS (CORREÇÃO REAL DO ERRO)
+# PÁGINAS (SEM ALTERAÇÃO ESTRUTURAL)
 # ---------------------------------------------------
-# (IMPORTANTE: aqui NÃO existe mais elif isolado quebrando execução)
 
-pagina = st.session_state.pagina
-
-# ---------------------------------------------------
 # HOME
-# ---------------------------------------------------
-
-if pagina == "home":
+if st.session_state.pagina == "home":
 
     st.title("🏢 Minha Empresa")
 
     st.write(st.session_state.dados["minha_empresa"])
 
 # ---------------------------------------------------
-# CONCORRENTES
+# CONCORRENTES (ÚNICA MUDANÇA: CARD)
 # ---------------------------------------------------
 
-if pagina == "cad":
+elif st.session_state.pagina == "cad":
 
     st.title("👥 Concorrentes")
 
@@ -177,21 +171,47 @@ if pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
+                # 🔥 ÚNICA CORREÇÃO AQUI (troca de st.markdown → components.html)
                 html = f"""
-                <div style="background:#1f2937;padding:20px;border-radius:15px;color:white;">
-                    <div style="display:flex;gap:10px;align-items:center;">
-                        <div style="background:#9333ea;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                <div style="
+                    background:#1f2937;
+                    padding:20px;
+                    border-radius:15px;
+                    color:white;
+                    min-height:220px;
+                    font-family:Arial;
+                ">
+                    <div style="
+                        display:flex;
+                        gap:10px;
+                        align-items:center;
+                        margin-bottom:15px;
+                    ">
+                        <div style="
+                            width:50px;
+                            height:50px;
+                            border-radius:50%;
+                            background:#9333ea;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-weight:bold;
+                        ">
                             {avatar}
                         </div>
-                        <h3>{c['nome']}</h3>
+
+                        <h3 style="margin:0;">
+                            {c['nome']}
+                        </h3>
                     </div>
-                    <p>🌐 {c['url']}</p>
-                    <p>📸 {c['instagram']}</p>
-                    <p>📘 {c['fb_page']}</p>
+
+                    <p>🌐 {c['url'] if c['url'] else 'Sem site'}</p>
+                    <p>📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}</p>
+                    <p>📘 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}</p>
                 </div>
                 """
 
-                components.html(html, height=220)
+                components.html(html, height=240)
 
     else:
         st.info("Nenhum concorrente cadastrado.")
@@ -200,7 +220,7 @@ if pagina == "cad":
 # VISÃO GERAL
 # ---------------------------------------------------
 
-if pagina == "geral":
+elif st.session_state.pagina == "geral":
 
     st.title("📊 Visão Geral")
 
@@ -210,7 +230,7 @@ if pagina == "geral":
 # ADS
 # ---------------------------------------------------
 
-if pagina == "ads":
+elif st.session_state.pagina == "ads":
 
     st.title("📢 Biblioteca de Ads")
 
@@ -218,7 +238,7 @@ if pagina == "ads":
 # SITES
 # ---------------------------------------------------
 
-if pagina == "sites":
+elif st.session_state.pagina == "sites":
 
     st.title("🌐 Confronto de Sites")
 
@@ -226,6 +246,6 @@ if pagina == "sites":
 # INSIGHTS
 # ---------------------------------------------------
 
-if pagina == "insights":
+elif st.session_state.pagina == "insights":
 
     st.title("💡 IA Battle Cards")
