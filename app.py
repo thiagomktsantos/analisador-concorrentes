@@ -353,39 +353,40 @@ st.markdown("""
     color: #ffffff !important;
 }
 
-/* ============ CARDS CONCORRENTES — força fundo escuro ============ */
+/* ============ CARDS CONCORRENTES — HTML puro ============ */
 
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #1a2235 !important;
+.conc-card {
+    background: #1a2235;
+    border: 1px solid #2d3f5e;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px 16px 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+
+/* Botões Streamlit logo abaixo do card, sem gap */
+.conc-card + div[data-testid="stHorizontalBlock"] {
+    background: #1a2235;
+    border: 1px solid #2d3f5e;
+    border-top: 1px solid #233050;
+    border-radius: 0 0 16px 16px;
+    padding: 0 12px 12px 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+
+.conc-card + div[data-testid="stHorizontalBlock"] button {
+    background: #233050 !important;
+    color: #cbd5e1 !important;
     border: 1px solid #2d3f5e !important;
-    border-radius: 16px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
-    min-height: 260px !important;
-    display: flex !important;
-    flex-direction: column !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
 }
 
-/* garante que texto dentro dos cards fique visível */
-[data-testid="stVerticalBlockBorderWrapper"] p,
-[data-testid="stVerticalBlockBorderWrapper"] span,
-[data-testid="stVerticalBlockBorderWrapper"] div {
-    color: inherit;
+.conc-card + div[data-testid="stHorizontalBlock"] button:hover {
+    background: #2d3f5e !important;
+    color: #f1f5f9 !important;
 }
-
-[data-testid="stVerticalBlockBorderWrapper"] > div {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-[data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-}
-
-.card-inner { flex: 1; }
 
 .card-avatar {
     width: 52px;
@@ -1105,35 +1106,35 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
-                with st.container(border=True):
-
-                    st.markdown(
-                        f"""
-                        <div class="card-inner">
-                            <div class="card-header">
-                                <div class="card-avatar">{avatar}</div>
-                                <h3 class="card-name">{c['nome']}</h3>
-                            </div>
-                            <div class="card-info">
-                                <p>🌐 {c['url'] or '—'}</p>
-                                <p>📸 {c['instagram'] or '—'}</p>
-                                <p>📘 {c['fb_page'] or '—'}</p>
-                            </div>
+                # Card 100% HTML — sem container(border=True)
+                st.markdown(
+                    f"""
+                    <div class="conc-card">
+                        <div class="card-header">
+                            <div class="card-avatar">{avatar}</div>
+                            <h3 class="card-name">{c['nome']}</h3>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                        <div class="card-info">
+                            <p>🌐 {c['url'] or '—'}</p>
+                            <p>📸 {c['instagram'] or '—'}</p>
+                            <p>📘 {c['fb_page'] or '—'}</p>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                    b1, b2 = st.columns(2)
-                    with b1:
-                        if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
-                            st.session_state.editando_concorrente = i
-                            st.session_state.mostrar_form_concorrente = False
-                            st.rerun()
-                    with b2:
-                        if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
-                            st.session_state.dados["concorrentes"].pop(i)
-                            st.rerun()
+                # Botões ficam fora do HTML mas "acoplados" visualmente via CSS
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
+                        st.session_state.editando_concorrente = i
+                        st.session_state.mostrar_form_concorrente = False
+                        st.rerun()
+                with b2:
+                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
+                        st.session_state.dados["concorrentes"].pop(i)
+                        st.rerun()
 
     else:
 
