@@ -325,18 +325,23 @@ st.markdown("""
 
 [data-testid="stSidebar"] div.stButton > button {
     width: 100%;
-    border-radius: 0px !important;
+    border-radius: 8px !important;
     background-color: transparent !important;
     color: #eee !important;
     border: none !important;
-    border-bottom: 1px solid #2c3338 !important;
     text-align: left !important;
-    padding: 15px 20px !important;
+    padding: 12px 20px !important;
     min-height: auto !important;
     font-size: 15px !important;
     font-weight: 400 !important;
     white-space: normal !important;
     box-shadow: none !important;
+    transition: background-color 0.15s ease !important;
+}
+
+[data-testid="stSidebar"] div.stButton > button:hover {
+    background-color: #2c3338 !important;
+    color: #ffffff !important;
 }
 
 /* ============ CARDS ============ */
