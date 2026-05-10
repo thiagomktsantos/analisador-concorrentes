@@ -273,6 +273,7 @@ st.markdown("""
 
 html, body, [class*="css"] {
     font-family: 'Segoe UI', sans-serif;
+    background: #f3f4f6;
 }
 
 [data-testid="stSidebar"] {
@@ -284,7 +285,7 @@ html, body, [class*="css"] {
     border-right: 1px solid #1f2937;
 }
 
-/* REMOVE EFEITO DE BOTÃO MENU */
+/* MENU */
 
 [data-testid="stSidebar"] .stButton > button {
     width: 100%;
@@ -296,21 +297,18 @@ html, body, [class*="css"] {
     padding: 14px 18px !important;
     border-radius: 12px !important;
     font-size: 16px !important;
-    transition: all 0.2s ease;
+    transition: 0.2s;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {
     background: #1f2937 !important;
     color: white !important;
-    transform: none !important;
 }
 
 [data-testid="stSidebar"] .stButton > button:focus {
     box-shadow: none !important;
     outline: none !important;
 }
-
-/* HEADER MENU */
 
 .sidebar-header {
     color: #9ca3af;
@@ -321,80 +319,69 @@ html, body, [class*="css"] {
     letter-spacing: 1px;
 }
 
-/* CARDS */
+/* CARD */
 
 .conc-card {
-    background: linear-gradient(
-        180deg,
-        #1f2937 0%,
-        #111827 100%
-    );
-    border: 1px solid #2d3748;
+    background: white;
     border-radius: 24px;
-    padding: 24px;
-    color: white;
-    min-height: 420px;
-    margin-bottom: 24px;
-    position: relative;
     overflow: hidden;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
 
-.conc-top-bar {
-    height: 140px;
-    width: 100%;
-    border-radius: 18px;
+.conc-banner {
+    height: 180px;
     background: linear-gradient(
         135deg,
-        #111827,
+        #0f172a,
         #1e293b
     );
-    margin-bottom: 24px;
+}
+
+.conc-content {
+    padding: 24px;
+    margin-top: -50px;
 }
 
 .conc-avatar {
-    width: 70px;
-    height: 70px;
+    width: 78px;
+    height: 78px;
     border-radius: 50%;
     background: linear-gradient(
         135deg,
         #9333ea,
         #ec4899
     );
+    border: 5px solid white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
     color: white;
-    margin-top: -58px;
-    border: 4px solid #1f2937;
+    font-size: 26px;
+    font-weight: 700;
 }
 
 .conc-title {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
-    margin-top: 14px;
+    color: #111827;
+    margin-top: 16px;
     margin-bottom: 20px;
-    color: white;
 }
 
 .conc-info {
-    color: #cbd5e1;
+    color: #4b5563;
     font-size: 15px;
     margin-bottom: 12px;
     word-break: break-word;
 }
 
-.conc-buttons {
-    margin-top: 26px;
-}
-
 .card-box {
-    background: #1f2937;
+    background: white;
     border-radius: 18px;
     padding: 25px;
-    border: 1px solid #2d3748;
-    color: white;
+    border: 1px solid #e5e7eb;
     margin-bottom: 20px;
 }
 
@@ -456,194 +443,30 @@ if st.session_state.pagina == "home":
 
     emp = st.session_state.dados["minha_empresa"]
 
-    if not st.session_state.editar_empresa:
+    st.markdown(
+        f"""
+        <div class="card-box">
 
-        st.markdown(
-            f"""
-            <div class="card-box">
+            <h2>{emp['nome'] or 'Minha Empresa'}</h2>
 
-                <h2>{emp['nome'] or 'Minha Empresa'}</h2>
+            <p><b>Setor:</b> {emp['setor']}</p>
 
-                <p><b>Setor:</b> {emp['setor']}</p>
+            <p><b>Sub-nicho:</b> {emp['tipo']}</p>
 
-                <p><b>Sub-nicho:</b> {emp['tipo']}</p>
+            <p><b>Estado:</b> {emp['estado']}</p>
 
-                <p><b>Estado:</b> {emp['estado']}</p>
+            <p><b>Cidade:</b> {emp['cidade']}</p>
 
-                <p><b>Cidade:</b> {emp['cidade']}</p>
+            <p><b>Instagram:</b> {emp['instagram']}</p>
 
-                <p><b>Instagram:</b> {emp['instagram']}</p>
+            <p><b>Facebook:</b> {emp['fb_page']}</p>
 
-                <p><b>Facebook:</b> {emp['fb_page']}</p>
+            <p><b>Site:</b> {emp['site']}</p>
 
-                <p><b>Site:</b> {emp['site']}</p>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        if emp["servicos"]:
-
-            st.markdown(
-                "".join([
-                    f"<span class='service-tag'>{s}</span>"
-                    for s in emp["servicos"]
-                ]),
-                unsafe_allow_html=True
-            )
-
-        if st.button(
-            "✏️ Editar Empresa",
-            type="primary"
-        ):
-
-            st.session_state.editar_empresa = True
-            st.rerun()
-
-    else:
-
-        st.subheader("📄 Informações Gerais")
-
-        col1, col2 = st.columns(2)
-
-        emp["nome"] = col1.text_input(
-            "Nome da Empresa",
-            emp["nome"]
-        )
-
-        emp["setor"] = col1.selectbox(
-            "Setor",
-            [
-                "Marketing",
-                "Tecnologia",
-                "Varejo",
-                "Saúde",
-                "Educação",
-                "Indústria"
-            ]
-        )
-
-        emp["tipo"] = col2.text_input(
-            "Sub-nicho",
-            emp["tipo"]
-        )
-
-        st.markdown("---")
-
-        st.subheader("📍 Localização")
-
-        loc1, loc2 = st.columns(2)
-
-        estados = list(ESTADOS_CIDADES.keys())
-
-        estado_index = 0
-
-        if emp["estado"] in estados:
-            estado_index = estados.index(emp["estado"])
-
-        emp["estado"] = loc1.selectbox(
-            "Estado",
-            estados,
-            index=estado_index
-        )
-
-        cidades = ESTADOS_CIDADES.get(
-            emp["estado"],
-            []
-        )
-
-        cidade_index = 0
-
-        if emp["cidade"] in cidades:
-            cidade_index = cidades.index(emp["cidade"])
-
-        emp["cidade"] = loc2.selectbox(
-            "Cidade",
-            cidades,
-            index=cidade_index
-        )
-
-        st.markdown("---")
-
-        st.subheader("📱 Redes Sociais")
-
-        col_a, col_b = st.columns(2)
-
-        emp["instagram"] = col_a.text_input(
-            "Instagram",
-            value=emp["instagram"]
-        )
-
-        emp["fb_page"] = col_b.text_input(
-            "Facebook",
-            emp["fb_page"]
-        )
-
-        st.markdown("---")
-
-        st.subheader("🌐 Website")
-
-        site_digitado = st.text_input(
-            "Site",
-            emp["site"]
-        )
-
-        emp["site"] = limpar_site(
-            site_digitado
-        )
-
-        st.markdown("---")
-
-        st.subheader("🛠️ Serviços")
-
-        with st.form("form_servico", clear_on_submit=True):
-
-            novo = st.text_input("Adicionar Serviço")
-
-            enviar = st.form_submit_button(
-                "Adicionar",
-                type="primary"
-            )
-
-            if enviar and novo:
-
-                emp["servicos"].append(novo)
-
-                st.rerun()
-
-        if emp["servicos"]:
-
-            st.markdown(
-                "".join([
-                    f"<span class='service-tag'>{s}</span>"
-                    for s in emp["servicos"]
-                ]),
-                unsafe_allow_html=True
-            )
-
-        c1, c2 = st.columns(2)
-
-        with c1:
-
-            if st.button(
-                "💾 Salvar",
-                type="primary",
-                use_container_width=True
-            ):
-
-                st.session_state.editar_empresa = False
-                st.rerun()
-
-        with c2:
-
-            if st.button(
-                "❌ Cancelar",
-                use_container_width=True
-            ):
-
-                st.session_state.editar_empresa = False
-                st.rerun()
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ---------------------------------------------------
 # CONCORRENTES
@@ -670,138 +493,6 @@ elif st.session_state.pagina == "cad":
 
     st.markdown("---")
 
-    if (
-        st.session_state.mostrar_form_concorrente
-        or st.session_state.editando_concorrente is not None
-    ):
-
-        concorrente_edit = None
-
-        if st.session_state.editando_concorrente is not None:
-
-            concorrente_edit = st.session_state.dados[
-                "concorrentes"
-            ][st.session_state.editando_concorrente]
-
-        with st.form(
-            "cad_concorrente",
-            clear_on_submit=False
-        ):
-
-            st.subheader("📄 Identificação")
-
-            c1, c2 = st.columns(2)
-
-            n = c1.text_input(
-                "Nome do Concorrente",
-                value=(
-                    concorrente_edit["nome"]
-                    if concorrente_edit else ""
-                )
-            )
-
-            u = c2.text_input(
-                "URL do Site",
-                value=(
-                    concorrente_edit["url"]
-                    if concorrente_edit else ""
-                )
-            )
-
-            st.markdown("---")
-
-            st.subheader("📱 Redes Sociais")
-
-            c3, c4 = st.columns(2)
-
-            insta_handle = c3.text_input(
-                "Instagram",
-                value=(
-                    concorrente_edit["instagram"]
-                    if concorrente_edit else "@"
-                )
-            )
-
-            fb_p = c4.text_input(
-                "Facebook",
-                value=(
-                    concorrente_edit["fb_page"]
-                    if concorrente_edit else ""
-                )
-            )
-
-            ads_manual = st.text_input(
-                "ID Manual Ads (Opcional)",
-                value=(
-                    concorrente_edit["ads_id"]
-                    if concorrente_edit else ""
-                )
-            )
-
-            col1, col2 = st.columns(2)
-
-            salvar = col1.form_submit_button(
-                "Salvar",
-                type="primary"
-            )
-
-            cancelar = col2.form_submit_button(
-                "Cancelar"
-            )
-
-            if cancelar:
-
-                st.session_state.mostrar_form_concorrente = False
-                st.session_state.editando_concorrente = None
-
-                st.rerun()
-
-            if salvar:
-
-                clean_handle = obter_instagram_handle(
-                    insta_handle
-                )
-
-                fb_clean = obter_facebook_handle(
-                    fb_p
-                )
-
-                site_clean = limpar_site(u)
-
-                search_term = (
-                    ads_manual
-                    or fb_clean
-                    or clean_handle.replace("@", "")
-                    or n
-                )
-
-                dados_novos = {
-                    "nome": n,
-                    "url": site_clean,
-                    "instagram": clean_handle,
-                    "fb_page": fb_clean,
-                    "ads_id": search_term
-                }
-
-                if st.session_state.editando_concorrente is not None:
-
-                    st.session_state.dados[
-                        "concorrentes"
-                    ][
-                        st.session_state.editando_concorrente
-                    ] = dados_novos
-
-                else:
-
-                    st.session_state.dados[
-                        "concorrentes"
-                    ].append(dados_novos)
-
-                st.session_state.mostrar_form_concorrente = False
-                st.session_state.editando_concorrente = None
-
-                st.rerun()
-
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
@@ -818,26 +509,30 @@ elif st.session_state.pagina == "cad":
                     f"""
                     <div class="conc-card">
 
-                        <div class="conc-top-bar"></div>
+                        <div class="conc-banner"></div>
 
-                        <div class="conc-avatar">
-                            {avatar}
-                        </div>
+                        <div class="conc-content">
 
-                        <div class="conc-title">
-                            {c['nome']}
-                        </div>
+                            <div class="conc-avatar">
+                                {avatar}
+                            </div>
 
-                        <div class="conc-info">
-                            🌐 {c['url'] if c['url'] else 'Sem site'}
-                        </div>
+                            <div class="conc-title">
+                                {c['nome']}
+                            </div>
 
-                        <div class="conc-info">
-                            📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                        </div>
+                            <div class="conc-info">
+                                🌐 {c['url'] if c['url'] else 'Sem site'}
+                            </div>
 
-                        <div class="conc-info">
-                            📘 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
+                            <div class="conc-info">
+                                📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
+                            </div>
+
+                            <div class="conc-info">
+                                📘 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
+                            </div>
+
                         </div>
 
                     </div>
@@ -845,9 +540,9 @@ elif st.session_state.pagina == "cad":
                     unsafe_allow_html=True
                 )
 
-                b1, b2 = st.columns(2)
+                c1, c2 = st.columns(2)
 
-                with b1:
+                with c1:
 
                     if st.button(
                         "✏️ Editar",
@@ -856,11 +551,9 @@ elif st.session_state.pagina == "cad":
                     ):
 
                         st.session_state.editando_concorrente = i
-                        st.session_state.mostrar_form_concorrente = False
-
                         st.rerun()
 
-                with b2:
+                with c2:
 
                     if st.button(
                         "🗑️ Remover",
@@ -873,8 +566,6 @@ elif st.session_state.pagina == "cad":
                         ].pop(i)
 
                         st.rerun()
-
-                st.markdown("<br>", unsafe_allow_html=True)
 
     else:
 
