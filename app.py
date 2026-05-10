@@ -149,6 +149,9 @@ def obter_instagram_handle(valor):
     valor = valor.strip()
     valor = re.sub(r"^https?:\/\/(www\.)?instagram\.com\/", "", valor, flags=re.IGNORECASE)
     valor = valor.strip("/")
+    valor = valor.lstrip("@")
+    if valor:
+        valor = "@" + valor
     return valor
 
 def obter_facebook_handle(valor):
@@ -899,7 +902,7 @@ elif st.session_state.pagina == "cad":
                 clean_handle = obter_instagram_handle(insta_handle)
                 fb_clean = obter_facebook_handle(fb_p)
                 site_clean = limpar_site(u)
-                search_term = ads_manual or fb_clean or clean_handle.replace("@", "") or n
+                search_term = ads_manual or fb_clean or clean_handle.lstrip("@") or n
                 dados_novos = {
                     "nome": n,
                     "url": site_clean,
@@ -931,12 +934,13 @@ elif st.session_state.pagina == "cad":
 {CARD_FONT_IMPORT}
 <style>
 {CARD_CSS}
+body {{ padding-bottom: 16px; }}
 .card {{
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 22px 24px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }}
 .header {{
     display: flex;
@@ -994,7 +998,7 @@ elif st.session_state.pagina == "cad":
 </body>
 </html>"""
 
-                components.html(card_html, height=268, scrolling=False)
+                components.html(card_html, height=310, scrolling=False)
 
                 b1, b2 = st.columns(2)
                 with b1:
