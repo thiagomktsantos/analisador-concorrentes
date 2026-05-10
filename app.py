@@ -343,6 +343,39 @@ st.markdown("""
     margin-bottom: 20px;
 }
 
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.card-avatar {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9333ea, #ec4899);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: white;
+}
+
+.card-name {
+    margin: 0;
+    font-size: 20px;
+    color: white;
+}
+
+.card-info p {
+    margin: 6px 0;
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
 .service-tag {
     background-color: #2271b1;
     color: white;
@@ -489,23 +522,14 @@ if st.session_state.pagina == "home":
         st.markdown(
             f"""
             <div class="card-box">
-
             <h2>{emp['nome'] or 'Minha Empresa'}</h2>
-
             <p><b>Setor:</b> {emp['setor']}</p>
-
             <p><b>Sub-nicho:</b> {emp['tipo']}</p>
-
             <p><b>Estado:</b> {emp['estado']}</p>
-
             <p><b>Cidade:</b> {emp['cidade']}</p>
-
             <p><b>Instagram:</b> {emp['instagram']}</p>
-
             <p><b>Facebook:</b> {emp['fb_page']}</p>
-
             <p><b>Site:</b> {emp['site']}</p>
-
             </div>
             """,
             unsafe_allow_html=True
@@ -617,9 +641,7 @@ if st.session_state.pagina == "home":
             emp["site"]
         )
 
-        emp["site"] = limpar_site(
-            site_digitado
-        )
+        emp["site"] = limpar_site(site_digitado)
 
         st.markdown("---")
 
@@ -637,7 +659,6 @@ if st.session_state.pagina == "home":
             if enviar and novo:
 
                 emp["servicos"].append(novo)
-
                 st.rerun()
 
         if emp["servicos"]:
@@ -694,7 +715,6 @@ elif st.session_state.pagina == "cad":
 
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
-
             st.rerun()
 
     st.markdown("---")
@@ -712,10 +732,7 @@ elif st.session_state.pagina == "cad":
                 "concorrentes"
             ][st.session_state.editando_concorrente]
 
-        with st.form(
-            "cad_concorrente",
-            clear_on_submit=False
-        ):
+        with st.form("cad_concorrente", clear_on_submit=False):
 
             st.subheader("📄 Identificação")
 
@@ -774,27 +791,18 @@ elif st.session_state.pagina == "cad":
                 type="primary"
             )
 
-            cancelar = col2.form_submit_button(
-                "Cancelar"
-            )
+            cancelar = col2.form_submit_button("Cancelar")
 
             if cancelar:
 
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
-
                 st.rerun()
 
             if salvar:
 
-                clean_handle = obter_instagram_handle(
-                    insta_handle
-                )
-
-                fb_clean = obter_facebook_handle(
-                    fb_p
-                )
-
+                clean_handle = obter_instagram_handle(insta_handle)
+                fb_clean = obter_facebook_handle(fb_p)
                 site_clean = limpar_site(u)
 
                 search_term = (
@@ -814,21 +822,16 @@ elif st.session_state.pagina == "cad":
 
                 if st.session_state.editando_concorrente is not None:
 
-                    st.session_state.dados[
-                        "concorrentes"
-                    ][
+                    st.session_state.dados["concorrentes"][
                         st.session_state.editando_concorrente
                     ] = dados_novos
 
                 else:
 
-                    st.session_state.dados[
-                        "concorrentes"
-                    ].append(dados_novos)
+                    st.session_state.dados["concorrentes"].append(dados_novos)
 
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
-
                 st.rerun()
 
     concorrentes = st.session_state.dados["concorrentes"]
@@ -843,43 +846,19 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
+                # ✅ CORREÇÃO: estilos movidos para CSS global, HTML simples
                 st.markdown(
                     f"""
                     <div class="card-box">
-
-                    <div style="
-                        display:flex;
-                        align-items:center;
-                        gap:15px;
-                        margin-bottom:20px;
-                    ">
-
-                        <div style="
-                            width:60px;
-                            height:60px;
-                            border-radius:50%;
-                            background:linear-gradient(135deg,#9333ea,#ec4899);
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
-                            font-size:22px;
-                            font-weight:bold;
-                        ">
-                            {avatar}
+                        <div class="card-header">
+                            <div class="card-avatar">{avatar}</div>
+                            <h3 class="card-name">{c['nome']}</h3>
                         </div>
-
-                        <div>
-                            <h3 style="margin:0;">
-                                {c['nome']}
-                            </h3>
+                        <div class="card-info">
+                            <p>🌐 {c['url'] or '—'}</p>
+                            <p>📸 {c['instagram'] or '—'}</p>
+                            <p>📘 {c['fb_page'] or '—'}</p>
                         </div>
-
-                    </div>
-
-                    <p>🌐 {c['url']}</p>
-                    <p>📸 {c['instagram']}</p>
-                    <p>📘 {c['fb_page']}</p>
-
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -897,7 +876,6 @@ elif st.session_state.pagina == "cad":
 
                         st.session_state.editando_concorrente = i
                         st.session_state.mostrar_form_concorrente = False
-
                         st.rerun()
 
                 with b2:
@@ -908,10 +886,7 @@ elif st.session_state.pagina == "cad":
                         use_container_width=True
                     ):
 
-                        st.session_state.dados[
-                            "concorrentes"
-                        ].pop(i)
-
+                        st.session_state.dados["concorrentes"].pop(i)
                         st.rerun()
 
     else:
@@ -933,14 +908,7 @@ elif st.session_state.pagina == "geral":
         df = pd.DataFrame(concorrentes)
 
         st.dataframe(
-            df[
-                [
-                    "nome",
-                    "url",
-                    "instagram",
-                    "fb_page"
-                ]
-            ],
+            df[["nome", "url", "instagram", "fb_page"]],
             use_container_width=True
         )
 
@@ -966,10 +934,7 @@ elif st.session_state.pagina == "ads":
 
         for c in concs:
 
-            with st.expander(
-                f"🔍 {c['nome']}",
-                expanded=True
-            ):
+            with st.expander(f"🔍 {c['nome']}", expanded=True):
 
                 term = c["ads_id"]
 
@@ -977,10 +942,7 @@ elif st.session_state.pagina == "ads":
 
                 st.write(f"Buscando por: {term}")
 
-                st.link_button(
-                    "Abrir Biblioteca de Ads",
-                    url
-                )
+                st.link_button("Abrir Biblioteca de Ads", url)
 
 # ---------------------------------------------------
 # CONFRONTO DE SITES
@@ -1009,14 +971,9 @@ elif st.session_state.pagina == "insights":
             [c["nome"] for c in concorrentes]
         )
 
-        if st.button(
-            "Gerar Estratégia",
-            type="primary"
-        ):
+        if st.button("Gerar Estratégia", type="primary"):
 
-            with st.spinner(
-                "Criando Battle Card..."
-            ):
+            with st.spinner("Criando Battle Card..."):
 
                 resposta = consultar_ia(
                     f"""
