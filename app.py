@@ -64,10 +64,10 @@ def consultar_ia(prompt):
         emp = st.session_state.dados["minha_empresa"]
 
         contexto = f"""
-        Empresa: {emp['nome']}
-        Setor: {emp['setor']}
-        Instagram: {emp['instagram']}
-        """
+Empresa: {emp['nome']}
+Setor: {emp['setor']}
+Instagram: {emp['instagram']}
+"""
 
         resposta = model.generate_content(
             contexto + "\n" + prompt
@@ -462,28 +462,28 @@ elif st.session_state.pagina == "cad":
             with cols[i % 3]:
 
                 st.markdown(
-                    f"""
-                    <div class="card-concorrente">
+f"""
+<div class="card-concorrente">
 
-                        <div class="nome-card">
-                            {c['nome']}
-                        </div>
+    <div class="nome-card">
+        {c['nome']}
+    </div>
 
-                        <div class="info-card">
-                            🌐 {c['url'] or 'Sem site'}
-                        </div>
+    <div class="info-card">
+        🌐 {c['url'] or 'Sem site'}
+    </div>
 
-                        <div class="info-card">
-                            📸 {c['instagram'] or 'Sem Instagram'}
-                        </div>
+    <div class="info-card">
+        📸 {c['instagram'] or 'Sem Instagram'}
+    </div>
 
-                        <div class="info-card">
-                            👍 {c['fb_page'] or 'Sem Facebook'}
-                        </div>
+    <div class="info-card">
+        👍 {c['fb_page'] or 'Sem Facebook'}
+    </div>
 
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+</div>
+""",
+unsafe_allow_html=True
                 )
 
                 if st.button(
