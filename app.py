@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 import pandas as pd
+import trafilatura
 
 # ---------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -191,7 +192,7 @@ div[data-testid="stButton"] > button[kind="secondary"]:hover {
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# MENU LATERAL
+# MENU LATERAL ORIGINAL
 # ---------------------------------------------------
 
 with st.sidebar:
@@ -215,6 +216,9 @@ with st.sidebar:
     if st.button("📊 Visão Geral"):
         st.session_state.pagina = "geral"
 
+    if st.button("🌐 Confronto de Sites"):
+        st.session_state.pagina = "sites"
+
     if st.button("📢 Biblioteca de Ads"):
         st.session_state.pagina = "ads"
 
@@ -222,7 +226,7 @@ with st.sidebar:
         st.session_state.pagina = "insights"
 
 # ---------------------------------------------------
-# PÁGINA: HOME
+# HOME
 # ---------------------------------------------------
 
 if st.session_state.pagina == "home":
@@ -309,7 +313,7 @@ if st.session_state.pagina == "home":
         )
 
 # ---------------------------------------------------
-# PÁGINA: CONCORRENTES
+# CONCORRENTES
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "cad":
@@ -483,7 +487,37 @@ elif st.session_state.pagina == "cad":
         st.info("Nenhum concorrente cadastrado.")
 
 # ---------------------------------------------------
-# PÁGINA: ADS
+# VISÃO GERAL
+# ---------------------------------------------------
+
+elif st.session_state.pagina == "geral":
+
+    st.title("📊 Visão Geral")
+
+    concorrentes = st.session_state.dados["concorrentes"]
+
+    if concorrentes:
+
+        df = pd.DataFrame(concorrentes)
+
+        st.dataframe(
+            df[
+                [
+                    "nome",
+                    "url",
+                    "instagram",
+                    "fb_page"
+                ]
+            ],
+            use_container_width=True
+        )
+
+    else:
+
+        st.warning("Sem dados.")
+
+# ---------------------------------------------------
+# ADS
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "ads":
@@ -517,37 +551,17 @@ elif st.session_state.pagina == "ads":
                 )
 
 # ---------------------------------------------------
-# PÁGINA: VISÃO GERAL
+# CONFRONTO DE SITES
 # ---------------------------------------------------
 
-elif st.session_state.pagina == "geral":
+elif st.session_state.pagina == "sites":
 
-    st.title("📊 Visão Geral")
+    st.title("🌐 Confronto de Sites")
 
-    concorrentes = st.session_state.dados["concorrentes"]
-
-    if concorrentes:
-
-        df = pd.DataFrame(concorrentes)
-
-        st.dataframe(
-            df[
-                [
-                    "nome",
-                    "url",
-                    "instagram",
-                    "fb_page"
-                ]
-            ],
-            use_container_width=True
-        )
-
-    else:
-
-        st.warning("Sem dados.")
+    st.info("Módulo em desenvolvimento.")
 
 # ---------------------------------------------------
-# PÁGINA: IA BATTLE CARDS
+# IA BATTLE CARDS
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "insights":
