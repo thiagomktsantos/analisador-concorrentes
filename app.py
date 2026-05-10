@@ -353,37 +353,25 @@ st.markdown("""
     color: #ffffff !important;
 }
 
-/* ============ CARDS CONCORRENTES — HTML puro ============ */
+/* ============ CARDS CONCORRENTES ============ */
 
 .conc-card {
-    background: #1a2235;
-    border: 1px solid #2d3f5e;
-    border-bottom: none;
-    border-radius: 16px 16px 0 0;
-    padding: 20px 20px 16px 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    background: transparent;
+    padding: 20px 20px 8px 20px;
 }
 
-/* Botões Streamlit logo abaixo do card, sem gap */
-.conc-card + div[data-testid="stHorizontalBlock"] {
-    background: #1a2235;
-    border: 1px solid #2d3f5e;
-    border-top: 1px solid #233050;
-    border-radius: 0 0 16px 16px;
-    padding: 0 12px 12px 12px;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-}
-
-.conc-card + div[data-testid="stHorizontalBlock"] button {
+/* botões dentro do card ficam com estilo escuro */
+.conc-card ~ div button,
+[data-testid="stVerticalBlock"] > div > [data-testid="stHorizontalBlock"] button {
     background: #233050 !important;
     color: #cbd5e1 !important;
     border: 1px solid #2d3f5e !important;
     border-radius: 8px !important;
     font-size: 13px !important;
+    margin-bottom: 4px !important;
 }
 
-.conc-card + div[data-testid="stHorizontalBlock"] button:hover {
+.conc-card ~ div button:hover {
     background: #2d3f5e !important;
     color: #f1f5f9 !important;
 }
@@ -867,81 +855,107 @@ if st.session_state.pagina == "home":
 
         avatar = gerar_avatar(emp["nome"])
 
-        servicos_html = ""
-        if emp["servicos"]:
-            tags = "".join([
-                f"<span class='service-tag'>{s}</span>"
-                for s in emp["servicos"]
-            ])
-            servicos_html = f"""
-            <div class="empresa-servicos">
-                <div class="empresa-servicos-titulo">🛠️ Serviços</div>
-                {tags}
-            </div>
-            """
-
         loc = emp['cidade'] or ''
         if emp['estado']:
             loc += (', ' if loc else '') + emp['estado']
 
-        st.markdown(
-            f"""
-            <div class="empresa-card">
+        servicos_tags = ""
+        if emp["servicos"]:
+            servicos_tags = "".join([
+                f"<span style='background:#1e3a5f;color:#93c5fd;border:1px solid #2d5a8e;padding:4px 12px;border-radius:20px;font-size:12px;margin-right:6px;display:inline-block;margin-bottom:6px'>{s}</span>"
+                for s in emp["servicos"]
+            ])
+            servicos_block = f"""
+            <div style='margin-top:20px;padding-top:16px;border-top:1px solid #2d3f5e'>
+                <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:10px'>🛠️ Serviços</div>
+                {servicos_tags}
+            </div>"""
+        else:
+            servicos_block = ""
 
-                <div class="empresa-top">
-                    <div class="empresa-avatar">{avatar}</div>
-                    <div>
-                        <h2 class="empresa-nome">{emp['nome']}</h2>
-                        <p class="empresa-subtitulo">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</p>
-                    </div>
+        card_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+            body {{ margin:0; padding:0; background:transparent; font-family: sans-serif; }}
+            .card {{
+                background:#1a2235;
+                border:1px solid #2d3f5e;
+                border-radius:16px;
+                padding:28px 32px;
+                box-shadow:0 4px 24px rgba(0,0,0,0.3);
+            }}
+            .top {{ display:flex; align-items:center; gap:18px; margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid #2d3f5e; }}
+            .avatar {{
+                width:64px; height:64px; min-width:64px; border-radius:50%;
+                background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+                display:flex; align-items:center; justify-content:center;
+                font-size:24px; font-weight:bold; color:white; flex-shrink:0;
+            }}
+            .nome {{ margin:0 0 4px 0; font-size:22px; font-weight:700; color:#f1f5f9; }}
+            .subtitulo {{ margin:0; font-size:13px; color:#94a3b8; }}
+            .grid {{ display:grid; grid-template-columns:1fr 1fr; gap:0 40px; }}
+            .grupo-titulo {{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin:0 0 10px 0; padding-bottom:6px; border-bottom:1px solid #1e3a5f; }}
+            .row {{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }}
+            .row-icon {{ font-size:15px; width:20px; flex-shrink:0; margin-top:1px; }}
+            .row-label {{ font-size:11px; color:#64748b; display:block; margin-bottom:1px; }}
+            .row-value {{ font-size:14px; color:#cbd5e1; }}
+        </style>
+        </head>
+        <body>
+        <div class="card">
+            <div class="top">
+                <div class="avatar">{avatar}</div>
+                <div>
+                    <h2 class="nome">{emp['nome']}</h2>
+                    <p class="subtitulo">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</p>
                 </div>
-
-                <div class="empresa-grid">
-
-                    <div class="empresa-grupo">
-                        <div class="empresa-grupo-titulo">📍 Localização</div>
-                        <div class="empresa-row">
-                            <span class="empresa-row-icon">🗺️</span>
-                            <div class="empresa-row-content">
-                                <span class="empresa-row-label">Cidade / Estado</span>
-                                <span class="empresa-row-value">{loc or '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="empresa-grupo">
-                        <div class="empresa-grupo-titulo">🌐 Presença Digital</div>
-                        <div class="empresa-row">
-                            <span class="empresa-row-icon">📸</span>
-                            <div class="empresa-row-content">
-                                <span class="empresa-row-label">Instagram</span>
-                                <span class="empresa-row-value">{emp['instagram'] or '—'}</span>
-                            </div>
-                        </div>
-                        <div class="empresa-row">
-                            <span class="empresa-row-icon">📘</span>
-                            <div class="empresa-row-content">
-                                <span class="empresa-row-label">Facebook</span>
-                                <span class="empresa-row-value">{emp['fb_page'] or '—'}</span>
-                            </div>
-                        </div>
-                        <div class="empresa-row">
-                            <span class="empresa-row-icon">🔗</span>
-                            <div class="empresa-row-content">
-                                <span class="empresa-row-label">Site</span>
-                                <span class="empresa-row-value">{emp['site'] or '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                {servicos_html}
-
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+            <div class="grid">
+                <div>
+                    <div class="grupo-titulo">📍 Localização</div>
+                    <div class="row">
+                        <span class="row-icon">🗺️</span>
+                        <div>
+                            <span class="row-label">Cidade / Estado</span>
+                            <span class="row-value">{loc or '—'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="grupo-titulo">🌐 Presença Digital</div>
+                    <div class="row">
+                        <span class="row-icon">📸</span>
+                        <div>
+                            <span class="row-label">Instagram</span>
+                            <span class="row-value">{emp['instagram'] or '—'}</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <span class="row-icon">📘</span>
+                        <div>
+                            <span class="row-label">Facebook</span>
+                            <span class="row-value">{emp['fb_page'] or '—'}</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <span class="row-icon">🔗</span>
+                        <div>
+                            <span class="row-label">Site</span>
+                            <span class="row-value">{emp['site'] or '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {servicos_block}
+        </div>
+        </body>
+        </html>
+        """
+
+        altura = 280 + (40 if emp["servicos"] else 0)
+        components.html(card_html, height=altura, scrolling=False)
 
 # ---------------------------------------------------
 # CONCORRENTES
@@ -1106,35 +1120,56 @@ elif st.session_state.pagina == "cad":
 
                 avatar = gerar_avatar(c["nome"])
 
-                # Card 100% HTML — sem container(border=True)
-                st.markdown(
-                    f"""
-                    <div class="conc-card">
-                        <div class="card-header">
-                            <div class="card-avatar">{avatar}</div>
-                            <h3 class="card-name">{c['nome']}</h3>
-                        </div>
-                        <div class="card-info">
-                            <p>🌐 {c['url'] or '—'}</p>
-                            <p>📸 {c['instagram'] or '—'}</p>
-                            <p>📘 {c['fb_page'] or '—'}</p>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                # Wrapper container — CSS vai pintar o stVerticalBlock pai via JS
+                with st.container():
 
-                # Botões ficam fora do HTML mas "acoplados" visualmente via CSS
-                b1, b2 = st.columns(2)
-                with b1:
-                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
-                        st.session_state.editando_concorrente = i
-                        st.session_state.mostrar_form_concorrente = False
-                        st.rerun()
-                with b2:
-                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
-                        st.session_state.dados["concorrentes"].pop(i)
-                        st.rerun()
+                    # Injeta JS que sobe pelo DOM e aplica a classe ao bloco pai
+                    st.markdown(
+                        f"""
+                        <div class="conc-card" id="conc-card-{i}">
+                            <div class="card-header">
+                                <div class="card-avatar">{avatar}</div>
+                                <h3 class="card-name">{c['nome']}</h3>
+                            </div>
+                            <div class="card-info">
+                                <p>🌐 {c['url'] or '—'}</p>
+                                <p>📸 {c['instagram'] or '—'}</p>
+                                <p>📘 {c['fb_page'] or '—'}</p>
+                            </div>
+                            <div class="conc-btn-row">
+                                <!-- placeholder visual — botões reais abaixo -->
+                            </div>
+                        </div>
+                        <script>
+                        (function() {{
+                            var el = document.getElementById('conc-card-{i}');
+                            if (!el) return;
+                            // sobe até o bloco de coluna do Streamlit e aplica fundo
+                            var parent = el.closest('[data-testid="stVerticalBlock"]');
+                            if (parent) {{
+                                parent.style.background = '#1a2235';
+                                parent.style.border = '1px solid #2d3f5e';
+                                parent.style.borderRadius = '16px';
+                                parent.style.padding = '0';
+                                parent.style.overflow = 'hidden';
+                                parent.style.boxShadow = '0 4px 20px rgba(0,0,0,0.25)';
+                            }}
+                        }})();
+                        </script>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    b1, b2 = st.columns(2)
+                    with b1:
+                        if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
+                            st.session_state.editando_concorrente = i
+                            st.session_state.mostrar_form_concorrente = False
+                            st.rerun()
+                    with b2:
+                        if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
+                            st.session_state.dados["concorrentes"].pop(i)
+                            st.rerun()
 
     else:
 
