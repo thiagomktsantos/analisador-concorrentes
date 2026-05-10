@@ -274,7 +274,7 @@ html, body, [class*="css"] {
 }
 
 [data-testid="stSidebar"] div.stButton {
-    margin-bottom: 1px !important;
+    margin-bottom: 0px !important;
 }
 
 /* ============ MAIN CONTENT ============ */
@@ -511,23 +511,33 @@ with st.sidebar:
 
     st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
     .sb-logo { padding: 20px 16px 14px; border-bottom: 1px solid #1e2530; margin-bottom: 6px; }
     .sb-logo-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
     .sb-logo-sub { font-size: 11px; color: #4b5a6e; margin-top: 2px; font-family: DM Sans, sans-serif; }
-    .sb-section { padding: 18px 16px 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
-    [data-testid="stSidebar"] div.stButton { margin-bottom: 1px !important; }
+    .sb-section { padding: 14px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
+    [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
     [data-testid="stSidebar"] div.stButton > button {
-        width: 100% !important; border-radius: 6px !important;
-        background-color: transparent !important; color: #9ca3af !important;
-        border: none !important; text-align: left !important;
-        padding: 8px 14px !important; min-height: auto !important;
-        font-size: 14px !important; font-weight: 400 !important;
-        box-shadow: none !important; transition: all 0.12s ease !important;
+        width: 100% !important;
+        border-radius: 6px !important;
+        background-color: transparent !important;
+        color: #9ca3af !important;
+        border: none !important;
+        text-align: left !important;
+        padding: 6px 14px !important;
+        min-height: auto !important;
+        font-size: 13.5px !important;
+        font-weight: 400 !important;
+        box-shadow: none !important;
+        transition: all 0.12s ease !important;
         font-family: DM Sans, sans-serif !important;
+        line-height: 1.4 !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
-        background-color: #1a2030 !important; color: #e5e7eb !important;
+        background-color: #1a2030 !important;
+        color: #e5e7eb !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -536,10 +546,10 @@ with st.sidebar:
 
     st.markdown('<div class="sb-section">Dados Principais</div>', unsafe_allow_html=True)
 
-    if st.button("🏠  Minha Empresa"):
+    if st.button("🏢  Minha Empresa"):
         trocar_pagina("home")
 
-    if st.button("👥  Concorrentes"):
+    if st.button("👤  Concorrentes"):
         trocar_pagina("cad")
 
     st.markdown('<div class="sb-section">Análise</div>', unsafe_allow_html=True)
@@ -547,16 +557,16 @@ with st.sidebar:
     if st.button("📊  Visão Geral"):
         trocar_pagina("geral")
 
-    if st.button("📱  Redes & Engajamento"):
+    if st.button("📱  Redes Sociais"):
         trocar_pagina("redes")
 
     if st.button("🌐  Confronto de Sites"):
         trocar_pagina("sites")
 
-    if st.button("📢  Biblioteca de Ads"):
+    if st.button("📣  Biblioteca de Ads"):
         trocar_pagina("ads")
 
-    if st.button("💡  IA Battle Cards"):
+    if st.button("✨  Insights"):
         trocar_pagina("insights")
 
 # ---------------------------------------------------
@@ -674,7 +684,6 @@ if st.session_state.pagina == "home":
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-        # ── Linha principal: 2 colunas lado a lado
         col_left, col_right = st.columns(2)
 
         with col_left:
@@ -702,7 +711,6 @@ if st.session_state.pagina == "home":
 
         divider()
 
-        # ── Presença Digital (antes de Localização)
         sec_header("Presença Digital")
         col_ig, col_fb, col_site = st.columns(3)
         emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
@@ -712,7 +720,6 @@ if st.session_state.pagina == "home":
 
         divider()
 
-        # ── Localização
         sec_header("Localização")
         loc1, loc2 = st.columns(2)
         estados = list(ESTADOS_CIDADES.keys())
@@ -752,7 +759,6 @@ if st.session_state.pagina == "home":
         if emp['estado']:
             loc += (', ' if loc else '') + emp['estado']
 
-        # Serviços como tags na terceira coluna
         if emp["servicos"]:
             servicos_col_html = "".join([
                 f"<div class='tag'>{s}</div>"
@@ -1065,7 +1071,6 @@ elif st.session_state.pagina == "geral":
     if not concorrentes:
         st.warning("Nenhum concorrente cadastrado ainda.")
     else:
-        # Card resumo minha empresa
         st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Minha Empresa</div>", unsafe_allow_html=True)
         col_me = st.columns(1)[0]
         with col_me:
@@ -1095,7 +1100,7 @@ elif st.session_state.pagina == "geral":
 
 elif st.session_state.pagina == "ads":
 
-    periodo, data_inicio = cabecalho_analise("📢 Biblioteca de Ads", "Anúncios ativos da sua empresa e concorrentes no Facebook")
+    periodo, data_inicio = cabecalho_analise("📣 Biblioteca de Ads", "Anúncios ativos da sua empresa e concorrentes no Facebook")
     concs = st.session_state.dados["concorrentes"]
     emp = st.session_state.dados["minha_empresa"]
 
@@ -1169,12 +1174,12 @@ elif st.session_state.pagina == "sites":
     """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# IA BATTLE CARDS
+# INSIGHTS (ex IA Battle Cards)
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "insights":
 
-    periodo, data_inicio = cabecalho_analise("💡 IA Battle Cards", "Estratégias geradas por IA para vencer a concorrência")
+    periodo, data_inicio = cabecalho_analise("✨ Insights", "Estratégias geradas por IA para vencer a concorrência")
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
@@ -1186,22 +1191,22 @@ elif st.session_state.pagina == "insights":
                 label_visibility="collapsed"
             )
         with col_btn:
-            gerar = st.button("⚡ Gerar Battle Card", type="primary", use_container_width=True)
+            gerar = st.button("⚡ Gerar Insight", type="primary", use_container_width=True)
 
         if gerar:
-            with st.spinner("Criando Battle Card..."):
+            with st.spinner("Gerando insight..."):
                 resposta = consultar_ia(f"Gere um battle card focado em vencer o concorrente {target} considerando o período: {periodo}.")
                 st.markdown(resposta)
     else:
-        st.info("Adicione concorrentes para gerar battle cards estratégicos.")
+        st.info("Adicione concorrentes para gerar insights estratégicos.")
 
 # ---------------------------------------------------
-# REDES SOCIAIS & ENGAJAMENTO
+# REDES SOCIAIS (ex Redes & Engajamento)
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
 
-    periodo, data_inicio = cabecalho_analise("📱 Redes & Engajamento", "Seguidores, posts e engajamento por empresa")
+    periodo, data_inicio = cabecalho_analise("📱 Redes Sociais", "Seguidores, posts e engajamento por empresa")
 
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
@@ -1296,7 +1301,6 @@ elif st.session_state.pagina == "redes":
 
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-        # Tabela comparativa
         st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Comparativo Geral</div>", unsafe_allow_html=True)
 
         rows = []
