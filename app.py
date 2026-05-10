@@ -93,6 +93,9 @@ for campo, valor in campos_padrao.items():
     if campo not in empresa:
         empresa[campo] = valor
 
+if "metricas_redes" not in st.session_state:
+    st.session_state.metricas_redes = {}
+
 if "logado" not in st.session_state:
     st.session_state.logado = False
 
@@ -543,6 +546,9 @@ with st.sidebar:
 
     if st.button("📊  Visão Geral"):
         trocar_pagina("geral")
+
+    if st.button("📱  Redes & Engajamento"):
+        trocar_pagina("redes")
 
     if st.button("🌐  Confronto de Sites"):
         trocar_pagina("sites")
@@ -1188,3 +1194,130 @@ elif st.session_state.pagina == "insights":
                 st.markdown(resposta)
     else:
         st.info("Adicione concorrentes para gerar battle cards estratégicos.")
+
+# ---------------------------------------------------
+# REDES SOCIAIS & ENGAJAMENTO
+# ---------------------------------------------------
+
+elif st.session_state.pagina == "redes":
+
+    periodo, data_inicio = cabecalho_analise("📱 Redes & Engajamento", "Seguidores, posts e engajamento por empresa")
+
+    emp = st.session_state.dados["minha_empresa"]
+    concorrentes = st.session_state.dados["concorrentes"]
+
+    todas = []
+    if emp.get("nome"):
+        todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp.get("instagram", ""), "facebook": emp.get("fb_page", ""), "tipo": "minha"})
+    for i, c in enumerate(concorrentes):
+        todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c.get("instagram", ""), "facebook": c.get("fb_page", ""), "tipo": "concorrente"})
+
+    if not todas:
+        st.info("Cadastre sua empresa e concorrentes para visualizar métricas.")
+    else:
+        metricas = st.session_state.metricas_redes
+
+        for empresa in todas:
+            k = empresa["key"]
+            if k not in metricas:
+                metricas[k] = {
+                    "ig_seguidores": 0, "ig_posts": 0, "ig_engajamento": 0.0,
+                    "fb_seguidores": 0, "fb_posts": 0, "fb_engajamento": 0.0,
+                }
+
+            tem_ig = bool(empresa["instagram"])
+            tem_fb = bool(empresa["facebook"])
+
+            if not tem_ig and not tem_fb:
+                continue
+
+            is_minha = empresa["tipo"] == "minha"
+            badge_cor = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt_cor = "#1d4ed8" if is_minha else "#6b7280"
+            badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_label = "Minha Empresa" if is_minha else "Concorrente"
+            avatar = gerar_avatar(empresa["nome"])
+
+            st.markdown(f"""
+            <div style='display:flex;align-items:center;gap:12px;margin:8px 0 14px 0'>
+                <div style='width:38px;height:38px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                <div style='font-size:17px;font-weight:600;color:#111827'>{empresa['nome']}</div>
+                <span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_label}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+            redes_cols = []
+            if tem_ig:
+                redes_cols.append("instagram")
+            if tem_fb:
+                redes_cols.append("facebook")
+
+            cols = st.columns(len(redes_cols))
+
+            for idx, rede in enumerate(redes_cols):
+                with cols[idx]:
+                    if rede == "instagram":
+                        handle = empresa["instagram"]
+                        icon = "📷"
+                        label = "Instagram"
+                        prefix = "ig"
+                    else:
+                        handle = empresa["facebook"]
+                        icon = "🔵"
+                        label = "Facebook"
+                        prefix = "fb"
+
+                    st.markdown(f"""
+                    <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px 8px 18px;margin-bottom:4px'>
+                        <div style='display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f3f4f6'>
+                            <span style='font-size:18px'>{icon}</span>
+                            <span style='font-size:14px;font-weight:600;color:#111827'>{label}</span>
+                            <span style='font-size:12px;color:#9ca3af;margin-left:auto'>{handle}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    c1, c2, c3 = st.columns(3)
+                    metricas[k][f"{prefix}_seguidores"] = c1.number_input(
+                        "👥 Seguidores", min_value=0, step=100,
+                        value=metricas[k][f"{prefix}_seguidores"],
+                        key=f"{k}_{prefix}_seg"
+                    )
+                    metricas[k][f"{prefix}_posts"] = c2.number_input(
+                        "📝 Posts", min_value=0, step=1,
+                        value=metricas[k][f"{prefix}_posts"],
+                        key=f"{k}_{prefix}_posts"
+                    )
+                    metricas[k][f"{prefix}_engajamento"] = c3.number_input(
+                        "❤️ Engaj. %", min_value=0.0, step=0.1, format="%.2f",
+                        value=metricas[k][f"{prefix}_engajamento"],
+                        key=f"{k}_{prefix}_eng"
+                    )
+
+            st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+
+        # Tabela comparativa
+        st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Comparativo Geral</div>", unsafe_allow_html=True)
+
+        rows = []
+        for empresa in todas:
+            k = empresa["key"]
+            m = metricas.get(k, {})
+            tem_ig = bool(empresa["instagram"])
+            tem_fb = bool(empresa["facebook"])
+            if not tem_ig and not tem_fb:
+                continue
+            row = {"Empresa": empresa["nome"]}
+            if tem_ig:
+                row["IG Seguidores"] = m.get("ig_seguidores", 0)
+                row["IG Posts"] = m.get("ig_posts", 0)
+                row["IG Engaj. %"] = m.get("ig_engajamento", 0.0)
+            if tem_fb:
+                row["FB Seguidores"] = m.get("fb_seguidores", 0)
+                row["FB Posts"] = m.get("fb_posts", 0)
+                row["FB Engaj. %"] = m.get("fb_engajamento", 0.0)
+            rows.append(row)
+
+        if rows:
+            df_redes = pd.DataFrame(rows).fillna("—")
+            st.dataframe(df_redes, use_container_width=True, hide_index=True)
