@@ -645,14 +645,17 @@ if st.session_state.pagina == "home":
     else:
         h1, h2 = st.columns([8, 2])
         with h1:
-            st.title("🏢 Minha Empresa")
+            st.markdown(
+                "<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;padding:0;font-family:DM Sans,sans-serif'>Minha Empresa</h1>",
+                unsafe_allow_html=True
+            )
         with h2:
-            st.markdown("<div style='padding-top:18px'/>", unsafe_allow_html=True)
+            st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
             if st.button("✏️ Editar Empresa", use_container_width=True):
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        st.markdown("---")
+        st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
 
         avatar = gerar_avatar(emp["nome"])
         loc = emp['cidade'] or ''
@@ -779,9 +782,12 @@ if st.session_state.pagina == "home":
 </html>"""
 
         n_servicos = len(emp["servicos"])
-        altura_base = 280
-        linhas_servicos = (n_servicos // 4 + (1 if n_servicos % 4 else 0)) if n_servicos else 0
-        altura = altura_base + linhas_servicos * 42 + (60 if n_servicos else 0)
+        altura_base = 300
+        if n_servicos > 0:
+            linhas_servicos = max(1, (n_servicos + 2) // 3)
+            altura = altura_base + 64 + linhas_servicos * 46
+        else:
+            altura = altura_base
         components.html(card_html, height=altura, scrolling=False)
 
 # ---------------------------------------------------
