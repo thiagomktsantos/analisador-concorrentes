@@ -118,7 +118,7 @@ st.markdown("""
     letter-spacing: 1px;
 }
 
-/* MENU ORIGINAL */
+/* MENU */
 
 [data-testid="stSidebar"] div.stButton > button {
     width: 100%;
@@ -142,7 +142,7 @@ st.markdown("""
     transform: none !important;
 }
 
-/* BOTÃO ADICIONAR */
+/* BOTÃO */
 
 .add-button button {
     background: #2271b1 !important;
@@ -164,14 +164,14 @@ st.markdown("""
     padding: 22px;
     border-radius: 16px;
     border: 1px solid #2d3748;
-    margin-bottom: 12px;
-    min-height: 220px;
+    margin-bottom: 14px;
+    min-height: 210px;
 }
 
 .nome-card {
     font-size: 22px;
     font-weight: 700;
-    color: white;
+    color: #ffffff;
     margin-bottom: 18px;
 }
 
@@ -179,6 +179,7 @@ st.markdown("""
     color: #cbd5e1;
     margin-bottom: 10px;
     font-size: 15px;
+    line-height: 1.5;
     word-break: break-word;
 }
 
@@ -193,7 +194,11 @@ st.markdown("""
     margin-bottom: 5px;
 }
 
-/* REMOVE BORDA DO CODE */
+/* REMOVE ESTILO DE CODE */
+
+code {
+    white-space: pre-wrap !important;
+}
 
 pre {
     white-space: pre-wrap !important;
@@ -457,7 +462,7 @@ elif st.session_state.pagina == "cad":
 
                     st.error("Nome obrigatório.")
 
-    # GRID
+    # GRID DE CARDS
 
     concorrentes = st.session_state.dados["concorrentes"]
 
@@ -469,29 +474,33 @@ elif st.session_state.pagina == "cad":
 
             with cols[i % 3]:
 
-                st.markdown(
-                    f"""
-                    <div class="card-concorrente">
+                card_html = f"""
+                <div class="card-concorrente">
 
-                        <div class="nome-card">
-                            {c['nome']}
-                        </div>
-
-                        <div class="info-card">
-                            🌐 {c['url'] if c['url'] else 'Sem site'}
-                        </div>
-
-                        <div class="info-card">
-                            📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
-                        </div>
-
-                        <div class="info-card">
-                            👍 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
-                        </div>
-
+                    <div class="nome-card">
+                        {c['nome']}
                     </div>
-                    """,
-                    unsafe_allow_html=True
+
+                    <div class="info-card">
+                        🌐 {c['url'] if c['url'] else 'Sem site'}
+                    </div>
+
+                    <div class="info-card">
+                        📸 {c['instagram'] if c['instagram'] else 'Sem Instagram'}
+                    </div>
+
+                    <div class="info-card">
+                        👍 {c['fb_page'] if c['fb_page'] else 'Sem Facebook'}
+                    </div>
+
+                </div>
+                """
+
+                # ESSA É A CORREÇÃO PRINCIPAL
+                st.components.v1.html(
+                    card_html,
+                    height=230,
+                    scrolling=False
                 )
 
                 if st.button(
