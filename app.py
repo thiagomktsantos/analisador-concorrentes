@@ -511,33 +511,67 @@ with st.sidebar:
 
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
-    .sb-logo { padding: 20px 16px 14px; border-bottom: 1px solid #1e2530; margin-bottom: 6px; }
-    .sb-logo-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
-    .sb-logo-sub { font-size: 11px; color: #4b5a6e; margin-top: 2px; font-family: DM Sans, sans-serif; }
-    .sb-section { padding: 14px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
+
+    .sb-logo {
+        padding: 22px 18px 16px;
+        border-bottom: 1px solid #1e2530;
+        margin-bottom: 8px;
+    }
+    .sb-logo-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
+        font-family: DM Sans, sans-serif;
+    }
+    .sb-logo-sub {
+        font-size: 11px;
+        color: #3d4f63;
+        margin-top: 3px;
+        font-family: DM Sans, sans-serif;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+    .sb-section {
+        padding: 18px 18px 5px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.6px;
+        color: #2d3a4a;
+        font-family: DM Sans, sans-serif;
+    }
+
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
+
     [data-testid="stSidebar"] div.stButton > button {
         width: 100% !important;
-        border-radius: 6px !important;
+        border-radius: 7px !important;
         background-color: transparent !important;
-        color: #9ca3af !important;
+        color: #8a95a3 !important;
         border: none !important;
         text-align: left !important;
-        padding: 6px 14px !important;
+        padding: 8px 14px !important;
         min-height: auto !important;
-        font-size: 13.5px !important;
-        font-weight: 400 !important;
+        font-size: 14.5px !important;
+        font-weight: 700 !important;
         box-shadow: none !important;
-        transition: all 0.12s ease !important;
+        transition: all 0.15s ease !important;
         font-family: DM Sans, sans-serif !important;
-        line-height: 1.4 !important;
+        line-height: 1.45 !important;
+        letter-spacing: -0.1px !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
-        background-color: #1a2030 !important;
+        background-color: #161d2a !important;
         color: #e5e7eb !important;
+    }
+    [data-testid="stSidebar"] div.stButton > button:focus {
+        background-color: #1a2235 !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -546,27 +580,27 @@ with st.sidebar:
 
     st.markdown('<div class="sb-section">Dados Principais</div>', unsafe_allow_html=True)
 
-    if st.button("🏢  Minha Empresa"):
+    if st.button("🏛️   Minha Empresa"):
         trocar_pagina("home")
 
-    if st.button("👤  Concorrentes"):
+    if st.button("🎯   Concorrentes"):
         trocar_pagina("cad")
 
     st.markdown('<div class="sb-section">Análise</div>', unsafe_allow_html=True)
 
-    if st.button("📊  Visão Geral"):
+    if st.button("📈   Visão Geral"):
         trocar_pagina("geral")
 
-    if st.button("📱  Redes Sociais"):
+    if st.button("𝕏 ·  🔵 ·  📸   Redes Sociais"):
         trocar_pagina("redes")
 
-    if st.button("🌐  Confronto de Sites"):
+    if st.button("🔍   Confronto de Sites"):
         trocar_pagina("sites")
 
-    if st.button("📣  Biblioteca de Ads"):
+    if st.button("🎬   Biblioteca de Ads"):
         trocar_pagina("ads")
 
-    if st.button("✨  Insights"):
+    if st.button("💡   Insights"):
         trocar_pagina("insights")
 
 # ---------------------------------------------------
@@ -828,12 +862,15 @@ body {{ padding-bottom: 16px; }}
     margin-bottom: 14px;
 }}
 .ico {{
-    font-size: 16px;
     width: 20px;
+    height: 20px;
     flex-shrink: 0;
-    margin-top: 3px;
-    color: #6b7280;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }}
+.ico svg {{ width: 18px; height: 18px; }}
 .lbl {{ font-size: 12px; color: #9ca3af; display: block; margin-bottom: 2px; }}
 .val {{ font-size: 15px; color: #111827; font-weight: 500; }}
 .tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
@@ -862,22 +899,42 @@ body {{ padding-bottom: 16px; }}
         <div>
             <div class="sec-title">Presença Digital</div>
             <div class="row">
-                <span class="ico">📷</span>
+                <span class="ico">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="url(#ig)"/>
+                        <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                        <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+                    </svg>
+                </span>
                 <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '—'}</span></div>
             </div>
             <div class="row">
-                <span class="ico">🔵</span>
+                <span class="ico">
+                    <svg viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                    </svg>
+                </span>
                 <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '—'}</span></div>
             </div>
             <div class="row">
-                <span class="ico">🌐</span>
+                <span class="ico">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </span>
                 <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
             </div>
         </div>
         <div>
             <div class="sec-title">Localização</div>
             <div class="row">
-                <span class="ico">📍</span>
+                <span class="ico">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </span>
                 <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
             </div>
         </div>
@@ -1016,7 +1073,8 @@ body {{ padding-bottom: 16px; }}
     gap: 10px;
     margin-bottom: 13px;
 }}
-.ico {{ font-size: 16px; width: 20px; flex-shrink: 0; margin-top: 1px; }}
+.ico {{ width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; display:flex; align-items:center; justify-content:center; }}
+.ico svg {{ width: 17px; height: 17px; }}
 .lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 2px; }}
 .val {{ font-size: 14px; color: #374151; font-weight: 500; word-break: break-all; }}
 </style>
@@ -1028,15 +1086,31 @@ body {{ padding-bottom: 16px; }}
         <span class="name">{c['nome']}</span>
     </div>
     <div class="row">
-        <span class="ico">🌐</span>
+        <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+        </span>
         <div><span class="lbl">Site</span><span class="val">{c['url'] or '—'}</span></div>
     </div>
     <div class="row">
-        <span class="ico">📷</span>
+        <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs><linearGradient id="ig2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="url(#ig2)"/>
+                <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+            </svg>
+        </span>
         <div><span class="lbl">Instagram</span><span class="val">{c['instagram'] or '—'}</span></div>
     </div>
     <div class="row">
-        <span class="ico">🔵</span>
+        <span class="ico">
+            <svg viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+            </svg>
+        </span>
         <div><span class="lbl">Facebook</span><span class="val">{c['fb_page'] or '—'}</span></div>
     </div>
 </div>
@@ -1263,19 +1337,19 @@ elif st.session_state.pagina == "redes":
                 with cols[idx]:
                     if rede == "instagram":
                         handle = empresa["instagram"]
-                        icon = "📷"
+                        icon_svg = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="igr" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="url(#igr)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>"""
                         label = "Instagram"
                         prefix = "ig"
                     else:
                         handle = empresa["facebook"]
-                        icon = "🔵"
+                        icon_svg = """<svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>"""
                         label = "Facebook"
                         prefix = "fb"
 
                     st.markdown(f"""
                     <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px 8px 18px;margin-bottom:4px'>
                         <div style='display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f3f4f6'>
-                            <span style='font-size:18px'>{icon}</span>
+                            {icon_svg}
                             <span style='font-size:14px;font-weight:600;color:#111827'>{label}</span>
                             <span style='font-size:12px;color:#9ca3af;margin-left:auto'>{handle}</span>
                         </div>
