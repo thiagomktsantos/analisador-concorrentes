@@ -600,6 +600,39 @@ body { padding-bottom: 8px; }
 CARD_FONT_IMPORT = """<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">"""
 
 # ---------------------------------------------------
+# HELPER — CABEÇALHO DE ANÁLISE COM PERÍODO
+# ---------------------------------------------------
+
+def cabecalho_analise(titulo, subtitulo=""):
+    import datetime
+    h1, h2 = st.columns([6, 3])
+    with h1:
+        st.markdown(f"<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>{titulo}</h1>", unsafe_allow_html=True)
+        if subtitulo:
+            st.markdown(f"<div style='font-size:14px;color:#6b7280;margin-top:3px'>{subtitulo}</div>", unsafe_allow_html=True)
+    with h2:
+        periodo = st.selectbox(
+            "Período",
+            ["Últimos 7 dias", "Últimos 30 dias", "Últimos 90 dias", "Últimos 12 meses", "Todo o período"],
+            index=1,
+            label_visibility="collapsed"
+        )
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
+    periodo_map = {
+        "Últimos 7 dias": 7,
+        "Últimos 30 dias": 30,
+        "Últimos 90 dias": 90,
+        "Últimos 12 meses": 365,
+        "Todo o período": None,
+    }
+    dias = periodo_map[periodo]
+    if dias:
+        data_inicio = (datetime.date.today() - datetime.timedelta(days=dias)).strftime("%Y-%m-%d")
+    else:
+        data_inicio = None
+    return periodo, data_inicio
+
+# ---------------------------------------------------
 # HOME — Minha Empresa
 # ---------------------------------------------------
 
@@ -1012,39 +1045,6 @@ body {{ padding-bottom: 16px; }}
                         st.rerun()
     else:
         st.info("Nenhum concorrente cadastrado ainda. Clique em **➕ Adicionar** para começar.")
-
-# ---------------------------------------------------
-# HELPER — CABEÇALHO DE ANÁLISE COM PERÍODO
-# ---------------------------------------------------
-
-def cabecalho_analise(titulo, subtitulo=""):
-    import datetime
-    h1, h2 = st.columns([6, 3])
-    with h1:
-        st.markdown(f"<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>{titulo}</h1>", unsafe_allow_html=True)
-        if subtitulo:
-            st.markdown(f"<div style='font-size:14px;color:#6b7280;margin-top:3px'>{subtitulo}</div>", unsafe_allow_html=True)
-    with h2:
-        periodo = st.selectbox(
-            "Período",
-            ["Últimos 7 dias", "Últimos 30 dias", "Últimos 90 dias", "Últimos 12 meses", "Todo o período"],
-            index=1,
-            label_visibility="collapsed"
-        )
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
-    periodo_map = {
-        "Últimos 7 dias": 7,
-        "Últimos 30 dias": 30,
-        "Últimos 90 dias": 90,
-        "Últimos 12 meses": 365,
-        "Todo o período": None,
-    }
-    dias = periodo_map[periodo]
-    if dias:
-        data_inicio = (datetime.date.today() - datetime.timedelta(days=dias)).strftime("%Y-%m-%d")
-    else:
-        data_inicio = None
-    return periodo, data_inicio
 
 # ---------------------------------------------------
 # VISÃO GERAL
