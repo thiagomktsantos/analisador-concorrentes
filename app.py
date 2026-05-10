@@ -180,10 +180,6 @@ st.markdown("""
     font-size: 15px;
 }
 
-.remove-btn {
-    margin-top: 10px;
-}
-
 .service-tag {
     background-color: #2271b1;
     color: white;
@@ -325,8 +321,6 @@ if st.session_state.pagina == "home":
 
 elif st.session_state.pagina == "cad":
 
-    # TOPO
-
     top1, top2 = st.columns([8, 2])
 
     with top1:
@@ -467,27 +461,30 @@ elif st.session_state.pagina == "cad":
 
             with cols[i % 3]:
 
-                st.markdown(f"""
-                <div class="card-concorrente">
+                st.markdown(
+                    f"""
+                    <div class="card-concorrente">
 
-                    <div class="nome-card">
-                        {c['nome']}
+                        <div class="nome-card">
+                            {c['nome']}
+                        </div>
+
+                        <div class="info-card">
+                            🌐 {c['url'] or 'Sem site'}
+                        </div>
+
+                        <div class="info-card">
+                            📸 {c['instagram'] or 'Sem Instagram'}
+                        </div>
+
+                        <div class="info-card">
+                            👍 {c['fb_page'] or 'Sem Facebook'}
+                        </div>
+
                     </div>
-
-                    <div class="info-card">
-                        🌐 {c['url'] or 'Sem site'}
-                    </div>
-
-                    <div class="info-card">
-                        📸 {c['instagram'] or 'Sem Instagram'}
-                    </div>
-
-                    <div class="info-card">
-                        👍 {c['fb_page'] or 'Sem Facebook'}
-                    </div>
-
-                </div>
-                """, unsafe_allow_html=True)
+                    """,
+                    unsafe_allow_html=True
+                )
 
                 if st.button(
                     "🗑️ Remover",
