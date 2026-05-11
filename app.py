@@ -29,11 +29,11 @@ def get_supabase() -> Client | None:
 supabase = get_supabase()
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO GEMINI (MODELO ATUAL)
+# CONFIGURAÇÃO GEMINI (MODELO ATUAL FUNCIONAL)
 # ---------------------------------------------------
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    gemini_model = genai.GenerativeModel("gemini-1.5-pro")
+    gemini_model = genai.GenerativeModel("gemini-1.5-flash")
 else:
     gemini_model = None
 
@@ -72,14 +72,12 @@ def extrair_conteudo_site(url: str) -> str:
     }
 
     try:
-        # 1️⃣ tentativa direta
         resp = requests.get(url_fmt, headers=headers, timeout=20)
         if resp.status_code != 200:
             return "Conteúdo indisponível ou bloqueado."
 
         html = resp.text
 
-        # 2️⃣ Trafilatura otimizada
         texto = trafilatura.extract(
             html,
             favor_precision=True,
@@ -93,10 +91,9 @@ def extrair_conteudo_site(url: str) -> str:
         if not texto or len(texto) < 200:
             return (
                 "Site com conteúdo carregado via JavaScript. "
-                "Texto institucional não disponível no HTML inicial."
+                "Conteúdo institucional não acessível via HTML."
             )
 
-        # 3️⃣ Limpeza semântica
         texto = re.sub(
             r"(Política de Privacidade.*|Cookies.*|©.*|Todos os direitos reservados.*)",
             "",
@@ -116,8 +113,8 @@ def extrair_conteudo_site(url: str) -> str:
 st.title("Análise Competitiva com IA")
 
 st.markdown(
-    "Informe os **sites da sua empresa e dos concorrentes** "
-    "para gerar um relatório comparativo estratégico."
+    "Insira os **sites da sua empresa e concorrentes** "
+    "para gerar um relatório estratégico comparativo."
 )
 
 urls = st.text_area(
@@ -142,15 +139,16 @@ if st.button("Gerar Relatório"):
         prompt = f"""
 Você é um estrategista sênior de marketing e branding.
 
-Com base nos conteúdos abaixo, gere um relatório contendo:
+Analise os conteúdos abaixo e gere um relatório com:
+
 1. Posicionamento de cada empresa
-2. Mensagens-chave percebidas
+2. Mensagens-chave
 3. Diferenciais competitivos
-4. Limitações de comunicação
-5. Oportunidades estratégicas não exploradas
+4. Fragilidades de comunicação
+5. Oportunidades estratégicas
 6. Recomendações práticas
 
-Quando um site tiver conteúdo limitado, considere isso um insight estratégico.
+Se algum site tiver conteúdo limitado, considere isso como insight estratégico.
 
 CONTEÚDOS:
 {"\n\n---\n\n".join(conteudos)}
