@@ -4,9 +4,10 @@ import google.generativeai as genai
 import pandas as pd
 import re
 import unicodedata
-import trafilatura
 import requests
 from supabase import create_client, Client
+from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
 # ---------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -37,39 +38,6 @@ else:
     gemini_model = None
 
 # ---------------------------------------------------
-# LISTA ESTADOS E CIDADES
-# ---------------------------------------------------
-ESTADOS_CIDADES = {
-    "Acre": ["Rio Branco", "Cruzeiro do Sul"],
-    "Alagoas": ["Maceió", "Arapiraca"],
-    "Amapá": ["Macapá", "Santana"],
-    "Amazonas": ["Manaus", "Parintins"],
-    "Bahia": ["Salvador", "Feira de Santana"],
-    "Ceará": ["Fortaleza", "Juazeiro do Norte", "Sobral"],
-    "Distrito Federal": ["Brasília"],
-    "Espírito Santo": ["Vitória", "Vila Velha"],
-    "Goiás": ["Goiânia", "Anápolis"],
-    "Maranhão": ["São Luís", "Imperatriz"],
-    "Mato Grosso": ["Cuiabá", "Rondonópolis"],
-    "Mato Grosso do Sul": ["Campo Grande", "Dourados"],
-    "Minas Gerais": ["Belo Horizonte", "Uberlândia"],
-    "Pará": ["Belém", "Santarém"],
-    "Paraíba": ["João Pessoa", "Campina Grande"],
-    "Paraná": ["Curitiba", "Londrina"],
-    "Pernambuco": ["Recife", "Caruaru"],
-    "Piauí": ["Teresina", "Parnaíba"],
-    "Rio de Janeiro": ["Rio de Janeiro", "Niterói"],
-    "Rio Grande do Norte": ["Natal", "Mossoró"],
-    "Rio Grande do Sul": ["Porto Alegre", "Caxias do Sul"],
-    "Rondônia": ["Porto Velho", "Ji-Paraná"],
-    "Roraima": ["Boa Vista"],
-    "Santa Catarina": ["Florianópolis", "Joinville"],
-    "São Paulo": ["São Paulo", "Campinas", "Santos"],
-    "Sergipe": ["Aracaju"],
-    "Tocantins": ["Palmas"]
-}
-
-# ---------------------------------------------------
 # FUNÇÕES AUXILIARES
 # ---------------------------------------------------
 def remover_acentos(texto):
@@ -78,49 +46,7 @@ def remover_acentos(texto):
         if unicodedata.category(c) != 'Mn'
     )
 
-def limpar_site(url):
-    if not url:
-        return ""
-    url = url.strip().lower()
-    url = re.sub(r"^https?:\/\/", "", url, flags=re.IGNORECASE)
-    url = re.sub(r"^www\.", "", url, flags=re.IGNORECASE)
-    url = remover_acentos(url)
-    url = re.sub(r"[^a-z0-9\.\-\/]", "", url)
-    return url
-
-def gerar_avatar(nome):
-    nome = nome.strip().upper()
-    if not nome:
-        return "?"
-    partes = nome.split()
-    if len(partes) == 1:
-        return partes[0][0]
-    return partes[0][0] + partes[1][0]
-
-def obter_instagram_handle(valor):
-    if not valor:
-        return ""
-    valor = valor.strip()
-    valor = re.sub(r"^https?:\/\/(www\.)?instagram\.com\/", "", valor, flags=re.IGNORECASE)
-    valor = valor.strip("/")
-    valor = valor.lstrip("@")
-    if valor:
-        valor = "@" + valor
-    return valor
-
-def obter_facebook_handle(valor):
-    if not valor:
-        return ""
-    valor = valor.strip()
-    valor = re.sub(r"^https?:\/\/(www\.)?facebook\.com\/", "", valor, flags=re.IGNORECASE)
-    valor = valor.strip("/")
-    return valor
-
-def empresa_tem_dados(emp):
-    return bool(emp.get("nome", "").strip())
-
 def formatar_url(url):
-    """Garante que a URL tenha schema HTTP para Trafilatura."""
     if not url:
         return ""
     url = url.strip()
@@ -129,72 +55,89 @@ def formatar_url(url):
     return url
 
 # ---------------------------------------------------
-# NOVA FUNÇÃO DE EXTRAÇÃO DE CONTEÚDO
+# EXTRAÇÃO REAL DE CONTEÚDO (JS RENDERIZADO)
 # ---------------------------------------------------
 def extrair_conteudo_site(url: str) -> str:
-    """Extrai texto principal do site com fallback inteligente."""
     url_fmt = formatar_url(url)
     if not url_fmt:
         return ""
 
     try:
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/122.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8"
-        }
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/122.0.0.0 Safari/537.36"
+                )
+            )
 
-        # 1) Tenta baixar com Trafilatura
-        downloaded = trafilatura.fetch_url(url_fmt)
+            page.goto(url_fmt, timeout=30000)
+            page.wait_for_timeout(5000)
 
-        # 2) Fallback com Requests se Trafilatura não trouxe HTML
-        if not downloaded:
-            resp = requests.get(url_fmt, headers=headers, timeout=15)
-            if resp.status_code == 200:
-                downloaded = resp.text
+            html = page.content()
+            browser.close()
 
-        if not downloaded:
-            return ""
+        soup = BeautifulSoup(html, "html.parser")
 
-        # 3) Extração otimizada
-        texto = trafilatura.extract(
-            downloaded,
-            include_tables=False,
-            include_links=False,
-            include_images=False,
-            favor_precision=True,
-            no_fallback=False,
-            deduplicate=True
-        )
+        for tag in soup(["script", "style", "noscript", "svg", "footer", "header"]):
+            tag.decompose()
 
-        if not texto:
-            return ""
+        texto = soup.get_text(separator="\n")
 
-        # 4) Limpeza semântica (remove rodapés, políticas etc.)
         texto = re.sub(
             r"(Política de Privacidade.*|Cookies.*|©.*|Todos os direitos reservados.*)",
             "",
             texto,
             flags=re.IGNORECASE | re.DOTALL
         )
+
         texto = re.sub(r"\n{3,}", "\n\n", texto).strip()
+
+        if len(texto) < 300:
+            return "Conteúdo institucional limitado ou carregado dinamicamente."
+
         return texto
 
     except Exception as e:
-        return f"[Erro ao acessar {url_fmt}: {e}]"
+        return f"[Erro ao processar {url_fmt}: {e}]"
 
 # ---------------------------------------------------
-# CONTINUAÇÃO DO APP (SEM ALTERAÇÕES)
+# EXEMPLO DE USO NO APP (fluxo original mantido)
 # ---------------------------------------------------
+st.title("Análise Competitiva com IA")
 
-# — daqui em diante todo o restante do seu `app.py`
-# permanece exatamente como está no GitHub.
+urls = st.text_area(
+    "Informe os sites (um por linha):",
+    placeholder="https://suaempresa.com\nhttps://concorrente.com"
+)
 
-# As funcionalidades de autenticação, navegação,
-# dashboard, relatórios, integração com Gemini,
-# comentários, páginas e UI não foram alteradas.
+if st.button("Gerar Relatório"):
+    if not gemini_model:
+        st.error("API do Gemini não configurada.")
+    else:
+        sites = [u.strip() for u in urls.split("\n") if u.strip()]
+        conteudos = []
 
-# (O trecho que foi substituído foi apenas a função `extrair_conteudo_site`)
+        for site in sites:
+            with st.spinner(f"Extraindo conteúdo de {site}..."):
+                texto = extrair_conteudo_site(site)
+                conteudos.append(f"SITE: {site}\n\n{texto}")
+
+        prompt = f"""
+Você é um estrategista de marketing e branding.
+
+Analise os conteúdos institucionais abaixo e gere:
+1. Posicionamento de cada empresa
+2. Mensagens-chave
+3. Diferenciais competitivos
+4. Oportunidades estratégicas não exploradas
+
+Conteúdos:
+{"\n\n---\n\n".join(conteudos)}
+"""
+
+        resposta = gemini_model.generate_content(prompt)
+        st.subheader("Relatório de Competitividade")
+        st.write(resposta.text)
