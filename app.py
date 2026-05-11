@@ -1521,25 +1521,23 @@ elif st.session_state.pagina == "redes":
             if posts_data else 0
         )
         eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
-
-            return {
-                "handle":      "@" + data.get("username", handle.lstrip("@")),
-                "nome_exibido": data.get("name", handle),
-                "seguidores":  seg,
-                "seguindo":    0,
-                "total_posts": data.get("media_count", 0),
-                "bio":         (data.get("biography") or "")[:120],
-                "is_verified": False,
-                "pic_url":     data.get("profile_picture_url", ""),
-                "eng_medio":   round(eng_medio, 1),
-                "eng_pct":     eng_pct,
-                "posts":       posts_data,
-                "fonte":       "graph_api",
-                "erro":        None,
-            }
-
-        except Exception as e:
-            return {"erro": str(e)}
+        return {
+            "handle":      "@" + data.get("username", handle.lstrip("@")),
+            "nome_exibido": data.get("name", handle),
+            "seguidores":  seg,
+            "seguindo":    0,
+            "total_posts": data.get("media_count", 0),
+            "bio":         (data.get("biography") or "")[:120],
+            "is_verified": False,
+            "pic_url":     data.get("profile_picture_url", ""),
+            "eng_medio":   round(eng_medio, 1),
+            "eng_pct":     eng_pct,
+            "posts":       posts_data,
+            "fonte":       "graph_api",
+            "erro":        None,
+        }
+    except Exception as e:
+        return {"erro": str(e)}
 
     # ── FONTE 2: Instaloader com login opcional ───────────────────
     @st.cache_data(ttl=1800, show_spinner=False)
