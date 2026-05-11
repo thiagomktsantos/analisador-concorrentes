@@ -1305,95 +1305,538 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
-
-    periodo, data_inicio = cabecalho_analise("📱 Redes Sociais", "Seguidores, posts e engajamento por empresa")
-
+ 
+    import instaloader
+    import datetime
+    import plotly.graph_objects as go
+    import plotly.express as px
+    from playwright.sync_api import sync_playwright
+ 
+    periodo, data_inicio = cabecalho_analise(
+        "📱 Redes Sociais",
+        "Métricas reais coletadas via Instaloader · últimas postagens · comparativo visual"
+    )
+ 
+    # ── CSS local da página ──────────────────────────────────────
+    st.markdown("""
+    <style>
+    .rs-section-title {
+        font-size: 12px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 1.2px; color: #6b7280;
+        padding: 0 0 10px 0; border-bottom: 1px solid #f3f4f6;
+        margin-bottom: 18px; font-family: 'DM Sans', sans-serif;
+    }
+    .rs-metric-card {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+        padding: 18px 20px; margin-bottom: 8px;
+    }
+    .rs-metric-val {
+        font-size: 26px; font-weight: 700; color: #111827;
+        letter-spacing: -1px; font-family: 'DM Sans', sans-serif;
+    }
+    .rs-metric-lbl {
+        font-size: 12px; color: #9ca3af; margin-top: 2px;
+        font-family: 'DM Sans', sans-serif;
+    }
+    .rs-metric-delta-pos { color: #16a34a; font-size: 12px; font-weight: 600; }
+    .rs-metric-delta-neu { color: #9ca3af; font-size: 12px; }
+    .rs-empresa-header {
+        display: flex; align-items: center; gap: 14px;
+        padding: 14px 18px; background: #fff;
+        border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 6px;
+    }
+    .rs-post-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .rs-post-thumb {
+        width: 90px; height: 90px; border-radius: 8px;
+        object-fit: cover; border: 1px solid #e5e7eb;
+        transition: transform 0.15s;
+    }
+    .rs-post-thumb:hover { transform: scale(1.06); }
+    .rs-post-meta {
+        font-size: 11px; color: #6b7280; margin-top: 4px; text-align: center;
+        width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .rs-post-item { display: flex; flex-direction: column; align-items: center; }
+    .rs-status-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .rs-badge-ok   { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+    .rs-badge-warn { background:#fffbeb; color:#d97706; border:1px solid #fde68a; }
+    .rs-badge-err  { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+    </style>
+    """, unsafe_allow_html=True)
+ 
+    # ── helpers ──────────────────────────────────────────────────
+ 
+    def fmt_num(n):
+        if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+        if n >= 1_000:     return f"{n/1_000:.1f}K"
+        return str(n)
+ 
+    def calcular_engajamento(posts_recentes):
+        """Taxa de engajamento média dos últimos N posts."""
+        if not posts_recentes:
+            return 0.0
+        total = sum(p.get("likes", 0) + p.get("comments", 0) for p in posts_recentes)
+        return round(total / len(posts_recentes), 1)
+ 
+    @st.cache_data(ttl=1800, show_spinner=False)
+    def coletar_instagram_instaloader(handle: str) -> dict:
+        """
+        Coleta métricas públicas via Instaloader (sem login).
+        Retorna dict com seguidores, posts, engajamento médio e lista de últimos posts.
+        """
+        handle = handle.lstrip("@").strip()
+        if not handle:
+            return {"erro": "Handle vazio"}
+        try:
+            L = instaloader.Instaloader(
+                download_pictures=False,
+                download_videos=False,
+                download_video_thumbnails=False,
+                download_geotags=False,
+                download_comments=False,
+                save_metadata=False,
+                compress_json=False,
+                quiet=True,
+            )
+            profile = instaloader.Profile.from_username(L.context, handle)
+            posts_data = []
+            try:
+                for i, post in enumerate(profile.get_posts()):
+                    if i >= 9:
+                        break
+                    posts_data.append({
+                        "shortcode": post.shortcode,
+                        "likes": post.likes,
+                        "comments": post.comments,
+                        "thumb": post.url,               # URL pública da miniatura
+                        "caption": (post.caption or "")[:80],
+                        "date": post.date_local.strftime("%d/%m/%Y") if post.date_local else "",
+                        "is_video": post.is_video,
+                    })
+            except Exception:
+                pass  # perfil sem posts acessíveis
+ 
+            eng_medio = calcular_engajamento(posts_data)
+            seg = profile.followers
+            eng_pct = round((eng_medio / seg * 100), 2) if seg > 0 else 0.0
+ 
+            return {
+                "handle":       "@" + handle,
+                "nome_exibido": profile.full_name or handle,
+                "seguidores":   profile.followers,
+                "seguindo":     profile.followees,
+                "total_posts":  profile.mediacount,
+                "bio":          profile.biography[:120] if profile.biography else "",
+                "is_verified":  profile.is_verified,
+                "pic_url":      profile.profile_pic_url,
+                "eng_medio":    eng_medio,
+                "eng_pct":      eng_pct,
+                "posts":        posts_data,
+                "fonte":        "instaloader",
+                "erro":         None,
+            }
+        except instaloader.exceptions.ProfileNotExistsException:
+            return {"erro": f"Perfil @{handle} não encontrado."}
+        except instaloader.exceptions.ConnectionException as e:
+            # Rate-limited → tenta Playwright como fallback
+            return _fallback_playwright_ig(handle, str(e))
+        except Exception as e:
+            return {"erro": str(e)}
+ 
+    def _fallback_playwright_ig(handle: str, motivo: str) -> dict:
+        """
+        Fallback: abre instagram.com/{handle} com Playwright e extrai
+        dados do JSON embutido na página (window._sharedData).
+        """
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page(
+                    user_agent=(
+                        "Mozilla/5.0 (X11; Linux x86_64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/124.0.0.0 Safari/537.36"
+                    )
+                )
+                page.goto(f"https://www.instagram.com/{handle}/", timeout=20000)
+                page.wait_for_timeout(4000)
+ 
+                # Tenta extrair JSON embutido
+                data = page.evaluate("""() => {
+                    try {
+                        const scripts = [...document.querySelectorAll('script[type="application/json"]')];
+                        for (const s of scripts) {
+                            try {
+                                const d = JSON.parse(s.textContent);
+                                const u = d?.require?.[0]?.[3]?.[0]?.
+                                    __bbox?.require?.[0]?.[3]?.[1]?.
+                                    __bbox?.result?.data?.user;
+                                if (u) return { seg: u.edge_followed_by?.count,
+                                                posts: u.edge_owner_to_timeline_media?.count };
+                            } catch(e) {}
+                        }
+                    } catch(e) {}
+                    return null;
+                }""")
+ 
+                browser.close()
+ 
+                if data:
+                    return {
+                        "handle":       "@" + handle,
+                        "nome_exibido": handle,
+                        "seguidores":   data.get("seg", 0),
+                        "seguindo":     0,
+                        "total_posts":  data.get("posts", 0),
+                        "bio":          "",
+                        "is_verified":  False,
+                        "pic_url":      "",
+                        "eng_medio":    0,
+                        "eng_pct":      0.0,
+                        "posts":        [],
+                        "fonte":        "playwright",
+                        "erro":         None,
+                        "aviso":        f"Instaloader bloqueado ({motivo[:60]}), dados parciais via Playwright.",
+                    }
+                return {"erro": f"Instaloader bloqueado e Playwright não extraiu dados. ({motivo[:80]})"}
+        except Exception as e2:
+            return {"erro": f"Instaloader: {motivo[:60]} | Playwright: {e2}"}
+ 
+    # ── montar lista de empresas ──────────────────────────────────
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
-
+ 
     todas = []
     if emp.get("nome"):
-        todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp.get("instagram", ""), "facebook": emp.get("fb_page", ""), "tipo": "minha"})
+        todas.append({
+            "key":       "__minha__",
+            "nome":      emp["nome"],
+            "instagram": emp.get("instagram", ""),
+            "tipo":      "minha",
+        })
     for i, c in enumerate(concorrentes):
-        todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c.get("instagram", ""), "facebook": c.get("fb_page", ""), "tipo": "concorrente"})
-
-    if not todas:
-        st.info("Cadastre sua empresa e concorrentes para visualizar métricas.")
-    else:
-        metricas = st.session_state.metricas_redes
-        for empresa_item in todas:
-            k = empresa_item["key"]
-            if k not in metricas:
-                metricas[k] = {
-                    "ig_seguidores": 0, "ig_posts": 0, "ig_engajamento": 0.0,
-                    "fb_seguidores": 0, "fb_posts": 0, "fb_engajamento": 0.0,
-                }
-
-        IG_LOGO = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="igl" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect width="24" height="24" rx="6" ry="6" fill="url(#igl)"/><circle cx="12" cy="12" r="5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="18" cy="6" r="1.4" fill="white"/></svg>"""
-        FB_LOGO = """<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="6" fill="#1877F2"/><path d="M21.5 16H18v12H13.5V16H11v-4h2.5v-2.4C13.5 7.1 15 5.5 18.3 5.5c1.3 0 2.7.2 2.7.2V9h-1.5c-1.5 0-2 .9-2 1.9V12H21l-.5 4z" fill="white"/></svg>"""
-
-        aba_ig, aba_fb = st.tabs(["  Instagram  ", "  Facebook  "])
-
-        with aba_ig:
-            st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-            st.markdown(f"""<div style='display:flex;align-items:center;gap:12px;margin-bottom:24px;padding:16px 20px;background:linear-gradient(135deg,#fdf2f8,#fce7f3);border:1px solid #f9a8d4;border-radius:12px'>{IG_LOGO}<div><div style='font-size:17px;font-weight:700;color:#831843;font-family:DM Sans,sans-serif'>Instagram</div><div style='font-size:12px;color:#be185d;margin-top:1px;font-family:DM Sans,sans-serif'>Métricas de presença e engajamento</div></div></div>""", unsafe_allow_html=True)
-
-            empresas_ig = [e for e in todas if bool(e["instagram"])]
-            if not empresas_ig:
-                st.info("Nenhuma empresa com Instagram cadastrado.")
-            else:
-                for empresa_item in empresas_ig:
-                    k = empresa_item["key"]
-                    is_minha = empresa_item["tipo"] == "minha"
-                    badge_cor = "#eff6ff" if is_minha else "#f3f4f6"
-                    badge_txt_cor = "#1d4ed8" if is_minha else "#6b7280"
-                    badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
-                    badge_label = "Minha Empresa" if is_minha else "Concorrente"
-                    avatar = gerar_avatar(empresa_item["nome"])
-                    handle = empresa_item["instagram"] or "—"
-                    st.markdown(f"""<div style='display:flex;align-items:center;gap:14px;margin:12px 0;padding:14px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:10px'><div style='width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div><div style='flex:1;min-width:0'><div style='font-size:15px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif'>{empresa_item['nome']}</div><div style='font-size:13px;color:#9ca3af;margin-top:1px'>{handle}</div></div><span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap'>{badge_label}</span></div>""", unsafe_allow_html=True)
-                    c1, c2, c3 = st.columns(3)
-                    metricas[k]["ig_seguidores"]  = c1.number_input("👥 Seguidores", min_value=0, step=100, value=metricas[k]["ig_seguidores"], key=f"{k}_ig_seg")
-                    metricas[k]["ig_posts"]        = c2.number_input("📝 Posts", min_value=0, step=1, value=metricas[k]["ig_posts"], key=f"{k}_ig_posts")
-                    metricas[k]["ig_engajamento"]  = c3.number_input("❤️ Engaj. %", min_value=0.0, step=0.1, format="%.2f", value=metricas[k]["ig_engajamento"], key=f"{k}_ig_eng")
-                    st.markdown("<div style='margin:4px 0 12px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-
-                st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin:20px 0 10px 0'>Comparativo Instagram</div>", unsafe_allow_html=True)
-                rows_ig = [{"Empresa": e["nome"], "Handle": e["instagram"], "Seguidores": metricas[e["key"]]["ig_seguidores"], "Posts": metricas[e["key"]]["ig_posts"], "Engaj. %": metricas[e["key"]]["ig_engajamento"]} for e in empresas_ig]
-                st.dataframe(pd.DataFrame(rows_ig), use_container_width=True, hide_index=True)
-
-                if st.button("💾 Salvar métricas de Redes Sociais", key="salvar_ig"):
-                    salvar_dados_usuario(st.session_state.user.id)
-                    st.success("Métricas salvas!")
-
-        with aba_fb:
-            st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-            st.markdown(f"""<div style='display:flex;align-items:center;gap:12px;margin-bottom:24px;padding:16px 20px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:12px'>{FB_LOGO}<div><div style='font-size:17px;font-weight:700;color:#1e3a5f;font-family:DM Sans,sans-serif'>Facebook</div><div style='font-size:12px;color:#1d4ed8;margin-top:1px'>Métricas de presença e engajamento</div></div></div>""", unsafe_allow_html=True)
-
-            empresas_fb = [e for e in todas if bool(e["facebook"])]
-            if not empresas_fb:
-                st.info("Nenhuma empresa com Facebook cadastrado.")
-            else:
-                for empresa_item in empresas_fb:
-                    k = empresa_item["key"]
-                    is_minha = empresa_item["tipo"] == "minha"
-                    badge_cor = "#eff6ff" if is_minha else "#f3f4f6"
-                    badge_txt_cor = "#1d4ed8" if is_minha else "#6b7280"
-                    badge_borda = "#bfdbfe" if is_minha else "#e5e7eb"
-                    badge_label = "Minha Empresa" if is_minha else "Concorrente"
-                    avatar = gerar_avatar(empresa_item["nome"])
-                    handle = empresa_item["facebook"] or "—"
-                    st.markdown(f"""<div style='display:flex;align-items:center;gap:14px;margin:12px 0;padding:14px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:10px'><div style='width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div><div style='flex:1;min-width:0'><div style='font-size:15px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif'>{empresa_item['nome']}</div><div style='font-size:13px;color:#9ca3af;margin-top:1px'>{handle}</div></div><span style='background:{badge_cor};color:{badge_txt_cor};border:1px solid {badge_borda};padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap'>{badge_label}</span></div>""", unsafe_allow_html=True)
-                    c1, c2, c3 = st.columns(3)
-                    metricas[k]["fb_seguidores"]  = c1.number_input("👥 Seguidores", min_value=0, step=100, value=metricas[k]["fb_seguidores"], key=f"{k}_fb_seg")
-                    metricas[k]["fb_posts"]        = c2.number_input("📝 Posts", min_value=0, step=1, value=metricas[k]["fb_posts"], key=f"{k}_fb_posts")
-                    metricas[k]["fb_engajamento"]  = c3.number_input("❤️ Engaj. %", min_value=0.0, step=0.1, format="%.2f", value=metricas[k]["fb_engajamento"], key=f"{k}_fb_eng")
-                    st.markdown("<div style='margin:4px 0 12px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-
-                st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin:20px 0 10px 0'>Comparativo Facebook</div>", unsafe_allow_html=True)
-                rows_fb = [{"Empresa": e["nome"], "Página": e["facebook"], "Seguidores": metricas[e["key"]]["fb_seguidores"], "Posts": metricas[e["key"]]["fb_posts"], "Engaj. %": metricas[e["key"]]["fb_engajamento"]} for e in empresas_fb]
-                st.dataframe(pd.DataFrame(rows_fb), use_container_width=True, hide_index=True)
-
-                if st.button("💾 Salvar métricas de Redes Sociais", key="salvar_fb"):
-                    salvar_dados_usuario(st.session_state.user.id)
-                    st.success("Métricas salvas!")
+        todas.append({
+            "key":       f"conc_{i}",
+            "nome":      c["nome"],
+            "instagram": c.get("instagram", ""),
+            "tipo":      "concorrente",
+        })
+ 
+    empresas_ig = [e for e in todas if e["instagram"] and e["instagram"] not in ("@", "")]
+    if not empresas_ig:
+        st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
+        st.stop()
+ 
+    # ── painel de coleta ─────────────────────────────────────────
+    col_info, col_btn = st.columns([5, 2])
+    with col_info:
+        handles_txt = "  ·  ".join(e["instagram"] for e in empresas_ig)
+        st.markdown(
+            f"<div style='font-size:14px;color:#6b7280;padding:10px 0'>"
+            f"Perfis: <b style='color:#111827'>{handles_txt}</b></div>",
+            unsafe_allow_html=True
+        )
+    with col_btn:
+        coletar = st.button("🔄 Coletar dados agora", type="primary", use_container_width=True)
+ 
+    if coletar:
+        # Limpa cache para forçar nova coleta
+        coletar_instagram_instaloader.clear()
+ 
+    # ── coleta (com cache) ────────────────────────────────────────
+    resultados = {}   # key → dict de métricas
+    erros      = []
+ 
+    with st.spinner("Coletando perfis do Instagram…"):
+        for e in empresas_ig:
+            dados_ig = coletar_instagram_instaloader(e["instagram"])
+            if dados_ig.get("erro"):
+                erros.append(f"{e['nome']}: {dados_ig['erro']}")
+            resultados[e["key"]] = {**e, **dados_ig}
+ 
+    if erros:
+        for err in erros:
+            st.warning(f"⚠️ {err}", icon="⚠️")
+ 
+    # Filtra apenas os que foram coletados com sucesso
+    ok = [r for r in resultados.values() if not r.get("erro")]
+    if not ok:
+        st.error("Não foi possível coletar dados de nenhum perfil.")
+        st.stop()
+ 
+    # ── aba única: tudo na mesma view ────────────────────────────
+    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+ 
+    # ════════════════════════════════════════════════════════════
+    # SEÇÃO 1 — KPI cards
+    # ════════════════════════════════════════════════════════════
+    st.markdown("<div class='rs-section-title'>📊 Métricas por Empresa</div>", unsafe_allow_html=True)
+ 
+    for r in ok:
+        is_minha = r["tipo"] == "minha"
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+        avatar = gerar_avatar(r["nome"])
+        verified = " ✓" if r.get("is_verified") else ""
+        fonte_label = (
+            "<span class='rs-status-badge rs-badge-ok'>✔ Instaloader</span>" if r.get("fonte") == "instaloader"
+            else "<span class='rs-status-badge rs-badge-warn'>⚡ Playwright (parcial)</span>"
+        )
+ 
+        st.markdown(f"""
+        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                    padding:18px 22px;margin-bottom:6px'>
+            <div style='display:flex;align-items:center;gap:14px;
+                        margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f3f4f6'>
+                <div style='width:42px;height:42px;border-radius:50%;background:#111827;
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:15px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                <div style='flex:1'>
+                    <div style='font-size:16px;font-weight:700;color:#111827'>
+                        {r['nome']}{verified}
+                        <span style='font-size:13px;font-weight:400;color:#9ca3af;margin-left:8px'>{r.get('handle','')}</span>
+                    </div>
+                    <div style='margin-top:4px;display:flex;gap:8px;align-items:center'>
+                        <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                                     padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
+                        {fonte_label}
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+ 
+        # KPI row
+        kpi_cols = st.columns(4)
+        kpis = [
+            ("👥 Seguidores",    fmt_num(r.get("seguidores", 0))),
+            ("📝 Posts totais",  fmt_num(r.get("total_posts", 0))),
+            ("❤️ Eng. médio",   fmt_num(int(r.get("eng_medio", 0)))),
+            ("📈 Eng. %",        f"{r.get('eng_pct', 0):.2f}%"),
+        ]
+        for col, (lbl, val) in zip(kpi_cols, kpis):
+            col.markdown(f"""
+            <div style='padding:12px 14px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px'>
+                <div class='rs-metric-lbl'>{lbl}</div>
+                <div class='rs-metric-val'>{val}</div>
+            </div>
+            """, unsafe_allow_html=True)
+ 
+        if r.get("bio"):
+            st.markdown(
+                f"<div style='font-size:13px;color:#6b7280;margin-top:12px;font-style:italic'>"{r['bio']}"</div>",
+                unsafe_allow_html=True
+            )
+        if r.get("aviso"):
+            st.markdown(
+                f"<div style='font-size:12px;color:#d97706;margin-top:8px'>⚡ {r['aviso']}</div>",
+                unsafe_allow_html=True
+            )
+ 
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+ 
+    # ════════════════════════════════════════════════════════════
+    # SEÇÃO 2 — Gráficos comparativos
+    # ════════════════════════════════════════════════════════════
+    st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
+    st.markdown("<div class='rs-section-title'>📈 Comparativo Visual</div>", unsafe_allow_html=True)
+ 
+    nomes   = [r["nome"]                      for r in ok]
+    segs    = [r.get("seguidores", 0)          for r in ok]
+    posts   = [r.get("total_posts", 0)         for r in ok]
+    eng_abs = [int(r.get("eng_medio", 0))      for r in ok]
+    eng_pct = [r.get("eng_pct", 0.0)           for r in ok]
+ 
+    CORES = ["#111827", "#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"]
+ 
+    col_g1, col_g2 = st.columns(2)
+ 
+    with col_g1:
+        fig_seg = go.Figure(go.Bar(
+            x=nomes, y=segs,
+            marker_color=CORES[:len(nomes)],
+            text=[fmt_num(s) for s in segs],
+            textposition="outside",
+        ))
+        fig_seg.update_layout(
+            title=dict(text="Seguidores", font=dict(size=15, family="DM Sans", color="#111827")),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            margin=dict(t=45, b=30, l=10, r=10),
+            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
+            xaxis=dict(showgrid=False),
+            showlegend=False,
+            height=300,
+        )
+        st.plotly_chart(fig_seg, use_container_width=True, config={"displayModeBar": False})
+ 
+    with col_g2:
+        fig_eng = go.Figure(go.Bar(
+            x=nomes, y=eng_pct,
+            marker_color=CORES[:len(nomes)],
+            text=[f"{v:.2f}%" for v in eng_pct],
+            textposition="outside",
+        ))
+        fig_eng.update_layout(
+            title=dict(text="Taxa de Engajamento (%)", font=dict(size=15, family="DM Sans", color="#111827")),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            margin=dict(t=45, b=30, l=10, r=10),
+            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%"),
+            xaxis=dict(showgrid=False),
+            showlegend=False,
+            height=300,
+        )
+        st.plotly_chart(fig_eng, use_container_width=True, config={"displayModeBar": False})
+ 
+    col_g3, col_g4 = st.columns(2)
+ 
+    with col_g3:
+        fig_posts = go.Figure(go.Bar(
+            x=nomes, y=posts,
+            marker_color=CORES[:len(nomes)],
+            text=[fmt_num(p) for p in posts],
+            textposition="outside",
+        ))
+        fig_posts.update_layout(
+            title=dict(text="Total de Posts", font=dict(size=15, family="DM Sans", color="#111827")),
+            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+            margin=dict(t=45, b=30, l=10, r=10),
+            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
+            xaxis=dict(showgrid=False),
+            showlegend=False,
+            height=300,
+        )
+        st.plotly_chart(fig_posts, use_container_width=True, config={"displayModeBar": False})
+ 
+    with col_g4:
+        # Radar chart: Seguidores norm + Posts norm + Engajamento norm
+        def norm(lst):
+            mx = max(lst) if max(lst) > 0 else 1
+            return [round(v / mx * 100, 1) for v in lst]
+ 
+        categorias = ["Seguidores", "Total Posts", "Eng. Médio"]
+        fig_radar = go.Figure()
+        for idx, r in enumerate(ok):
+            valores = [
+                norm(segs)[idx],
+                norm(posts)[idx],
+                norm(eng_abs)[idx],
+            ]
+            fig_radar.add_trace(go.Scatterpolar(
+                r=valores + [valores[0]],
+                theta=categorias + [categorias[0]],
+                fill="toself",
+                name=r["nome"],
+                line_color=CORES[idx % len(CORES)],
+                fillcolor=CORES[idx % len(CORES)],
+                opacity=0.25,
+            ))
+        fig_radar.update_layout(
+            title=dict(text="Radar Comparativo (0–100 normalizado)", font=dict(size=15, family="DM Sans", color="#111827")),
+            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+            showlegend=True,
+            paper_bgcolor="#ffffff",
+            margin=dict(t=50, b=20, l=30, r=30),
+            height=300,
+            legend=dict(font=dict(family="DM Sans", size=12)),
+        )
+        st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
+ 
+    # ════════════════════════════════════════════════════════════
+    # SEÇÃO 3 — Últimas postagens com miniaturas
+    # ════════════════════════════════════════════════════════════
+    st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
+    st.markdown("<div class='rs-section-title'>🖼️ Últimas Postagens</div>", unsafe_allow_html=True)
+ 
+    for r in ok:
+        posts_list = r.get("posts", [])
+        is_minha = r["tipo"] == "minha"
+        avatar = gerar_avatar(r["nome"])
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+ 
+        st.markdown(f"""
+        <div style='display:flex;align-items:center;gap:12px;margin-bottom:12px;
+                    padding:12px 16px;background:#fff;border:1px solid #e5e7eb;border-radius:10px'>
+            <div style='width:36px;height:36px;border-radius:50%;background:#111827;
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:13px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+            <div style='font-size:15px;font-weight:700;color:#111827;flex:1'>{r['nome']}</div>
+            <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                         padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
+        </div>
+        """, unsafe_allow_html=True)
+ 
+        if not posts_list:
+            st.markdown(
+                "<div style='padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;"
+                "border-radius:8px;font-size:14px;color:#9ca3af;margin-bottom:20px'>"
+                "Nenhum post acessível (perfil privado ou rate-limit atingido).</div>",
+                unsafe_allow_html=True
+            )
+            continue
+ 
+        # Grid de miniaturas
+        MAX_COLS = 9
+        cols_posts = st.columns(min(len(posts_list), MAX_COLS))
+        for idx, post in enumerate(posts_list[:MAX_COLS]):
+            with cols_posts[idx]:
+                icon = "🎥" if post.get("is_video") else "🖼️"
+                likes_fmt = fmt_num(post.get("likes", 0))
+                coms_fmt  = fmt_num(post.get("comments", 0))
+                thumb_url = post.get("thumb", "")
+ 
+                if thumb_url:
+                    st.markdown(f"""
+                    <div style='text-align:center'>
+                        <img src="{thumb_url}"
+                             style='width:90px;height:90px;border-radius:8px;object-fit:cover;
+                                    border:1px solid #e5e7eb;display:block;margin:0 auto 4px'
+                             onerror="this.style.display='none'" />
+                        <div style='font-size:11px;color:#6b7280'>{icon} ❤️{likes_fmt} 💬{coms_fmt}</div>
+                        <div style='font-size:10px;color:#9ca3af'>{post.get('date','')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style='width:90px;height:90px;border-radius:8px;background:#f3f4f6;
+                                display:flex;align-items:center;justify-content:center;
+                                font-size:24px;margin:0 auto 4px'>{icon}</div>
+                    <div style='font-size:11px;color:#6b7280;text-align:center'>❤️{likes_fmt} 💬{coms_fmt}</div>
+                    """, unsafe_allow_html=True)
+ 
+        st.markdown("<div style='height:20px'/>", unsafe_allow_html=True)
+ 
+        # Tabela de posts
+        if posts_list:
+            df_posts = pd.DataFrame([{
+                "Data":        p.get("date", ""),
+                "Tipo":        "🎥 Vídeo" if p.get("is_video") else "🖼️ Foto",
+                "❤️ Curtidas": p.get("likes", 0),
+                "💬 Comentários": p.get("comments", 0),
+                "Eng. total":  p.get("likes", 0) + p.get("comments", 0),
+                "Legenda":     p.get("caption", "")[:60],
+            } for p in posts_list])
+            with st.expander(f"📋 Ver tabela de posts — {r['nome']}"):
+                st.dataframe(df_posts, use_container_width=True, hide_index=True)
+ 
+        st.markdown("<hr style='border:none;border-top:1px solid #f3f4f6;margin:8px 0 20px'/>", unsafe_allow_html=True)
+ 
+    # ── nota de rodapé ───────────────────────────────────────────
+    st.markdown("""
+    <div style='margin-top:12px;padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;
+                border-radius:10px;font-size:13px;color:#9ca3af;line-height:1.7'>
+        ℹ️ <b>Como funciona:</b> os dados são coletados diretamente do Instagram via
+        <b>Instaloader</b> (perfis públicos). Se o Instagram bloquear a coleta,
+        o <b>Playwright</b> é usado como fallback. As imagens das miniaturas são
+        servidas pela CDN do Instagram — podem expirar; clique em
+        <b>🔄 Coletar dados agora</b> para atualizar.<br>
+        Os dados ficam em cache por <b>30 minutos</b> para evitar rate-limit.
+    </div>
+    """, unsafe_allow_html=True)
