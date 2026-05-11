@@ -1,8 +1,10 @@
 streamlit
-pandas
-requests
-beautifulsoup4
-google-generativeai
-python-dotenv
-supabase
+google.generativeai
 trafilatura
+duckduckgo_search
+pandas
+streamlit-option-menu
+supabase
+requests
+instaloader
+playwright
