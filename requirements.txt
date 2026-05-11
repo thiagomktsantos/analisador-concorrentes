@@ -6,5 +6,6 @@ pandas
 streamlit-option-menu
 supabase
 requests
-instaloader
-playwright
+instaloader>=4.10
+playwright>=1.44
+plotly>=5.22
