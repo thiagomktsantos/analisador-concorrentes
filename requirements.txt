@@ -4,3 +4,5 @@ trafilatura
 duckduckgo_search
 pandas
 streamlit-option-menu
+supabase
+requests
