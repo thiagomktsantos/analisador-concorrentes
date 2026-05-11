@@ -29,11 +29,11 @@ def get_supabase() -> Client | None:
 supabase = get_supabase()
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO GEMINI (MODELO ATUAL FUNCIONAL)
+# CONFIGURAÇÃO GEMINI (VERSÃO ATUAL DA API)
 # ---------------------------------------------------
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+    gemini_model = genai.GenerativeModel("models/gemini-1.5-flash")
 else:
     gemini_model = None
 
@@ -55,7 +55,7 @@ def formatar_url(url):
     return url
 
 # ---------------------------------------------------
-# EXTRAÇÃO DE CONTEÚDO (STREAMLIT CLOUD SAFE)
+# EXTRAÇÃO DE CONTEÚDO (ROBUSTA / CLOUD SAFE)
 # ---------------------------------------------------
 def extrair_conteudo_site(url: str) -> str:
     url_fmt = formatar_url(url)
@@ -90,8 +90,7 @@ def extrair_conteudo_site(url: str) -> str:
 
         if not texto or len(texto) < 200:
             return (
-                "Site com conteúdo carregado via JavaScript. "
-                "Conteúdo institucional não acessível via HTML."
+                "Site com conteúdo carregado via JavaScript ou com baixo conteúdo institucional."
             )
 
         texto = re.sub(
@@ -137,18 +136,18 @@ if st.button("Gerar Relatório"):
                 conteudos.append(f"SITE: {site}\n\n{texto}")
 
         prompt = f"""
-Você é um estrategista sênior de marketing e branding.
+Você é um estrategista sênior de marketing, branding e posicionamento competitivo.
 
 Analise os conteúdos abaixo e gere um relatório com:
 
-1. Posicionamento de cada empresa
-2. Mensagens-chave
+1. Posicionamento percebido de cada empresa
+2. Mensagens-chave predominantes
 3. Diferenciais competitivos
 4. Fragilidades de comunicação
 5. Oportunidades estratégicas
-6. Recomendações práticas
+6. Recomendações práticas e acionáveis
 
-Se algum site tiver conteúdo limitado, considere isso como insight estratégico.
+Considere ausência ou baixo conteúdo como insight estratégico.
 
 CONTEÚDOS:
 {"\n\n---\n\n".join(conteudos)}
