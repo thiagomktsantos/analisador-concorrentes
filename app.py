@@ -1548,11 +1548,11 @@ elif st.session_state.pagina == "redes":
             return {"erro": str(e)}
 
     def coletar_melhor_fonte(handle: str, is_minha: bool) -> dict:
-    # 1. Tenta Graph API para todos (própria conta = /me, concorrente = Business Discovery)
-    token = st.secrets.get("IG_ACCESS_TOKEN", "")
-    if token:
-        r = coletar_graph_api(handle, is_minha)
-        if r is not None and not r.get("erro"):
+        # 1. Tenta Graph API para todos
+        token = st.secrets.get("IG_ACCESS_TOKEN", "")
+        if token:
+            r = coletar_graph_api(handle, is_minha)
+            if r is not None and not r.get("erro"):
             return r
         # Se Graph API falhou, loga o motivo mas continua
         graph_err = r.get("erro", "") if r else ""
