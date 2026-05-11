@@ -1331,7 +1331,7 @@ elif st.session_state.pagina == "redes":
     .rs-badge-err  { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
     </style>
     """, unsafe_allow_html=True)
-def fmt_num(n):
+    def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(int(n))
