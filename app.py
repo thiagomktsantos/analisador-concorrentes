@@ -4,7 +4,7 @@ import re
 import requests
 import trafilatura
 from supabase import create_client, Client
-import google.generativeai as genai
+from google import genai
 
 # ---------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -28,44 +28,53 @@ def get_supabase() -> Client | None:
 supabase = get_supabase()
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO GEMINI (SDK ESTÁVEL)
+# CONFIGURAÇÃO GEMINI (SDK NOVO — ÚNICO FUNCIONAL)
 # ---------------------------------------------------
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    gemini_model = genai.GenerativeModel("models/gemini-pro")
+    gemini_client = genai.Client(
+        api_key=st.secrets["GEMINI_API_KEY"]
+    )
 else:
-    gemini_model = None
+    gemini_client = None
 
 # ---------------------------------------------------
-# FUNÇÕES
+# FUNÇÕES AUXILIARES
 # ---------------------------------------------------
-def formatar_url(url):
+def formatar_url(url: str) -> str:
+    url = url.strip()
     if not url.startswith("http"):
-        return "https://" + url
+        url = "https://" + url
     return url
 
+# ---------------------------------------------------
+# EXTRAÇÃO DE CONTEÚDO
+# ---------------------------------------------------
 def extrair_conteudo_site(url: str) -> str:
     try:
         url = formatar_url(url)
-        r = requests.get(url, timeout=20, headers={
-            "User-Agent": "Mozilla/5.0"
-        })
+        resp = requests.get(
+            url,
+            timeout=20,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
 
-        if r.status_code != 200:
+        if resp.status_code != 200:
             return "Conteúdo indisponível."
 
         texto = trafilatura.extract(
-            r.text,
+            resp.text,
             favor_precision=True,
             include_links=False,
-            include_images=False
+            include_images=False,
+            deduplicate=True,
+            no_fallback=False
         )
 
         if not texto or len(texto) < 200:
-            return "Site com pouco conteúdo institucional ou carregado via JS."
+            return "Site com conteúdo institucional limitado ou carregado via JavaScript."
 
         texto = re.sub(
-            r"(Política de Privacidade.*|Cookies.*)",
+            r"(Política de Privacidade.*|Cookies.*|©.*)",
             "",
             texto,
             flags=re.I | re.S
@@ -81,35 +90,40 @@ def extrair_conteudo_site(url: str) -> str:
 # ---------------------------------------------------
 st.title("Análise Competitiva com IA")
 
+st.markdown(
+    "Insira os **sites da sua empresa e concorrentes** "
+    "para gerar um relatório comparativo."
+)
+
 urls = st.text_area(
     "Sites (um por linha):",
     placeholder="https://suaempresa.com\nhttps://concorrente.com"
 )
 
 if st.button("Gerar Relatório"):
-    if not gemini_model:
+    if not gemini_client:
         st.error("API Gemini não configurada.")
     elif not urls.strip():
-        st.warning("Informe ao menos um site.")
+        st.warning("Informe pelo menos um site.")
     else:
         sites = [u.strip() for u in urls.split("\n") if u.strip()]
         conteudos = []
 
         for site in sites:
-            with st.spinner(f"Extraindo {site}..."):
+            with st.spinner(f"Extraindo conteúdo de {site}..."):
                 conteudos.append(
                     f"SITE: {site}\n{extrair_conteudo_site(site)}"
                 )
 
         prompt = f"""
-Você é um estrategista sênior de marketing.
+Você é um estrategista sênior de marketing e posicionamento competitivo.
 
-Analise os sites abaixo e gere um relatório com:
-1. Posicionamento
+Analise os conteúdos abaixo e gere um relatório com:
+1. Posicionamento de cada empresa
 2. Mensagens-chave
-3. Diferenciais
-4. Fragilidades
-5. Oportunidades
+3. Diferenciais competitivos
+4. Fragilidades de comunicação
+5. Oportunidades estratégicas
 6. Recomendações práticas
 
 CONTEÚDOS:
@@ -117,8 +131,13 @@ CONTEÚDOS:
 """
 
         try:
-            resposta = gemini_model.generate_content(prompt)
+            response = gemini_client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt
+            )
+
             st.subheader("Relatório de Competitividade")
-            st.write(resposta.text)
+            st.write(response.text)
+
         except Exception as e:
             st.error(f"Erro ao gerar relatório: {e}")
