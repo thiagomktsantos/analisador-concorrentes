@@ -1538,8 +1538,8 @@ elif st.session_state.pagina == "redes":
             "erro":        None,
         }
 
-    except Exception as e:
-        return {"erro": str(e)}
+        except Exception as e:
+            return {"erro": str(e)}
 
     # ── FONTE 2: Instaloader com login opcional ───────────────────
     @st.cache_data(ttl=1800, show_spinner=False)
