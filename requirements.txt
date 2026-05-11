@@ -1,10 +1,4 @@
 streamlit
-google.generativeai
-trafilatura
-duckduckgo_search
 pandas
-streamlit-option-menu
-supabase
-requests
 instaloader
 playwright
