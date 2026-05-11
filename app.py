@@ -1339,29 +1339,38 @@ elif st.session_state.pagina == "redes":
 
     # ── FONTE 1: Instagram Graph API (Business/Creator) ──────────
     @st.cache_data(ttl=1800, show_spinner=False)
-    def coletar_graph_api(handle: str) -> dict:
-        """
-        Coleta via Graph API se IG_ACCESS_TOKEN e IG_BUSINESS_ID estiverem
-        nos secrets. Retorna None se não configurado.
-        """
-        token = st.secrets.get("IG_ACCESS_TOKEN", "")
-        if not token:
-            return None
-        # Busca ID do usuário pelo username
-        try:
-            # Para contas próprias, usa /me
-            url_me = f"https://graph.instagram.com/me?fields=id,username,name,biography,followers_count,media_count,profile_picture_url&access_token={token}"
-            r = requests.get(url_me, timeout=10)
+def coletar_graph_api(handle: str, is_minha: bool) -> dict:
+    token = st.secrets.get("IG_ACCESS_TOKEN", "")
+    if not token:
+        return None
+
+    try:
+        if is_minha:
+            # ── Conta própria: /me ────────────────────────────────
+            url = (
+                f"https://graph.instagram.com/me"
+                f"?fields=id,username,name,biography,followers_count,"
+                f"media_count,profile_picture_url"
+                f"&access_token={token}"
+            )
+            r = requests.get(url, timeout=10)
             data = r.json()
             if "error" in data:
-                return {"erro": data["error"].get("message", "Erro Graph API")}
-            seg = data.get("followers_count", 0)
-            # Busca últimos 9 posts
-            url_media = f"https://graph.instagram.com/me/media?fields=id,media_type,like_count,comments_count,timestamp,caption,thumbnail_url,media_url&limit=9&access_token={token}"
-            r2 = requests.get(url_media, timeout=10)
-            media_data = r2.json().get("data", [])
+                return {"erro": f"Graph API: {data['error'].get('message','')}"}
+
+            ig_id = data["id"]
+            seg   = data.get("followers_count", 0)
+
+            # Posts
+            url_media = (
+                f"https://graph.instagram.com/{ig_id}/media"
+                f"?fields=id,media_type,like_count,comments_count,"
+                f"timestamp,caption,thumbnail_url,media_url"
+                f"&limit=9&access_token={token}"
+            )
+            media = requests.get(url_media, timeout=10).json().get("data", [])
             posts_data = []
-            for p in media_data:
+            for p in media:
                 posts_data.append({
                     "likes":    p.get("like_count", 0),
                     "comments": p.get("comments_count", 0),
@@ -1370,28 +1379,73 @@ elif st.session_state.pagina == "redes":
                     "date":     p.get("timestamp", "")[:10],
                     "is_video": p.get("media_type") == "VIDEO",
                 })
-            eng_medio = (
-                sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
-                if posts_data else 0
+
+        else:
+            # ── Conta de concorrente: Business Discovery API ──────
+            # Precisa do IG ID da sua própria conta primeiro
+            me = requests.get(
+                f"https://graph.instagram.com/me?fields=id&access_token={token}",
+                timeout=10
+            ).json()
+            if "error" in me:
+                return {"erro": f"Graph API: {me['error'].get('message','')}"}
+
+            ig_id_meu = me["id"]
+            h = handle.lstrip("@").strip()
+
+            # Business Discovery: busca dados públicos de outra conta
+            url_biz = (
+                f"https://graph.facebook.com/v18.0/{ig_id_meu}"
+                f"?fields=business_discovery.fields("
+                f"username,name,biography,followers_count,media_count,"
+                f"profile_picture_url,"
+                f"media{{like_count,comments_count,media_type,timestamp,caption,thumbnail_url,media_url}}"
+                f")&username={h}&access_token={token}"
             )
-            eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
-            return {
-                "handle":      "@" + data.get("username", handle),
-                "nome_exibido": data.get("name", handle),
-                "seguidores":  seg,
-                "seguindo":    0,
-                "total_posts": data.get("media_count", 0),
-                "bio":         data.get("biography", "")[:120],
-                "is_verified": False,
-                "pic_url":     data.get("profile_picture_url", ""),
-                "eng_medio":   round(eng_medio, 1),
-                "eng_pct":     eng_pct,
-                "posts":       posts_data,
-                "fonte":       "graph_api",
-                "erro":        None,
-            }
-        except Exception as e:
-            return {"erro": str(e)}
+            r2 = requests.get(url_biz, timeout=10)
+            biz = r2.json().get("business_discovery", {})
+
+            if not biz or "error" in r2.json():
+                err = r2.json().get("error", {}).get("message", "Business Discovery falhou")
+                return {"erro": f"Graph API (concorrente): {err}"}
+
+            data = biz
+            seg  = data.get("followers_count", 0)
+            posts_data = []
+            for p in (data.get("media", {}).get("data", [])):
+                posts_data.append({
+                    "likes":    p.get("like_count", 0),
+                    "comments": p.get("comments_count", 0),
+                    "thumb":    p.get("thumbnail_url") or p.get("media_url", ""),
+                    "caption":  (p.get("caption") or "")[:80],
+                    "date":     p.get("timestamp", "")[:10],
+                    "is_video": p.get("media_type") == "VIDEO",
+                })
+
+        eng_medio = (
+            sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
+            if posts_data else 0
+        )
+        eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
+
+        return {
+            "handle":      "@" + data.get("username", handle.lstrip("@")),
+            "nome_exibido": data.get("name", handle),
+            "seguidores":  seg,
+            "seguindo":    0,
+            "total_posts": data.get("media_count", 0),
+            "bio":         (data.get("biography") or "")[:120],
+            "is_verified": False,
+            "pic_url":     data.get("profile_picture_url", ""),
+            "eng_medio":   round(eng_medio, 1),
+            "eng_pct":     eng_pct,
+            "posts":       posts_data,
+            "fonte":       "graph_api",
+            "erro":        None,
+        }
+
+    except Exception as e:
+        return {"erro": str(e)}
 
     # ── FONTE 2: Instaloader com login opcional ───────────────────
     @st.cache_data(ttl=1800, show_spinner=False)
@@ -1511,24 +1565,31 @@ elif st.session_state.pagina == "redes":
             return {"erro": str(e)}
 
     def coletar_melhor_fonte(handle: str, is_minha: bool) -> dict:
-        """Tenta Graph API → Instaloader → Scraping, nessa ordem."""
-        # Graph API só funciona para sua própria conta
-        if is_minha:
-            r = coletar_graph_api(handle)
-            if r is not None and not r.get("erro"):
-                return r
-
-        r = coletar_instaloader(handle)
-        if not r.get("erro"):
+    # 1. Tenta Graph API para todos (própria conta = /me, concorrente = Business Discovery)
+    token = st.secrets.get("IG_ACCESS_TOKEN", "")
+    if token:
+        r = coletar_graph_api(handle, is_minha)
+        if r is not None and not r.get("erro"):
             return r
+        # Se Graph API falhou, loga o motivo mas continua
+        graph_err = r.get("erro", "") if r else ""
+    else:
+        graph_err = ""
 
-        # Fallback scraping
-        r2 = coletar_scraping(handle)
-        if not r2.get("erro"):
-            r2["aviso_instaloader"] = r.get("erro", "")
-            return r2
+    # 2. Instaloader com login
+    r2 = coletar_instaloader(handle)
+    if not r2.get("erro"):
+        return r2
 
-        return r  # retorna o erro do instaloader
+    # 3. Scraping HTML
+    r3 = coletar_scraping(handle)
+    if not r3.get("erro"):
+        if graph_err:
+            r3["aviso"] = f"Graph API: {graph_err[:80]}. Usando scraping."
+        return r3
+
+    # Retorna o erro mais informativo
+    return {"erro": r2.get("erro", r3.get("erro", "Falha em todas as fontes"))}
 
     # ── Lista de empresas ─────────────────────────────────────────
     emp = st.session_state.dados["minha_empresa"]
