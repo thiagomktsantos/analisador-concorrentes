@@ -1,3 +1,7 @@
+import instaloader
+import plotly.graph_objects as go
+import plotly.express as px
+from playwright.sync_api import sync_playwright
 import streamlit as st
 import streamlit.components.v1 as components
 import google.generativeai as genai
