@@ -1305,19 +1305,15 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
- 
-    import instaloader
+
     import datetime
     import plotly.graph_objects as go
-    import plotly.express as px
-    from playwright.sync_api import sync_playwright
- 
+
     periodo, data_inicio = cabecalho_analise(
         "📱 Redes Sociais",
-        "Métricas reais coletadas via Instaloader · últimas postagens · comparativo visual"
+        "Métricas coletadas via Instagram Graph API · comparativo visual"
     )
- 
-    # ── CSS local da página ──────────────────────────────────────
+
     st.markdown("""
     <style>
     .rs-section-title {
@@ -1326,211 +1322,249 @@ elif st.session_state.pagina == "redes":
         padding: 0 0 10px 0; border-bottom: 1px solid #f3f4f6;
         margin-bottom: 18px; font-family: 'DM Sans', sans-serif;
     }
-    .rs-metric-card {
-        background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-        padding: 18px 20px; margin-bottom: 8px;
-    }
-    .rs-metric-val {
-        font-size: 26px; font-weight: 700; color: #111827;
-        letter-spacing: -1px; font-family: 'DM Sans', sans-serif;
-    }
-    .rs-metric-lbl {
-        font-size: 12px; color: #9ca3af; margin-top: 2px;
-        font-family: 'DM Sans', sans-serif;
-    }
-    .rs-metric-delta-pos { color: #16a34a; font-size: 12px; font-weight: 600; }
-    .rs-metric-delta-neu { color: #9ca3af; font-size: 12px; }
-    .rs-empresa-header {
-        display: flex; align-items: center; gap: 14px;
-        padding: 14px 18px; background: #fff;
-        border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 6px;
-    }
-    .rs-post-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-    .rs-post-thumb {
-        width: 90px; height: 90px; border-radius: 8px;
-        object-fit: cover; border: 1px solid #e5e7eb;
-        transition: transform 0.15s;
-    }
-    .rs-post-thumb:hover { transform: scale(1.06); }
-    .rs-post-meta {
-        font-size: 11px; color: #6b7280; margin-top: 4px; text-align: center;
-        width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .rs-post-item { display: flex; flex-direction: column; align-items: center; }
-    .rs-status-badge {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
-    }
+    .rs-metric-val { font-size: 26px; font-weight: 700; color: #111827; letter-spacing: -1px; }
+    .rs-metric-lbl { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .rs-status-badge { display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
     .rs-badge-ok   { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
     .rs-badge-warn { background:#fffbeb; color:#d97706; border:1px solid #fde68a; }
     .rs-badge-err  { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
     </style>
     """, unsafe_allow_html=True)
- 
-    # ── helpers ──────────────────────────────────────────────────
- 
+
     def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
-        return str(n)
- 
-    def calcular_engajamento(posts_recentes):
-        """Taxa de engajamento média dos últimos N posts."""
-        if not posts_recentes:
-            return 0.0
-        total = sum(p.get("likes", 0) + p.get("comments", 0) for p in posts_recentes)
-        return round(total / len(posts_recentes), 1)
- 
+        return str(int(n))
+
+    # ── FONTE 1: Instagram Graph API (Business/Creator) ──────────
     @st.cache_data(ttl=1800, show_spinner=False)
-    def coletar_instagram_instaloader(handle: str) -> dict:
+    def coletar_graph_api(handle: str) -> dict:
         """
-        Coleta métricas públicas via Instaloader (sem login).
-        Retorna dict com seguidores, posts, engajamento médio e lista de últimos posts.
+        Coleta via Graph API se IG_ACCESS_TOKEN e IG_BUSINESS_ID estiverem
+        nos secrets. Retorna None se não configurado.
         """
+        token = st.secrets.get("IG_ACCESS_TOKEN", "")
+        if not token:
+            return None
+        # Busca ID do usuário pelo username
+        try:
+            # Para contas próprias, usa /me
+            url_me = f"https://graph.instagram.com/me?fields=id,username,name,biography,followers_count,media_count,profile_picture_url&access_token={token}"
+            r = requests.get(url_me, timeout=10)
+            data = r.json()
+            if "error" in data:
+                return {"erro": data["error"].get("message", "Erro Graph API")}
+            seg = data.get("followers_count", 0)
+            # Busca últimos 9 posts
+            url_media = f"https://graph.instagram.com/me/media?fields=id,media_type,like_count,comments_count,timestamp,caption,thumbnail_url,media_url&limit=9&access_token={token}"
+            r2 = requests.get(url_media, timeout=10)
+            media_data = r2.json().get("data", [])
+            posts_data = []
+            for p in media_data:
+                posts_data.append({
+                    "likes":    p.get("like_count", 0),
+                    "comments": p.get("comments_count", 0),
+                    "thumb":    p.get("thumbnail_url") or p.get("media_url", ""),
+                    "caption":  (p.get("caption") or "")[:80],
+                    "date":     p.get("timestamp", "")[:10],
+                    "is_video": p.get("media_type") == "VIDEO",
+                })
+            eng_medio = (
+                sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
+                if posts_data else 0
+            )
+            eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
+            return {
+                "handle":      "@" + data.get("username", handle),
+                "nome_exibido": data.get("name", handle),
+                "seguidores":  seg,
+                "seguindo":    0,
+                "total_posts": data.get("media_count", 0),
+                "bio":         data.get("biography", "")[:120],
+                "is_verified": False,
+                "pic_url":     data.get("profile_picture_url", ""),
+                "eng_medio":   round(eng_medio, 1),
+                "eng_pct":     eng_pct,
+                "posts":       posts_data,
+                "fonte":       "graph_api",
+                "erro":        None,
+            }
+        except Exception as e:
+            return {"erro": str(e)}
+
+    # ── FONTE 2: Instaloader com login opcional ───────────────────
+    @st.cache_data(ttl=1800, show_spinner=False)
+    def coletar_instaloader(handle: str) -> dict:
         handle = handle.lstrip("@").strip()
         if not handle:
             return {"erro": "Handle vazio"}
         try:
             L = instaloader.Instaloader(
-                download_pictures=False,
-                download_videos=False,
-                download_video_thumbnails=False,
-                download_geotags=False,
-                download_comments=False,
-                save_metadata=False,
-                compress_json=False,
-                quiet=True,
+                download_pictures=False, download_videos=False,
+                download_video_thumbnails=False, download_geotags=False,
+                download_comments=False, save_metadata=False,
+                compress_json=False, quiet=True,
             )
+            # Login se disponível nos secrets
+            ig_user = st.secrets.get("IG_USER", "")
+            ig_pass = st.secrets.get("IG_PASS", "")
+            if ig_user and ig_pass:
+                try:
+                    L.login(ig_user, ig_pass)
+                except Exception:
+                    pass  # tenta sem login mesmo assim
+
             profile = instaloader.Profile.from_username(L.context, handle)
             posts_data = []
             try:
                 for i, post in enumerate(profile.get_posts()):
-                    if i >= 9:
-                        break
+                    if i >= 9: break
                     posts_data.append({
-                        "shortcode": post.shortcode,
-                        "likes": post.likes,
-                        "comments": post.comments,
-                        "thumb": post.url,               # URL pública da miniatura
+                        "likes": post.likes, "comments": post.comments,
+                        "thumb": post.url,
                         "caption": (post.caption or "")[:80],
                         "date": post.date_local.strftime("%d/%m/%Y") if post.date_local else "",
                         "is_video": post.is_video,
                     })
             except Exception:
-                pass  # perfil sem posts acessíveis
- 
-            eng_medio = calcular_engajamento(posts_data)
+                pass
+
             seg = profile.followers
-            eng_pct = round((eng_medio / seg * 100), 2) if seg > 0 else 0.0
- 
+            eng_medio = (
+                sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
+                if posts_data else 0
+            )
+            eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
             return {
-                "handle":       "@" + handle,
+                "handle": "@" + handle,
                 "nome_exibido": profile.full_name or handle,
-                "seguidores":   profile.followers,
-                "seguindo":     profile.followees,
-                "total_posts":  profile.mediacount,
-                "bio":          profile.biography[:120] if profile.biography else "",
-                "is_verified":  profile.is_verified,
-                "pic_url":      profile.profile_pic_url,
-                "eng_medio":    eng_medio,
-                "eng_pct":      eng_pct,
-                "posts":        posts_data,
-                "fonte":        "instaloader",
-                "erro":         None,
+                "seguidores": profile.followers,
+                "seguindo": profile.followees,
+                "total_posts": profile.mediacount,
+                "bio": (profile.biography or "")[:120],
+                "is_verified": profile.is_verified,
+                "pic_url": profile.profile_pic_url,
+                "eng_medio": round(eng_medio, 1),
+                "eng_pct": eng_pct,
+                "posts": posts_data,
+                "fonte": "instaloader",
+                "erro": None,
             }
         except instaloader.exceptions.ProfileNotExistsException:
-            return {"erro": f"Perfil @{handle} não encontrado."}
-        except instaloader.exceptions.ConnectionException as e:
-            # Rate-limited → tenta Playwright como fallback
-            return _fallback_playwright_ig(handle, str(e))
+            return {"erro": f"Perfil @{handle} não encontrado (ou bloqueado pelo Instagram)."}
         except Exception as e:
             return {"erro": str(e)}
- 
-    def _fallback_playwright_ig(handle: str, motivo: str) -> dict:
-        """
-        Fallback: abre instagram.com/{handle} com Playwright e extrai
-        dados do JSON embutido na página (window._sharedData).
-        """
+
+    # ── FONTE 3: Scraping via requests + regex (último recurso) ──
+    @st.cache_data(ttl=1800, show_spinner=False)
+    def coletar_scraping(handle: str) -> dict:
+        """Extrai seguidores/posts do HTML público do Instagram."""
+        handle = handle.lstrip("@").strip()
         try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page(
-                    user_agent=(
-                        "Mozilla/5.0 (X11; Linux x86_64) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) "
-                        "Chrome/124.0.0.0 Safari/537.36"
-                    )
-                )
-                page.goto(f"https://www.instagram.com/{handle}/", timeout=20000)
-                page.wait_for_timeout(4000)
- 
-                # Tenta extrair JSON embutido
-                data = page.evaluate("""() => {
-                    try {
-                        const scripts = [...document.querySelectorAll('script[type="application/json"]')];
-                        for (const s of scripts) {
-                            try {
-                                const d = JSON.parse(s.textContent);
-                                const u = d?.require?.[0]?.[3]?.[0]?.
-                                    __bbox?.require?.[0]?.[3]?.[1]?.
-                                    __bbox?.result?.data?.user;
-                                if (u) return { seg: u.edge_followed_by?.count,
-                                                posts: u.edge_owner_to_timeline_media?.count };
-                            } catch(e) {}
-                        }
-                    } catch(e) {}
-                    return null;
-                }""")
- 
-                browser.close()
- 
-                if data:
-                    return {
-                        "handle":       "@" + handle,
-                        "nome_exibido": handle,
-                        "seguidores":   data.get("seg", 0),
-                        "seguindo":     0,
-                        "total_posts":  data.get("posts", 0),
-                        "bio":          "",
-                        "is_verified":  False,
-                        "pic_url":      "",
-                        "eng_medio":    0,
-                        "eng_pct":      0.0,
-                        "posts":        [],
-                        "fonte":        "playwright",
-                        "erro":         None,
-                        "aviso":        f"Instaloader bloqueado ({motivo[:60]}), dados parciais via Playwright.",
-                    }
-                return {"erro": f"Instaloader bloqueado e Playwright não extraiu dados. ({motivo[:80]})"}
-        except Exception as e2:
-            return {"erro": f"Instaloader: {motivo[:60]} | Playwright: {e2}"}
- 
-    # ── montar lista de empresas ──────────────────────────────────
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/124.0 Safari/537.36"
+                ),
+                "Accept-Language": "pt-BR,pt;q=0.9",
+            }
+            resp = requests.get(
+                f"https://www.instagram.com/{handle}/",
+                headers=headers, timeout=15
+            )
+            html = resp.text
+
+            # Tenta extrair do JSON embutido
+            seg, posts_total = 0, 0
+            m_seg = re.search(r'"edge_followed_by":\{"count":(\d+)\}', html)
+            m_posts = re.search(r'"edge_owner_to_timeline_media":\{"count":(\d+)', html)
+            if m_seg:   seg = int(m_seg.group(1))
+            if m_posts: posts_total = int(m_posts.group(1))
+
+            if seg == 0:
+                # Tenta padrão alternativo
+                m2 = re.search(r'("followers_count"|"followedBy").*?(\d{3,})', html)
+                if m2: seg = int(m2.group(2))
+
+            if seg == 0:
+                return {"erro": "Instagram bloqueou o acesso. Use a Graph API (ver instruções abaixo)."}
+
+            return {
+                "handle": "@" + handle,
+                "nome_exibido": handle,
+                "seguidores": seg,
+                "seguindo": 0,
+                "total_posts": posts_total,
+                "bio": "",
+                "is_verified": False,
+                "pic_url": "",
+                "eng_medio": 0,
+                "eng_pct": 0.0,
+                "posts": [],
+                "fonte": "scraping",
+                "erro": None,
+                "aviso": "Dados parciais (scraping HTML). Posts e engajamento indisponíveis.",
+            }
+        except Exception as e:
+            return {"erro": str(e)}
+
+    def coletar_melhor_fonte(handle: str, is_minha: bool) -> dict:
+        """Tenta Graph API → Instaloader → Scraping, nessa ordem."""
+        # Graph API só funciona para sua própria conta
+        if is_minha:
+            r = coletar_graph_api(handle)
+            if r is not None and not r.get("erro"):
+                return r
+
+        r = coletar_instaloader(handle)
+        if not r.get("erro"):
+            return r
+
+        # Fallback scraping
+        r2 = coletar_scraping(handle)
+        if not r2.get("erro"):
+            r2["aviso_instaloader"] = r.get("erro", "")
+            return r2
+
+        return r  # retorna o erro do instaloader
+
+    # ── Lista de empresas ─────────────────────────────────────────
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
- 
+
     todas = []
     if emp.get("nome"):
-        todas.append({
-            "key":       "__minha__",
-            "nome":      emp["nome"],
-            "instagram": emp.get("instagram", ""),
-            "tipo":      "minha",
-        })
+        todas.append({"key": "__minha__", "nome": emp["nome"],
+                      "instagram": emp.get("instagram", ""), "tipo": "minha"})
     for i, c in enumerate(concorrentes):
-        todas.append({
-            "key":       f"conc_{i}",
-            "nome":      c["nome"],
-            "instagram": c.get("instagram", ""),
-            "tipo":      "concorrente",
-        })
- 
+        todas.append({"key": f"conc_{i}", "nome": c["nome"],
+                      "instagram": c.get("instagram", ""), "tipo": "concorrente"})
+
     empresas_ig = [e for e in todas if e["instagram"] and e["instagram"] not in ("@", "")]
     if not empresas_ig:
         st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
         st.stop()
- 
-    # ── painel de coleta ─────────────────────────────────────────
+
+    # ── Aviso de configuração ─────────────────────────────────────
+    tem_token = bool(st.secrets.get("IG_ACCESS_TOKEN", ""))
+    tem_login = bool(st.secrets.get("IG_USER", ""))
+    if not tem_token and not tem_login:
+        st.markdown("""
+        <div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;
+                    padding:16px 20px;margin-bottom:20px;font-size:14px;color:#92400e'>
+            <b>⚠️ Para melhores resultados, configure uma das opções no <code>secrets.toml</code>:</b><br><br>
+            <b>Opção A — Instagram Graph API</b> (recomendado, para contas Business/Creator):<br>
+            <code>IG_ACCESS_TOKEN = "seu_token_aqui"</code><br><br>
+            <b>Opção B — Login Instaloader</b> (conta Instagram comum):<br>
+            <code>IG_USER = "seu_usuario"</code><br>
+            <code>IG_PASS = "sua_senha"</code><br><br>
+            Sem configuração, o app tenta scraping HTML (pode ser bloqueado pelo Instagram).
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Painel de coleta ──────────────────────────────────────────
     col_info, col_btn = st.columns([5, 2])
     with col_info:
         handles_txt = "  ·  ".join(e["instagram"] for e in empresas_ig)
@@ -1541,40 +1575,49 @@ elif st.session_state.pagina == "redes":
         )
     with col_btn:
         coletar = st.button("🔄 Coletar dados agora", type="primary", use_container_width=True)
- 
+
     if coletar:
-        # Limpa cache para forçar nova coleta
-        coletar_instagram_instaloader.clear()
- 
-    # ── coleta (com cache) ────────────────────────────────────────
-    resultados = {}   # key → dict de métricas
-    erros      = []
- 
+        coletar_graph_api.clear()
+        coletar_instaloader.clear()
+        coletar_scraping.clear()
+
+    # ── Coleta ────────────────────────────────────────────────────
+    resultados = {}
+    erros = []
+
     with st.spinner("Coletando perfis do Instagram…"):
         for e in empresas_ig:
-            dados_ig = coletar_instagram_instaloader(e["instagram"])
+            dados_ig = coletar_melhor_fonte(e["instagram"], e["tipo"] == "minha")
             if dados_ig.get("erro"):
                 erros.append(f"{e['nome']}: {dados_ig['erro']}")
             resultados[e["key"]] = {**e, **dados_ig}
- 
+
     if erros:
         for err in erros:
-            st.warning(f"⚠️ {err}", icon="⚠️")
- 
-    # Filtra apenas os que foram coletados com sucesso
+            st.warning(f"⚠️ {err}")
+
     ok = [r for r in resultados.values() if not r.get("erro")]
     if not ok:
         st.error("Não foi possível coletar dados de nenhum perfil.")
+        st.markdown("""
+        **Soluções:**
+        1. **Graph API** — crie um app em [developers.facebook.com](https://developers.facebook.com), conecte uma conta Business/Creator e adicione `IG_ACCESS_TOKEN` nos secrets
+        2. **Login Instaloader** — adicione `IG_USER` e `IG_PASS` nos secrets (conta Instagram comum)
+        3. Verifique se os handles estão corretos (sem `@`)
+        """)
         st.stop()
- 
-    # ── aba única: tudo na mesma view ────────────────────────────
+
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
- 
-    # ════════════════════════════════════════════════════════════
-    # SEÇÃO 1 — KPI cards
-    # ════════════════════════════════════════════════════════════
+
+    # ── SEÇÃO 1: KPI cards ────────────────────────────────────────
     st.markdown("<div class='rs-section-title'>📊 Métricas por Empresa</div>", unsafe_allow_html=True)
- 
+
+    FONTE_LABEL = {
+        "graph_api":   "<span class='rs-status-badge rs-badge-ok'>✔ Graph API</span>",
+        "instaloader": "<span class='rs-status-badge rs-badge-ok'>✔ Instaloader</span>",
+        "scraping":    "<span class='rs-status-badge rs-badge-warn'>⚡ Scraping (parcial)</span>",
+    }
+
     for r in ok:
         is_minha = r["tipo"] == "minha"
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
@@ -1582,12 +1625,8 @@ elif st.session_state.pagina == "redes":
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
         avatar = gerar_avatar(r["nome"])
-        verified = " ✓" if r.get("is_verified") else ""
-        fonte_label = (
-            "<span class='rs-status-badge rs-badge-ok'>✔ Instaloader</span>" if r.get("fonte") == "instaloader"
-            else "<span class='rs-status-badge rs-badge-warn'>⚡ Playwright (parcial)</span>"
-        )
- 
+        fonte_label = FONTE_LABEL.get(r.get("fonte", ""), "")
+
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
                     padding:18px 22px;margin-bottom:6px'>
@@ -1598,7 +1637,7 @@ elif st.session_state.pagina == "redes":
                             font-size:15px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
                 <div style='flex:1'>
                     <div style='font-size:16px;font-weight:700;color:#111827'>
-                        {r['nome']}{verified}
+                        {r['nome']}
                         <span style='font-size:13px;font-weight:400;color:#9ca3af;margin-left:8px'>{r.get('handle','')}</span>
                     </div>
                     <div style='margin-top:4px;display:flex;gap:8px;align-items:center'>
@@ -1609,14 +1648,13 @@ elif st.session_state.pagina == "redes":
                 </div>
             </div>
         """, unsafe_allow_html=True)
- 
-        # KPI row
+
         kpi_cols = st.columns(4)
         kpis = [
-            ("👥 Seguidores",    fmt_num(r.get("seguidores", 0))),
-            ("📝 Posts totais",  fmt_num(r.get("total_posts", 0))),
-            ("❤️ Eng. médio",   fmt_num(int(r.get("eng_medio", 0)))),
-            ("📈 Eng. %",        f"{r.get('eng_pct', 0):.2f}%"),
+            ("👥 Seguidores",   fmt_num(r.get("seguidores", 0))),
+            ("📝 Posts totais", fmt_num(r.get("total_posts", 0))),
+            ("❤️ Eng. médio",  fmt_num(int(r.get("eng_medio", 0)))),
+            ("📈 Eng. %",       f"{r.get('eng_pct', 0):.2f}%"),
         ]
         for col, (lbl, val) in zip(kpi_cols, kpis):
             col.markdown(f"""
@@ -1625,133 +1663,90 @@ elif st.session_state.pagina == "redes":
                 <div class='rs-metric-val'>{val}</div>
             </div>
             """, unsafe_allow_html=True)
- 
+
         if r.get("bio"):
             st.markdown(
                 f"<div style='font-size:13px;color:#6b7280;margin-top:12px;font-style:italic'>&ldquo;{r['bio']}&rdquo;</div>",
                 unsafe_allow_html=True
             )
-        if r.get("aviso"):
-            st.markdown(
-                f"<div style='font-size:12px;color:#d97706;margin-top:8px'>⚡ {r['aviso']}</div>",
-                unsafe_allow_html=True
-            )
- 
+        for aviso_key in ("aviso", "aviso_instaloader"):
+            if r.get(aviso_key):
+                st.markdown(
+                    f"<div style='font-size:12px;color:#d97706;margin-top:8px'>⚡ {r[aviso_key]}</div>",
+                    unsafe_allow_html=True
+                )
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
- 
-    # ════════════════════════════════════════════════════════════
-    # SEÇÃO 2 — Gráficos comparativos
-    # ════════════════════════════════════════════════════════════
+
+    # ── SEÇÃO 2: Gráficos comparativos ───────────────────────────
     st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
     st.markdown("<div class='rs-section-title'>📈 Comparativo Visual</div>", unsafe_allow_html=True)
- 
-    nomes   = [r["nome"]                      for r in ok]
-    segs    = [r.get("seguidores", 0)          for r in ok]
-    posts   = [r.get("total_posts", 0)         for r in ok]
-    eng_abs = [int(r.get("eng_medio", 0))      for r in ok]
-    eng_pct = [r.get("eng_pct", 0.0)           for r in ok]
- 
-    CORES = ["#111827", "#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"]
- 
+
+    nomes   = [r["nome"]                 for r in ok]
+    segs    = [r.get("seguidores", 0)    for r in ok]
+    posts   = [r.get("total_posts", 0)   for r in ok]
+    eng_abs = [int(r.get("eng_medio",0)) for r in ok]
+    eng_pct_list = [r.get("eng_pct",0.0) for r in ok]
+    CORES   = ["#111827","#3b82f6","#f59e0b","#10b981","#ef4444","#8b5cf6"]
+
     col_g1, col_g2 = st.columns(2)
- 
     with col_g1:
-        fig_seg = go.Figure(go.Bar(
-            x=nomes, y=segs,
-            marker_color=CORES[:len(nomes)],
-            text=[fmt_num(s) for s in segs],
-            textposition="outside",
-        ))
-        fig_seg.update_layout(
-            title=dict(text="Seguidores", font=dict(size=15, family="DM Sans", color="#111827")),
-            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
-            margin=dict(t=45, b=30, l=10, r=10),
-            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
-            xaxis=dict(showgrid=False),
-            showlegend=False,
-            height=300,
-        )
-        st.plotly_chart(fig_seg, use_container_width=True, config={"displayModeBar": False})
- 
+        fig = go.Figure(go.Bar(x=nomes, y=segs, marker_color=CORES[:len(nomes)],
+                               text=[fmt_num(s) for s in segs], textposition="outside"))
+        fig.update_layout(title=dict(text="Seguidores", font=dict(size=15,family="DM Sans",color="#111827")),
+                          plot_bgcolor="#fff", paper_bgcolor="#fff",
+                          margin=dict(t=45,b=30,l=10,r=10), height=300,
+                          yaxis=dict(showgrid=True,gridcolor="#f3f4f6",zeroline=False),
+                          xaxis=dict(showgrid=False), showlegend=False)
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
     with col_g2:
-        fig_eng = go.Figure(go.Bar(
-            x=nomes, y=eng_pct,
-            marker_color=CORES[:len(nomes)],
-            text=[f"{v:.2f}%" for v in eng_pct],
-            textposition="outside",
-        ))
-        fig_eng.update_layout(
-            title=dict(text="Taxa de Engajamento (%)", font=dict(size=15, family="DM Sans", color="#111827")),
-            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
-            margin=dict(t=45, b=30, l=10, r=10),
-            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%"),
-            xaxis=dict(showgrid=False),
-            showlegend=False,
-            height=300,
-        )
-        st.plotly_chart(fig_eng, use_container_width=True, config={"displayModeBar": False})
- 
+        fig2 = go.Figure(go.Bar(x=nomes, y=eng_pct_list, marker_color=CORES[:len(nomes)],
+                                text=[f"{v:.2f}%" for v in eng_pct_list], textposition="outside"))
+        fig2.update_layout(title=dict(text="Taxa de Engajamento (%)", font=dict(size=15,family="DM Sans",color="#111827")),
+                           plot_bgcolor="#fff", paper_bgcolor="#fff",
+                           margin=dict(t=45,b=30,l=10,r=10), height=300,
+                           yaxis=dict(showgrid=True,gridcolor="#f3f4f6",zeroline=False,ticksuffix="%"),
+                           xaxis=dict(showgrid=False), showlegend=False)
+        st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+
     col_g3, col_g4 = st.columns(2)
- 
     with col_g3:
-        fig_posts = go.Figure(go.Bar(
-            x=nomes, y=posts,
-            marker_color=CORES[:len(nomes)],
-            text=[fmt_num(p) for p in posts],
-            textposition="outside",
-        ))
-        fig_posts.update_layout(
-            title=dict(text="Total de Posts", font=dict(size=15, family="DM Sans", color="#111827")),
-            plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
-            margin=dict(t=45, b=30, l=10, r=10),
-            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
-            xaxis=dict(showgrid=False),
-            showlegend=False,
-            height=300,
-        )
-        st.plotly_chart(fig_posts, use_container_width=True, config={"displayModeBar": False})
- 
+        fig3 = go.Figure(go.Bar(x=nomes, y=posts, marker_color=CORES[:len(nomes)],
+                                text=[fmt_num(p) for p in posts], textposition="outside"))
+        fig3.update_layout(title=dict(text="Total de Posts", font=dict(size=15,family="DM Sans",color="#111827")),
+                           plot_bgcolor="#fff", paper_bgcolor="#fff",
+                           margin=dict(t=45,b=30,l=10,r=10), height=300,
+                           yaxis=dict(showgrid=True,gridcolor="#f3f4f6",zeroline=False),
+                           xaxis=dict(showgrid=False), showlegend=False)
+        st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
+
     with col_g4:
-        # Radar chart: Seguidores norm + Posts norm + Engajamento norm
         def norm(lst):
             mx = max(lst) if max(lst) > 0 else 1
-            return [round(v / mx * 100, 1) for v in lst]
- 
-        categorias = ["Seguidores", "Total Posts", "Eng. Médio"]
-        fig_radar = go.Figure()
+            return [round(v/mx*100,1) for v in lst]
+        categorias = ["Seguidores","Total Posts","Eng. Médio"]
+        fig4 = go.Figure()
         for idx, r in enumerate(ok):
-            valores = [
-                norm(segs)[idx],
-                norm(posts)[idx],
-                norm(eng_abs)[idx],
-            ]
-            fig_radar.add_trace(go.Scatterpolar(
-                r=valores + [valores[0]],
-                theta=categorias + [categorias[0]],
-                fill="toself",
-                name=r["nome"],
-                line_color=CORES[idx % len(CORES)],
-                fillcolor=CORES[idx % len(CORES)],
-                opacity=0.25,
+            vals = [norm(segs)[idx], norm(posts)[idx], norm(eng_abs)[idx]]
+            fig4.add_trace(go.Scatterpolar(
+                r=vals+[vals[0]], theta=categorias+[categorias[0]],
+                fill="toself", name=r["nome"],
+                line_color=CORES[idx%len(CORES)], fillcolor=CORES[idx%len(CORES)], opacity=0.25,
             ))
-        fig_radar.update_layout(
-            title=dict(text="Radar Comparativo (0–100 normalizado)", font=dict(size=15, family="DM Sans", color="#111827")),
-            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
-            showlegend=True,
-            paper_bgcolor="#ffffff",
-            margin=dict(t=50, b=20, l=30, r=30),
-            height=300,
-            legend=dict(font=dict(family="DM Sans", size=12)),
+        fig4.update_layout(
+            title=dict(text="Radar Comparativo (normalizado)", font=dict(size=15,family="DM Sans",color="#111827")),
+            polar=dict(radialaxis=dict(visible=True,range=[0,100])),
+            showlegend=True, paper_bgcolor="#fff",
+            margin=dict(t=50,b=20,l=30,r=30), height=300,
+            legend=dict(font=dict(family="DM Sans",size=12)),
         )
-        st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
- 
-    # ════════════════════════════════════════════════════════════
-    # SEÇÃO 3 — Últimas postagens com miniaturas
-    # ════════════════════════════════════════════════════════════
+        st.plotly_chart(fig4, use_container_width=True, config={"displayModeBar": False})
+
+    # ── SEÇÃO 3: Últimas postagens ────────────────────────────────
     st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
     st.markdown("<div class='rs-section-title'>🖼️ Últimas Postagens</div>", unsafe_allow_html=True)
- 
+
     for r in ok:
         posts_list = r.get("posts", [])
         is_minha = r["tipo"] == "minha"
@@ -1760,7 +1755,7 @@ elif st.session_state.pagina == "redes":
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
- 
+
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:12px;margin-bottom:12px;
                     padding:12px 16px;background:#fff;border:1px solid #e5e7eb;border-radius:10px'>
@@ -1772,71 +1767,60 @@ elif st.session_state.pagina == "redes":
                          padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
         </div>
         """, unsafe_allow_html=True)
- 
+
         if not posts_list:
             st.markdown(
                 "<div style='padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;"
                 "border-radius:8px;font-size:14px;color:#9ca3af;margin-bottom:20px'>"
-                "Nenhum post acessível (perfil privado ou rate-limit atingido).</div>",
+                "Posts não disponíveis (configure Graph API ou Instaloader com login para obter miniaturas).</div>",
                 unsafe_allow_html=True
             )
-            continue
- 
-        # Grid de miniaturas
-        MAX_COLS = 9
-        cols_posts = st.columns(min(len(posts_list), MAX_COLS))
-        for idx, post in enumerate(posts_list[:MAX_COLS]):
-            with cols_posts[idx]:
-                icon = "🎥" if post.get("is_video") else "🖼️"
-                likes_fmt = fmt_num(post.get("likes", 0))
-                coms_fmt  = fmt_num(post.get("comments", 0))
-                thumb_url = post.get("thumb", "")
- 
-                if thumb_url:
-                    st.markdown(f"""
-                    <div style='text-align:center'>
-                        <img src="{thumb_url}"
-                             style='width:90px;height:90px;border-radius:8px;object-fit:cover;
-                                    border:1px solid #e5e7eb;display:block;margin:0 auto 4px'
-                             onerror="this.style.display='none'" />
-                        <div style='font-size:11px;color:#6b7280'>{icon} ❤️{likes_fmt} 💬{coms_fmt}</div>
-                        <div style='font-size:10px;color:#9ca3af'>{post.get('date','')}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style='width:90px;height:90px;border-radius:8px;background:#f3f4f6;
-                                display:flex;align-items:center;justify-content:center;
-                                font-size:24px;margin:0 auto 4px'>{icon}</div>
-                    <div style='font-size:11px;color:#6b7280;text-align:center'>❤️{likes_fmt} 💬{coms_fmt}</div>
-                    """, unsafe_allow_html=True)
- 
-        st.markdown("<div style='height:20px'/>", unsafe_allow_html=True)
- 
-        # Tabela de posts
-        if posts_list:
+        else:
+            MAX_COLS = 9
+            cols_posts = st.columns(min(len(posts_list), MAX_COLS))
+            for idx, post in enumerate(posts_list[:MAX_COLS]):
+                with cols_posts[idx]:
+                    icon = "🎥" if post.get("is_video") else "🖼️"
+                    likes_fmt = fmt_num(post.get("likes", 0))
+                    coms_fmt  = fmt_num(post.get("comments", 0))
+                    thumb_url = post.get("thumb", "")
+                    if thumb_url:
+                        st.markdown(f"""
+                        <div style='text-align:center'>
+                            <img src="{thumb_url}"
+                                 style='width:90px;height:90px;border-radius:8px;object-fit:cover;
+                                        border:1px solid #e5e7eb;display:block;margin:0 auto 4px'
+                                 onerror="this.style.display='none'" />
+                            <div style='font-size:11px;color:#6b7280'>{icon} ❤️{likes_fmt} 💬{coms_fmt}</div>
+                            <div style='font-size:10px;color:#9ca3af'>{post.get('date','')}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style='width:90px;height:90px;border-radius:8px;background:#f3f4f6;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:24px;margin:0 auto 4px'>{icon}</div>
+                        <div style='font-size:11px;color:#6b7280;text-align:center'>❤️{likes_fmt} 💬{coms_fmt}</div>
+                        """, unsafe_allow_html=True)
+
+            st.markdown("<div style='height:20px'/>", unsafe_allow_html=True)
             df_posts = pd.DataFrame([{
-                "Data":        p.get("date", ""),
-                "Tipo":        "🎥 Vídeo" if p.get("is_video") else "🖼️ Foto",
-                "❤️ Curtidas": p.get("likes", 0),
-                "💬 Comentários": p.get("comments", 0),
-                "Eng. total":  p.get("likes", 0) + p.get("comments", 0),
-                "Legenda":     p.get("caption", "")[:60],
+                "Data": p.get("date",""), "Tipo": "🎥 Vídeo" if p.get("is_video") else "🖼️ Foto",
+                "❤️ Curtidas": p.get("likes",0), "💬 Comentários": p.get("comments",0),
+                "Eng. total": p.get("likes",0)+p.get("comments",0),
+                "Legenda": p.get("caption","")[:60],
             } for p in posts_list])
             with st.expander(f"📋 Ver tabela de posts — {r['nome']}"):
                 st.dataframe(df_posts, use_container_width=True, hide_index=True)
- 
+
         st.markdown("<hr style='border:none;border-top:1px solid #f3f4f6;margin:8px 0 20px'/>", unsafe_allow_html=True)
- 
-    # ── nota de rodapé ───────────────────────────────────────────
+
     st.markdown("""
     <div style='margin-top:12px;padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;
                 border-radius:10px;font-size:13px;color:#9ca3af;line-height:1.7'>
-        ℹ️ <b>Como funciona:</b> os dados são coletados diretamente do Instagram via
-        <b>Instaloader</b> (perfis públicos). Se o Instagram bloquear a coleta,
-        o <b>Playwright</b> é usado como fallback. As imagens das miniaturas são
-        servidas pela CDN do Instagram — podem expirar; clique em
-        <b>🔄 Coletar dados agora</b> para atualizar.<br>
-        Os dados ficam em cache por <b>30 minutos</b> para evitar rate-limit.
+        ℹ️ <b>Fontes em ordem de prioridade:</b>
+        <b>Graph API</b> (melhor, requer conta Business) →
+        <b>Instaloader com login</b> (requer IG_USER + IG_PASS nos secrets) →
+        <b>Scraping HTML</b> (pode ser bloqueado). Cache de <b>30 min</b>.
     </div>
     """, unsafe_allow_html=True)
