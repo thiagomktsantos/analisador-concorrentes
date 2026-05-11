@@ -1548,31 +1548,22 @@ elif st.session_state.pagina == "redes":
             return {"erro": str(e)}
 
     def coletar_melhor_fonte(handle: str, is_minha: bool) -> dict:
-        # 1. Tenta Graph API para todos
         token = st.secrets.get("IG_ACCESS_TOKEN", "")
+        graph_err = ""
         if token:
             r = coletar_graph_api(handle, is_minha)
             if r is not None and not r.get("erro"):
-            return r
-        # Se Graph API falhou, loga o motivo mas continua
-        graph_err = r.get("erro", "") if r else ""
-    else:
-        graph_err = ""
-
-    # 2. Instaloader com login
-    r2 = coletar_instaloader(handle)
-    if not r2.get("erro"):
-        return r2
-
-    # 3. Scraping HTML
-    r3 = coletar_scraping(handle)
-    if not r3.get("erro"):
-        if graph_err:
-            r3["aviso"] = f"Graph API: {graph_err[:80]}. Usando scraping."
-        return r3
-
-    # Retorna o erro mais informativo
-    return {"erro": r2.get("erro", r3.get("erro", "Falha em todas as fontes"))}
+                return r
+            graph_err = r.get("erro", "") if r else ""
+        r2 = coletar_instaloader(handle)
+        if not r2.get("erro"):
+            return r2
+        r3 = coletar_scraping(handle)
+        if not r3.get("erro"):
+            if graph_err:
+                r3["aviso"] = f"Graph API: {graph_err[:80]}. Usando scraping."
+            return r3
+        return {"erro": r2.get("erro", r3.get("erro", "Falha em todas as fontes"))}
 
     # ── Lista de empresas ─────────────────────────────────────────
     emp = st.session_state.dados["minha_empresa"]
