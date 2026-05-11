@@ -1554,16 +1554,25 @@ elif st.session_state.pagina == "redes":
             r = coletar_graph_api(handle, is_minha)
             if r is not None and not r.get("erro"):
                 return r
-            graph_err = r.get("erro", "") if r else ""
-        r2 = coletar_instaloader(handle)
-        if not r2.get("erro"):
-            return r2
-        r3 = coletar_scraping(handle)
-        if not r3.get("erro"):
-            if graph_err:
-                r3["aviso"] = f"Graph API: {graph_err[:80]}. Usando scraping."
-            return r3
-        return {"erro": r2.get("erro", r3.get("erro", "Falha em todas as fontes"))}
+            graph_err = r.get("erro", "") if r else "token presente mas retornou None"
+            # Mostra o erro real da Graph API no aviso
+            return {
+                "handle": "@" + handle.lstrip("@"),
+                "nome_exibido": handle,
+                "seguidores": 0,
+                "seguindo": 0,
+                "total_posts": 0,
+                "bio": "",
+                "is_verified": False,
+                "pic_url": "",
+                "eng_medio": 0,
+                "eng_pct": 0.0,
+                "posts": [],
+                "fonte": "erro_debug",
+                "erro": None,
+                "aviso": f"Graph API erro: {graph_err}",
+            }
+        return {"erro": "IG_ACCESS_TOKEN não encontrado nos secrets"}
 
     # ── Lista de empresas ─────────────────────────────────────────
     emp = st.session_state.dados["minha_empresa"]
