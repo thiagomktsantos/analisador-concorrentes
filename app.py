@@ -1339,78 +1339,51 @@ elif st.session_state.pagina == "redes":
     # ── FONTE 1: Instagram Graph API (Business/Creator) ──────────
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_graph_api(handle: str, is_minha: bool) -> dict:
-        token = st.secrets.get("IG_ACCESS_TOKEN", "")
-        if not token:
-            return None
+        handle_limpo = handle.lstrip("@").strip()
+        if not handle_limpo:
+            return {"erro": "Handle vazio"}
         try:
-            # 1. Busca as páginas do usuário
-            url_pages = f"https://graph.facebook.com/v18.0/me/accounts?access_token={token}"
-            r_pages = requests.get(url_pages, timeout=10)
-            pages_data = r_pages.json()
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+                "Accept-Language": "pt-BR,pt;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            }
 
-            if "error" in pages_data:
-                return {"erro": f"Graph API: {pages_data['error'].get('message', '')}"}
+            # Endpoint público do Instagram
+            url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={handle_limpo}"
+            headers["X-IG-App-ID"] = "936619743392459"
 
-            pages = pages_data.get("data", [])
-            if not pages:
-                return {"erro": "Nenhuma Página do Facebook encontrada. Conecte uma Página ao token."}
+            resp = requests.get(url, headers=headers, timeout=15)
+            data = resp.json()
 
-            page = pages[0]
-            page_id = page["id"]
-            page_token = page["access_token"]
+            user = data.get("data", {}).get("user", {})
+            if not user:
+                return {"erro": f"Perfil @{handle_limpo} não encontrado ou bloqueado."}
 
-            # 2. Busca o Instagram Business Account vinculado à página
-            url_ig = f"https://graph.facebook.com/v18.0/{page_id}?fields=instagram_business_account&access_token={page_token}"
-            r_ig = requests.get(url_ig, timeout=10)
-            ig_data = r_ig.json()
+            seg = user.get("edge_followed_by", {}).get("count", 0)
+            total_posts = user.get("edge_owner_to_timeline_media", {}).get("count", 0)
 
-            if "instagram_business_account" not in ig_data:
-                return {"erro": "Página do Facebook não tem conta Instagram Business vinculada."}
-
-            ig_id = ig_data["instagram_business_account"]["id"]
-
-            if is_minha:
-                url_info = (
-                    f"https://graph.facebook.com/v18.0/{ig_id}"
-                    f"?fields=username,name,biography,followers_count,media_count,profile_picture_url"
-                    f"&access_token={page_token}"
-                )
-                info = requests.get(url_info, timeout=10).json()
-                url_media = (
-                    f"https://graph.facebook.com/v18.0/{ig_id}/media"
-                    f"?fields=id,media_type,like_count,comments_count,timestamp,caption,thumbnail_url,media_url"
-                    f"&limit=9&access_token={page_token}"
-                )
-                media = requests.get(url_media, timeout=10).json().get("data", [])
-            else:
-                h = handle.lstrip("@").strip()
-                url_biz = (
-                    f"https://graph.facebook.com/v18.0/{ig_id}"
-                    f"?fields=business_discovery.fields("
-                    f"username,name,biography,followers_count,media_count,"
-                    f"media{{like_count,comments_count,media_type,timestamp,caption,thumbnail_url,media_url}}"
-                    f")&username={h}&access_token={page_token}"
-                )
-                r_biz = requests.get(url_biz, timeout=10)
-                biz = r_biz.json().get("business_discovery", {})
-                if not biz:
-                    err = r_biz.json().get("error", {}).get("message", "Business Discovery falhou")
-                    return {"erro": f"Concorrente: {err}"}
-                info = biz
-                media = biz.get("media", {}).get("data", [])
-
+            # Últimos posts
+            posts_raw = user.get("edge_owner_to_timeline_media", {}).get("edges", [])
             posts_data = []
-            for p in media:
+            for p in posts_raw[:9]:
+                node = p.get("node", {})
+                likes = node.get("edge_liked_by", {}).get("count", 0)
+                comments = node.get("edge_media_to_comment", {}).get("count", 0)
+                thumb = node.get("thumbnail_src") or node.get("display_url", "")
+                caption = ""
+                edges_caption = node.get("edge_media_to_caption", {}).get("edges", [])
+                if edges_caption:
+                    caption = edges_caption[0].get("node", {}).get("text", "")[:80]
                 posts_data.append({
-                    "likes":    p.get("like_count", 0),
-                    "comments": p.get("comments_count", 0),
-                    "thumb":    p.get("thumbnail_url") or p.get("media_url", ""),
-                    "caption":  (p.get("caption") or "")[:80],
-                    "date":     p.get("timestamp", "")[:10],
-                    "is_video": p.get("media_type") == "VIDEO",
+                    "likes": likes,
+                    "comments": comments,
+                    "thumb": thumb,
+                    "caption": caption,
+                    "date": "",
+                    "is_video": node.get("is_video", False),
                 })
 
-            seg = info.get("followers_count", 0)
             eng_medio = (
                 sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 if posts_data else 0
@@ -1418,14 +1391,14 @@ elif st.session_state.pagina == "redes":
             eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
 
             return {
-                "handle":       "@" + info.get("username", handle.lstrip("@")),
-                "nome_exibido": info.get("name", handle),
+                "handle":       "@" + handle_limpo,
+                "nome_exibido": user.get("full_name", handle_limpo),
                 "seguidores":   seg,
-                "seguindo":     0,
-                "total_posts":  info.get("media_count", 0),
-                "bio":          (info.get("biography") or "")[:120],
-                "is_verified":  False,
-                "pic_url":      info.get("profile_picture_url", ""),
+                "seguindo":     user.get("edge_follow", {}).get("count", 0),
+                "total_posts":  total_posts,
+                "bio":          (user.get("biography") or "")[:120],
+                "is_verified":  user.get("is_verified", False),
+                "pic_url":      user.get("profile_pic_url", ""),
                 "eng_medio":    round(eng_medio, 1),
                 "eng_pct":      eng_pct,
                 "posts":        posts_data,
