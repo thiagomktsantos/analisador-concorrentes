@@ -1,11 +1,11 @@
 import streamlit as st
-import google.generativeai as genai
 import pandas as pd
 import re
 import unicodedata
 import requests
 import trafilatura
 from supabase import create_client, Client
+from google import genai
 
 # ---------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -29,23 +29,16 @@ def get_supabase() -> Client | None:
 supabase = get_supabase()
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO GEMINI (VERSÃO ATUAL DA API)
+# CONFIGURAÇÃO GEMINI (SDK NOVO - FUNCIONAL)
 # ---------------------------------------------------
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    gemini_model = genai.GenerativeModel("models/gemini-1.5-flash")
+    gemini_client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    gemini_model = None
+    gemini_client = None
 
 # ---------------------------------------------------
 # FUNÇÕES AUXILIARES
 # ---------------------------------------------------
-def remover_acentos(texto):
-    return ''.join(
-        c for c in unicodedata.normalize("NFD", texto)
-        if unicodedata.category(c) != "Mn"
-    )
-
 def formatar_url(url):
     if not url:
         return ""
@@ -55,7 +48,7 @@ def formatar_url(url):
     return url
 
 # ---------------------------------------------------
-# EXTRAÇÃO DE CONTEÚDO (ROBUSTA / CLOUD SAFE)
+# EXTRAÇÃO DE CONTEÚDO (ROBUSTA)
 # ---------------------------------------------------
 def extrair_conteudo_site(url: str) -> str:
     url_fmt = formatar_url(url)
@@ -76,10 +69,8 @@ def extrair_conteudo_site(url: str) -> str:
         if resp.status_code != 200:
             return "Conteúdo indisponível ou bloqueado."
 
-        html = resp.text
-
         texto = trafilatura.extract(
-            html,
+            resp.text,
             favor_precision=True,
             include_links=False,
             include_images=False,
@@ -89,9 +80,7 @@ def extrair_conteudo_site(url: str) -> str:
         )
 
         if not texto or len(texto) < 200:
-            return (
-                "Site com conteúdo carregado via JavaScript ou com baixo conteúdo institucional."
-            )
+            return "Site com conteúdo carregado via JavaScript ou com baixo conteúdo institucional."
 
         texto = re.sub(
             r"(Política de Privacidade.*|Cookies.*|©.*|Todos os direitos reservados.*)",
@@ -99,9 +88,8 @@ def extrair_conteudo_site(url: str) -> str:
             texto,
             flags=re.IGNORECASE | re.DOTALL
         )
-        texto = re.sub(r"\n{3,}", "\n\n", texto).strip()
 
-        return texto
+        return texto.strip()
 
     except Exception as e:
         return f"[Erro ao acessar {url_fmt}: {e}]"
@@ -122,7 +110,7 @@ urls = st.text_area(
 )
 
 if st.button("Gerar Relatório"):
-    if not gemini_model:
+    if not gemini_client:
         st.error("API do Gemini não configurada.")
     elif not urls.strip():
         st.warning("Informe pelo menos um site.")
@@ -136,26 +124,28 @@ if st.button("Gerar Relatório"):
                 conteudos.append(f"SITE: {site}\n\n{texto}")
 
         prompt = f"""
-Você é um estrategista sênior de marketing, branding e posicionamento competitivo.
+Você é um estrategista sênior de marketing e posicionamento competitivo.
 
 Analise os conteúdos abaixo e gere um relatório com:
-
-1. Posicionamento percebido de cada empresa
-2. Mensagens-chave predominantes
+1. Posicionamento de cada empresa
+2. Mensagens-chave
 3. Diferenciais competitivos
-4. Fragilidades de comunicação
-5. Oportunidades estratégicas
-6. Recomendações práticas e acionáveis
-
-Considere ausência ou baixo conteúdo como insight estratégico.
+4. Fragilidades
+5. Oportunidades
+6. Recomendações práticas
 
 CONTEÚDOS:
 {"\n\n---\n\n".join(conteudos)}
 """
 
         try:
-            resposta = gemini_model.generate_content(prompt)
+            response = gemini_client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt
+            )
+
             st.subheader("Relatório de Competitividade")
-            st.write(resposta.text)
+            st.write(response.text)
+
         except Exception as e:
             st.error(f"Erro ao gerar relatório: {e}")
