@@ -1691,6 +1691,7 @@ elif st.session_state.pagina == "redes":
                     </div>
                 </div>
             </div>
+        </div>
         """, unsafe_allow_html=True)
 
         kpi_cols = st.columns(4)
@@ -1719,7 +1720,6 @@ elif st.session_state.pagina == "redes":
                     f"<div style='font-size:12px;color:#d97706;margin-top:8px'>⚡ {r[aviso_key]}</div>",
                     unsafe_allow_html=True
                 )
-        st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
     # ── SEÇÃO 2: Gráficos comparativos ───────────────────────────
