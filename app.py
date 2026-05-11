@@ -1,35 +1,43 @@
 import streamlit as st
-
-from pages.dashboard import render_dashboard
-from pages.redes_sociais import render_redes_sociais
+from components.sidebar import render_sidebar
+from pages.home import render_home
 from pages.concorrentes import render_concorrentes
+from pages.geral import render_geral
+from pages.redes import render_redes
+from pages.sites import render_sites
+from pages.ads import render_ads
 from pages.insights import render_insights
 
+st.set_page_config(
+    page_title="CI Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 if "pagina" not in st.session_state:
-    st.session_state.pagina = "dashboard"
+    st.session_state.pagina = "home"
 
-st.sidebar.title("Marketylics")
+render_sidebar()
 
-if st.sidebar.button("Dashboard"):
-    st.session_state.pagina = "dashboard"
+pagina = st.session_state.pagina
 
-if st.sidebar.button("Redes Sociais"):
-    st.session_state.pagina = "redes"
+if pagina == "home":
+    render_home()
 
-if st.sidebar.button("Concorrentes"):
-    st.session_state.pagina = "concorrentes"
-
-if st.sidebar.button("Insights"):
-    st.session_state.pagina = "insights"
-
-if st.session_state.pagina == "dashboard":
-    render_dashboard()
-
-elif st.session_state.pagina == "redes":
-    render_redes_sociais()
-
-elif st.session_state.pagina == "concorrentes":
+elif pagina == "cad":
     render_concorrentes()
 
-elif st.session_state.pagina == "insights":
+elif pagina == "geral":
+    render_geral()
+
+elif pagina == "redes":
+    render_redes()
+
+elif pagina == "sites":
+    render_sites()
+
+elif pagina == "ads":
+    render_ads()
+
+elif pagina == "insights":
     render_insights()
