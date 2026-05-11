@@ -1,3 +1,20 @@
+import subprocess
+import sys
+
+# ---------------------------------------------------
+# GARANTE DEPENDÊNCIA (evita erro no Streamlit Cloud)
+# ---------------------------------------------------
+def ensure_package(pkg):
+    try:
+        __import__(pkg)
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+
+ensure_package("google-generativeai")
+
+# ---------------------------------------------------
+# IMPORTS
+# ---------------------------------------------------
 import streamlit as st
 import requests
 import trafilatura
@@ -8,152 +25,119 @@ import google.generativeai as genai
 # CONFIGURAÇÃO DA PÁGINA
 # ---------------------------------------------------
 st.set_page_config(
-    page_title="Marketylics — Análise de Concorrentes",
+    page_title="Marketylics - Análise de Concorrentes",
     layout="wide"
 )
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO GEMINI
+# GEMINI CONFIG
 # ---------------------------------------------------
-if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-else:
-    st.error("GEMINI_API_KEY não configurada no Streamlit Secrets.")
+if "GEMINI_API_KEY" not in st.secrets:
+    st.error("GEMINI_API_KEY não configurada nos Secrets")
     st.stop()
 
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-@st.cache_resource
-def get_gemini_model():
-    """
-    Descobre automaticamente um modelo Gemini
-    compatível com generateContent
-    """
-    try:
-        for m in genai.list_models():
-            if "generateContent" in m.supported_generation_methods:
-                return genai.GenerativeModel(m.name)
-    except Exception:
-        return None
-    return None
-
-
-gemini_model = get_gemini_model()
-
-if not gemini_model:
-    st.error("Nenhum modelo Gemini disponível para generateContent.")
-    st.stop()
+MODEL_NAME = "models/gemini-1.5-flash"
+model = genai.GenerativeModel(MODEL_NAME)
 
 # ---------------------------------------------------
-# FUNÇÕES AUXILIARES
+# FUNÇÕES
 # ---------------------------------------------------
-def formatar_url(url: str) -> str:
+def format_url(url: str) -> str:
     url = url.strip()
     if not url.startswith("http"):
         url = "https://" + url
     return url
 
 
-def limpar_texto(texto: str) -> str:
-    texto = re.sub(
-        r"(Política de Privacidade.*|Cookies.*|©.*|Todos os direitos reservados.*)",
-        "",
-        texto,
-        flags=re.I | re.S
-    )
-    texto = re.sub(r"\n{3,}", "\n\n", texto)
-    return texto.strip()
-
-
-def extrair_conteudo_site(url: str) -> str:
+def extract_site_content(url: str) -> str:
     try:
-        url = formatar_url(url)
+        url = format_url(url)
 
-        resp = requests.get(
-            url,
-            timeout=20,
-            headers={
-                "User-Agent": "Mozilla/5.0 (compatible; MarketylicsBot/1.0)"
-            }
-        )
+        downloaded = trafilatura.fetch_url(url)
+        if not downloaded:
+            return "Conteúdo não acessível."
 
-        if resp.status_code != 200:
-            return "Conteúdo indisponível ou bloqueado."
-
-        texto = trafilatura.extract(
-            resp.text,
-            favor_precision=True,
+        text = trafilatura.extract(
+            downloaded,
             include_links=False,
             include_images=False,
-            include_tables=False,
-            deduplicate=True,
-            no_fallback=False
+            include_tables=False
         )
 
-        if not texto or len(texto) < 200:
-            return "Site com conteúdo institucional limitado ou carregado via JavaScript."
+        if not text or len(text) < 200:
+            return "Site com pouco conteúdo ou carregamento via JavaScript."
 
-        return limpar_texto(texto)
+        text = re.sub(
+            r"(Política de Privacidade.*|Cookies.*|©.*)",
+            "",
+            text,
+            flags=re.I | re.S
+        )
+
+        return text.strip()
 
     except Exception as e:
         return f"Erro ao acessar site: {e}"
 
 
+def generate_report(all_data: str) -> str:
+    prompt = f"""
+Você é um estrategista sênior de marketing e análise competitiva.
+
+Com base nos sites abaixo, gere um relatório detalhado com:
+
+1. Posicionamento de cada empresa
+2. Mensagem principal
+3. Diferenciais competitivos
+4. Tom de comunicação
+5. Fraquezas estratégicas
+6. Oportunidades de mercado
+7. Recomendações práticas
+
+SITES ANALISADOS:
+{all_data}
+"""
+
+    response = model.generate_content(prompt)
+    return response.text
+
 # ---------------------------------------------------
 # INTERFACE
 # ---------------------------------------------------
-st.title("Análise Competitiva com IA")
+st.title("🔎 Análise Competitiva com IA")
 
 st.markdown(
-    "Insira o site da **sua empresa** e dos **concorrentes** "
-    "para gerar um relatório estratégico comparativo."
+    "Cole os sites da sua empresa e dos concorrentes para análise estratégica."
 )
 
-urls = st.text_area(
+urls_input = st.text_area(
     "Sites (um por linha):",
     placeholder="https://suaempresa.com\nhttps://concorrente1.com\nhttps://concorrente2.com"
 )
 
 if st.button("Gerar Relatório"):
-    if not urls.strip():
-        st.warning("Informe pelo menos um site.")
+    if not urls_input.strip():
+        st.warning("Insira pelo menos um site.")
     else:
-        sites = [u.strip() for u in urls.split("\n") if u.strip()]
-        conteudos = []
+        urls = [u.strip() for u in urls_input.split("\n") if u.strip()]
 
-        for site in sites:
-            with st.spinner(f"Extraindo conteúdo de {site}..."):
-                texto = extrair_conteudo_site(site)
-                conteudos.append(f"SITE: {site}\n\n{texto}")
+        collected_data = []
 
-        prompt = f"""
-Você é um estrategista sênior de marketing, branding e posicionamento competitivo.
+        for url in urls:
+            with st.spinner(f"Analisando {url}..."):
+                content = extract_site_content(url)
+                collected_data.append(f"SITE: {url}\n\n{content}")
 
-Analise os conteúdos abaixo e gere um relatório contendo:
-
-1. Posicionamento de cada empresa
-2. Mensagens-chave predominantes
-3. Diferenciais competitivos
-4. Fragilidades de comunicação
-5. Oportunidades estratégicas
-6. Recomendações práticas e acionáveis
-
-Se algum site tiver pouco conteúdo ou depender de JavaScript,
-considere isso como um insight estratégico.
-
-CONTEÚDOS:
-{"\n\n---\n\n".join(conteudos)}
-"""
+        final_input = "\n\n---------------------\n\n".join(collected_data)
 
         try:
-            resposta = gemini_model.generate_content(prompt)
-            st.subheader("Relatório de Competitividade")
-            st.write(resposta.text)
+            report = generate_report(final_input)
+
+            st.success("Relatório gerado com sucesso!")
+            st.subheader("📊 Relatório de Competitividade")
+            st.markdown(report)
 
         except Exception as e:
-            if "RESOURCE_EXHAUSTED" in str(e):
-                st.error(
-                    "Limite da API Gemini excedido.\n\n"
-                    "➡ Verifique billing e quota do projeto Google Cloud."
-                )
-            else:
-                st.error(f"Erro ao gerar relatório: {e}")
+            st.error(f"Erro ao gerar relatório: {e}")
