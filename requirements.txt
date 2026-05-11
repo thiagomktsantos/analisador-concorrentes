@@ -1,4 +1,8 @@
 streamlit
 pandas
-instaloader
-playwright
+requests
+beautifulsoup4
+google-generativeai
+python-dotenv
+supabase
+trafilatura
