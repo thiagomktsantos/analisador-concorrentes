@@ -1339,7 +1339,7 @@ elif st.session_state.pagina == "redes":
 
     # ── FONTE 1: Instagram Graph API (Business/Creator) ──────────
     @st.cache_data(ttl=1800, show_spinner=False)
-def coletar_graph_api(handle: str, is_minha: bool) -> dict:
+    def coletar_graph_api(handle: str, is_minha: bool) -> dict:
     token = st.secrets.get("IG_ACCESS_TOKEN", "")
     if not token:
         return None
