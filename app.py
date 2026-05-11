@@ -1628,7 +1628,7 @@ elif st.session_state.pagina == "redes":
  
         if r.get("bio"):
             st.markdown(
-                f"<div style='font-size:13px;color:#6b7280;margin-top:12px;font-style:italic'>"{r['bio']}"</div>",
+                f"<div style='font-size:13px;color:#6b7280;margin-top:12px;font-style:italic'>&ldquo;{r['bio']}&rdquo;</div>",
                 unsafe_allow_html=True
             )
         if r.get("aviso"):
