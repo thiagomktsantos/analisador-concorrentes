@@ -1344,7 +1344,6 @@ elif st.session_state.pagina == "redes":
             return None
         try:
             if is_minha:
-                # ── Conta própria: /me ────────────────────────────────
                 url = (
                     f"https://graph.instagram.com/me"
                     f"?fields=id,username,name,biography,followers_count,"
@@ -1355,10 +1354,8 @@ elif st.session_state.pagina == "redes":
                 data = r.json()
                 if "error" in data:
                     return {"erro": f"Graph API: {data['error'].get('message','')}"}
-
                 ig_id = data["id"]
-                seg   = data.get("followers_count", 0)
-
+                seg = data.get("followers_count", 0)
                 url_media = (
                     f"https://graph.instagram.com/{ig_id}/media"
                     f"?fields=id,media_type,like_count,comments_count,"
@@ -1376,19 +1373,15 @@ elif st.session_state.pagina == "redes":
                         "date":     p.get("timestamp", "")[:10],
                         "is_video": p.get("media_type") == "VIDEO",
                     })
-
             else:
-                # ── Concorrente: Business Discovery API ──────────────
                 me = requests.get(
                     f"https://graph.instagram.com/me?fields=id&access_token={token}",
                     timeout=10
                 ).json()
                 if "error" in me:
                     return {"erro": f"Graph API: {me['error'].get('message','')}"}
-
                 ig_id_meu = me["id"]
                 h = handle.lstrip("@").strip()
-
                 url_biz = (
                     f"https://graph.facebook.com/v18.0/{ig_id_meu}"
                     f"?fields=business_discovery.fields("
@@ -1399,15 +1392,13 @@ elif st.session_state.pagina == "redes":
                 )
                 r2 = requests.get(url_biz, timeout=10)
                 biz = r2.json().get("business_discovery", {})
-
                 if not biz or "error" in r2.json():
                     err = r2.json().get("error", {}).get("message", "Business Discovery falhou")
                     return {"erro": f"Graph API (concorrente): {err}"}
-
                 data = biz
-                seg  = data.get("followers_count", 0)
+                seg = data.get("followers_count", 0)
                 posts_data = []
-                for p in (data.get("media", {}).get("data", [])):
+                for p in data.get("media", {}).get("data", []):
                     posts_data.append({
                         "likes":    p.get("like_count", 0),
                         "comments": p.get("comments_count", 0),
@@ -1416,13 +1407,11 @@ elif st.session_state.pagina == "redes":
                         "date":     p.get("timestamp", "")[:10],
                         "is_video": p.get("media_type") == "VIDEO",
                     })
-
             eng_medio = (
                 sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 if posts_data else 0
             )
             eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
-
             return {
                 "handle":       "@" + data.get("username", handle.lstrip("@")),
                 "nome_exibido": data.get("name", handle),
@@ -1438,106 +1427,8 @@ elif st.session_state.pagina == "redes":
                 "fonte":        "graph_api",
                 "erro":         None,
             }
-
         except Exception as e:
             return {"erro": str(e)}
-            url = (
-                f"https://graph.instagram.com/me"
-                f"?fields=id,username,name,biography,followers_count,"
-                f"media_count,profile_picture_url"
-                f"&access_token={token}"
-            )
-            r = requests.get(url, timeout=10)
-            data = r.json()
-            if "error" in data:
-                return {"erro": f"Graph API: {data['error'].get('message','')}"}
-
-            ig_id = data["id"]
-            seg   = data.get("followers_count", 0)
-
-            # Posts
-            url_media = (
-                f"https://graph.instagram.com/{ig_id}/media"
-                f"?fields=id,media_type,like_count,comments_count,"
-                f"timestamp,caption,thumbnail_url,media_url"
-                f"&limit=9&access_token={token}"
-            )
-            media = requests.get(url_media, timeout=10).json().get("data", [])
-            posts_data = []
-            for p in media:
-                posts_data.append({
-                    "likes":    p.get("like_count", 0),
-                    "comments": p.get("comments_count", 0),
-                    "thumb":    p.get("thumbnail_url") or p.get("media_url", ""),
-                    "caption":  (p.get("caption") or "")[:80],
-                    "date":     p.get("timestamp", "")[:10],
-                    "is_video": p.get("media_type") == "VIDEO",
-                })
-
-        else:
-            # ── Conta de concorrente: Business Discovery API ──────
-            # Precisa do IG ID da sua própria conta primeiro
-            me = requests.get(
-                f"https://graph.instagram.com/me?fields=id&access_token={token}",
-                timeout=10
-            ).json()
-            if "error" in me:
-                return {"erro": f"Graph API: {me['error'].get('message','')}"}
-
-            ig_id_meu = me["id"]
-            h = handle.lstrip("@").strip()
-
-            # Business Discovery: busca dados públicos de outra conta
-            url_biz = (
-                f"https://graph.facebook.com/v18.0/{ig_id_meu}"
-                f"?fields=business_discovery.fields("
-                f"username,name,biography,followers_count,media_count,"
-                f"profile_picture_url,"
-                f"media{{like_count,comments_count,media_type,timestamp,caption,thumbnail_url,media_url}}"
-                f")&username={h}&access_token={token}"
-            )
-            r2 = requests.get(url_biz, timeout=10)
-            biz = r2.json().get("business_discovery", {})
-
-            if not biz or "error" in r2.json():
-                err = r2.json().get("error", {}).get("message", "Business Discovery falhou")
-                return {"erro": f"Graph API (concorrente): {err}"}
-
-            data = biz
-            seg  = data.get("followers_count", 0)
-            posts_data = []
-            for p in (data.get("media", {}).get("data", [])):
-                posts_data.append({
-                    "likes":    p.get("like_count", 0),
-                    "comments": p.get("comments_count", 0),
-                    "thumb":    p.get("thumbnail_url") or p.get("media_url", ""),
-                    "caption":  (p.get("caption") or "")[:80],
-                    "date":     p.get("timestamp", "")[:10],
-                    "is_video": p.get("media_type") == "VIDEO",
-                })
-
-        eng_medio = (
-            sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
-            if posts_data else 0
-        )
-        eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
-        return {
-            "handle":      "@" + data.get("username", handle.lstrip("@")),
-            "nome_exibido": data.get("name", handle),
-            "seguidores":  seg,
-            "seguindo":    0,
-            "total_posts": data.get("media_count", 0),
-            "bio":         (data.get("biography") or "")[:120],
-            "is_verified": False,
-            "pic_url":     data.get("profile_picture_url", ""),
-            "eng_medio":   round(eng_medio, 1),
-            "eng_pct":     eng_pct,
-            "posts":       posts_data,
-            "fonte":       "graph_api",
-            "erro":        None,
-        }
-    except Exception as e:
-        return {"erro": str(e)}
 
     # ── FONTE 2: Instaloader com login opcional ───────────────────
     @st.cache_data(ttl=1800, show_spinner=False)
