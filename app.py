@@ -1003,8 +1003,8 @@ body {{ padding-bottom: 16px; }}
 .grid {{ display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 36px; }}
 .sec-title {{ font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f3f4f6; }}
 .row {{ display:flex;align-items:flex-start;gap:12px;margin-bottom:14px; }}
-.ico {{ width:20px;height:20px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center; }}
-.ico svg {{ width:18px;height:18px; }}
+.ico {{ width:38px;height:38px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background-color:#eeeeee;border-radius:10px;}}
+.ico svg {{ width:20px;height:20px; }}
 .lbl {{ font-size:12px;color:#9ca3af;display:block; }}
 .val {{ font-size:15px;color:#111827;font-weight:500; }}
 .tags-wrap {{ display:flex;flex-wrap:wrap;gap:8px; }}
