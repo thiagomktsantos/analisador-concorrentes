@@ -897,7 +897,7 @@ body {{
 /* ── Section separator ── */
 .sec {{
     display: flex; align-items: center; gap: 10px;
-    padding: 20px 14px 8px;
+    padding: 15px 14px 8px;
 }}
 .sec-dot {{
     width: 7px; height: 7px; border-radius: 50%;
@@ -932,7 +932,7 @@ body {{
 .nav-item.active {{
     background: #0e2a47;
     border-color: #1e5a8a;
-    border-left: 3px solid #3a9fd6;
+    border-left: 4px solid #00a7e3;
 }}
  
 .nav-icon {{
