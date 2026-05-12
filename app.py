@@ -592,11 +592,25 @@ if not st.session_state.logado:
     [data-testid="stHorizontalBlock"] > div:last-child {{
         background: #ffffff !important;
     }}
-
+    header[data-testid="stHeader"] {{
+        display: none !important;
+    }}
+    #MainMenu {{
+        display: none !important;
+    }}
+    [data-testid="stToolbar"] {{
+        display: none !important;
+    }}
+    /* Remove o padding do topo que o header deixa */
+    .appview-container .main .block-container {{
+        padding-top: 0 !important;
+    }}
     .mkt-left {{
         display: flex; flex-direction: column; align-items: center;
         justify-content: center; padding: 48px 32px;
         min-height: 100%;
+        position: sticky;
+        top: 0;
     }}
     .mkt-logo {{ width: 180px; margin-bottom: 8px; }}
     .mkt-brand-sub {{
