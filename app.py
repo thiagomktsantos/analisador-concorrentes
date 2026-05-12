@@ -524,7 +524,7 @@ div[data-testid="stTabs"] button[role="tab"] {
     margin-bottom: -2px !important;
 }
 div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-    color: #111827 !important; border-bottom: 2px solid #111827 !important;
+    color: #3a9fd6 !important; border-bottom: 2px solid #3a9fd6 !important;
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
 </style>
@@ -986,7 +986,7 @@ if st.session_state.pagina == "home":
 body {{ padding-bottom: 16px; }}
 .card {{ background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:28px 32px;margin-bottom:2px; }}
 .top {{ display:flex;align-items:center;gap:18px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #f3f4f6; }}
-.avatar {{ width:56px;height:56px;min-width:56px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff;flex-shrink:0; }}
+.avatar {{ width:56px;height:56px;min-width:56px;border-radius:50%;background:linear-gradient(135deg,#3a9fd6,#2ecc71);
 .nome {{ font-size:22px;font-weight:600;color:#111827;margin-bottom:3px;letter-spacing:-0.4px; }}
 .sub {{ font-size:14px;color:#9ca3af; }}
 .grid {{ display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 36px; }}
@@ -1106,7 +1106,7 @@ elif st.session_state.pagina == "cad":
 body{{padding-bottom:16px}}
 .card{{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:22px 24px;margin-bottom:2px}}
 .header{{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #f3f4f6}}
-.avatar{{width:46px;height:46px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff;flex-shrink:0}}
+.avatar{{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3a9fd6,#2ecc71);
 .name{{font-size:16px;font-weight:600;color:#111827;letter-spacing:-0.3px}}
 .row{{display:flex;align-items:flex-start;gap:10px;margin-bottom:13px}}
 .ico{{width:20px;height:20px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center}}
