@@ -568,6 +568,19 @@ if not st.session_state.logado:
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
+    /* Remove header e espaços do topo */
+    header {{ display: none !important; }}
+    header[data-testid="stHeader"] {{ display: none !important; }}
+    #MainMenu {{ display: none !important; }}
+    [data-testid="stToolbar"] {{ display: none !important; }}
+    [data-testid="stDecoration"] {{ display: none !important; }}
+    .stApp {{ padding-top: 0 !important; margin-top: 0 !important; }}
+    .stApp > header {{ display: none !important; }}
+    .main .block-container {{ padding-top: 0 !important; }}
+    .appview-container {{ padding-top: 0 !important; }}
+    .appview-container > section {{ padding-top: 0 !important; }}
+    div[class*="appview"] {{ padding-top: 0 !important; }}
+
     section.main .block-container {{ padding: 0 !important; max-width: 100% !important; }}
     [data-testid="stAppViewContainer"] {{ background: #ffffff !important; }}
 
@@ -576,7 +589,7 @@ if not st.session_state.logado:
         padding: 0 !important;
     }}
 
-    /* Faz as colunas esticarem full height e remove gap */
+    /* Colunas lado a lado sem gap */
     [data-testid="stHorizontalBlock"] {{
         gap: 0 !important;
         align-items: stretch !important;
@@ -588,29 +601,28 @@ if not st.session_state.logado:
         border-right: 1px solid #243047 !important;
     }}
 
+    /* Força altura total no container interno da coluna esquerda */
+    [data-testid="stHorizontalBlock"] > div:first-child > div {{
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }}
+
     /* Coluna direita — fundo branco */
     [data-testid="stHorizontalBlock"] > div:last-child {{
         background: #ffffff !important;
     }}
-    header[data-testid="stHeader"] {{
-        display: none !important;
-    }}
-    #MainMenu {{
-        display: none !important;
-    }}
-    [data-testid="stToolbar"] {{
-        display: none !important;
-    }}
-    /* Remove o padding do topo que o header deixa */
-    .appview-container .main .block-container {{
-        padding-top: 0 !important;
-    }}
+
     .mkt-left {{
-        display: flex; flex-direction: column; align-items: center;
-        justify-content: center; padding: 48px 32px;
-        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 32px;
+        height: 100%;
         position: sticky;
         top: 0;
+        box-sizing: border-box;
     }}
     .mkt-logo {{ width: 180px; margin-bottom: 8px; }}
     .mkt-brand-sub {{
@@ -629,8 +641,10 @@ if not st.session_state.logado:
 
     .mkt-right-wrap {{
         min-height: 100%;
-        display: flex; flex-direction: column;
-        justify-content: center; padding: 48px 32px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 48px 32px;
     }}
     .mkt-card-title {{ font-size: 22px; font-weight: 700; color: #1a2234; letter-spacing: -0.5px; margin-bottom: 4px; font-family: 'DM Sans', sans-serif; }}
     .mkt-card-sub {{ font-size: 14px; color: #9ca3af; margin-bottom: 24px; font-family: 'DM Sans', sans-serif; }}
