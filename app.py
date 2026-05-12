@@ -767,14 +767,64 @@ with st.sidebar:
     st.markdown("""
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-    [data-testid="stSidebar"]{background:#0f1117!important;border-right:1px solid #1e2530!important}
-    [data-testid="stSidebar"]>div:first-child{padding-top:0!important}
-    .sb-logo{padding:22px 18px 16px;border-bottom:1px solid #1e2530;margin-bottom:8px}
-    .sb-logo-sub{font-size:8.4px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;text-align:center;font-family:sans-serif}
-    [data-testid="stSidebar"] div.stButton{margin:0!important;height:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;}
-    [data-testid="stSidebar"] .stElementContainer:has(div.stButton){margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;}
-    .sb-user{padding:12px 18px;font-size:12px;color:#3d4f63;border-top:1px solid #1e2530;margin-top:4px;word-break:break-all;display:flex;align-items:center;gap:8px;font-family:sans-serif}
-    .sb-user i{color:#3a9fd6;font-size:14px}
+    [data-testid="stSidebar"] { background:#0f1117 !important; border-right:1px solid #1e2530 !important; }
+    [data-testid="stSidebar"] > div:first-child { padding-top:0 !important; }
+
+    .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
+    .sb-logo-sub { font-size:8.4px; color:#3a9fd6; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-align:center; font-family:sans-serif; }
+
+    /* ── CORREÇÃO: botões invisíveis fora do fluxo completamente ── */
+    [data-testid="stSidebar"] div.stButton > button {
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+    }
+    [data-testid="stSidebar"] .stElementContainer:has(div.stButton),
+    [data-testid="stSidebar"] .stElementContainer:has(div.stButton) > *,
+    [data-testid="stSidebar"] div[data-testid="stVerticalBlock"]:has(> .stElementContainer div.stButton) > .stElementContainer {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        line-height: 0 !important;
+    }
+
+    .sb-user { padding:12px 18px; font-size:12px; color:#3d4f63; border-top:1px solid #1e2530; margin-top:4px; word-break:break-all; display:flex; align-items:center; gap:8px; font-family:sans-serif; }
+    .sb-user i { color:#3a9fd6; font-size:14px; }
+
+    /* Botão Sair visível */
+    [data-testid="stSidebar"] div.stButton:last-of-type > button {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        width: auto !important;
+        height: auto !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+        background: transparent !important;
+        color: #6b7280 !important;
+        border: 1px solid #1e2530 !important;
+        border-radius: 7px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        padding: 8px 16px !important;
+        width: calc(100% - 36px) !important;
+        margin: 8px 18px !important;
+        transition: all 0.15s ease !important;
+    }
+    [data-testid="stSidebar"] div.stButton:last-of-type > button:hover {
+        background: #1e2530 !important;
+        color: #e5e7eb !important;
+        border-color: #3a9fd6 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -782,9 +832,18 @@ with st.sidebar:
     logo_white_b64 = get_logo_white_base64()
     logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
     if logo_white_src:
-        st.markdown(f'<div class="sb-logo"><img src="{logo_white_src}" style="width:170px;display:block;margin:0 auto"/><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="sb-logo"><img src="{logo_white_src}" style="width:170px;display:block;margin:0 auto"/>'
+            f'<div class="sb-logo-sub">Competitive Intelligence</div></div>',
+            unsafe_allow_html=True
+        )
     else:
-        st.markdown('<div class="sb-logo"><div style="font-size:16px;font-weight:700;color:#fff;text-align:center">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="sb-logo">'
+            '<div style="font-size:16px;font-weight:700;color:#fff;text-align:center">Marketylics</div>'
+            '<div class="sb-logo-sub">Competitive Intelligence</div></div>',
+            unsafe_allow_html=True
+        )
 
     # ── Botões invisíveis — acionados pelo JS do components.html
     paginas = ["home", "cad", "geral", "redes", "sites", "ads", "insights", "sair"]
@@ -806,6 +865,8 @@ with st.sidebar:
 
     def item_html(icon, label, key):
         ativo = "background:#1e2a3a;color:#e5e7eb;" if pagina_atual == key else "color:#8a95a3;"
+        hover_bg  = "transparent" if pagina_atual != key else "1e2a3a"
+        hover_cor = "8a95a3"      if pagina_atual != key else "e5e7eb"
         return f"""
         <a onclick="nav('{key}')" style="
             display:flex;align-items:center;gap:11px;
@@ -815,7 +876,7 @@ with st.sidebar:
             {ativo}transition:background 0.15s,color 0.15s;
         "
         onmouseover="this.style.background='#1e2a3a';this.style.color='#e5e7eb'"
-        onmouseout="this.style.background='{('1e2a3a' if pagina_atual == key else 'transparent')}';this.style.color='{('e5e7eb' if pagina_atual == key else '8a95a3')}'">
+        onmouseout="this.style.background='{'#1e2a3a' if pagina_atual == key else 'transparent'}';this.style.color='{'#e5e7eb' if pagina_atual == key else '#8a95a3'}'">
             <i class="{icon}" style="width:18px;text-align:center;font-size:15px;flex-shrink:0"></i>
             <span>{label}</span>
         </a>"""
@@ -830,7 +891,7 @@ with st.sidebar:
     menu_html = f"""
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
-    <div style="padding:0 4px;background:#0f1117;min-height:100vh">
+    <div style="padding:0 4px;background:#0f1117;">
 
         {sep("Dados Principais")}
         {item_html("fa-solid fa-building-columns", "Minha Empresa", "home")}
@@ -846,7 +907,6 @@ with st.sidebar:
     </div>
     <script>
     function nav(page) {{
-        // Sobe até o iframe pai e clica no botão invisível correspondente
         const buttons = window.parent.document.querySelectorAll('[data-testid="stSidebar"] button');
         for (const btn of buttons) {{
             if (btn.innerText.trim() === page) {{
@@ -858,12 +918,16 @@ with st.sidebar:
     </script>
     """
 
-    components.html(menu_html, height=340, scrolling=False)
+    components.html(menu_html, height=320, scrolling=False)
 
-    # ── Usuário + Sair
+    # ── Usuário
     user_email = st.session_state.user.email if st.session_state.user else ""
-    st.markdown(f'<div class="sb-user"><i class="fa-solid fa-circle-user"></i>{user_email}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="sb-user"><i class="fa-solid fa-circle-user"></i>{user_email}</div>',
+        unsafe_allow_html=True
+    )
 
+    # ── Botão Sair (visível — o CSS acima faz ele aparecer por ser o último)
     if st.button("⇥  Sair", key="nav_sair_visible"):
         logout_supabase()
         for k in ["logado","user","dados","metricas_redes","pagina",
