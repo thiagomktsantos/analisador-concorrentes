@@ -930,7 +930,7 @@ with st.sidebar:
     </script>
     """
 
-    components.html(menu_html, height=420, scrolling=False)
+    components.html(menu_html, height=480, scrolling=False)
         
 # ---------------------------------------------------
 # POPUP ALERTA SAÍDA
