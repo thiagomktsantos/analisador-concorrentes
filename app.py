@@ -539,6 +539,10 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
 
+/* ── Logo do sidebar ── */
+.sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
+.sb-logo-sub { font-size:8.4px; color:#3a9fd6; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-align:center; font-family:'DM Sans',sans-serif; }
+
 /* ── Botões invisíveis do sidebar ── */
 [data-testid="stSidebar"] div.stButton > button {
     position: fixed !important;
