@@ -573,19 +573,19 @@ if not st.session_state.logado:
     [data-testid="stAppViewContainer"] { background: #f0f2f5 !important; }
 
     section.main .block-container {
-        max-width: 460px !important;
+        max-width: 480px !important;
         padding: 48px 24px !important;
         margin: 0 auto !important;
         background: transparent !important;
     }
 
-    /* Remove borda padrão do container nativo */
-    [data-testid="stVerticalBlockBorderWrapper"] > div {{
+    [data-testid="stVerticalBlockBorderWrapper"] > div {
         border-radius: 16px !important;
         box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
         border: none !important;
         padding: 36px !important;
-    }}
+        background: #ffffff !important;
+    }
 
     div[data-testid="stTextInput"] input {
         border: 1.5px solid #e5e7eb !important;
@@ -643,19 +643,16 @@ if not st.session_state.logado:
     </style>
     """, unsafe_allow_html=True)
 
-    # Cabeçalho com logo e título
     with st.container(border=True):
         st.markdown(f"""
         <div style="text-align:center;margin-bottom:24px">
             {'<img src="' + logo_src + '" style="width:140px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">marketylics</div>'}
-            <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px">Competitive Intelligence</div>
-            <div style="font-size:22px;font-weight:700;color:#1a2234;margin-bottom:4px">Bem-vindo de volta</div>
-            <div style="font-size:14px;color:#9ca3af">Acesse sua conta para continuar</div>
+            <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
         </div>
         <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
         """, unsafe_allow_html=True)
 
-        aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
+        aba = st.tabs(["Já tenho conta", "Criar conta"])
 
         with aba[0]:
             with st.form("form_login"):
@@ -710,10 +707,9 @@ if not st.session_state.logado:
                         st.error(f"Erro: {err}")
 
         st.markdown("""
-        <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
-            🔒 Conexão segura com criptografia SSL<br><br>
-            Ao entrar, você concorda com os
-            <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> e
+        <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:4px;padding-top:12px;border-top:1px solid #f3f4f6">
+            🔒 Conexão segura com criptografia SSL &nbsp;·&nbsp;
+            <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> &nbsp;·&nbsp;
             <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
         </div>
         """, unsafe_allow_html=True)
