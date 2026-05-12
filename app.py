@@ -1493,7 +1493,7 @@ elif st.session_state.pagina == "redes":
                             <span style='background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>✔ RapidAPI</span>
                         </div>
                     </div>
-                    {f'<div style="flex:1;font-size:13px;color:#6b7280;font-style:italic;max-width:360px">&ldquo;{bio_txt.replace("<","&lt;").replace(">","&gt;")}&rdquo;</div>' if bio_txt else ''}
+                    {f'<div style="flex:1;font-size:13px;color:#6b7280;font-style:italic;max-width:360px">&ldquo;{bio_txt.replace("<","&lt;").replace(">","&gt;").replace(chr(10)," ")}&rdquo;</div>' if bio_txt else ''}
                 </div>
                 <div style='display:flex;gap:0;'>
                     <div style='flex:1;text-align:center;padding:8px 0'>
