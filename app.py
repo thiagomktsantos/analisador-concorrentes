@@ -558,18 +558,18 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     min-height: 0 !important;
     overflow: hidden !important;
     line-height: 0 !important;
-}
-[data-testid="stSidebar"] .stElementContainer:has(div.stButton) {
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    line-height: 0 !important;
     display: none !important;
 }
 
-/* ── Botão Sair visível — último element-container do sidebar ── */
+/* ── Botão Sair visível ── */
+[data-testid="stSidebar"] div[data-testid="element-container"]:last-child {
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
 [data-testid="stSidebar"] div[data-testid="element-container"]:last-child div.stButton > button {
     position: relative !important;
     top: auto !important;
@@ -579,6 +579,7 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     opacity: 1 !important;
     pointer-events: auto !important;
     visibility: visible !important;
+    display: block !important;
     background: transparent !important;
     color: #6b7280 !important;
     border: 1px solid #1e2530 !important;
@@ -593,13 +594,6 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     background: #1e2530 !important;
     color: #e5e7eb !important;
     border-color: #3a9fd6 !important;
-}
-[data-testid="stSidebar"] div[data-testid="element-container"]:last-child {
-    height: auto !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
