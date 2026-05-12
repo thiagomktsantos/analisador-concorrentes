@@ -1173,6 +1173,26 @@ if st.session_state.pagina == "home":
     # ----------------------------------------------------------
     if not tem_dados or st.session_state.editar_empresa:
 
+        # Injeta CSS no head da página pai para forçar fundo branco
+        components.html("""
+        <script>
+        (function() {
+            const style = document.createElement('style');
+            style.textContent = `
+                section.main [data-testid="stVerticalBlockBorderWrapper"],
+                section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
+                section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+                section.main [data-testid="stVerticalBlock"],
+                section.main [data-testid="stVerticalBlock"] > div {
+                    background: #ffffff !important;
+                    background-color: #ffffff !important;
+                }
+            `;
+            window.parent.document.head.appendChild(style);
+        })();
+        </script>
+        """, height=0)
+
         st.markdown("""
         <style>
         [data-testid="stMain"] div.stButton > button[kind="primary"],
@@ -1186,14 +1206,6 @@ if st.session_state.pagina == "home":
         section.main div.stButton > button[kind="primary"]:hover {
             background: #2e8bbf !important;
             background-color: #2e8bbf !important;
-        }
-
-        /* Form COM fundo branco */
-        section.main [data-testid="stVerticalBlockBorderWrapper"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -1310,11 +1322,6 @@ if st.session_state.pagina == "home":
             font-size: 14px !important;
             font-weight: 600 !important;
         }
-        [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
-        section.main div.stButton > button[kind="primary"]:hover {
-            background: #2e8bbf !important;
-            background-color: #2e8bbf !important;
-        }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
@@ -1334,25 +1341,46 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            if st.button("EDITAR_EMPRESA", use_container_width=True, type="primary", key="btn_editar_empresa"):
+            # Botão real do Streamlit — invisível, acionado pelo HTML abaixo
+            btn_editar = st.button("_editar_", use_container_width=True, type="primary", key="btn_editar_empresa")
+            if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # JS injeta ícone FA no botão pelo texto exato
-        st.markdown("""
-        <script>
-        (function tryInject() {
-            const all = window.parent.document.querySelectorAll('button');
-            for (const btn of all) {
-                if (btn.innerText.trim() === 'EDITAR_EMPRESA') {
-                    btn.innerHTML = '<i class="fa-solid fa-pen-to-square" style="margin-right:8px;font-size:13px"></i>Editar Empresa';
-                    return;
-                }
+        # HTML que renderiza o botão visual com ícone FA e clica no botão Streamlit real
+        components.html("""
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background: transparent; display: flex; justify-content: flex-end; padding: 0; }
+        .btn {
+            background: #3a9fd6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+            margin-top: -48px;
+        }
+        .btn:hover { background: #2e8bbf; }
+        </style>
+        <button class="btn" onclick="
+            const btns = window.parent.document.querySelectorAll('button');
+            for (const b of btns) {
+                if (b.innerText.trim() === '_editar_') { b.click(); break; }
             }
-            setTimeout(tryInject, 150);
-        })();
-        </script>
-        """, unsafe_allow_html=True)
+        ">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Editar Empresa
+        </button>
+        """, height=0)
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
@@ -1375,73 +1403,50 @@ if st.session_state.pagina == "home":
 {CARD_FONT_IMPORT}
 <style>
 {CARD_CSS}
-body {{ padding-bottom: 2px; }}
+body {{ padding: 0; margin: 0; overflow: hidden; }}
 
 .card {{
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 14px;
     overflow: hidden;
-    margin-bottom: 2px;
     position: relative;
 }}
-
-/* SVG decorativo no canto superior direito, SEM fundo colorido */
 .card-deco {{
     position: absolute;
     top: 0; right: 0;
-    width: 280px; height: 120px;
+    width: 260px; height: 110px;
     pointer-events: none;
-    opacity: 0.45;
+    opacity: 0.4;
 }}
-
 .card-body {{ padding: 24px 28px 24px 28px; }}
-
 .top {{
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding-bottom: 18px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 20px; padding-bottom: 18px;
     border-bottom: 1px solid #f3f4f6;
     position: relative;
 }}
 .avatar {{
     width: 52px; height: 52px; min-width: 52px;
-    border-radius: 50%;
-    background: #111827;
+    border-radius: 50%; background: #111827;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 700; color: #fff;
-    flex-shrink: 0;
+    font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
 }}
 .nome {{ font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 2px; letter-spacing: -0.3px; }}
 .sub  {{ font-size: 13px; color: #9ca3af; }}
-
-/* Grid 3 colunas com divisórias */
 .grid {{
     display: grid;
     grid-template-columns: 1fr 1px 1fr 1px 1fr;
     gap: 0;
 }}
-.divider-col {{
-    background: #f0f0f0;
-    margin: 0 24px;
-    align-self: stretch;
-}}
+.divider-col {{ background: #f0f0f0; margin: 0 24px; align-self: stretch; }}
 .col {{ padding: 0 4px; }}
-
 .sec-title {{
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1.2px;
-    color: #9ca3af;
-    margin-bottom: 14px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #f3f4f6;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.2px; color: #9ca3af;
+    margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
 }}
-.row {{
-    display: flex; align-items: flex-start;
-    gap: 10px; margin-bottom: 12px;
-}}
+.row {{ display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }}
 .ico {{
     width: 36px; height: 36px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
@@ -1452,31 +1457,24 @@ body {{ padding-bottom: 2px; }}
 .val {{ font-size: 14px; color: #111827; font-weight: 600; }}
 .tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
 .tag {{
-    background: #eff6ff; color: #1d4ed8;
-    border: 1px solid #bfdbfe;
-    padding: 4px 12px; border-radius: 20px;
-    font-size: 13px; font-weight: 500;
+    background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
 }}
 </style>
 </head>
 <body>
 <div class="card">
-
-  <!-- SVG decorativo flutuante, sem fundo -->
-  <svg class="card-deco" viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
-    <path d="M 0 95 C 60 70 120 82 180 55 C 220 38 250 30 280 18"
-          stroke="#93c5fd" stroke-width="1.5" fill="none"/>
-    <circle cx="180" cy="55" r="3.5" fill="#60a5fa"/>
-    <circle cx="250" cy="30" r="3.5" fill="#60a5fa"/>
-    <circle cx="272" cy="20" r="4.5" fill="#3b82f6"/>
-    <rect x="200" y="62" width="12" height="42" rx="3" fill="#93c5fd" opacity="0.5"/>
-    <rect x="218" y="50" width="12" height="54" rx="3" fill="#60a5fa" opacity="0.6"/>
-    <rect x="236" y="36" width="12" height="68" rx="3" fill="#3b82f6" opacity="0.68"/>
-    <rect x="254" y="22" width="12" height="82" rx="3" fill="#2563eb" opacity="0.75"/>
+  <svg class="card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
+    <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+    <circle cx="170" cy="50" r="3.5" fill="#60a5fa"/>
+    <circle cx="238" cy="26" r="3.5" fill="#60a5fa"/>
+    <circle cx="254" cy="16" r="4" fill="#3b82f6"/>
+    <rect x="185" y="58" width="11" height="38" rx="3" fill="#93c5fd" opacity="0.5"/>
+    <rect x="202" y="46" width="11" height="50" rx="3" fill="#60a5fa" opacity="0.6"/>
+    <rect x="219" y="33" width="11" height="63" rx="3" fill="#3b82f6" opacity="0.68"/>
+    <rect x="236" y="20" width="11" height="76" rx="3" fill="#2563eb" opacity="0.75"/>
   </svg>
-
   <div class="card-body">
-    <!-- Identidade -->
     <div class="top">
       <div class="avatar">{avatar}</div>
       <div>
@@ -1484,102 +1482,49 @@ body {{ padding-bottom: 2px; }}
         <div class="sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
       </div>
     </div>
-
-    <!-- 3 colunas com divisórias verticais -->
     <div class="grid">
-
-      <!-- Presença Digital -->
       <div class="col">
         <div class="sec-title">Presença Digital</div>
         <div class="row">
-          <span class="ico">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#f09433"/>
-                <stop offset="100%" stop-color="#bc1888"/>
-              </linearGradient></defs>
-              <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/>
-              <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-              <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-            </svg>
-          </span>
-          <div>
-            <span class="lbl">Instagram</span>
-            <span class="val">{emp['instagram'] or '—'}</span>
-          </div>
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span>
+          <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '—'}</span></div>
         </div>
         <div class="row">
-          <span class="ico">
-            <svg viewBox="0 0 24 24" fill="#1877F2">
-              <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-            </svg>
-          </span>
-          <div>
-            <span class="lbl">Facebook</span>
-            <span class="val">{emp['fb_page'] or '—'}</span>
-          </div>
+          <span class="ico"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></span>
+          <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '—'}</span></div>
         </div>
         <div class="row">
-          <span class="ico">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-          </span>
-          <div>
-            <span class="lbl">Site</span>
-            <span class="val">{emp['site'] or '—'}</span>
-          </div>
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+          <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
         </div>
       </div>
-
-      <!-- Divisória -->
       <div class="divider-col"></div>
-
-      <!-- Localização -->
       <div class="col">
         <div class="sec-title">Localização</div>
         <div class="row">
-          <span class="ico">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-          </span>
-          <div>
-            <span class="lbl">Cidade / Estado</span>
-            <span class="val">{loc or '—'}</span>
-          </div>
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+          <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
         </div>
       </div>
-
-      <!-- Divisória -->
       <div class="divider-col"></div>
-
-      <!-- Serviços -->
       <div class="col">
         <div class="sec-title">Serviços</div>
         <div class="tags-wrap">{servicos_col_html}</div>
       </div>
-
     </div>
   </div>
-
 </div>
 </body></html>"""
 
         n_servicos = len(emp["servicos"])
         linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
-        altura = 290 + (linhas_tags * 44) + 20
+        altura = 260 + (linhas_tags * 44)
         components.html(card_html, height=altura, scrolling=False)
 
-        # ── Bloco "Mantenha" — margem negativa grande para compensar padding do iframe
-        st.markdown("""
+        st.markdown(f"""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:16px 20px;display:flex;align-items:center;gap:16px;
-                    margin-top:-32px;position:relative;z-index:10;
-                    box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
