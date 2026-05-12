@@ -1005,7 +1005,7 @@ body {{ padding-bottom: 16px; }}
 .row {{ display:flex;align-items:flex-start;gap:12px;margin-bottom:14px; }}
 .ico {{ width:20px;height:20px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center; }}
 .ico svg {{ width:18px;height:18px; }}
-.lbl {{ font-size:12px;color:#9ca3af;display:block;margin-bottom:2px; }}
+.lbl {{ font-size:12px;color:#9ca3af;display:block; }}
 .val {{ font-size:15px;color:#111827;font-weight:500; }}
 .tags-wrap {{ display:flex;flex-wrap:wrap;gap:8px; }}
 .tag {{ background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:5px 13px;border-radius:20px;font-size:13px;font-weight:500;display:inline-block; }}
@@ -1131,9 +1131,9 @@ body{{padding-bottom:16px}}
 .header{{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #f3f4f6}}
 .avatar{{width:46px;height:46px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff;flex-shrink:0}}
 .name{{font-size:16px;font-weight:600;color:#111827;letter-spacing:-0.3px}}
-.row{{display:flex;align-items:flex-start;gap:10px;margin-bottom:13px}}
-.ico{{width:20px;height:20px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center}}
-.ico svg{{width:17px;height:17px}}
+.row{{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}}
+.ico{{width:38px;height:38px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;background-color: #eeeeee;border-radius: 10px;}}
+.ico svg{{width:25px;height:25px}}
 .lbl{{font-size:11px;color:#9ca3af;display:block;margin-bottom:2px}}
 .val{{font-size:14px;color:#374151;font-weight:500;word-break:break-all}}
 </style>
