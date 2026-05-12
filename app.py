@@ -573,13 +573,15 @@ if not st.session_state.logado:
     [data-testid="stAppViewContainer"] { background: #f0f2f5 !important; }
 
     section.main .block-container {
-        max-width: 480px !important;
+        max-width: 440px !important;
         padding: 48px 24px !important;
         margin: 0 auto !important;
         background: transparent !important;
     }
 
-    [data-testid="stVerticalBlockBorderWrapper"] > div {
+    [data-testid="stVerticalBlockBorderWrapper"],
+    [data-testid="stVerticalBlockBorderWrapper"] > div,
+    [data-testid="stVerticalBlockBorderWrapper"] > div > div {
         border-radius: 16px !important;
         box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
         border: none !important;
