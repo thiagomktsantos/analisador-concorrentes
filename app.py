@@ -1532,20 +1532,20 @@ elif st.session_state.pagina == "redes":
             return {"erro": str(e)}
 
     def coletar_melhor_fonte(handle: str, is_minha: bool) -> dict:
-    rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
+        rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
 
-    if rapidapi_key:
-        r = coletar_graph_api(handle, is_minha)
+        if rapidapi_key:
+            r = coletar_graph_api(handle, is_minha)
+            if r and not r.get("erro"):
+                return r
+            return r if r else {"erro": "Erro desconhecido na RapidAPI"}
+
+        # Fallback: scraping HTML
+        r = coletar_scraping(handle)
         if r and not r.get("erro"):
             return r
-        return r if r else {"erro": "Erro desconhecido na RapidAPI"}
 
-    # Fallback: scraping HTML
-    r = coletar_scraping(handle)
-    if r and not r.get("erro"):
-        return r
-
-    return {"erro": "Configure RAPIDAPI_KEY nos secrets para coletar dados do Instagram."}
+        return {"erro": "Configure RAPIDAPI_KEY nos secrets para coletar dados do Instagram."}
 
     # ── Lista de empresas ─────────────────────────────────────────
     emp = st.session_state.dados["minha_empresa"]
