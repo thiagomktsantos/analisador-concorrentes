@@ -886,8 +886,6 @@ body {{
 .logo-wrap {{
     text-align: center;
     padding: 28px 20px 20px;
-    border-bottom: 1px solid #1e2a3a;
-    margin-bottom: 4px;
 }}
 .logo-wrap img {{ width: 180px; display: block; margin: 0 auto 6px; }}
 .logo-sub {{
