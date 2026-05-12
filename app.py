@@ -1590,7 +1590,8 @@ elif st.session_state.pagina == "redes":
                     yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
                     xaxis=dict(showgrid=False), showlegend=False
                 )
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
+                                key=f"graf_seg_{idx}")
 
             with col_g2:
                 fig2 = go.Figure(go.Bar(
@@ -1604,4 +1605,5 @@ elif st.session_state.pagina == "redes":
                     yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%"),
                     xaxis=dict(showgrid=False), showlegend=False
                 )
-                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False},
+                                key=f"graf_eng_{idx}")
