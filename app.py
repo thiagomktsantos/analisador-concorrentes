@@ -982,7 +982,7 @@ body {{
 }}
 .btn-sair {{
     display: flex; align-items: center; justify-content: center;
-    gap: 10px; width: 100%; padding: 12px 0;
+    gap: 10px; width: 100%; padding: 7px 0;
     border: 1px solid #1e2a3a; border-radius: 10px;
     background: transparent; cursor: pointer;
     font-size: 15px; font-weight: 600; color: #5a7090;
