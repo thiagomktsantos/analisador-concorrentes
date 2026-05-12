@@ -760,50 +760,21 @@ if not st.session_state.logado:
 # SIDEBAR (apenas quando logado)
 # ---------------------------------------------------
 
+import streamlit.components.v1 as components
+
 with st.sidebar:
 
     st.markdown("""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap');
-
     [data-testid="stSidebar"]{background:#0f1117!important;border-right:1px solid #1e2530!important}
     [data-testid="stSidebar"]>div:first-child{padding-top:0!important}
-
     .sb-logo{padding:22px 18px 16px;border-bottom:1px solid #1e2530;margin-bottom:8px}
-    .sb-logo-sub{font-size:8.4px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;text-align:center;font-family:'DM Sans',sans-serif}
-    .sb-sep{padding:5px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.6px;color:#008fcc;font-family:'DM Sans',sans-serif;margin:10px 6px 2px;background:#052f46;border-radius:5px;display:block}
-    .sb-user{padding:12px 18px;font-size:12px;color:#3d4f63;border-top:1px solid #1e2530;margin-top:8px;word-break:break-all;font-family:'DM Sans',sans-serif}
-
-    [data-testid="stSidebar"] div.stButton{margin:0!important}
-    [data-testid="stSidebar"] .stElementContainer{margin:0!important;padding:0!important}
-    [data-testid="stSidebar"] .stVerticalBlock{gap:0!important}
-
-    [data-testid="stSidebar"] div.stButton>button{
-        width:100%!important;
-        border-radius:7px!important;
-        background:transparent!important;
-        color:#8a95a3!important;
-        border:none!important;
-        text-align:left!important;
-        font-size:14px!important;
-        font-weight:600!important;
-        box-shadow:none!important;
-        font-family:'DM Sans',sans-serif!important;
-        padding:8px 14px!important;
-        line-height:1.4!important;
-        letter-spacing:0!important;
-    }
-    [data-testid="stSidebar"] div.stButton>button:hover{
-        background:#161d2a!important;
-        color:#e5e7eb!important;
-    }
-    [data-testid="stSidebar"] div.stButton>button p{
-        margin:0!important;
-        display:flex!important;
-        align-items:center!important;
-        gap:0!important;
-        font-size:14px!important;
-    }
+    .sb-logo-sub{font-size:8.4px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;text-align:center;font-family:sans-serif}
+    [data-testid="stSidebar"] div.stButton{margin:0!important;height:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;}
+    [data-testid="stSidebar"] .stElementContainer:has(div.stButton){margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;}
+    .sb-user{padding:12px 18px;font-size:12px;color:#3d4f63;border-top:1px solid #1e2530;margin-top:4px;word-break:break-all;display:flex;align-items:center;gap:8px;font-family:sans-serif}
+    .sb-user i{color:#3a9fd6;font-size:14px}
     </style>
     """, unsafe_allow_html=True)
 
@@ -815,23 +786,85 @@ with st.sidebar:
     else:
         st.markdown('<div class="sb-logo"><div style="font-size:16px;font-weight:700;color:#fff;text-align:center">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
 
-    # ── Menu com ícones unicode nativos (sem FA, sem HTML externo)
-    # Ícones escolhidos a dedo para parecer com FA e renderizar em todos os browsers
-    st.markdown('<div class="sb-sep">Dados Principais</div>', unsafe_allow_html=True)
-    if st.button("🏛  Minha Empresa",  key="nav_home"):  trocar_pagina("home")
-    if st.button("⊕  Concorrentes",   key="nav_cad"):   trocar_pagina("cad")
+    # ── Botões invisíveis — acionados pelo JS do components.html
+    paginas = ["home", "cad", "geral", "redes", "sites", "ads", "insights", "sair"]
+    for p in paginas:
+        if st.button(p, key=f"_hidden_{p}"):
+            if p == "sair":
+                logout_supabase()
+                for k in ["logado","user","dados","metricas_redes","pagina",
+                          "mostrar_form_concorrente","editando_concorrente",
+                          "editar_empresa","relatorio_sites","relatorio_gemini"]:
+                    if k in st.session_state:
+                        del st.session_state[k]
+            else:
+                trocar_pagina(p)
+            st.rerun()
 
-    st.markdown('<div class="sb-sep">Análise Competitiva</div>', unsafe_allow_html=True)
-    if st.button("📊  Visão Geral",        key="nav_geral"):    trocar_pagina("geral")
-    if st.button("📱  Redes Sociais",      key="nav_redes"):    trocar_pagina("redes")
-    if st.button("🔍  Confronto de Sites", key="nav_sites"):    trocar_pagina("sites")
-    if st.button("📣  Biblioteca de Ads",  key="nav_ads"):      trocar_pagina("ads")
-    if st.button("💡  Insights",           key="nav_insights"): trocar_pagina("insights")
+    # ── Menu HTML com Font Awesome real
+    pagina_atual = st.session_state.pagina
 
+    def item_html(icon, label, key):
+        ativo = "background:#1e2a3a;color:#e5e7eb;" if pagina_atual == key else "color:#8a95a3;"
+        return f"""
+        <a onclick="nav('{key}')" style="
+            display:flex;align-items:center;gap:11px;
+            padding:9px 14px;margin:1px 4px;border-radius:7px;
+            text-decoration:none;font-size:15px;font-weight:600;
+            font-family:'DM Sans',sans-serif;cursor:pointer;
+            {ativo}transition:background 0.15s,color 0.15s;
+        "
+        onmouseover="this.style.background='#1e2a3a';this.style.color='#e5e7eb'"
+        onmouseout="this.style.background='{('1e2a3a' if pagina_atual == key else 'transparent')}';this.style.color='{('e5e7eb' if pagina_atual == key else '8a95a3')}'">
+            <i class="{icon}" style="width:18px;text-align:center;font-size:15px;flex-shrink:0"></i>
+            <span>{label}</span>
+        </a>"""
+
+    sep = lambda label: f"""
+        <div style="padding:5px 8px;font-size:11px;font-weight:700;text-transform:uppercase;
+                    letter-spacing:1.6px;color:#008fcc;font-family:'DM Sans',sans-serif;
+                    margin:12px 4px 2px;background:#052f46;border-radius:5px">
+            {label}
+        </div>"""
+
+    menu_html = f"""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
+    <div style="padding:0 4px;background:#0f1117;min-height:100vh">
+
+        {sep("Dados Principais")}
+        {item_html("fa-solid fa-building-columns", "Minha Empresa", "home")}
+        {item_html("fa-solid fa-crosshairs",        "Concorrentes",  "cad")}
+
+        {sep("Análise Competitiva")}
+        {item_html("fa-solid fa-chart-bar",               "Visão Geral",        "geral")}
+        {item_html("fa-brands fa-instagram",              "Redes Sociais",      "redes")}
+        {item_html("fa-solid fa-magnifying-glass-chart",  "Confronto de Sites", "sites")}
+        {item_html("fa-solid fa-rectangle-ad",            "Biblioteca de Ads",  "ads")}
+        {item_html("fa-solid fa-lightbulb",               "Insights",           "insights")}
+
+    </div>
+    <script>
+    function nav(page) {{
+        // Sobe até o iframe pai e clica no botão invisível correspondente
+        const buttons = window.parent.document.querySelectorAll('[data-testid="stSidebar"] button');
+        for (const btn of buttons) {{
+            if (btn.innerText.trim() === page) {{
+                btn.click();
+                break;
+            }}
+        }}
+    }}
+    </script>
+    """
+
+    components.html(menu_html, height=340, scrolling=False)
+
+    # ── Usuário + Sair
     user_email = st.session_state.user.email if st.session_state.user else ""
-    st.markdown(f'<div class="sb-user">👤 {user_email}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sb-user"><i class="fa-solid fa-circle-user"></i>{user_email}</div>', unsafe_allow_html=True)
 
-    if st.button("🚪  Sair", key="nav_sair"):
+    if st.button("⇥  Sair", key="nav_sair_visible"):
         logout_supabase()
         for k in ["logado","user","dados","metricas_redes","pagina",
                   "mostrar_form_concorrente","editando_concorrente",
