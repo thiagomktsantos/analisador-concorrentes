@@ -882,59 +882,223 @@ with st.sidebar:
         </div>"""
 
     menu_html = f"""
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <div style="display:flex;flex-direction:column;min-height:100%;background:#0f1117;">
-
-        <div style="flex:1;padding:0 4px;">
-            {sep("Dados Principais")}
-            {item_html("fa-solid fa-building-columns", "Minha Empresa", "home")}
-            {item_html("fa-solid fa-crosshairs",        "Concorrentes",  "cad")}
-
-            {sep("Análise Competitiva")}
-            {item_html("fa-solid fa-chart-bar",               "Visão Geral",        "geral")}
-            {item_html("fa-brands fa-instagram",              "Redes Sociais",      "redes")}
-            {item_html("fa-solid fa-magnifying-glass-chart",  "Confronto de Sites", "sites")}
-            {item_html("fa-solid fa-rectangle-ad",            "Biblioteca de Ads",  "ads")}
-            {item_html("fa-solid fa-lightbulb",               "Insights",           "insights")}
-        </div>
-
-        <!-- Email + Botão Sair -->
-        <div style="border-top:1px solid #1e2530;padding:12px 18px 8px 18px;margin-top:16px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <i class="fa-solid fa-circle-user" style="color:#3a9fd6;font-size:14px;flex-shrink:0"></i>
-                <span style="font-size:12px;color:#3d4f63;word-break:break-all;font-family:'DM Sans',sans-serif">{user_email}</span>
-            </div>
-            <a onclick="nav('sair')" style="
-                display:flex;align-items:center;justify-content:center;gap:8px;
-                padding:8px 16px;border-radius:7px;
-                border:1px solid #1e2530;background:transparent;
-                color:#6b7280;font-size:13px;font-weight:500;
-                font-family:'DM Sans',sans-serif;cursor:pointer;
-                transition:all 0.15s ease;text-decoration:none;
-            "
-            onmouseover="this.style.background='#1e2530';this.style.color='#e5e7eb';this.style.borderColor='#3a9fd6'"
-            onmouseout="this.style.background='transparent';this.style.color='#6b7280';this.style.borderColor='#1e2530'">
-                <i class="fa-solid fa-right-from-bracket" style="font-size:13px"></i>
-                Sair
-            </a>
-        </div>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+ 
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+body {{
+    background: #0d1117;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}}
+ 
+/* ── Logo ── */
+.logo-wrap {{
+    text-align: center;
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid #1e2a3a;
+    margin-bottom: 4px;
+}}
+.logo-wrap img {{ width: 180px; display: block; margin: 0 auto 6px; }}
+.logo-sub {{
+    font-size: 9px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: #3a9fd6;
+    font-family: 'DM Sans', sans-serif;
+}}
+ 
+/* ── Section separator ── */
+.sec {{
+    display: flex; align-items: center; gap: 10px;
+    padding: 20px 14px 8px;
+}}
+.sec-dot {{
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #3a9fd6; flex-shrink: 0;
+}}
+.sec-line {{ flex: 1; height: 1px; background: #1e2a3a; }}
+.sec-label {{
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #3a9fd6;
+    white-space: nowrap;
+}}
+ 
+/* ── Nav items ── */
+.nav-list {{ padding: 4px 10px; flex: 1; }}
+ 
+.nav-item {{
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+}}
+.nav-item:hover {{
+    background: #1a2535;
+    border-color: #1e2a3a;
+}}
+.nav-item.active {{
+    background: #0e2a47;
+    border-color: #1e5a8a;
+    border-left: 3px solid #3a9fd6;
+}}
+ 
+.nav-icon {{
+    width: 26px; text-align: center; flex-shrink: 0;
+    font-size: 18px; color: #8a9bb0;
+}}
+.nav-item.active .nav-icon {{ color: #e2eaf5; }}
+ 
+.nav-label {{
+    font-size: 15px; font-weight: 600;
+    color: #8a9bb0; flex: 1;
+    letter-spacing: 0.1px;
+}}
+.nav-item.active .nav-label {{ color: #e2eaf5; }}
+ 
+.nav-arrow {{
+    font-size: 13px; color: #3a4f6a;
+    flex-shrink: 0;
+}}
+.nav-item.active .nav-arrow {{ color: #3a9fd6; }}
+ 
+/* ── Footer ── */
+.footer {{
+    border-top: 1px solid #1e2a3a;
+    padding: 16px 14px 12px;
+    margin-top: auto;
+}}
+.footer-email {{
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+}}
+.footer-email i {{ font-size: 22px; color: #3a9fd6; }}
+.footer-email span {{
+    font-size: 13px; color: #5a7090;
+    word-break: break-all;
+    font-family: 'DM Sans', sans-serif;
+}}
+.btn-sair {{
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; width: 100%; padding: 12px 0;
+    border: 1px solid #1e2a3a; border-radius: 10px;
+    background: transparent; cursor: pointer;
+    font-size: 15px; font-weight: 600; color: #5a7090;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+}}
+.btn-sair:hover {{
+    background: #1a2535; color: #e2eaf5;
+    border-color: #3a9fd6;
+}}
+.btn-sair i {{ font-size: 16px; }}
+</style>
+ 
+<body>
+ 
+<!-- Logo -->
+<div class="logo-wrap">
+    {'<img src="' + logo_white_src + '" />' if logo_white_src else '<div style="font-size:20px;font-weight:700;color:#fff">Marketylics</div>'}
+    <div class="logo-sub">Competitive Intelligence</div>
+</div>
+ 
+<!-- ── DADOS PRINCIPAIS ── -->
+<div class="sec">
+    <span class="sec-dot"></span>
+    <span class="sec-label">Dados Principais</span>
+    <span class="sec-line"></span>
+</div>
+ 
+<div class="nav-list">
+ 
+    <a class="nav-item {'active' if pagina_atual == 'home' else ''}" onclick="nav('home')">
+        <span class="nav-icon"><i class="fa-solid fa-building-columns"></i></span>
+        <span class="nav-label">Minha Empresa</span>
+    </a>
+ 
+    <a class="nav-item {'active' if pagina_atual == 'cad' else ''}" onclick="nav('cad')">
+        <span class="nav-icon"><i class="fa-solid fa-crosshairs"></i></span>
+        <span class="nav-label">Concorrentes</span>
+    </a>
+ 
+</div>
+ 
+<!-- ── ANÁLISE COMPETITIVA ── -->
+<div class="sec">
+    <span class="sec-dot"></span>
+    <span class="sec-label">Análise Competitiva</span>
+    <span class="sec-line"></span>
+</div>
+ 
+<div class="nav-list">
+ 
+    <a class="nav-item {'active' if pagina_atual == 'geral' else ''}" onclick="nav('geral')">
+        <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>
+        <span class="nav-label">Visão Geral</span>
+        <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+    </a>
+ 
+    <a class="nav-item {'active' if pagina_atual == 'redes' else ''}" onclick="nav('redes')">
+        <span class="nav-icon"><i class="fa-brands fa-instagram"></i></span>
+        <span class="nav-label">Redes Sociais</span>
+        <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+    </a>
+ 
+    <a class="nav-item {'active' if pagina_atual == 'sites' else ''}" onclick="nav('sites')">
+        <span class="nav-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+        <span class="nav-label">Confronto de Sites</span>
+        <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+    </a>
+ 
+    <a class="nav-item {'active' if pagina_atual == 'ads' else ''}" onclick="nav('ads')">
+        <span class="nav-icon"><i class="fa-solid fa-rectangle-ad"></i></span>
+        <span class="nav-label">Biblioteca de Ads</span>
+        <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+    </a>
+ 
+    <a class="nav-item {'active' if pagina_atual == 'insights' else ''}" onclick="nav('insights')">
+        <span class="nav-icon"><i class="fa-solid fa-lightbulb"></i></span>
+        <span class="nav-label">Insights</span>
+        <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+    </a>
+ 
+</div>
+ 
+<!-- Footer -->
+<div class="footer">
+    <div class="footer-email">
+        <i class="fa-solid fa-circle-user"></i>
+        <span>{user_email}</span>
     </div>
-    <script>
-    function nav(page) {{
-        const buttons = window.parent.document.querySelectorAll('[data-testid="stSidebar"] button');
-        for (const btn of buttons) {{
-            if (btn.innerText.trim() === page) {{
-                btn.click();
-                break;
-            }}
+    <button class="btn-sair" onclick="nav('sair')">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        Sair
+    </button>
+</div>
+ 
+</body>
+ 
+<script>
+function nav(page) {{
+    const buttons = window.parent.document.querySelectorAll('[data-testid="stSidebar"] button');
+    for (const btn of buttons) {{
+        if (btn.innerText.trim() === page) {{
+            btn.click();
+            break;
         }}
     }}
-    </script>
-    """
+}}
+</script>
+"""
 
-    components.html(menu_html, height=480, scrolling=False)
+    components.html(menu_html, height=620, scrolling=False)
         
 # ---------------------------------------------------
 # POPUP ALERTA SAÍDA
