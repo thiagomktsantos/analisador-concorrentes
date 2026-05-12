@@ -771,6 +771,8 @@ with st.sidebar:
     .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
     .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
+    [data-testid="stSidebar"] .stElementContainer { margin-bottom: 0px !important; padding-bottom: 0px !important; }
+    [data-testid="stSidebar"] .stVerticalBlock { gap: 0px !important; }
     [data-testid="stSidebar"] div.stButton > button {
         width: 100% !important; border-radius: 7px !important;
         background-color: transparent !important; color: #8a95a3 !important;
