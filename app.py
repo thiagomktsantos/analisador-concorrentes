@@ -573,9 +573,18 @@ if not st.session_state.logado:
     [data-testid="stAppViewContainer"] { background: #f0f2f5 !important; }
 
     section.main .block-container {
-        max-width: 480px !important;
+        max-width: 460px !important;
         padding: 48px 24px !important;
         margin: 0 auto !important;
+        background: transparent !important;
+    }
+
+    /* Wrapper visual único em volta de tudo */
+    [data-testid="stVerticalBlock"] {
+        background: #ffffff !important;
+        border-radius: 16px !important;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
+        padding: 36px 36px 28px 36px !important;
     }
 
     div[data-testid="stTextInput"] input {
@@ -602,7 +611,6 @@ if not st.session_state.logado:
     }
     div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
 
-    /* Cor laranja removida — usa azul da marca */
     div[data-testid="stTabs"] > div:first-child {
         justify-content: center !important;
         border-bottom: 2px solid #e5e7eb !important;
@@ -629,37 +637,21 @@ if not st.session_state.logado:
         box-shadow: none !important;
         outline: none !important;
     }
-    /* Remove a linha laranja do Streamlit */
-    div[data-testid="stTabs"] > div:first-child > div[role="tablist"]::after,
-    div[data-testid="stTabs"] [aria-selected="true"]::after,
-    div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
+    div[data-baseweb="tab-highlight"] {
         background-color: #3a9fd6 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
+    # Cabeçalho com logo e título
     st.markdown(f"""
-    <div style="
-        background:#fff;
-        border-radius:16px;
-        box-shadow:0 2px 16px rgba(0,0,0,0.07);
-        padding:36px 40px 28px 40px;
-        text-align:center;
-        margin-bottom:16px;
-    ">
+    <div style="text-align:center;margin-bottom:24px">
         {'<img src="' + logo_src + '" style="width:140px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234;margin-bottom:10px">marketylics</div>'}
         <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px">Competitive Intelligence</div>
         <div style="font-size:22px;font-weight:700;color:#1a2234;margin-bottom:4px">Bem-vindo de volta</div>
         <div style="font-size:14px;color:#9ca3af">Acesse sua conta para continuar</div>
     </div>
-
-    <div style="
-        background:#fff;
-        border-radius:16px;
-        box-shadow:0 2px 16px rgba(0,0,0,0.07);
-        padding:28px 40px 24px 40px;
-        margin-bottom:16px;
-    ">
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
     """, unsafe_allow_html=True)
 
     aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
@@ -717,7 +709,7 @@ if not st.session_state.logado:
                     st.error(f"Erro: {err}")
 
     st.markdown("""
-    <div style="text-align:center;font-size:11px;color:#c4c9d4;padding-top:8px">
+    <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
         🔒 Conexão segura com criptografia SSL<br><br>
         Ao entrar, você concorda com os
         <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> e
