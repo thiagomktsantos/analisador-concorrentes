@@ -775,7 +775,6 @@ with st.sidebar:
         width: 100% !important; border-radius: 7px !important;
         background-color: transparent !important; color: #8a95a3 !important;
         border: none !important; text-align: left !important;
-        padding: 5px 14px !important; min-height: auto !important;
         font-size: 17px !important; font-weight: 700 !important;
         box-shadow: none !important; transition: all 0.15s ease !important;
         font-family: 'Animo', 'DM Sans', sans-serif !important;
