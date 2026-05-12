@@ -1173,10 +1173,8 @@ if st.session_state.pagina == "home":
     # ----------------------------------------------------------
     if not tem_dados or st.session_state.editar_empresa:
  
-        # CSS: fundo branco no formulário + botão azul primário
         st.markdown("""
         <style>
-        /* Fundo branco no form de empresa */
         .empresa-form-wrap {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -1185,20 +1183,23 @@ if st.session_state.pagina == "home":
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             margin-bottom: 24px;
         }
-        /* Botão primário AZUL nesta página */
+        /* Botão azul — seletor mais específico para ganhar do global */
+        [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
             background: #2563eb !important;
+            background-color: #2563eb !important;
             color: #ffffff !important;
             border: none !important;
         }
+        [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
         section.main div.stButton > button[kind="primary"]:hover {
             background: #1d4ed8 !important;
+            background-color: #1d4ed8 !important;
             color: #ffffff !important;
         }
         </style>
         """, unsafe_allow_html=True)
  
-        # Cabeçalho
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1234,7 +1235,6 @@ if st.session_state.pagina == "home":
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
  
-        # ── Formulário com fundo branco via container HTML
         st.markdown("<div class='empresa-form-wrap'>", unsafe_allow_html=True)
  
         col_left, col_right = st.columns(2)
@@ -1272,18 +1272,19 @@ if st.session_state.pagina == "home":
         divider()
         sec_header("Localização")
         loc1, loc2 = st.columns(2)
-        estados     = list(ESTADOS_CIDADES.keys())
+        estados      = list(ESTADOS_CIDADES.keys())
         estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
         emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
         cidades       = ESTADOS_CIDADES.get(emp["estado"], [])
         cidade_index  = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
         emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
  
-        st.markdown("</div>", unsafe_allow_html=True)  # fecha empresa-form-wrap
+        st.markdown("</div>", unsafe_allow_html=True)
  
-        # ── Botões Salvar + Cancelar PRÓXIMOS (mesma linha)
         divider()
-        col_salvar, col_cancelar, col_space = st.columns([2, 2, 4])
+ 
+        # Salvar + Cancelar lado a lado
+        col_salvar, col_cancelar, _ = st.columns([2, 2, 4])
         with col_salvar:
             if st.button("💾 Salvar Empresa", use_container_width=True, type="primary"):
                 if emp["nome"].strip():
@@ -1304,22 +1305,26 @@ if st.session_state.pagina == "home":
     # ----------------------------------------------------------
     else:
  
+        # ── CSS: botão azul com seletor de alta especificidade
         st.markdown("""
         <style>
-        /* Botão primário AZUL nesta página */
+        [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
             background: #2563eb !important;
+            background-color: #2563eb !important;
             color: #ffffff !important;
             border: none !important;
         }
+        [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
         section.main div.stButton > button[kind="primary"]:hover {
             background: #1d4ed8 !important;
+            background-color: #1d4ed8 !important;
             color: #ffffff !important;
         }
         </style>
         """, unsafe_allow_html=True)
  
-        # Título + subtítulo
+        # Cabeçalho
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1344,37 +1349,7 @@ if st.session_state.pagina == "home":
             unsafe_allow_html=True,
         )
  
-        # ── Bloco "Mantenha suas informações atualizadas"
-        st.markdown("""
-        <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
-                    padding:16px 20px;display:flex;align-items:center;
-                    justify-content:space-between;margin-bottom:20px;
-                    box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
-            <div style='display:flex;align-items:center;gap:16px'>
-                <div style='width:42px;height:42px;border-radius:10px;
-                            background:#eff6ff;display:flex;align-items:center;
-                            justify-content:center;flex-shrink:0'>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 12l2 2 4-4" stroke="#2563eb" stroke-width="2.2"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
-                              stroke="#2563eb" stroke-width="2"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <div>
-                    <div style='font-size:14px;font-weight:600;color:#0f172a'>
-                        Mantenha suas informações atualizadas
-                    </div>
-                    <div style='font-size:13px;color:#64748b;margin-top:2px'>
-                        Dados atualizados garantem análises mais precisas e relatórios mais completos.
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
- 
-        # ── Card da empresa
+        # ── Card da empresa (PRIMEIRO)
         avatar = gerar_avatar(emp["nome"])
         loc = emp["cidade"] or ""
         if emp["estado"]:
@@ -1448,6 +1423,35 @@ body {{ padding-bottom: 16px; }}
         linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
         altura = 300 + (linhas_tags * 44) + 40
         components.html(card_html, height=altura, scrolling=False)
+ 
+        # ── Bloco "Mantenha" (DEPOIS do card)
+        st.markdown("""
+        <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
+                    padding:16px 20px;display:flex;align-items:center;
+                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+            <div style='display:flex;align-items:center;gap:16px'>
+                <div style='width:42px;height:42px;border-radius:10px;
+                            background:#eff6ff;display:flex;align-items:center;
+                            justify-content:center;flex-shrink:0'>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 12l2 2 4-4" stroke="#2563eb" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
+                              stroke="#2563eb" stroke-width="2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div style='font-size:14px;font-weight:600;color:#0f172a'>
+                        Mantenha suas informações atualizadas
+                    </div>
+                    <div style='font-size:13px;color:#64748b;margin-top:2px'>
+                        Dados atualizados garantem análises mais precisas e relatórios mais completos.
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
 # CONCORRENTES
