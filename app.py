@@ -1353,45 +1353,47 @@ elif st.session_state.pagina == "cad":
 
     # ── CSS local
     st.markdown("""
-    <style>
-    /* Botão Adicionar */
-    section.main div.stButton > button[kind="primary"] {
-        background: #ef4444 !important;
-        color: #ffffff !important;
-        border: none !important;
-        border-radius: 8px !important;
-        font-size: 15px !important;
-        font-weight: 700 !important;
-    }
-    section.main div.stButton > button[kind="primary"]:hover {
-        background: #dc2626 !important;
-    }
-    /* Form */
-    div[data-testid="stForm"] {
-        background: #ffffff !important;
-        border: 1px solid #e5e7eb !important;
-        border-radius: 14px !important;
-        padding: 28px 32px !important;
-        margin-bottom: 28px !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-    }
-    /* Wrapper dos botões de ação — torna invisível mas clicável */
-    .btn-actions-wrap {
-        display: flex;
-        gap: 8px;
-        margin-top: 4px;
-    }
-    .btn-actions-wrap div.stButton > button {
-        opacity: 0 !important;
-        height: 1px !important;
-        min-height: 0 !important;
-        padding: 0 !important;
-        border: none !important;
-        cursor: pointer !important;
-        position: absolute !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+/* Apenas o botão Adicionar — fora de formulário */
+section.main > div div.stButton > button[kind="primary"] {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+section.main > div div.stButton > button[kind="primary"]:hover {
+    background: #dc2626 !important;
+}
+
+/* Botão Salvar do formulário — volta para preto */
+section.main div.stFormSubmitButton > button[kind="primary"] {
+    background: #111827 !important;
+    color: #ffffff !important;
+}
+section.main div.stFormSubmitButton > button[kind="primary"]:hover {
+    background: #1f2937 !important;
+}
+
+/* Oculta botões de ação abaixo dos cards */
+section.main div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) {
+    visibility: hidden !important;
+    height: 1px !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Form */
+div[data-testid="stForm"] {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 14px !important;
+    padding: 28px 32px !important;
+    margin-bottom: 28px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
     # ── Cabeçalho
     top1, top2 = st.columns([8, 2])
