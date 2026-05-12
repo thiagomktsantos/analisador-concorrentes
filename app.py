@@ -784,7 +784,7 @@ with st.sidebar:
     if st.button("🏛️   Minha Empresa"):   trocar_pagina("home")
     if st.button("🎯   Concorrentes"):     trocar_pagina("cad")
 
-    st.markdown('<div class="sb-section">Análise</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-section">Análise Competitiva</div>', unsafe_allow_html=True)
     if st.button("📈   Visão Geral"):      trocar_pagina("geral")
     if st.button("📱   Redes Sociais"):    trocar_pagina("redes")
     if st.button("🔍   Confronto de Sites"): trocar_pagina("sites")
@@ -1134,7 +1134,7 @@ body{{padding-bottom:16px}}
 .row{{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}}
 .ico{{width:38px;height:38px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;background-color: #eeeeee;border-radius: 10px;}}
 .ico svg{{width:25px;height:25px}}
-.lbl{{font-size:11px;color:#9ca3af;display:block;margin-bottom:2px}}
+.lbl{{font-size:11px;color:#9ca3af;display:block}}
 .val{{font-size:14px;color:#374151;font-weight:500;word-break:break-all}}
 </style>
 </head>
@@ -1142,7 +1142,7 @@ body{{padding-bottom:16px}}
 <div class="card">
   <div class="header"><div class="avatar">{avatar}</div><span class="name">{c['nome']}</span></div>
   <div class="row"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><div><span class="lbl">Site</span><span class="val">{c['url'] or '—'}</span></div></div>
-  <div class="row"><span class="ico" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig2)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span><div><span class="lbl">Instagram</span><span class="val">{c['instagram'] or '—'}</span></div></div>
+  <div class="row"><span class="ico"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig2)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span><div><span class="lbl">Instagram</span><span class="val">{c['instagram'] or '—'}</span></div></div>
   <div class="row"><span class="ico"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></span><div><span class="lbl">Facebook</span><span class="val">{c['fb_page'] or '—'}</span></div></div>
 </div>
 </body></html>"""
