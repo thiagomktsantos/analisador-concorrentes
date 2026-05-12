@@ -762,108 +762,130 @@ if not st.session_state.logado:
 
 with st.sidebar:
     st.markdown("""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
-    /* Carrega Font Awesome como webfont para uso nos botões */
-    @font-face {
-        font-family: "FontAwesome";
-        src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/webfonts/fa-solid-900.woff2") format("woff2");
-        font-weight: 900;
-        font-style: normal;
+    [data-testid="stSidebar"] {
+        background-color: #0f1117 !important;
+        border-right: 1px solid #1e2530 !important;
     }
+    [data-testid="stSidebar"] > div:first-child { padding-top: 0 !important; }
 
-    [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
-    .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; }
-    .sb-logo-sub { font-size: 8.4px; color:#3a9fd6; font-family: DM Sans, sans-serif; font-weight:600; letter-spacing:2px; text-transform:uppercase; }
+    .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; margin-bottom: 8px; }
+    .sb-logo-sub {
+        font-size: 8.4px; color: #3a9fd6; font-family: DM Sans, sans-serif;
+        font-weight: 600; letter-spacing: 2px; text-transform: uppercase; text-align: center;
+    }
     .sb-section {
-        padding: 5px 0px 5px 10px;
-        font-size: 11px; font-weight: 700;
+        padding: 5px 8px; font-size: 11px; font-weight: 700;
         text-transform: uppercase; letter-spacing: 1.6px;
         color: #008fcc; font-family: DM Sans, sans-serif;
-        margin: 5px 0 4px; width: 100%;
-        background-color: #052f46; border-radius: 5px;
-        display: flex; align-items: center; gap: 8px;
+        margin: 12px 8px 4px; background-color: #052f46;
+        border-radius: 5px; display: flex; align-items: center; gap: 8px;
     }
-    .sb-section .fa-icon {
-        font-family: "FontAwesome";
-        font-weight: 900;
-        font-size: 12px;
+    .sb-nav-item {
+        display: flex; align-items: center; gap: 11px;
+        padding: 9px 14px; margin: 1px 4px;
+        border-radius: 7px; cursor: pointer;
+        color: #8a95a3; font-size: 15px; font-weight: 600;
+        font-family: DM Sans, sans-serif;
+        text-decoration: none !important;
+        transition: background 0.15s, color 0.15s;
+        border: none; background: transparent;
     }
+    .sb-nav-item:hover { background: #161d2a; color: #e5e7eb; }
+    .sb-nav-item i { width: 18px; text-align: center; font-size: 15px; color: #3a9fd6; flex-shrink: 0; }
+    .sb-nav-item:hover i { color: #60c4f0; }
+
     .sb-user {
         padding: 12px 18px; font-size: 12px; color: #3d4f63;
-        border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all;
-        display: flex; align-items: center; gap: 8px;
+        border-top: 1px solid #1e2530; margin-top: 8px;
+        word-break: break-all; display: flex; align-items: center; gap: 8px;
     }
-    .sb-user .fa-icon { font-family: "FontAwesome"; font-weight: 900; color: #3a9fd6; }
+    .sb-user i { color: #3a9fd6; font-size: 14px; }
 
+    /* esconde botão padrão do Sair mas mantém funcional */
+    [data-testid="stSidebar"] div.stButton > button {
+        width: 100% !important; border-radius: 7px !important;
+        background-color: transparent !important; color: #8a95a3 !important;
+        border: none !important; text-align: left !important;
+        font-size: 15px !important; font-weight: 600 !important;
+        box-shadow: none !important; font-family: DM Sans, sans-serif !important;
+        padding: 9px 14px !important;
+    }
+    [data-testid="stSidebar"] div.stButton > button:hover {
+        background-color: #161d2a !important; color: #e5e7eb !important;
+    }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
     [data-testid="stSidebar"] .stElementContainer { margin-bottom: 0px !important; padding-bottom: 0px !important; }
     [data-testid="stSidebar"] .stVerticalBlock { gap: 0px !important; }
-
-    [data-testid="stSidebar"] div.stButton > button {
-        width: 100% !important;
-        border-radius: 7px !important;
-        background-color: transparent !important;
-        color: #8a95a3 !important;
-        border: none !important;
-        text-align: left !important;
-        font-size: 15px !important;
-        font-weight: 600 !important;
-        box-shadow: none !important;
-        transition: all 0.15s ease !important;
-        font-family: "FontAwesome", "DM Sans", sans-serif !important;
-        letter-spacing: 0px !important;
-    }
-    [data-testid="stSidebar"] div.stButton > button:hover {
-        background-color: #161d2a !important;
-        color: #e5e7eb !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
+    # ── Logo
     logo_white_b64 = get_logo_white_base64()
     logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
-
     if logo_white_src:
         st.markdown(f'''
         <div class="sb-logo">
             <img src="{logo_white_src}" style="width:170px;display:block;margin:0 auto;" />
-            <div class="sb-logo-sub" style="text-align:center">Competitive Intelligence</div>
+            <div class="sb-logo-sub">Competitive Intelligence</div>
         </div>
         ''', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="sb-logo"><div style="font-size:16px;font-weight:700;color:#fff">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-logo"><div style="font-size:16px;font-weight:700;color:#fff;text-align:center">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
 
-    # ── Seção: Dados Principais
-    # \uf1c0 = fa-database
-    st.markdown('<div class="sb-section"><span class="fa-icon">\uf1c0</span> Dados Principais</div>', unsafe_allow_html=True)
+    # ── Menu via HTML (ícones Font Awesome reais)
+    def nav_item(icon_class, label, pagina_destino):
+        """Renderiza item de menu clicável com ícone FA."""
+        st.markdown(f"""
+        <a class="sb-nav-item" href="#" onclick="
+            window.parent.document.querySelectorAll('[data-testid=stSidebar] button').forEach(function(b){{
+                if(b.innerText.trim() === '{pagina_destino}') b.click();
+            }});
+            return false;
+        ">
+            <i class="{icon_class}"></i>
+            <span>{label}</span>
+        </a>
+        """, unsafe_allow_html=True)
+        # Botão invisível que o JS acima vai clicar
+        if st.button(pagina_destino, key=f"_nav_{pagina_destino}", help=""):
+            trocar_pagina(pagina_destino)
 
-    # \uf19c = fa-building-columns  |  \uf140 = fa-crosshairs
-    if st.button("\uf19c   Minha Empresa"):   trocar_pagina("home")
-    if st.button("\uf140   Concorrentes"):     trocar_pagina("cad")
+    # Esconde os botões-gatilho invisíveis
+    st.markdown("""
+    <style>
+    button[kind="secondary"][aria-label="home"],
+    [data-testid="stSidebar"] div.stButton > button {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    # ── Seção: Análise Competitiva
-    # \uf201 = fa-chart-line
-    st.markdown('<div class="sb-section"><span class="fa-icon">\uf201</span> Análise Competitiva</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-section"><i class="fa-solid fa-database"></i> Dados Principais</div>', unsafe_allow_html=True)
+    nav_item("fa-solid fa-building-columns", "Minha Empresa", "home")
+    nav_item("fa-solid fa-crosshairs",       "Concorrentes",  "cad")
 
-    # \uf080 = fa-chart-bar
-    # \uf16d = fa-instagram
-    # \uf9d9 = fa-magnifying-glass-chart
-    # \uf144 = fa-circle-play
-    # \uf0eb = fa-lightbulb
-    if st.button("\uf080   Visão Geral"):         trocar_pagina("geral")
-    if st.button("\uf16d   Redes Sociais"):        trocar_pagina("redes")
-    if st.button("\uf9d9   Confronto de Sites"):   trocar_pagina("sites")
-    if st.button("\uf144   Biblioteca de Ads"):    trocar_pagina("ads")
-    if st.button("\uf0eb   Insights"):             trocar_pagina("insights")
+    st.markdown('<div class="sb-section"><i class="fa-solid fa-chart-line"></i> Análise Competitiva</div>', unsafe_allow_html=True)
+    nav_item("fa-solid fa-chart-bar",              "Visão Geral",       "geral")
+    nav_item("fa-brands fa-instagram",             "Redes Sociais",     "redes")
+    nav_item("fa-solid fa-magnifying-glass-chart", "Confronto de Sites","sites")
+    nav_item("fa-solid fa-rectangle-ad",           "Biblioteca de Ads", "ads")
+    nav_item("fa-solid fa-lightbulb",              "Insights",          "insights")
 
+    # ── Usuário + Sair
     user_email = st.session_state.user.email if st.session_state.user else ""
-    # \uf2bd = fa-circle-user
-    st.markdown(f'<div class="sb-user"><span class="fa-icon">\uf2bd</span>{user_email}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sb-user"><i class="fa-solid fa-circle-user"></i>{user_email}</div>', unsafe_allow_html=True)
 
-    # \uf2f5 = fa-right-from-bracket
-    if st.button("\uf2f5   Sair"):
+    if st.button("  \u2192  Sair", key="btn_sair"):
         logout_supabase()
         for k in ["logado", "user", "dados", "metricas_redes", "pagina",
                   "mostrar_form_concorrente", "editando_concorrente",
