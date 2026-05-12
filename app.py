@@ -1175,7 +1175,6 @@ if st.session_state.pagina == "home":
  
         st.markdown("""
         <style>
-        /* Botão primário azul */
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
             background: #3a9fd6 !important;
@@ -1188,12 +1187,11 @@ if st.session_state.pagina == "home":
             background: #2e8bbf !important;
             background-color: #2e8bbf !important;
         }
-        /* Container do formulário com fundo branco */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(div.empresa-form-inner) {
-            background: #ffffff !important;
+            background: transparent !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 14px !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+            box-shadow: none !important;
             padding: 8px 16px !important;
         }
         </style>
@@ -1236,7 +1234,6 @@ if st.session_state.pagina == "home":
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
  
-        # st.container(border=True) gera o wrapper detectável pelo CSS :has
         with st.container(border=True):
             st.markdown("<div class='empresa-form-inner' style='display:none'></div>", unsafe_allow_html=True)
  
@@ -1282,7 +1279,6 @@ if st.session_state.pagina == "home":
             cidade_index  = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
             emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
  
-        # Botões Salvar + Cancelar fora do container, lado a lado
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
         col_salvar, col_cancelar, _ = st.columns([2, 2, 4])
         with col_salvar:
@@ -1300,7 +1296,6 @@ if st.session_state.pagina == "home":
                     st.session_state.editar_empresa = False
                     st.rerun()
  
-        # Substitui texto __salvar__ por ícone FA + texto via JS
         st.markdown("""
         <script>
         (function() {
@@ -1363,7 +1358,6 @@ if st.session_state.pagina == "home":
                 st.session_state.editar_empresa = True
                 st.rerun()
  
-        # Substitui __editar__ por ícone FA + texto via JS
         st.markdown("""
         <script>
         (function() {
@@ -1388,7 +1382,7 @@ if st.session_state.pagina == "home":
             unsafe_allow_html=True,
         )
  
-        # ── Card da empresa
+        # ── Dados do card
         avatar = gerar_avatar(emp["nome"])
         loc = emp["cidade"] or ""
         if emp["estado"]:
@@ -1397,23 +1391,26 @@ if st.session_state.pagina == "home":
             "".join([f"<div class='tag'>{s}</div>" for s in emp["servicos"]])
             if emp["servicos"] else "<span class='val' style='color:#9ca3af'>—</span>"
         )
- 
+
         card_html = f"""<!DOCTYPE html>
 <html>
 <head>
 {CARD_FONT_IMPORT}
 <style>
 {CARD_CSS}
-body {{ padding-bottom: 16px; }}
-.card {{ background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:28px 32px;margin-bottom:2px; }}
-.top {{ display:flex;align-items:center;gap:18px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #f3f4f6; }}
-.avatar {{ width:56px;height:56px;min-width:56px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff;flex-shrink:0; }}
+body {{ padding-bottom: 2px; }}
+.card {{ background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;margin-bottom:2px; }}
+.card-hero {{ position:relative;height:72px;background:linear-gradient(135deg,#e8f0fe 0%,#dbeafe 60%,#ede9fe 100%);overflow:hidden; }}
+.card-hero svg {{ position:absolute;bottom:0;right:0;width:320px;height:72px;opacity:0.65; }}
+.card-body {{ padding:0 32px 28px 32px; }}
+.top {{ display:flex;align-items:center;gap:18px;margin-top:-24px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #f3f4f6; }}
+.avatar {{ width:56px;height:56px;min-width:56px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff;flex-shrink:0;border:3px solid #fff; }}
 .nome {{ font-size:22px;font-weight:600;color:#111827;margin-bottom:3px;letter-spacing:-0.4px; }}
 .sub {{ font-size:14px;color:#9ca3af; }}
 .grid {{ display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 36px; }}
 .sec-title {{ font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f3f4f6; }}
 .row {{ display:flex;align-items:flex-start;gap:12px;margin-bottom:14px; }}
-.ico {{ width:38px;height:38px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background-color:#eeeeee;border-radius:10px;}}
+.ico {{ width:38px;height:38px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background-color:#f3f4f6;border-radius:10px;}}
 .ico svg {{ width:20px;height:20px; }}
 .lbl {{ font-size:12px;color:#9ca3af;display:block; }}
 .val {{ font-size:15px;color:#111827;font-weight:500; }}
@@ -1423,51 +1420,74 @@ body {{ padding-bottom: 16px; }}
 </head>
 <body>
 <div class="card">
-  <div class="top">
-    <div class="avatar">{avatar}</div>
-    <div><div class="nome">{emp['nome']}</div><div class="sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div></div>
+
+  <div class="card-hero">
+    <svg viewBox="0 0 700 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMax meet">
+      <path d="M 80 85 C 200 58 320 72 440 46 C 510 32 580 28 700 15" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+      <circle cx="440" cy="46" r="4" fill="#60a5fa"/>
+      <circle cx="580" cy="28" r="4" fill="#60a5fa"/>
+      <circle cx="668" cy="17" r="5" fill="#3b82f6"/>
+      <rect x="558" y="54" width="14" height="36" rx="3" fill="#93c5fd" opacity="0.55"/>
+      <rect x="578" y="42" width="14" height="48" rx="3" fill="#60a5fa" opacity="0.65"/>
+      <rect x="598" y="30" width="14" height="60" rx="3" fill="#3b82f6" opacity="0.72"/>
+      <rect x="618" y="19" width="14" height="71" rx="3" fill="#2563eb" opacity="0.78"/>
+      <path d="M 180 96 Q 400 86 600 93 Q 650 95 700 91" stroke="#c7d2fe" stroke-width="1" fill="none" opacity="0.5"/>
+      <path d="M 0 98 Q 300 90 500 96 Q 600 98 700 95" stroke="#ddd6fe" stroke-width="0.8" fill="none" opacity="0.4"/>
+    </svg>
   </div>
-  <div class="grid">
-    <div>
-      <div class="sec-title">Presença Digital</div>
-      <div class="row">
-        <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span>
-        <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '—'}</span></div>
-      </div>
-      <div class="row">
-        <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></span>
-        <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '—'}</span></div>
-      </div>
-      <div class="row">
-        <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
-        <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
+
+  <div class="card-body">
+    <div class="top">
+      <div class="avatar">{avatar}</div>
+      <div>
+        <div class="nome">{emp['nome']}</div>
+        <div class="sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
       </div>
     </div>
-    <div>
-      <div class="sec-title">Localização</div>
-      <div class="row">
-        <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-        <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
+    <div class="grid">
+      <div>
+        <div class="sec-title">Presença Digital</div>
+        <div class="row">
+          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span>
+          <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '—'}</span></div>
+        </div>
+        <div class="row">
+          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></span>
+          <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '—'}</span></div>
+        </div>
+        <div class="row">
+          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+          <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
+        </div>
       </div>
-    </div>
-    <div>
-      <div class="sec-title">Serviços</div>
-      <div class="tags-wrap">{servicos_col_html}</div>
+      <div>
+        <div class="sec-title">Localização</div>
+        <div class="row">
+          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+          <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="sec-title">Serviços</div>
+        <div class="tags-wrap">{servicos_col_html}</div>
+      </div>
     </div>
   </div>
+
 </div>
 </body></html>"""
- 
+
         n_servicos = len(emp["servicos"])
         linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
-        altura = 300 + (linhas_tags * 44) + 40
+        altura = 320 + (linhas_tags * 44) + 40
         components.html(card_html, height=altura, scrolling=False)
- 
-        # ── Bloco "Mantenha" — colado abaixo do card (margin-top pequeno)
+
+        # ── Bloco "Mantenha" colado abaixo do card
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:16px 20px;display:flex;align-items:center;gap:16px;
-                    margin-top:4px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+                    margin-top:-10px;position:relative;z-index:1;
+                    box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
