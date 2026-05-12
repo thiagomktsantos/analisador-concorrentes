@@ -764,6 +764,8 @@ with st.sidebar:
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
+
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
     .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; }
     .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
@@ -778,14 +780,21 @@ with st.sidebar:
         width: 100% !important; border-radius: 7px !important;
         background-color: transparent !important; color: #8a95a3 !important;
         border: none !important; text-align: left !important;
-        font-size: 17px !important; font-weight: 700 !important;
+        font-size: 15px !important; font-weight: 600 !important;
         box-shadow: none !important; transition: all 0.15s ease !important;
-        font-family: 'Animo', 'DM Sans', sans-serif !important;
+        font-family: 'DM Sans', sans-serif !important;
+        display: flex !important; align-items: center !important; gap: 10px !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
         background-color: #161d2a !important; color: #e5e7eb !important;
     }
+
+    /* Ícones Font Awesome nos botões via ::before */
+    [data-testid="stSidebar"] div.stButton > button p {
+        display: flex !important; align-items: center !important; gap: 10px !important;
+    }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
     logo_white_b64 = get_logo_white_base64()
@@ -801,20 +810,24 @@ with st.sidebar:
     else:
         st.markdown('<div class="sb-logo"><div class="sb-logo-title">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="sb-section">Dados Principais</div>', unsafe_allow_html=True)
-    if st.button("🏛️   Minha Empresa"):   trocar_pagina("home")
-    if st.button("🎯   Concorrentes"):     trocar_pagina("cad")
+    # ── Dados Principais
+    st.markdown('<div class="sb-section"><i class="fa-solid fa-database" style="margin-right:7px"></i>Dados Principais</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="sb-section">Análise Competitiva</div>', unsafe_allow_html=True)
-    if st.button("📈   Visão Geral"):      trocar_pagina("geral")
-    if st.button("📱   Redes Sociais"):    trocar_pagina("redes")
-    if st.button("🔍   Confronto de Sites"): trocar_pagina("sites")
-    if st.button("🎬   Biblioteca de Ads"): trocar_pagina("ads")
-    if st.button("💡   Insights"):         trocar_pagina("insights")
+    if st.button("  \uf19c   Minha Empresa"):   trocar_pagina("home")
+    if st.button("  \uf140   Concorrentes"):     trocar_pagina("cad")
+
+    # ── Análise Competitiva
+    st.markdown('<div class="sb-section"><i class="fa-solid fa-chart-line" style="margin-right:7px"></i>Análise Competitiva</div>', unsafe_allow_html=True)
+
+    if st.button("  \uf080   Visão Geral"):      trocar_pagina("geral")
+    if st.button("  \uf16d   Redes Sociais"):    trocar_pagina("redes")
+    if st.button("  \uf002   Confronto de Sites"): trocar_pagina("sites")
+    if st.button("  \uf144   Biblioteca de Ads"): trocar_pagina("ads")
+    if st.button("  \uf0eb   Insights"):         trocar_pagina("insights")
 
     user_email = st.session_state.user.email if st.session_state.user else ""
-    st.markdown(f'<div class="sb-user">👤 {user_email}</div>', unsafe_allow_html=True)
-    if st.button("🚪   Sair"):
+    st.markdown(f'<div class="sb-user"><i class="fa-solid fa-circle-user" style="margin-right:6px;color:#3a9fd6"></i>{user_email}</div>', unsafe_allow_html=True)
+    if st.button("  \uf2f5   Sair"):
         logout_supabase()
         for k in ["logado", "user", "dados", "metricas_redes", "pagina",
                   "mostrar_form_concorrente", "editando_concorrente",
