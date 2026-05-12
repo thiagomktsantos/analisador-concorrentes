@@ -95,6 +95,7 @@ def limpar_site(url):
     url = re.sub(r"^www\.", "", url, flags=re.IGNORECASE)
     url = remover_acentos(url)
     url = re.sub(r"[^a-z0-9\.\-\/]", "", url)
+    url = url.rstrip("/")  # ← ADICIONAR ESTA LINHA
     return url
 
 def gerar_avatar(nome):
@@ -1074,6 +1075,17 @@ elif st.session_state.pagina == "cad":
         concorrente_edit = None
         if st.session_state.editando_concorrente is not None:
             concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
+
+        st.markdown("""
+        <style>
+        div[data-testid="stForm"] {
+            background: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 12px !important;
+            padding: 24px 28px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
         with st.form("cad_concorrente", clear_on_submit=False):
             st.markdown("<div style='font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif'>Identificação</div>", unsafe_allow_html=True)
