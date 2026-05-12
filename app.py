@@ -917,12 +917,13 @@ body {{
  
 .nav-item {{
     display: flex; align-items: center; gap: 14px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-radius: 10px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     cursor: pointer;
     text-decoration: none;
-    border: 1px solid transparent;
+    background: #131c2b;
+    border: 1px solid #1e2a3a;
     transition: background 0.15s, border-color 0.15s;
     position: relative;
 }}
