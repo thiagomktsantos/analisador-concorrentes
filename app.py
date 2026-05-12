@@ -580,26 +580,23 @@ if not st.session_state.logado:
     [data-testid="stHorizontalBlock"] {{
         gap: 0 !important;
         align-items: stretch !important;
-        min-height: 100vh !important;
     }}
 
     /* Coluna esquerda — fundo escuro */
     [data-testid="stHorizontalBlock"] > div:first-child {{
         background: #1a2234 !important;
         border-right: 1px solid #243047 !important;
-        min-height: 100vh !important;
     }}
 
     /* Coluna direita — fundo branco */
     [data-testid="stHorizontalBlock"] > div:last-child {{
         background: #ffffff !important;
-        min-height: 100vh !important;
     }}
 
     .mkt-left {{
         display: flex; flex-direction: column; align-items: center;
         justify-content: center; padding: 48px 32px;
-        min-height: 100vh;
+        min-height: 100%;
     }}
     .mkt-logo {{ width: 180px; margin-bottom: 8px; }}
     .mkt-brand-sub {{
@@ -617,7 +614,7 @@ if not st.session_state.logado:
     .mkt-tagline {{ margin-top: 28px; font-size: 12px; color: #3d5168; text-align: center; line-height: 1.7; }}
 
     .mkt-right-wrap {{
-        min-height: 100vh;
+        min-height: 100%;
         display: flex; flex-direction: column;
         justify-content: center; padding: 48px 32px;
     }}
