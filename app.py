@@ -1308,11 +1308,12 @@ elif st.session_state.pagina == "redes":
 
     import datetime
     import plotly.graph_objects as go
+    import json
 
-    # ── Cabeçalho com botão na mesma linha
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
 
+    # ── Cabeçalho
     h1, h2 = st.columns([7, 3])
     with h1:
         st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>📱 Redes Sociais</h1>", unsafe_allow_html=True)
@@ -1326,6 +1327,33 @@ elif st.session_state.pagina == "redes":
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(int(n))
+
+    # ── Chave de cache no Supabase
+    CACHE_KEY = f"redes_cache_{st.session_state.user.id}"
+
+    def salvar_cache_redes(dados: list):
+        try:
+            payload = {
+                "user_id": st.session_state.user.id,
+                "minha_empresa": st.session_state.dados["minha_empresa"],
+                "concorrentes": st.session_state.dados["concorrentes"],
+                "metricas_redes": {
+                    "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "dados": dados
+                },
+            }
+            supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
+        except Exception as e:
+            st.toast(f"⚠️ Erro ao salvar cache: {e}", icon="⚠️")
+
+    def carregar_cache_redes() -> dict:
+        try:
+            res = supabase.table("ci_dados").select("metricas_redes").eq("user_id", st.session_state.user.id).execute()
+            if res.data and res.data[0].get("metricas_redes"):
+                return res.data[0]["metricas_redes"]
+        except Exception:
+            pass
+        return {}
 
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_rapidapi(handle: str) -> dict:
@@ -1342,14 +1370,11 @@ elif st.session_state.pagina == "redes":
                 "x-rapidapi-host": "instagram-looter2.p.rapidapi.com"
             }
 
-            # Perfil
             r = requests.get(
                 f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}",
                 headers=headers, timeout=15
             )
             data = r.json()
-
-            # Normaliza estrutura
             user_data = data
             if isinstance(data, dict):
                 if "data" in data: user_data = data["data"]
@@ -1362,13 +1387,11 @@ elif st.session_state.pagina == "redes":
             total_posts = int(user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count") or 0)
             pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
 
-            # Posts — tenta múltiplos endpoints
             posts_data = []
             if pk:
                 for endpoint in [
                     f"https://instagram-looter2.p.rapidapi.com/user-feeds?id={pk}&count=12&allow_restricted_media=false",
                     f"https://instagram-looter2.p.rapidapi.com/user-medias?id={pk}&count=12",
-                    f"https://instagram-looter2.p.rapidapi.com/media-list?id={pk}&count=12",
                 ]:
                     try:
                         rp = requests.get(endpoint, headers=headers, timeout=15)
@@ -1386,7 +1409,7 @@ elif st.session_state.pagina == "redes":
                                     thumb = p["thumbnail_url"]
                                 caption = ""
                                 if p.get("caption"):
-                                    caption = (p["caption"].get("text", "") if isinstance(p["caption"], dict) else str(p["caption"]))[:80]
+                                    caption = (p["caption"].get("text", "") if isinstance(p["caption"], dict) else str(p["caption"]))[:120]
                                 taken_at = p.get("taken_at", 0)
                                 date_str = ""
                                 if taken_at:
@@ -1404,7 +1427,6 @@ elif st.session_state.pagina == "redes":
                     except Exception:
                         continue
 
-            # Engajamento
             if posts_data:
                 eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 eng_pct   = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
@@ -1429,7 +1451,7 @@ elif st.session_state.pagina == "redes":
         except Exception as e:
             return {"erro": str(e)}
 
-    # ── Lista de empresas com Instagram
+    # ── Lista de empresas
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
         todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp["instagram"], "tipo": "minha"})
@@ -1444,31 +1466,37 @@ elif st.session_state.pagina == "redes":
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
 
-    # ── Coleta
+    # ── Coleta ou carrega cache
+    cache = carregar_cache_redes()
+
     if coletar:
         coletar_rapidapi.clear()
+        resultados_lista = []
+        with st.spinner("Coletando perfis…"):
+            for e in todas:
+                r = coletar_rapidapi(e["instagram"])
+                resultados_lista.append({**e, **(r or {"erro": "Sem resposta"})})
+        salvar_cache_redes(resultados_lista)
+        cache = {"ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"), "dados": resultados_lista}
+        st.toast("✅ Dados coletados e salvos!", icon="✅")
 
-    resultados = {}
-    with st.spinner("Coletando perfis…"):
-        for e in todas:
-            r = coletar_rapidapi(e["instagram"])
-            resultados[e["key"]] = {**e, **(r or {"erro": "Sem resposta"})}
+    ok = []
+    if cache.get("dados"):
+        ok = [r for r in cache["dados"] if not r.get("erro")]
+        erros = [r for r in cache["dados"] if r.get("erro")]
+        for r in erros:
+            st.warning(f"⚠️ {r['nome']}: {r['erro']}")
 
-    ok = [r for r in resultados.values() if not r.get("erro")]
-    erros = [r for r in resultados.values() if r.get("erro")]
-
-    for r in erros:
-        st.warning(f"⚠️ {r['nome']}: {r['erro']}")
+    if cache.get("ultima_coleta"):
+        st.markdown(f"<div style='font-size:12px;color:#9ca3af;margin-bottom:12px'>🕐 Última coleta: <b>{cache['ultima_coleta']}</b></div>", unsafe_allow_html=True)
 
     if not ok:
-        st.error("Não foi possível coletar dados de nenhum perfil.")
+        st.info("Clique em **🔄 Coletar dados agora** para buscar os dados do Instagram.")
         st.stop()
 
     # ── Abas por empresa
-    nomes_abas = [r["nome"] for r in ok]
-    abas = st.tabs(nomes_abas)
-
     CORES = ["#111827", "#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"]
+    abas  = st.tabs([r["nome"] for r in ok])
 
     for idx, (aba, r) in enumerate(zip(abas, ok)):
         with aba:
@@ -1478,12 +1506,12 @@ elif st.session_state.pagina == "redes":
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
             cor       = CORES[idx % len(CORES)]
-            bio_txt   = r.get("bio", "")
+            bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
             eng_est   = len(r.get("posts", [])) == 0
 
-            # Card header + métricas
+            # ── Card métricas
             st.markdown(f"""
-            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:12px'>
+            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:16px'>
                 <div style='display:flex;align-items:center;gap:14px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f3f4f6'>
                     <div style='width:44px;height:44px;border-radius:50%;background:{cor};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0'>{gerar_avatar(r["nome"])}</div>
                     <div style='flex:1'>
@@ -1493,9 +1521,9 @@ elif st.session_state.pagina == "redes":
                             <span style='background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>✔ RapidAPI</span>
                         </div>
                     </div>
-                    {f'<div style="flex:1;font-size:13px;color:#6b7280;font-style:italic;max-width:360px">&ldquo;{bio_txt.replace("<","&lt;").replace(">","&gt;").replace(chr(10)," ")}&rdquo;</div>' if bio_txt else ''}
+                    {f'<div style="flex:1;font-size:13px;color:#6b7280;font-style:italic;max-width:360px;text-align:right">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else ''}
                 </div>
-                <div style='display:flex;gap:0;'>
+                <div style='display:flex;gap:0'>
                     <div style='flex:1;text-align:center;padding:8px 0'>
                         <div style='font-size:11px;color:#9ca3af;margin-bottom:4px'>👥 Seguidores</div>
                         <div style='font-size:26px;font-weight:700;color:#111827;letter-spacing:-1px'>{fmt_num(r.get("seguidores",0))}</div>
@@ -1520,18 +1548,18 @@ elif st.session_state.pagina == "redes":
             </div>
             """, unsafe_allow_html=True)
 
-            # ── Últimas postagens + Análise IA
+            # ── Posts + IA lado a lado
             posts_list = r.get("posts", [])
             col_posts, col_ia = st.columns([3, 2])
 
             with col_posts:
-                st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🖼️ Últimas Postagens</div>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🖼️ Últimas 3 Postagens</div>", unsafe_allow_html=True)
                 if not posts_list:
-                    st.markdown("<div style='padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px;font-size:14px;color:#9ca3af'>Posts não disponíveis para este perfil.</div>", unsafe_allow_html=True)
+                    st.markdown("<div style='padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px;font-size:14px;color:#9ca3af'>Posts não disponíveis.</div>", unsafe_allow_html=True)
                 else:
                     cols_posts = st.columns(3)
-                    for pidx, post in enumerate(posts_list[:6]):
-                        with cols_posts[pidx % 3]:
+                    for pidx, post in enumerate(posts_list[:3]):
+                        with cols_posts[pidx]:
                             icon      = "🎥" if post.get("is_video") else "🖼️"
                             likes_fmt = fmt_num(post.get("likes", 0))
                             coms_fmt  = fmt_num(post.get("comments", 0))
@@ -1539,19 +1567,17 @@ elif st.session_state.pagina == "redes":
                             if thumb_url:
                                 st.markdown(f"""
                                 <div style='text-align:center;margin-bottom:8px'>
-                                    <img src="{thumb_url}"
-                                         style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:4px'
-                                         onerror="this.style.display='none'" />
-                                    <div style='font-size:11px;color:#374151;font-weight:600'>{icon} ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
-                                    <div style='font-size:10px;color:#9ca3af'>{post.get("date","")}</div>
+                                    <img src="{thumb_url}" style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror="this.style.display='none'" />
+                                    <div style='font-size:12px;color:#374151;font-weight:600'>{icon} ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                                    <div style='font-size:11px;color:#9ca3af'>{post.get("date","")}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
                             else:
                                 st.markdown(f"""
                                 <div style='text-align:center;margin-bottom:8px'>
-                                    <div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:4px'>{icon}</div>
-                                    <div style='font-size:11px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
-                                    <div style='font-size:10px;color:#9ca3af'>{post.get("date","")}</div>
+                                    <div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:6px'>{icon}</div>
+                                    <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                                    <div style='font-size:11px;color:#9ca3af'>{post.get("date","")}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
 
@@ -1569,99 +1595,135 @@ elif st.session_state.pagina == "redes":
 
             with col_ia:
                 st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🤖 Análise de IA</div>", unsafe_allow_html=True)
-                chave_ia = f"ia_analise_{r['handle']}"
-                if chave_ia not in st.session_state:
-                    st.session_state[chave_ia] = ""
 
-                if st.button("✨ Analisar perfil com IA", key=f"btn_ia_{idx}", use_container_width=True):
-                    if gemini_model is None:
-                        st.session_state[chave_ia] = "⚠️ Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        resumo_posts = "\n".join([
-                            f"- {p.get('date','')} | ❤️{p.get('likes',0)} 💬{p.get('comments',0)} | {p.get('caption','')[:60]}"
-                            for p in posts_list[:12]
-                        ]) if posts_list else "Sem posts disponíveis."
+                chave_criativo = f"ia_criativo_{r['handle']}"
+                chave_copy     = f"ia_copy_{r['handle']}"
+                chave_geral    = f"ia_geral_{r['handle']}"
+                for ch in [chave_criativo, chave_copy, chave_geral]:
+                    if ch not in st.session_state:
+                        st.session_state[ch] = ""
 
-                        prompt = f"""
-Analise o perfil do Instagram abaixo e gere um diagnóstico estratégico em português:
+                resumo_posts = "\n".join([
+                    f"- {p.get('date','')} | ❤️{p.get('likes',0)} 💬{p.get('comments',0)} | {p.get('caption','')[:80]}"
+                    for p in posts_list[:12]
+                ]) if posts_list else "Sem posts disponíveis."
 
-**Perfil:** {r.get('handle','')} — {r.get('nome_exibido','')}
-**Bio:** {r.get('bio','')}
-**Seguidores:** {r.get('seguidores',0)}
-**Total de posts:** {r.get('total_posts',0)}
-**Engajamento médio:** {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
-
-**Últimos posts (data | curtidas | comentários | legenda):**
+                perfil_ctx = f"""
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Bio: {r.get('bio','')}
+Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
+Últimos posts:
 {resumo_posts}
-
-Gere uma análise com:
-### 💪 Pontos Fortes
-### 🎯 Foco de Conteúdo
-### ⚠️ Pontos de Atenção
-### 💡 Recomendações
-
-Seja direto e objetivo, máximo 3 pontos por seção.
 """
-                        try:
-                            resp = gemini_model.generate_content(prompt)
-                            st.session_state[chave_ia] = resp.text
-                        except Exception as e:
-                            st.session_state[chave_ia] = f"Erro: {e}"
+                b1, b2, b3 = st.columns(3)
+                gerar_criativo = b1.button("🎨 Criativo", key=f"btn_criativo_{idx}", use_container_width=True)
+                gerar_copy     = b2.button("✍️ Copy", key=f"btn_copy_{idx}", use_container_width=True)
+                gerar_geral    = b3.button("🔍 Geral", key=f"btn_geral_{idx}", use_container_width=True)
 
-                if st.session_state[chave_ia]:
-                    st.markdown(f"""
-                    <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                padding:16px 18px;font-size:13px;color:#374151;line-height:1.7;
-                                max-height:420px;overflow-y:auto'>
-                        {st.session_state[chave_ia].replace(chr(10), "<br>")}
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
+                def rodar_ia(prompt, chave):
+                    if gemini_model is None:
+                        st.session_state[chave] = "⚠️ Configure GEMINI_API_KEY nos secrets."
+                        return
+                    try:
+                        resp = gemini_model.generate_content(prompt)
+                        st.session_state[chave] = resp.text
+                    except Exception as e:
+                        st.session_state[chave] = f"Erro: {e}"
+
+                if gerar_criativo:
+                    with st.spinner("Analisando criativos…"):
+                        rodar_ia(f"""
+{perfil_ctx}
+Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
+Responda em português com:
+### 🎨 Análise de Criativo
+**Estilo visual predominante:** ...
+**Formatos mais usados:** ...
+**Posts com melhor desempenho:** ...
+**Pontos fortes visuais:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""", chave_criativo)
+
+                if gerar_copy:
+                    with st.spinner("Analisando copies…"):
+                        rodar_ia(f"""
+{perfil_ctx}
+Analise as LEGENDAS (copy) deste perfil Instagram.
+Responda em português com:
+### ✍️ Análise de Copy
+**Tom de voz predominante:** ...
+**Uso de CTAs:** ...
+**Uso de hashtags:** ...
+**Pontos fortes nas legendas:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""", chave_copy)
+
+                if gerar_geral:
+                    with st.spinner("Gerando análise geral…"):
+                        rodar_ia(f"""
+{perfil_ctx}
+Faça uma análise geral estratégica deste perfil Instagram.
+Responda em português com:
+### 🔍 Análise Geral
+**Posicionamento:** ...
+**Frequência de posts:** ...
+### 💪 Pontos Fortes (3 pontos)
+### ⚠️ Pontos de Atenção (2 pontos)
+### 💡 Recomendações Estratégicas (3 ações concretas)
+Seja direto e objetivo.
+""", chave_geral)
+
+                # Exibe resultado da análise ativa
+                resultado_ativo = st.session_state.get(chave_criativo) or st.session_state.get(chave_copy) or st.session_state.get(chave_geral)
+
+                # Mostra a mais recente clicada
+                for chave_label, chave_key in [("🎨 Criativo", chave_criativo), ("✍️ Copy", chave_copy), ("🔍 Geral", chave_geral)]:
+                    if st.session_state.get(chave_key):
+                        st.markdown(f"""
+                        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+                                    padding:16px 18px;font-size:13px;color:#374151;line-height:1.7;
+                                    max-height:400px;overflow-y:auto;margin-top:4px'>
+                            {st.session_state[chave_key].replace(chr(10), "<br>")}
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                if not any(st.session_state.get(ch) for ch in [chave_criativo, chave_copy, chave_geral]):
                     st.markdown("""
                     <div style='background:#f9fafb;border:1px dashed #e5e7eb;border-radius:10px;
                                 padding:24px 18px;text-align:center;color:#9ca3af;font-size:13px'>
-                        Clique em <b>Analisar perfil com IA</b> para gerar insights sobre este perfil.
+                        Escolha uma análise acima:<br>
+                        <b>🎨 Criativo</b> · <b>✍️ Copy</b> · <b>🔍 Geral</b>
                     </div>
                     """, unsafe_allow_html=True)
 
-            # ── Gráficos comparativos (só na última aba ou em todas?)
-            # Mostrar comparativo em todas as abas
+            # ── Comparativo
             st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
             st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>📈 Comparativo com todos os perfis</div>", unsafe_allow_html=True)
 
-            nomes_ok      = [x["nome"]               for x in ok]
-            segs_ok       = [x.get("seguidores", 0)  for x in ok]
-            posts_ok      = [x.get("total_posts", 0) for x in ok]
-            eng_pct_ok    = [x.get("eng_pct", 0.0)   for x in ok]
-            cores_ok      = [CORES[i % len(CORES)]    for i in range(len(ok))]
+            nomes_ok   = [x["nome"]              for x in ok]
+            segs_ok    = [x.get("seguidores", 0) for x in ok]
+            eng_pct_ok = [x.get("eng_pct", 0.0)  for x in ok]
+            cores_ok   = [CORES[i % len(CORES)]   for i in range(len(ok))]
 
             col_g1, col_g2 = st.columns(2)
             with col_g1:
-                fig = go.Figure(go.Bar(
-                    x=nomes_ok, y=segs_ok, marker_color=cores_ok,
-                    text=[fmt_num(s) for s in segs_ok], textposition="outside"
-                ))
-                fig.update_layout(
-                    title=dict(text="Seguidores", font=dict(size=14, family="DM Sans", color="#111827")),
-                    plot_bgcolor="#fff", paper_bgcolor="#fff",
-                    margin=dict(t=40, b=20, l=10, r=10), height=260,
-                    yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
-                    xaxis=dict(showgrid=False), showlegend=False
-                )
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
-                                key=f"graf_seg_{idx}")
+                fig = go.Figure(go.Bar(x=nomes_ok, y=segs_ok, marker_color=cores_ok,
+                                       text=[fmt_num(s) for s in segs_ok], textposition="outside"))
+                fig.update_layout(title=dict(text="Seguidores", font=dict(size=14, family="DM Sans", color="#111827")),
+                                  plot_bgcolor="#fff", paper_bgcolor="#fff",
+                                  margin=dict(t=40, b=20, l=10, r=10), height=260,
+                                  yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
+                                  xaxis=dict(showgrid=False), showlegend=False)
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=f"graf_seg_{idx}")
 
             with col_g2:
-                fig2 = go.Figure(go.Bar(
-                    x=nomes_ok, y=eng_pct_ok, marker_color=cores_ok,
-                    text=[f"{v:.2f}%" for v in eng_pct_ok], textposition="outside"
-                ))
-                fig2.update_layout(
-                    title=dict(text="Taxa de Engajamento (%)", font=dict(size=14, family="DM Sans", color="#111827")),
-                    plot_bgcolor="#fff", paper_bgcolor="#fff",
-                    margin=dict(t=40, b=20, l=10, r=10), height=260,
-                    yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%"),
-                    xaxis=dict(showgrid=False), showlegend=False
-                )
-                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False},
-                                key=f"graf_eng_{idx}")
+                fig2 = go.Figure(go.Bar(x=nomes_ok, y=eng_pct_ok, marker_color=cores_ok,
+                                        text=[f"{v:.2f}%" for v in eng_pct_ok], textposition="outside"))
+                fig2.update_layout(title=dict(text="Taxa de Engajamento (%)", font=dict(size=14, family="DM Sans", color="#111827")),
+                                   plot_bgcolor="#fff", paper_bgcolor="#fff",
+                                   margin=dict(t=40, b=20, l=10, r=10), height=260,
+                                   yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%"),
+                                   xaxis=dict(showgrid=False), showlegend=False)
+                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False}, key=f"graf_eng_{idx}")
