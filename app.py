@@ -915,7 +915,7 @@ body {{
  
 .nav-item {{
     display: flex; align-items: center; gap: 14px;
-    padding: 7px 16px;
+    padding: 6px 16px;
     border-radius: 10px;
     margin-bottom: 3px;
     cursor: pointer;
