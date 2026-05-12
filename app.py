@@ -1351,6 +1351,45 @@ body {{ padding-bottom: 16px; }}
 
 elif st.session_state.pagina == "cad":
  
+    # ── CSS local
+    st.markdown("""
+    <style>
+    /* Botão Adicionar vermelho */
+    section.main div.stButton > button[kind="primary"] {
+        background: #ef4444 !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+    }
+    section.main div.stButton > button[kind="primary"]:hover {
+        background: #dc2626 !important;
+    }
+    /* Botões Editar / Remover abaixo dos cards */
+    div[data-testid="stHorizontalBlock"] div.stButton > button {
+        border-radius: 8px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        padding: 8px 0 !important;
+        border: 1px solid #e5e7eb !important;
+        background: #ffffff !important;
+        color: #374151 !important;
+    }
+    div[data-testid="stHorizontalBlock"] div.stButton > button:hover {
+        background: #f9fafb !important;
+    }
+    div[data-testid="stForm"] {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 14px !important;
+        padding: 28px 32px !important;
+        margin-bottom: 28px !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+ 
     # ── Cabeçalho
     top1, top2 = st.columns([8, 2])
     with top1:
@@ -1369,24 +1408,11 @@ elif st.session_state.pagina == "cad":
  
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
  
-    # ── Formulário de cadastro/edição
+    # ── Formulário cadastro/edição
     if st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None:
         concorrente_edit = None
         if st.session_state.editando_concorrente is not None:
             concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
- 
-        st.markdown("""
-        <style>
-        div[data-testid="stForm"] {
-            background: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 14px !important;
-            padding: 28px 32px !important;
-            margin-bottom: 28px !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
  
         titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
         st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
@@ -1436,7 +1462,6 @@ elif st.session_state.pagina == "cad":
     concorrentes = st.session_state.dados["concorrentes"]
  
     if concorrentes:
-        # 2 colunas igual à imagem
         cols = st.columns(2)
         for i, c in enumerate(concorrentes):
             with cols[i % 2]:
@@ -1454,23 +1479,22 @@ html, body {{
     -webkit-font-smoothing: antialiased;
 }}
 body {{ padding-bottom: 4px; }}
- 
 .card {{
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 16px;
-    padding: 24px 24px 0 24px;
-    margin-bottom: 2px;
+    overflow: hidden;
 }}
- 
-/* Header */
+.card-body {{
+    padding: 24px 24px 20px 24px;
+}}
 .header {{
     display: flex;
     align-items: center;
     gap: 16px;
-    padding-bottom: 20px;
+    padding-bottom: 18px;
     border-bottom: 1px solid #f3f4f6;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }}
 .avatar {{
     width: 52px; height: 52px;
@@ -1479,196 +1503,128 @@ body {{ padding-bottom: 4px; }}
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; font-weight: 700; color: #fff;
     flex-shrink: 0;
+    letter-spacing: -0.5px;
 }}
 .name {{
-    font-size: 18px; font-weight: 700; color: #111827;
+    font-size: 17px; font-weight: 700; color: #111827;
     flex: 1; letter-spacing: -0.3px;
 }}
 .menu-btn {{
-    width: 32px; height: 32px;
+    width: 30px; height: 30px;
     border-radius: 8px; background: #f9fafb;
     border: 1px solid #e5e7eb;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
-    font-size: 18px; color: #6b7280;
-    letter-spacing: 1px; line-height: 0;
+    color: #9ca3af; font-size: 16px; font-weight: 700;
+    line-height: 1; letter-spacing: 1px;
+    padding-bottom: 4px;
 }}
- 
-/* Rows */
 .row {{
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }}
+.row:last-child {{ margin-bottom: 0; }}
 .ico {{
-    width: 40px; height: 40px;
+    width: 38px; height: 38px;
     border-radius: 10px;
     background: #f3f4f6;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }}
-.ico svg, .ico img {{
-    width: 22px; height: 22px;
-}}
-.info {{ flex: 1; }}
+.ico svg {{ width: 20px; height: 20px; }}
+.info {{ flex: 1; min-width: 0; }}
 .lbl {{
     font-size: 11px; color: #9ca3af;
-    display: block; margin-bottom: 2px;
-    font-weight: 500;
+    display: block; margin-bottom: 1px; font-weight: 500;
 }}
 .val {{
     font-size: 14px; color: #111827;
-    font-weight: 600; word-break: break-all;
-}}
- 
-/* Action buttons */
-.actions {{
-    display: flex;
-    border-top: 1px solid #f3f4f6;
-    margin: 0 -24px;
-}}
-.btn-edit, .btn-remove {{
-    flex: 1;
-    display: flex; align-items: center; justify-content: center;
-    gap: 8px;
-    padding: 14px 0;
-    font-size: 14px; font-weight: 600;
-    cursor: pointer; border: none; background: transparent;
-    font-family: 'DM Sans', sans-serif;
-    transition: background 0.12s;
-}}
-.btn-edit {{
-    color: #d97706;
-    border-right: 1px solid #f3f4f6;
-    border-radius: 0 0 0 16px;
-}}
-.btn-edit:hover {{ background: #fffbeb; }}
-.btn-remove {{
-    color: #dc2626;
-    border-radius: 0 0 16px 0;
-}}
-.btn-remove:hover {{ background: #fef2f2; }}
-.btn-edit svg, .btn-remove svg {{
-    width: 15px; height: 15px;
+    font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
 }}
 </style>
 </head>
 <body>
 <div class="card">
+  <div class="card-body">
+    <div class="header">
+      <div class="avatar">{avatar}</div>
+      <div class="name">{c['nome']}</div>
+      <div class="menu-btn">···</div>
+    </div>
  
-  <!-- Header -->
-  <div class="header">
-    <div class="avatar">{avatar}</div>
-    <div class="name">{c['nome']}</div>
-    <div class="menu-btn">⋯</div>
+    <div class="row">
+      <div class="ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <div class="info">
+        <span class="lbl">Site</span>
+        <span class="val">{c['url'] or '—'}</span>
+      </div>
+    </div>
+ 
+    <div class="row">
+      <div class="ico" style="background:#f9f0ff;">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ig_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#f09433"/>
+              <stop offset="25%" stop-color="#e6683c"/>
+              <stop offset="50%" stop-color="#dc2743"/>
+              <stop offset="75%" stop-color="#cc2366"/>
+              <stop offset="100%" stop-color="#bc1888"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_grad)"/>
+          <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+          <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+        </svg>
+      </div>
+      <div class="info">
+        <span class="lbl">Instagram</span>
+        <span class="val">{c['instagram'] or '—'}</span>
+      </div>
+    </div>
+ 
+    <div class="row">
+      <div class="ico" style="background:#e8f0fe;">
+        <svg viewBox="0 0 24 24" fill="#1877F2">
+          <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+        </svg>
+      </div>
+      <div class="info">
+        <span class="lbl">Facebook</span>
+        <span class="val">{c['fb_page'] or '—'}</span>
+      </div>
+    </div>
+ 
   </div>
- 
-  <!-- Site -->
-  <div class="row">
-    <div class="ico">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="2" y1="12" x2="22" y2="12"/>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-      </svg>
-    </div>
-    <div class="info">
-      <span class="lbl">Site</span>
-      <span class="val">{c['url'] or '—'}</span>
-    </div>
-  </div>
- 
-  <!-- Instagram -->
-  <div class="row">
-    <div class="ico">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="ig3" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#f09433"/>
-            <stop offset="25%" stop-color="#e6683c"/>
-            <stop offset="50%" stop-color="#dc2743"/>
-            <stop offset="75%" stop-color="#cc2366"/>
-            <stop offset="100%" stop-color="#bc1888"/>
-          </linearGradient>
-        </defs>
-        <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig3)"/>
-        <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-        <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-      </svg>
-    </div>
-    <div class="info">
-      <span class="lbl">Instagram</span>
-      <span class="val">{c['instagram'] or '—'}</span>
-    </div>
-  </div>
- 
-  <!-- Facebook -->
-  <div class="row">
-    <div class="ico" style="background:#e8f0fe;">
-      <svg viewBox="0 0 24 24" fill="#1877F2">
-        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-      </svg>
-    </div>
-    <div class="info">
-      <span class="lbl">Facebook</span>
-      <span class="val">{c['fb_page'] or '—'}</span>
-    </div>
-  </div>
- 
-  <!-- Actions -->
-  <div class="actions">
-    <button class="btn-edit" onclick="window.parent.document.querySelector('[data-testid=\\'stSidebar\\']')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-      </svg>
-      Editar
-    </button>
-    <button class="btn-remove">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-        <path d="M10 11v6M14 11v6"/>
-        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-      </svg>
-      Remover
-    </button>
-  </div>
- 
 </div>
 </body>
 </html>"""
  
-                components.html(card_html, height=320, scrolling=False)
+                components.html(card_html, height=295, scrolling=False)
  
-                # Botões Streamlit invisíveis que realmente funcionam
                 b1, b2 = st.columns(2)
                 with b1:
-                    if st.button("Editar", key=f"editar_{i}", use_container_width=True):
+                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
                         st.session_state.editando_concorrente = i
                         st.session_state.mostrar_form_concorrente = False
                         st.rerun()
                 with b2:
-                    if st.button("Remover", key=f"remove_{i}", use_container_width=True):
+                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
                         st.session_state.dados["concorrentes"].pop(i)
                         salvar_dados_usuario(st.session_state.user.id)
                         st.rerun()
  
-                # Esconde os botões Streamlit mas mantém o HTML visual
-                st.markdown(f"""
-                <style>
-                div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) {{
-                    margin-top: -52px !important;
-                    opacity: 0 !important;
-                    pointer-events: auto !important;
-                    height: 48px !important;
-                    overflow: hidden !important;
-                    position: relative !important;
-                    z-index: 10 !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
+                st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
  
     else:
         st.markdown("""
