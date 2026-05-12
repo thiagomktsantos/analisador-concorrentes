@@ -561,180 +561,122 @@ def get_logo_base64():
 
 # No bloco if not st.session_state.logado:
 if not st.session_state.logado:
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+    html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
+
+    header, #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
+    .stApp, .appview-container, section.main, .block-container {
+        padding: 0 !important; margin: 0 !important; max-width: 100% !important;
+    }
+    [data-testid="stAppViewContainer"] {
+        background: #f0f2f5 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 100vh !important;
+    }
+
+    .login-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+        padding: 48px 48px 36px 48px;
+        width: 100%;
+        max-width: 440px;
+        margin: 40px auto;
+    }
+    .login-logo {
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    .login-logo img {
+        width: 160px;
+    }
+    .login-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a2234;
+        text-align: center;
+        margin-bottom: 4px;
+    }
+    .login-sub {
+        font-size: 14px;
+        color: #9ca3af;
+        text-align: center;
+        margin-bottom: 28px;
+    }
+    .login-footer {
+        text-align: center;
+        font-size: 11px;
+        color: #c4c9d4;
+        margin-top: 16px;
+    }
+    .login-footer a { color: #3a9fd6; text-decoration: none; }
+
+    div.stFormSubmitButton > button {
+        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        padding: 12px !important;
+        width: 100% !important;
+        margin-top: 4px !important;
+    }
+    div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
+
+    div[data-testid="stTextInput"] input {
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        background: #fafafa !important;
+        font-size: 15px !important;
+        padding: 10px 14px !important;
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #3a9fd6 !important;
+        background: #fff !important;
+    }
+
+    div[data-testid="stTabs"] > div:first-child {
+        justify-content: center !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        gap: 0 !important;
+        margin-bottom: 20px !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        padding: 8px 28px !important;
+        color: #9ca3af !important;
+        border-bottom: 2px solid transparent !important;
+        margin-bottom: -2px !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #1a2234 !important;
+        border-bottom: 2px solid #1a2234 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     logo_b64 = get_logo_base64()
     logo_src = f"data:image/jpeg;base64,{logo_b64}" if logo_b64 else ""
 
     st.markdown(f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-
-    /* Remove header e espaços do topo */
-    header {{ display: none !important; }}
-    header[data-testid="stHeader"] {{ display: none !important; }}
-    #MainMenu {{ display: none !important; }}
-    [data-testid="stToolbar"] {{ display: none !important; }}
-    [data-testid="stDecoration"] {{ display: none !important; }}
-    .stApp {{ padding-top: 0 !important; margin-top: 0 !important; }}
-    .stApp > header {{ display: none !important; }}
-    .main .block-container {{ padding-top: 0 !important; }}
-    .appview-container {{ padding-top: 0 !important; }}
-    .appview-container > section {{ padding-top: 0 !important; }}
-    div[class*="appview"] {{ padding-top: 0 !important; }}
-
-    section.main .block-container {{ padding: 0 !important; max-width: 100% !important; }}
-    [data-testid="stAppViewContainer"] {{ background: #ffffff !important; }}
-
-    /* Remove padding padrão do main */
-    [data-testid="stAppViewContainer"] > section.main {{
-        padding: 0 !important;
-    }}
-
-    /* Colunas lado a lado sem gap */
-    [data-testid="stHorizontalBlock"] {{
-        gap: 0 !important;
-        align-items: stretch !important;
-    }}
-
-    /* Coluna esquerda — fundo escuro */
-    [data-testid="stHorizontalBlock"] > div:first-child {{
-        background: #1a2234 !important;
-        border-right: 1px solid #243047 !important;
-    }}
-
-    /* Força altura total no container interno da coluna esquerda */
-    [data-testid="stHorizontalBlock"] > div:first-child > div {{
-        height: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-    }}
-
-    /* Coluna direita — fundo branco */
-    [data-testid="stHorizontalBlock"] > div:last-child {{
-        background: #ffffff !important;
-    }}
-
-    .mkt-left {{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 48px 32px;
-        height: 100%;
-        position: sticky;
-        top: 0;
-        box-sizing: border-box;
-    }}
-    .mkt-logo {{ width: 180px; margin-bottom: 8px; }}
-    .mkt-brand-sub {{
-        font-size: 11px; color: #3a9fd6; font-weight: 600;
-        letter-spacing: 2px; text-transform: uppercase; margin-bottom: 36px;
-    }}
-    .mkt-divider {{ width: 40px; height: 2px; background: #2ecc71; border-radius: 2px; margin-bottom: 28px; }}
-    .mkt-badge {{ display: flex; align-items: flex-start; gap: 12px; width: 100%; margin-bottom: 16px; }}
-    .mkt-badge-icon {{
-        width: 34px; height: 34px; border-radius: 8px; background: #243047;
-        display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
-    }}
-    .mkt-badge-strong {{ font-size: 13px; color: #c8d8e8; font-weight: 600; display: block; margin-bottom: 2px; }}
-    .mkt-badge-desc {{ font-size: 12px; color: #7a8faa; }}
-    .mkt-tagline {{ margin-top: 28px; font-size: 12px; color: #3d5168; text-align: center; line-height: 1.7; }}
-
-    .mkt-right-wrap {{
-        min-height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 48px 32px;
-    }}
-    .mkt-card-title {{ font-size: 22px; font-weight: 700; color: #1a2234; letter-spacing: -0.5px; margin-bottom: 4px; font-family: 'DM Sans', sans-serif; }}
-    .mkt-card-sub {{ font-size: 14px; color: #9ca3af; margin-bottom: 24px; font-family: 'DM Sans', sans-serif; }}
-    .mkt-security {{
-        display: flex; align-items: center; justify-content: center;
-        gap: 6px; margin-top: 16px; padding-top: 16px;
-        border-top: 1px solid #f3f4f6; font-size: 11px; color: #c4c9d4;
-        font-family: 'DM Sans', sans-serif;
-    }}
-    .mkt-footer {{ text-align: center; font-size: 11px; color: #c4c9d4; margin-top: 10px; font-family: 'DM Sans', sans-serif; }}
-    .mkt-footer a {{ color: #3a9fd6; text-decoration: none; }}
-
-    section.main div.stFormSubmitButton > button {{
-        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
-        color: #fff !important; border: none !important;
-        border-radius: 8px !important; font-size: 15px !important;
-        font-weight: 700 !important; padding: 13px !important;
-        width: 100% !important;
-    }}
-    section.main div.stFormSubmitButton > button:hover {{ opacity: 0.9 !important; }}
-    section.main div[data-testid="stTextInput"] input {{
-        border: 1.5px solid #e5e7eb !important; background: #fafafa !important;
-    }}
-    section.main div[data-testid="stTextInput"] input:focus {{
-        border-color: #3a9fd6 !important; background: #fff !important;
-    }}
-
-    /* Força o flex no container interno da coluna direita */
-    [data-testid="stHorizontalBlock"] > div:last-child > div {{
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        height: 100% !important;
-        padding: 0 !important;
-    }}
-
-    /* Remove padding extra do elemento filho direto */
-    [data-testid="stHorizontalBlock"] > div:last-child > div > div {{
-        width: 100% !important;
-    }}
-    </style>
+    <div class="login-card">
+        <div class="login-logo">
+            {'<img src="' + logo_src + '" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">marketylics</div>'}
+        </div>
+        <div style="text-align:center;font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px">Competitive Intelligence</div>
+        <div class="login-title">Bem-vindo de volta</div>
+        <div class="login-sub">Acesse sua conta para continuar</div>
+    </div>
     """, unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([1.1, 1.6])
-
-    # ── PAINEL ESQUERDO (HTML puro, sem widgets)
-    with col_left:
-        st.markdown(f"""
-        <div class="mkt-left">
-            {'<img class="mkt-logo" src="' + logo_src + '" />' if logo_src else '<div style="color:#3a9fd6;font-size:22px;font-weight:700;margin-bottom:8px">marketylics</div>'}
-            <div class="mkt-brand-sub">Competitive Intelligence</div>
-            <div class="mkt-divider"></div>
-            <div class="mkt-badge">
-                <div class="mkt-badge-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a9fd6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                </div>
-                <div>
-                    <span class="mkt-badge-strong">Análise de concorrentes</span>
-                    <span class="mkt-badge-desc">Monitoramento em tempo real com IA</span>
-                </div>
-            </div>
-            <div class="mkt-badge">
-                <div class="mkt-badge-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
-                <div>
-                    <span class="mkt-badge-strong">Redes sociais</span>
-                    <span class="mkt-badge-desc">Instagram, Facebook e métricas de ads</span>
-                </div>
-            </div>
-            <div class="mkt-badge">
-                <div class="mkt-badge-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a9fd6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </div>
-                <div>
-                    <span class="mkt-badge-strong">Confronto de sites</span>
-                    <span class="mkt-badge-desc">Posicionamento e palavras-chave</span>
-                </div>
-            </div>
-            <div class="mkt-tagline">Utilizado por agências e empresas<br>que querem crescer mais rápido.</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ── PAINEL DIREITO (widgets Streamlit normais)
-    with col_right:
-        st.markdown("""
-        <div style='height:60px'/>
-        """, unsafe_allow_html=True)
-        st.markdown("<div class='mkt-card-title'>Bem-vindo de volta</div>", unsafe_allow_html=True)
-        st.markdown("<div class='mkt-card-sub'>Acesse sua conta para continuar</div>", unsafe_allow_html=True)
+    with st.container():
+        st.markdown("<div style='max-width:440px;margin:0 auto;padding:0 16px'>", unsafe_allow_html=True)
 
         aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
 
@@ -791,12 +733,13 @@ if not st.session_state.logado:
                         st.error(f"Erro: {err}")
 
         st.markdown("""
-        <div class="mkt-security">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Conexão segura com criptografia SSL
+        <div class="login-footer">
+            🔒 Conexão segura com criptografia SSL<br><br>
+            Ao entrar, você concorda com os <a href="#">Termos de Uso</a> e <a href="#">Privacidade</a>
         </div>
-        <div class="mkt-footer">Ao entrar, você concorda com os <a href="#">Termos de Uso</a> e <a href="#">Privacidade</a></div>
         """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.stop()
 
