@@ -1373,14 +1373,6 @@ elif st.session_state.pagina == "redes":
                     try:
                         rp = requests.get(endpoint, headers=headers, timeout=15)
                         pr = rp.json()
-                        # DEBUG temporário — ver resposta bruta
-                        st.write(f"🔍 Endpoint: {endpoint}")
-                        st.write(f"Tipo: {type(pr).__name__}")
-                        if isinstance(pr, dict):
-                            st.write(f"Chaves: {list(pr.keys())}")
-                        elif isinstance(pr, list):
-                            st.write(f"Lista com {len(pr)} itens")
-                            if pr: st.write("Primeiro item chaves:", list(pr[0].keys()) if isinstance(pr[0], dict) else pr[0])
                         items = pr if isinstance(pr, list) else pr.get("items", [])
                         if items:
                             for p in items[:12]:
