@@ -852,6 +852,7 @@ with st.sidebar:
 
     # ── Menu HTML
     pagina_atual = st.session_state.pagina
+    user_email = st.session_state.user.email if st.session_state.user else ""
 
     def item_html(icon, label, key):
         ativo = "background:#1e2a3a;color:#e5e7eb;" if pagina_atual == key else "color:#8a95a3;"
@@ -878,19 +879,42 @@ with st.sidebar:
 
     menu_html = f"""
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600&display=swap" rel="stylesheet">
-    <div style="padding:0 4px;background:#0f1117;">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <div style="display:flex;flex-direction:column;min-height:100%;background:#0f1117;">
 
-        {sep("Dados Principais")}
-        {item_html("fa-solid fa-building-columns", "Minha Empresa", "home")}
-        {item_html("fa-solid fa-crosshairs",        "Concorrentes",  "cad")}
+        <div style="flex:1;padding:0 4px;">
+            {sep("Dados Principais")}
+            {item_html("fa-solid fa-building-columns", "Minha Empresa", "home")}
+            {item_html("fa-solid fa-crosshairs",        "Concorrentes",  "cad")}
 
-        {sep("Análise Competitiva")}
-        {item_html("fa-solid fa-chart-bar",               "Visão Geral",        "geral")}
-        {item_html("fa-brands fa-instagram",              "Redes Sociais",      "redes")}
-        {item_html("fa-solid fa-magnifying-glass-chart",  "Confronto de Sites", "sites")}
-        {item_html("fa-solid fa-rectangle-ad",            "Biblioteca de Ads",  "ads")}
-        {item_html("fa-solid fa-lightbulb",               "Insights",           "insights")}
+            {sep("Análise Competitiva")}
+            {item_html("fa-solid fa-chart-bar",               "Visão Geral",        "geral")}
+            {item_html("fa-brands fa-instagram",              "Redes Sociais",      "redes")}
+            {item_html("fa-solid fa-magnifying-glass-chart",  "Confronto de Sites", "sites")}
+            {item_html("fa-solid fa-rectangle-ad",            "Biblioteca de Ads",  "ads")}
+            {item_html("fa-solid fa-lightbulb",               "Insights",           "insights")}
+        </div>
+
+        <!-- Email + Botão Sair -->
+        <div style="border-top:1px solid #1e2530;padding:12px 18px 8px 18px;margin-top:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <i class="fa-solid fa-circle-user" style="color:#3a9fd6;font-size:14px;flex-shrink:0"></i>
+                <span style="font-size:12px;color:#3d4f63;word-break:break-all;font-family:'DM Sans',sans-serif">{user_email}</span>
+            </div>
+            <a onclick="nav('sair')" style="
+                display:flex;align-items:center;justify-content:center;gap:8px;
+                padding:8px 16px;border-radius:7px;
+                border:1px solid #1e2530;background:transparent;
+                color:#6b7280;font-size:13px;font-weight:500;
+                font-family:'DM Sans',sans-serif;cursor:pointer;
+                transition:all 0.15s ease;text-decoration:none;
+            "
+            onmouseover="this.style.background='#1e2530';this.style.color='#e5e7eb';this.style.borderColor='#3a9fd6'"
+            onmouseout="this.style.background='transparent';this.style.color='#6b7280';this.style.borderColor='#1e2530'">
+                <i class="fa-solid fa-right-from-bracket" style="font-size:13px"></i>
+                Sair
+            </a>
+        </div>
 
     </div>
     <script>
@@ -906,24 +930,7 @@ with st.sidebar:
     </script>
     """
 
-    components.html(menu_html, height=370, scrolling=False)
-
-    # ── Usuário
-    user_email = st.session_state.user.email if st.session_state.user else ""
-    st.markdown(
-        f'<div class="sb-user"><i class="fa-solid fa-circle-user"></i>{user_email}</div>',
-        unsafe_allow_html=True
-    )
-
-    # ── Botão Sair
-    if st.button("⇥  Sair", key="nav_sair_visible"):
-        logout_supabase()
-        for k in ["logado","user","dados","metricas_redes","pagina",
-                  "mostrar_form_concorrente","editando_concorrente",
-                  "editar_empresa","relatorio_sites","relatorio_gemini"]:
-            if k in st.session_state:
-                del st.session_state[k]
-        st.rerun()
+    components.html(menu_html, height=420, scrolling=False)
         
 # ---------------------------------------------------
 # POPUP ALERTA SAÍDA
