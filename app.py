@@ -292,25 +292,38 @@ Instagram: {emp['instagram']}
 # ---------------------------------------------------
 
 def extrair_conteudo_site(url: str) -> str:
-    """Extrai texto principal do site via Trafilatura."""
     url_fmt = formatar_url(url)
     if not url_fmt:
         return ""
     try:
-        downloaded = trafilatura.fetch_url(url_fmt)
-        if not downloaded:
-            # Tenta requests como fallback
-            headers = {"User-Agent": "Mozilla/5.0 (compatible; CIBot/1.0)"}
-            resp = requests.get(url_fmt, headers=headers, timeout=10)
-            downloaded = resp.text
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+        }
+        resp = requests.get(url_fmt, headers=headers, timeout=15, allow_redirects=True)
+        resp.encoding = resp.apparent_encoding
+        html = resp.text
+
+        # Tenta trafilatura primeiro
         texto = trafilatura.extract(
-            downloaded,
+            html,
             include_tables=True,
             include_links=False,
             include_images=False,
             no_fallback=False,
+            favor_recall=True,
         )
-        return texto or ""
+        if texto and len(texto) > 100:
+            return texto
+
+        # Fallback: extrai texto bruto removendo tags
+        import re as _re
+        texto_bruto = _re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=_re.DOTALL)
+        texto_bruto = _re.sub(r"<style[^>]*>.*?</style>", " ", texto_bruto, flags=_re.DOTALL)
+        texto_bruto = _re.sub(r"<[^>]+>", " ", texto_bruto)
+        texto_bruto = _re.sub(r"\s+", " ", texto_bruto).strip()
+        return texto_bruto[:5000] if texto_bruto else ""
     except Exception as e:
         return f"[Erro ao acessar {url}: {e}]"
 
