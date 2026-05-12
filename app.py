@@ -540,7 +540,7 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
 
 /* ── Botões invisíveis do sidebar ── */
-[data-testid="stSidebar"] div.stButton > button {
+[data-testid="stSidebar"] div.stButton:not(:last-of-type) > button {
     position: fixed !important;
     top: -9999px !important;
     left: -9999px !important;
@@ -551,9 +551,8 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     pointer-events: none !important;
     visibility: hidden !important;
 }
-[data-testid="stSidebar"] .stElementContainer:has(div.stButton),
-[data-testid="stSidebar"] .stElementContainer:has(div.stButton) > *,
-[data-testid="stSidebar"] div[data-testid="stVerticalBlock"]:has(> .stElementContainer div.stButton) > .stElementContainer {
+[data-testid="stSidebar"] .stElementContainer:has(div.stButton:not(:last-of-type)),
+[data-testid="stSidebar"] .stElementContainer:has(div.stButton:not(:last-of-type)) > * {
     margin: 0 !important;
     padding: 0 !important;
     height: 0 !important;
