@@ -792,7 +792,7 @@ with st.sidebar:
     if logo_white_src:
         st.markdown(f'''
         <div class="sb-logo">
-            <img src="{logo_white_src}" style="width: 160px; display: block; margin: 0 auto 8px auto;" />
+            <img src="{logo_white_src}" style="width: 150px; display: block; margin: 0 auto;" />
             <div class="sb-logo-sub" style="text-align:center">Competitive Intelligence</div>
         </div>
         ''', unsafe_allow_html=True)
