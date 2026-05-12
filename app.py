@@ -1622,7 +1622,7 @@ elif st.session_state.pagina == "redes":
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
 
     if cache.get("ultima_coleta"):
-        st.markdown(f"<div style='font-size:12px;color:#9ca3af;margin-bottom:12px'>🕐 Última coleta: <b>{cache['ultima_coleta']}</b></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:13px;color:#9ca3af;margin-bottom:12px'>🕐 Última coleta: <b>{cache['ultima_coleta']}</b></div>", unsafe_allow_html=True)
 
     if not ok:
         st.info("Clique em **🔄 Coletar dados agora** para buscar os dados do Instagram.")
@@ -1687,7 +1687,7 @@ elif st.session_state.pagina == "redes":
             col_posts, col_ia = st.columns([3, 2])
 
             with col_posts:
-                st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🖼️ Últimas 3 Postagens</div>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🖼️ Últimas 3 Postagens</div>", unsafe_allow_html=True)
                 if not posts_list:
                     st.markdown("<div style='padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px;font-size:14px;color:#9ca3af'>Posts não disponíveis.</div>", unsafe_allow_html=True)
                 else:
@@ -1728,7 +1728,7 @@ elif st.session_state.pagina == "redes":
                         st.dataframe(df_posts, use_container_width=True, hide_index=True)
 
             with col_ia:
-                st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🤖 Análise de IA</div>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🤖 Análise de IA</div>", unsafe_allow_html=True)
 
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
@@ -1834,7 +1834,7 @@ Seja direto e objetivo.
 
             # ── Comparativo
             st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>📈 Comparativo com todos os perfis</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>📈 Comparativo com todos os perfis</div>", unsafe_allow_html=True)
 
             nomes_ok   = [x["nome"]              for x in ok]
             segs_ok    = [x.get("seguidores", 0) for x in ok]
