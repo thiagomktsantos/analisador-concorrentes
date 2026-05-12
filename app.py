@@ -397,6 +397,13 @@ Seja direto, objetivo e use dados do conteúdo real dos sites.
 
 st.markdown("""
 <style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
@@ -410,13 +417,18 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
 section.main .block-container {
     padding: 2rem 2.5rem !important;
     max-width: 1100px !important;
+    background: #f0f4f8 !important;
+}
+
+[data-testid="stAppViewContainer"] { background: #f0f4f8 !important; }
+section.main { background: #f0f4f8 !important;
 }
 
 .page-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;
 }
-.page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; }
+.page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; font-family: 'Animo', 'DM Sans', sans-serif; }
 .page-subtitle { font-size: 14px; color: #6b7280; margin-top: 3px; }
 
 section.main div.stButton > button {
@@ -457,7 +469,7 @@ section.main label {
     margin-bottom: 4px !important;
 }
 section.main h1, section.main h2, section.main h3 {
-    font-family: 'DM Sans', sans-serif !important; letter-spacing: -0.4px !important;
+    font-family: 'Animo', 'DM Sans', sans-serif !important;
 }
 section.main h1 { font-size: 28px !important; font-weight: 600 !important; color: #111827 !important; }
 section.main h2 { font-size: 20px !important; font-weight: 600 !important; color: #111827 !important; margin-top: 28px !important; }
@@ -756,9 +768,9 @@ with st.sidebar:
         background-color: transparent !important; color: #8a95a3 !important;
         border: none !important; text-align: left !important;
         padding: 5px 14px !important; min-height: auto !important;
-        font-size: 14.5px !important; font-weight: 700 !important;
+        font-size: 17px !important; font-weight: 700 !important;
         box-shadow: none !important; transition: all 0.15s ease !important;
-        font-family: DM Sans, sans-serif !important; line-height: 1.4 !important;
+        font-family: 'Animo', 'DM Sans', sans-serif !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
         background-color: #161d2a !important; color: #e5e7eb !important;
