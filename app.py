@@ -1164,22 +1164,55 @@ def cabecalho_analise(titulo, subtitulo=""):
 # ---------------------------------------------------
 
 if st.session_state.pagina == "home":
-
+ 
     emp = st.session_state.dados["minha_empresa"]
     tem_dados = empresa_tem_dados(emp)
-
+ 
+    # ----------------------------------------------------------
+    # MODO EDIÇÃO / CADASTRO
+    # ----------------------------------------------------------
     if not tem_dados or st.session_state.editar_empresa:
-
+ 
+        # CSS: fundo branco no formulário + botão azul primário
+        st.markdown("""
+        <style>
+        /* Fundo branco no form de empresa */
+        .empresa-form-wrap {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 28px 32px 24px 32px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+        /* Botão primário AZUL nesta página */
+        section.main div.stButton > button[kind="primary"] {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border: none !important;
+        }
+        section.main div.stButton > button[kind="primary"]:hover {
+            background: #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+ 
+        # Cabeçalho
         h1, h2 = st.columns([8, 2])
         with h1:
-            st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>Minha Empresa</h1>", unsafe_allow_html=True)
-        with h2:
-            if tem_dados:
-                st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-                if st.button("Cancelar", use_container_width=True, type="primary"):
-                    st.session_state.editar_empresa = False
-                    st.rerun()
-
+            st.markdown(
+                "<h1 style='font-size:28px;font-weight:600;color:#111827;"
+                "letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>"
+                "Minha Empresa</h1>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                "<p style='font-size:14px;color:#6b7280;margin:0'>"
+                "Gerencie as informações e tenha uma visão geral da sua empresa.</p>",
+                unsafe_allow_html=True,
+            )
+ 
         SUBNICHOS = {
             "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
             "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
@@ -1188,15 +1221,24 @@ if st.session_state.pagina == "home":
             "Educação": ["Escola", "Curso Online", "Coaching", "Consultoria", "Idiomas", "Pré-vestibular", "Creche", "Faculdade"],
             "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
         }
-
+ 
         def sec_header(label):
-            st.markdown(f"<div style='font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif'>{label}</div>", unsafe_allow_html=True)
-
+            st.markdown(
+                f"<div style='font-size:12px;font-weight:600;color:#6b7280;"
+                f"text-transform:uppercase;letter-spacing:0.8px;"
+                f"padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;"
+                f"margin:0;font-family:DM Sans,sans-serif'>{label}</div>",
+                unsafe_allow_html=True,
+            )
+ 
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-
+ 
+        # ── Formulário com fundo branco via container HTML
+        st.markdown("<div class='empresa-form-wrap'>", unsafe_allow_html=True)
+ 
         col_left, col_right = st.columns(2)
-
+ 
         with col_left:
             sec_header("Informações Gerais")
             emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
@@ -1207,63 +1249,141 @@ if st.session_state.pagina == "home":
             subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
             tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
             emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
-
+ 
         with col_right:
             sec_header("Serviços")
             servicos_text = st.text_area(
-                "Serviços (um por linha)", value="\n".join(emp["servicos"]),
-                height=178, label_visibility="collapsed",
-                placeholder="Ex:\nTráfego Pago\nSEO\nSocial Media"
+                "Serviços (um por linha)",
+                value="\n".join(emp["servicos"]),
+                height=178,
+                label_visibility="collapsed",
+                placeholder="Ex:\nTráfego Pago\nSEO\nSocial Media",
             )
             emp["servicos"] = [s.strip() for s in servicos_text.splitlines() if s.strip()]
-
+ 
         divider()
         sec_header("Presença Digital")
         col_ig, col_fb, col_site = st.columns(3)
         emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
-        emp["fb_page"] = col_fb.text_input("Facebook", emp["fb_page"])
-        site_digitado = col_site.text_input("Site", emp["site"])
-        emp["site"] = limpar_site(site_digitado)
-
+        emp["fb_page"]   = col_fb.text_input("Facebook", emp["fb_page"])
+        site_digitado    = col_site.text_input("Site", emp["site"])
+        emp["site"]      = limpar_site(site_digitado)
+ 
         divider()
         sec_header("Localização")
         loc1, loc2 = st.columns(2)
-        estados = list(ESTADOS_CIDADES.keys())
+        estados     = list(ESTADOS_CIDADES.keys())
         estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
         emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
-        cidades = ESTADOS_CIDADES.get(emp["estado"], [])
-        cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
+        cidades       = ESTADOS_CIDADES.get(emp["estado"], [])
+        cidade_index  = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
         emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
-
+ 
+        st.markdown("</div>", unsafe_allow_html=True)  # fecha empresa-form-wrap
+ 
+        # ── Botões Salvar + Cancelar PRÓXIMOS (mesma linha)
         divider()
-
-        if st.button("💾 Salvar Empresa", use_container_width=True, type="primary"):
-            if emp["nome"].strip():
-                st.session_state.editar_empresa = False
-                salvar_dados_usuario(st.session_state.user.id)
-                st.success("Empresa salva com sucesso!")
-                st.rerun()
-            else:
-                st.error("Informe pelo menos o nome da empresa.")
-
+        col_salvar, col_cancelar, col_space = st.columns([2, 2, 4])
+        with col_salvar:
+            if st.button("💾 Salvar Empresa", use_container_width=True, type="primary"):
+                if emp["nome"].strip():
+                    st.session_state.editar_empresa = False
+                    salvar_dados_usuario(st.session_state.user.id)
+                    st.success("Empresa salva com sucesso!")
+                    st.rerun()
+                else:
+                    st.error("Informe pelo menos o nome da empresa.")
+        with col_cancelar:
+            if tem_dados:
+                if st.button("Cancelar", use_container_width=True):
+                    st.session_state.editar_empresa = False
+                    st.rerun()
+ 
+    # ----------------------------------------------------------
+    # MODO VISUALIZAÇÃO
+    # ----------------------------------------------------------
     else:
+ 
+        st.markdown("""
+        <style>
+        /* Botão primário AZUL nesta página */
+        section.main div.stButton > button[kind="primary"] {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border: none !important;
+        }
+        section.main div.stButton > button[kind="primary"]:hover {
+            background: #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+ 
+        # Título + subtítulo
         h1, h2 = st.columns([8, 2])
         with h1:
-            st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>Minha Empresa</h1>", unsafe_allow_html=True)
+            st.markdown(
+                "<h1 style='font-size:28px;font-weight:600;color:#111827;"
+                "letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>"
+                "Minha Empresa</h1>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                "<p style='font-size:14px;color:#6b7280;margin:3px 0 0 0'>"
+                "Gerencie as informações e tenha uma visão geral da sua empresa.</p>",
+                unsafe_allow_html=True,
+            )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
             if st.button("✏️ Editar Empresa", use_container_width=True, type="primary"):
                 st.session_state.editar_empresa = True
                 st.rerun()
-
-        st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
-
+ 
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
+            unsafe_allow_html=True,
+        )
+ 
+        # ── Bloco "Mantenha suas informações atualizadas"
+        st.markdown("""
+        <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
+                    padding:16px 20px;display:flex;align-items:center;
+                    justify-content:space-between;margin-bottom:20px;
+                    box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+            <div style='display:flex;align-items:center;gap:16px'>
+                <div style='width:42px;height:42px;border-radius:10px;
+                            background:#eff6ff;display:flex;align-items:center;
+                            justify-content:center;flex-shrink:0'>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 12l2 2 4-4" stroke="#2563eb" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
+                              stroke="#2563eb" stroke-width="2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div style='font-size:14px;font-weight:600;color:#0f172a'>
+                        Mantenha suas informações atualizadas
+                    </div>
+                    <div style='font-size:13px;color:#64748b;margin-top:2px'>
+                        Dados atualizados garantem análises mais precisas e relatórios mais completos.
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+ 
+        # ── Card da empresa
         avatar = gerar_avatar(emp["nome"])
-        loc = emp['cidade'] or ''
-        if emp['estado']:
-            loc += (', ' if loc else '') + emp['estado']
-        servicos_col_html = "".join([f"<div class='tag'>{s}</div>" for s in emp["servicos"]]) if emp["servicos"] else "<span class='val' style='color:#9ca3af'>—</span>"
-
+        loc = emp["cidade"] or ""
+        if emp["estado"]:
+            loc += (", " if loc else "") + emp["estado"]
+        servicos_col_html = (
+            "".join([f"<div class='tag'>{s}</div>" for s in emp["servicos"]])
+            if emp["servicos"] else "<span class='val' style='color:#9ca3af'>—</span>"
+        )
+ 
         card_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -1320,10 +1440,10 @@ body {{ padding-bottom: 16px; }}
       <div class="sec-title">Serviços</div>
       <div class="tags-wrap">{servicos_col_html}</div>
     </div>
-</div>
+  </div>
 </div>
 </body></html>"""
-
+ 
         n_servicos = len(emp["servicos"])
         linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
         altura = 300 + (linhas_tags * 44) + 40
