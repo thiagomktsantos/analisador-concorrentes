@@ -392,10 +392,178 @@ Seja direto, objetivo e use dados do conteúdo real dos sites.
         return f"Erro ao gerar relatório: {e}"
 
 # ---------------------------------------------------
-# CSS GLOBAL
+# CSS GLOBAL (apenas quando logado)
 # ---------------------------------------------------
 
-st.markdown("""
+if st.session_state.logado:
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+    html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
+
+    [data-testid="stSidebar"] {
+        background-color: #0f1117 !important;
+        border-right: 1px solid #1e2530 !important;
+    }
+    [data-testid="stSidebar"] > div:first-child { padding-top: 0 !important; }
+
+    section.main .block-container {
+        padding: 2rem 2.5rem !important;
+        max-width: 1100px !important;
+    }
+
+    .page-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;
+    }
+    .page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; }
+    .page-subtitle { font-size: 14px; color: #6b7280; margin-top: 3px; }
+
+    section.main div.stButton > button {
+        border-radius: 7px !important; font-size: 14px !important; font-weight: 500 !important;
+        border: 1px solid #d1d5db !important; background: #ffffff !important;
+        color: #374151 !important; box-shadow: none !important;
+        padding: 8px 16px !important; transition: all 0.12s ease !important;
+        font-family: 'DM Sans', sans-serif !important; min-height: 38px !important;
+    }
+    section.main div.stButton > button:hover {
+        background: #f9fafb !important; border-color: #9ca3af !important; color: #111827 !important;
+    }
+    section.main div.stButton > button[kind="primary"],
+    section.main div.stFormSubmitButton > button,
+    section.main div.stFormSubmitButton > button[kind="primary"] {
+        background: #111827 !important; color: #ffffff !important; border: none !important;
+    }
+    section.main div.stButton > button[kind="primary"]:hover,
+    section.main div.stFormSubmitButton > button:hover { background: #1f2937 !important; }
+
+    .form-section-header {
+        font-size: 13px; font-weight: 600; color: #6b7280;
+        text-transform: uppercase; letter-spacing: 0.8px;
+        padding: 20px 0 12px 0; border-bottom: 1px solid #f3f4f6;
+        margin-bottom: 16px; font-family: 'DM Sans', sans-serif;
+    }
+
+    section.main div[data-testid="stTextInput"] input,
+    section.main div[data-testid="stSelectbox"] select,
+    section.main div[data-baseweb="select"] {
+        font-size: 15px !important; border-radius: 7px !important;
+        border: 1px solid #e5e7eb !important;
+        font-family: 'DM Sans', sans-serif !important; color: #111827 !important;
+    }
+    section.main label {
+        font-size: 14px !important; font-weight: 500 !important;
+        color: #374151 !important; font-family: 'DM Sans', sans-serif !important;
+        margin-bottom: 4px !important;
+    }
+    section.main h1, section.main h2, section.main h3 {
+        font-family: 'DM Sans', sans-serif !important; letter-spacing: -0.4px !important;
+    }
+    section.main h1 { font-size: 28px !important; font-weight: 600 !important; color: #111827 !important; }
+    section.main h2 { font-size: 20px !important; font-weight: 600 !important; color: #111827 !important; margin-top: 28px !important; }
+    section.main h3 { font-size: 16px !important; font-weight: 600 !important; color: #374151 !important; }
+    section.main hr { border: none !important; border-top: 1px solid #f3f4f6 !important; margin: 20px 0 !important; }
+
+    div[data-testid="stInfo"] {
+        background: #f0f9ff !important; border: 1px solid #bae6fd !important;
+        border-radius: 8px !important; font-size: 15px !important;
+        color: #0c4a6e !important; padding: 14px 18px !important;
+    }
+    div[data-testid="stWarning"] {
+        background: #fffbeb !important; border: 1px solid #fcd34d !important;
+        border-radius: 8px !important; font-size: 15px !important; padding: 14px 18px !important;
+    }
+    div[data-testid="stSuccess"] {
+        background: #f0fdf4 !important; border: 1px solid #86efac !important;
+        border-radius: 8px !important; font-size: 15px !important; padding: 14px 18px !important;
+    }
+    div[data-testid="stError"] {
+        background: #fef2f2 !important; border: 1px solid #fca5a5 !important;
+        border-radius: 8px !important; font-size: 15px !important; padding: 14px 18px !important;
+    }
+
+    details summary { font-size: 16px !important; font-weight: 500 !important; padding: 14px 0 !important; }
+
+    .popup-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        z-index: 999999; backdrop-filter: blur(2px);
+    }
+    .popup-box {
+        position: fixed; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ffffff; width: 480px; border-radius: 14px;
+        padding: 32px; z-index: 9999999; border: 1px solid #e5e7eb;
+        color: #111827; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .popup-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #111827; }
+    .popup-text { color: #6b7280; margin-bottom: 24px; font-size: 15px; line-height: 1.6; }
+
+    div[data-baseweb="select"] > div {
+        border-radius: 7px !important; min-height: 42px !important;
+        font-size: 15px !important; font-family: 'DM Sans', sans-serif !important;
+    }
+    div[data-testid="stDataFrame"] {
+        border-radius: 10px !important; overflow: hidden !important; border: 1px solid #e5e7eb !important;
+    }
+    section.main div[data-testid="stTextArea"] textarea {
+        font-size: 15px !important; border-radius: 7px !important;
+        border: 1px solid #e5e7eb !important;
+        font-family: 'DM Sans', sans-serif !important;
+        color: #111827 !important; resize: vertical !important;
+    }
+
+    div[data-testid="stTabs"] > div:first-child {
+        justify-content: center !important; border-bottom: 2px solid #e5e7eb !important; gap: 0 !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        font-size: 15px !important; font-weight: 600 !important;
+        font-family: 'DM Sans', sans-serif !important; padding: 10px 32px !important;
+        color: #9ca3af !important; border-bottom: 2px solid transparent !important;
+        margin-bottom: -2px !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #111827 !important; border-bottom: 2px solid #111827 !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# ---------------------------------------------------
+# CARD HELPERS
+# ---------------------------------------------------
+
+CARD_CSS = """
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+    background: transparent;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: visible;
+}
+body { padding-bottom: 8px; }
+"""
+CARD_FONT_IMPORT = """<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">"""
+
+# ---------------------------------------------------
+# LOGIN / CADASTRO (Supabase Auth)
+# ---------------------------------------------------
+
+import base64
+from pathlib import Path
+
+def get_logo_base64():
+    logo_path = Path("images/logo-marketylics.jpg")
+    if logo_path.exists():
+        with open(logo_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return ""
+
+if not st.session_state.logado:
+    logo_b64 = get_logo_base64()
+    logo_src = f"data:image/jpeg;base64,{logo_b64}" if logo_b64 else ""
+
+    st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
@@ -414,7 +582,6 @@ st.markdown("""
         box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
     }
 
-    /* Remove borda duplicada do wrapper interno */
     [data-testid="stVerticalBlockBorderWrapper"] {
         border: none !important;
         background: #ffffff !important;
@@ -484,85 +651,80 @@ st.markdown("""
         box-shadow: none !important;
         outline: none !important;
     }
-    div[data-baseweb="tab-highlight"] {
-        background-color: #3a9fd6 !important;
-    }
-    div[data-baseweb="tab-panel"] {
-        background: #ffffff !important;
-    }
+    div[data-baseweb="tab-highlight"] { background-color: #3a9fd6 !important; }
+    div[data-baseweb="tab-panel"] { background: #ffffff !important; }
     </style>
     """, unsafe_allow_html=True)
 
-    with st.container(border=True):
-        st.markdown(f"""
-        <div style="text-align:center;margin-bottom:24px">
-            {'<img src="' + logo_src + '" style="width:140px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">marketylics</div>'}
-            <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
-        </div>
-        <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
-        """, unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="text-align:center;margin-bottom:24px">
+        {'<img src="' + logo_src + '" style="width:140px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">marketylics</div>'}
+        <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
+    </div>
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
+    """, unsafe_allow_html=True)
 
-        aba = st.tabs(["Já tenho conta", "Criar conta"])
+    aba = st.tabs(["Já tenho conta", "Criar conta"])
 
-        with aba[0]:
-            with st.form("form_login"):
-                email_login = st.text_input("E-mail", placeholder="seu@email.com")
-                senha_login = st.text_input("Senha", type="password", placeholder="••••••••")
-                submit_login = st.form_submit_button("Entrar na plataforma →", use_container_width=True)
+    with aba[0]:
+        with st.form("form_login"):
+            email_login = st.text_input("E-mail", placeholder="seu@email.com")
+            senha_login = st.text_input("Senha", type="password", placeholder="••••••••")
+            submit_login = st.form_submit_button("Entrar na plataforma →", use_container_width=True)
 
-            if submit_login:
-                if email_login and senha_login:
-                    with st.spinner("Autenticando..."):
-                        user, err = login_supabase(email_login, senha_login)
-                    if user:
-                        st.session_state.logado = True
-                        st.session_state.user = user
-                        dados_db = carregar_dados_usuario(user.id)
-                        st.session_state.dados = {
-                            "minha_empresa": dados_db["minha_empresa"] or {
-                                "nome": "", "setor": "Marketing", "tipo": "",
-                                "estado": "", "cidade": "",
-                                "instagram": "@", "fb_page": "", "site": "",
-                                "servicos": []
-                            },
-                            "concorrentes": dados_db.get("concorrentes", []),
-                        }
-                        st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
-                        st.rerun()
-                    else:
-                        st.error(f"Erro ao entrar: {err}")
+        if submit_login:
+            if email_login and senha_login:
+                with st.spinner("Autenticando..."):
+                    user, err = login_supabase(email_login, senha_login)
+                if user:
+                    st.session_state.logado = True
+                    st.session_state.user = user
+                    dados_db = carregar_dados_usuario(user.id)
+                    st.session_state.dados = {
+                        "minha_empresa": dados_db["minha_empresa"] or {
+                            "nome": "", "setor": "Marketing", "tipo": "",
+                            "estado": "", "cidade": "",
+                            "instagram": "@", "fb_page": "", "site": "",
+                            "servicos": []
+                        },
+                        "concorrentes": dados_db.get("concorrentes", []),
+                    }
+                    st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
+                    st.rerun()
                 else:
-                    st.warning("Preencha e-mail e senha.")
+                    st.error(f"Erro ao entrar: {err}")
+            else:
+                st.warning("Preencha e-mail e senha.")
 
-        with aba[1]:
-            with st.form("form_cadastro"):
-                email_cad  = st.text_input("E-mail", placeholder="seu@email.com", key="cad_email")
-                senha_cad  = st.text_input("Senha", type="password", placeholder="Mínimo 6 caracteres", key="cad_senha")
-                senha_cad2 = st.text_input("Confirmar senha", type="password", placeholder="Repita a senha", key="cad_senha2")
-                submit_cad = st.form_submit_button("Criar conta", use_container_width=True)
+    with aba[1]:
+        with st.form("form_cadastro"):
+            email_cad  = st.text_input("E-mail", placeholder="seu@email.com", key="cad_email")
+            senha_cad  = st.text_input("Senha", type="password", placeholder="Mínimo 6 caracteres", key="cad_senha")
+            senha_cad2 = st.text_input("Confirmar senha", type="password", placeholder="Repita a senha", key="cad_senha2")
+            submit_cad = st.form_submit_button("Criar conta", use_container_width=True)
 
-            if submit_cad:
-                if not email_cad or not senha_cad:
-                    st.warning("Preencha todos os campos.")
-                elif senha_cad != senha_cad2:
-                    st.error("As senhas não coincidem.")
-                elif len(senha_cad) < 6:
-                    st.error("A senha deve ter pelo menos 6 caracteres.")
+        if submit_cad:
+            if not email_cad or not senha_cad:
+                st.warning("Preencha todos os campos.")
+            elif senha_cad != senha_cad2:
+                st.error("As senhas não coincidem.")
+            elif len(senha_cad) < 6:
+                st.error("A senha deve ter pelo menos 6 caracteres.")
+            else:
+                with st.spinner("Criando conta..."):
+                    user, err = cadastro_supabase(email_cad, senha_cad)
+                if user:
+                    st.success("Conta criada! Verifique seu e-mail para confirmar, depois faça login.")
                 else:
-                    with st.spinner("Criando conta..."):
-                        user, err = cadastro_supabase(email_cad, senha_cad)
-                    if user:
-                        st.success("Conta criada! Verifique seu e-mail para confirmar, depois faça login.")
-                    else:
-                        st.error(f"Erro: {err}")
+                    st.error(f"Erro: {err}")
 
-        st.markdown("""
-        <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:4px;padding-top:12px;border-top:1px solid #f3f4f6">
-            🔒 Conexão segura com criptografia SSL &nbsp;·&nbsp;
-            <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> &nbsp;·&nbsp;
-            <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown("""
+    <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:4px;padding-top:12px;border-top:1px solid #f3f4f6">
+        🔒 Conexão segura com criptografia SSL &nbsp;·&nbsp;
+        <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> &nbsp;·&nbsp;
+        <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.stop()
 
