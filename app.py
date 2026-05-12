@@ -1506,11 +1506,11 @@ elif st.session_state.pagina == "redes":
 
             seg         = user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count", 0)
             total_posts = user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count", 0)
-            pk          = user_data.get("pk") or user_data.get("id", "")
+            pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
 
             posts_data = []
             if pk:
-                url_posts = f"https://instagram-looter2.p.rapidapi.com/feed?id={pk}&count=9"
+                url_posts = f"https://instagram-looter2.p.rapidapi.com/posts?id={pk}&count=9"
                 r_posts = requests.get(url_posts, headers=headers, timeout=15)
                 posts_raw = r_posts.json()
                 items = posts_raw if isinstance(posts_raw, list) else posts_raw.get("items", [])
