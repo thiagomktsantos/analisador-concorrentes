@@ -539,6 +539,16 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
 
+/* ── Botão Adicionar da página Concorrentes ── */
+section.main div.stButton > button[kind="primary"] {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+section.main div.stButton > button[kind="primary"]:hover {
+    background: #dc2626 !important;
+}
+
 /* ── Logo do sidebar ── */
 .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
 .sb-logo-sub { font-size:8.4px; color:#3a9fd6; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-align:center; font-family:'DM Sans',sans-serif; }
