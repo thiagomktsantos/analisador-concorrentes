@@ -1448,6 +1448,38 @@ elif st.session_state.pagina == "redes":
     concorrentes = st.session_state.dados["concorrentes"]
 
     # ── Cabeçalho
+    st.markdown("""
+    <style>
+    /* Botão primário desta página */
+    section.main div.stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+    }
+    section.main div.stButton > button[kind="primary"]:hover {
+        opacity: 0.9 !important;
+        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+    }
+    /* Abas */
+    div[data-testid="stTabs"] button[role="tab"] {
+        font-size: 20px !important;
+        font-weight: 600 !important;
+        color: #9ca3af !important;
+        border-bottom: 2px solid transparent !important;
+        padding: 10px 32px !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #3a9fd6 !important;
+        border-bottom: 2px solid #3a9fd6 !important;
+    }
+    div[data-baseweb="tab-highlight"] {
+        background-color: #3a9fd6 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     h1, h2 = st.columns([7, 3])
     with h1:
         st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>📱 Redes Sociais</h1>", unsafe_allow_html=True)
@@ -1459,32 +1491,6 @@ elif st.session_state.pagina == "redes":
         if ultima_coleta:
             st.markdown(f"<div style='font-size:12px;color:#6b7280;margin-top:6px;text-align:center'>🕐 Última coleta: <b>{ultima_coleta}</b></div>", unsafe_allow_html=True)
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <style>
-    section.main div.stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
-        color: #ffffff !important;
-        border: none !important;
-    }
-    section.main div.stButton > button[kind="primary"]:hover {
-        opacity: 0.9 !important;
-        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
-    }
-    div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 20px !important;
-        color: #9ca3af !important;
-        border-bottom: 2px solid transparent !important;
-    }
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #3a9fd6 !important;
-        border-bottom: 2px solid #3a9fd6 !important;
-    }
-    div[data-baseweb="tab-highlight"] {
-        background-color: #3a9fd6 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
     def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
@@ -1649,9 +1655,6 @@ elif st.session_state.pagina == "redes":
         erros = [r for r in cache["dados"] if r.get("erro")]
         for r in erros:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
-
-    if cache.get("ultima_coleta"):
-        st.markdown(f"<div style='font-size:13px;color:#9ca3af;margin-bottom:12px'>🕐 Última coleta: <b>{cache['ultima_coleta']}</b></div>", unsafe_allow_html=True)
 
     if not ok:
         st.info("Clique em **🔄 Coletar dados agora** para buscar os dados do Instagram.")
