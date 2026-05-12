@@ -570,13 +570,11 @@ if not st.session_state.logado:
     section.main .block-container {{ padding: 0 !important; max-width: 100% !important; }}
     [data-testid="stAppViewContainer"] {{ background: #f0f2f5 !important; }}
 
-    .mkt-wrap {{
-        display: flex; min-height: 100vh; width: 100%;
-    }}
     .mkt-left {{
-        width: 360px; min-width: 280px; background: #1a2234;
+        background: #1a2234;
         display: flex; flex-direction: column; align-items: center;
-        justify-content: center; padding: 48px 36px;
+        justify-content: center; padding: 48px 32px;
+        min-height: 100vh;
         border-right: 1px solid #243047;
     }}
     .mkt-logo {{ width: 180px; margin-bottom: 8px; }}
@@ -593,54 +591,46 @@ if not st.session_state.logado:
     .mkt-badge-strong {{ font-size: 13px; color: #c8d8e8; font-weight: 600; display: block; margin-bottom: 2px; }}
     .mkt-badge-desc {{ font-size: 12px; color: #7a8faa; }}
     .mkt-tagline {{ margin-top: 28px; font-size: 12px; color: #3d5168; text-align: center; line-height: 1.7; }}
-    .mkt-right {{
-        flex: 1; background: #ffffff; display: flex;
-        align-items: center; justify-content: center; padding: 48px 40px;
+
+    .mkt-right-wrap {{
+        background: #ffffff; min-height: 100vh;
+        display: flex; flex-direction: column;
+        justify-content: center; padding: 48px 32px;
     }}
-    .mkt-card {{ width: 100%; max-width: 380px; }}
-    .mkt-card-title {{ font-size: 22px; font-weight: 700; color: #1a2234; letter-spacing: -0.5px; margin-bottom: 4px; }}
-    .mkt-card-sub {{ font-size: 14px; color: #9ca3af; margin-bottom: 28px; }}
-    .mkt-tabs {{
-        display: flex; border: 1px solid #e5e7eb; border-radius: 10px;
-        overflow: hidden; margin-bottom: 24px;
-    }}
-    .mkt-tab {{
-        flex: 1; padding: 10px 0; text-align: center; font-size: 13px;
-        font-weight: 600; font-family: 'DM Sans', sans-serif; border: none;
-    }}
-    .mkt-tab.active {{ background: #1a2234; color: #fff; }}
-    .mkt-tab.inactive {{ background: #fff; color: #9ca3af; }}
+    .mkt-card-title {{ font-size: 22px; font-weight: 700; color: #1a2234; letter-spacing: -0.5px; margin-bottom: 4px; font-family: 'DM Sans', sans-serif; }}
+    .mkt-card-sub {{ font-size: 14px; color: #9ca3af; margin-bottom: 24px; font-family: 'DM Sans', sans-serif; }}
     .mkt-security {{
         display: flex; align-items: center; justify-content: center;
-        gap: 6px; margin-top: 20px; padding-top: 18px;
+        gap: 6px; margin-top: 16px; padding-top: 16px;
         border-top: 1px solid #f3f4f6; font-size: 11px; color: #c4c9d4;
+        font-family: 'DM Sans', sans-serif;
     }}
-    .mkt-footer {{ text-align: center; font-size: 11px; color: #c4c9d4; margin-top: 14px; }}
+    .mkt-footer {{ text-align: center; font-size: 11px; color: #c4c9d4; margin-top: 10px; font-family: 'DM Sans', sans-serif; }}
     .mkt-footer a {{ color: #3a9fd6; text-decoration: none; }}
 
-    /* Botão com gradiente da marca */
+    /* Botão gradiente da marca */
     section.main div.stFormSubmitButton > button {{
         background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
         color: #fff !important; border: none !important;
         border-radius: 8px !important; font-size: 15px !important;
         font-weight: 700 !important; padding: 13px !important;
-        width: 100% !important; letter-spacing: -0.2px !important;
-        transition: opacity 0.15s !important;
+        width: 100% !important;
     }}
-    section.main div.stFormSubmitButton > button:hover {{
-        opacity: 0.9 !important;
-    }}
+    section.main div.stFormSubmitButton > button:hover {{ opacity: 0.9 !important; }}
     section.main div[data-testid="stTextInput"] input {{
-        border: 1.5px solid #e5e7eb !important;
-        background: #fafafa !important;
+        border: 1.5px solid #e5e7eb !important; background: #fafafa !important;
     }}
     section.main div[data-testid="stTextInput"] input:focus {{
-        border-color: #3a9fd6 !important;
-        background: #fff !important;
+        border-color: #3a9fd6 !important; background: #fff !important;
     }}
     </style>
+    """, unsafe_allow_html=True)
 
-    <div class="mkt-wrap">
+    col_left, col_right = st.columns([1.1, 1.6])
+
+    # ── PAINEL ESQUERDO (HTML puro, sem widgets)
+    with col_left:
+        st.markdown(f"""
         <div class="mkt-left">
             {'<img class="mkt-logo" src="' + logo_src + '" />' if logo_src else '<div style="color:#3a9fd6;font-size:22px;font-weight:700;margin-bottom:8px">marketylics</div>'}
             <div class="mkt-brand-sub">Competitive Intelligence</div>
@@ -674,21 +664,78 @@ if not st.session_state.logado:
             </div>
             <div class="mkt-tagline">Utilizado por agências e empresas<br>que querem crescer mais rápido.</div>
         </div>
+        """, unsafe_allow_html=True)
 
-        <div class="mkt-right">
-            <div class="mkt-card">
-                <div class="mkt-card-title">Bem-vindo de volta</div>
-                <div class="mkt-card-sub">Acesse sua conta para continuar</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── PAINEL DIREITO (widgets Streamlit normais)
+    with col_right:
+        st.markdown("<div class='mkt-right-wrap'>", unsafe_allow_html=True)
+        st.markdown("<div style='height:60px'/>", unsafe_allow_html=True)
+        st.markdown("<div class='mkt-card-title'>Bem-vindo de volta</div>", unsafe_allow_html=True)
+        st.markdown("<div class='mkt-card-sub'>Acesse sua conta para continuar</div>", unsafe_allow_html=True)
 
-    # Formulários Streamlit sobrepostos (posicionar no mkt-right)
-    _, form_col, _ = st.columns([1.05, 1, 0.1])
-    with form_col:
         aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
-        # ... resto dos formulários igual ao código anterior
+
+        with aba[0]:
+            with st.form("form_login"):
+                email_login = st.text_input("E-mail", placeholder="seu@email.com")
+                senha_login = st.text_input("Senha", type="password", placeholder="••••••••")
+                submit_login = st.form_submit_button("Entrar na plataforma →", use_container_width=True)
+
+            if submit_login:
+                if email_login and senha_login:
+                    with st.spinner("Autenticando..."):
+                        user, err = login_supabase(email_login, senha_login)
+                    if user:
+                        st.session_state.logado = True
+                        st.session_state.user = user
+                        dados_db = carregar_dados_usuario(user.id)
+                        st.session_state.dados = {
+                            "minha_empresa": dados_db["minha_empresa"] or {
+                                "nome": "", "setor": "Marketing", "tipo": "",
+                                "estado": "", "cidade": "",
+                                "instagram": "@", "fb_page": "", "site": "",
+                                "servicos": []
+                            },
+                            "concorrentes": dados_db.get("concorrentes", []),
+                        }
+                        st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
+                        st.rerun()
+                    else:
+                        st.error(f"Erro ao entrar: {err}")
+                else:
+                    st.warning("Preencha e-mail e senha.")
+
+        with aba[1]:
+            with st.form("form_cadastro"):
+                email_cad  = st.text_input("E-mail", placeholder="seu@email.com", key="cad_email")
+                senha_cad  = st.text_input("Senha", type="password", placeholder="Mínimo 6 caracteres", key="cad_senha")
+                senha_cad2 = st.text_input("Confirmar senha", type="password", placeholder="Repita a senha", key="cad_senha2")
+                submit_cad = st.form_submit_button("Criar conta", use_container_width=True)
+
+            if submit_cad:
+                if not email_cad or not senha_cad:
+                    st.warning("Preencha todos os campos.")
+                elif senha_cad != senha_cad2:
+                    st.error("As senhas não coincidem.")
+                elif len(senha_cad) < 6:
+                    st.error("A senha deve ter pelo menos 6 caracteres.")
+                else:
+                    with st.spinner("Criando conta..."):
+                        user, err = cadastro_supabase(email_cad, senha_cad)
+                    if user:
+                        st.success("Conta criada! Verifique seu e-mail para confirmar, depois faça login.")
+                    else:
+                        st.error(f"Erro: {err}")
+
+        st.markdown("""
+        <div class="mkt-security">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Conexão segura com criptografia SSL
+        </div>
+        <div class="mkt-footer">Ao entrar, você concorda com os <a href="#">Termos de Uso</a> e <a href="#">Privacidade</a></div>
+        """, unsafe_allow_html=True)
+
+    st.stop()
 
 # ---------------------------------------------------
 # SIDEBAR (apenas quando logado)
