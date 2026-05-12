@@ -1565,18 +1565,13 @@ elif st.session_state.pagina == "redes":
         st.stop()
 
     # ── Aviso de configuração ─────────────────────────────────────
-    tem_token = bool(st.secrets.get("IG_ACCESS_TOKEN", ""))
-    tem_login = bool(st.secrets.get("IG_USER", ""))
-    if not tem_token and not tem_login:
+    tem_token = bool(st.secrets.get("RAPIDAPI_KEY", ""))
+    if not tem_token:
         st.markdown("""
         <div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;
                     padding:16px 20px;margin-bottom:20px;font-size:14px;color:#92400e'>
-            <b>⚠️ Para melhores resultados, configure uma das opções no <code>secrets.toml</code>:</b><br><br>
-            <b>Opção A — Instagram Graph API</b> (recomendado, para contas Business/Creator):<br>
-            <code>IG_ACCESS_TOKEN = "seu_token_aqui"</code><br><br>
-            <b>Opção B — Login Instaloader</b> (conta Instagram comum):<br>
-            <code>IG_USER = "seu_usuario"</code><br>
-            <code>IG_PASS = "sua_senha"</code><br><br>
+            <b>⚠️ Configure a chave no <code>secrets.toml</code>:</b><br><br>
+            <code>RAPIDAPI_KEY = "sua_chave_aqui"</code><br><br>
             Sem configuração, o app tenta scraping HTML (pode ser bloqueado pelo Instagram).
         </div>
         """, unsafe_allow_html=True)
