@@ -422,8 +422,7 @@ section.main .block-container {
 }
 
 [data-testid="stAppViewContainer"] { background: #f0f4f8 !important; }
-section.main { background: #f0f4f8 !important;
-}
+section.main { background: #f0f4f8 !important; }
 
 .page-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -539,6 +538,55 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
     color: #111827 !important; border-bottom: 2px solid #111827 !important;
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
+
+/* ── Botões invisíveis do sidebar ── */
+[data-testid="stSidebar"] div.stButton > button {
+    position: fixed !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+[data-testid="stSidebar"] .stElementContainer:has(div.stButton),
+[data-testid="stSidebar"] .stElementContainer:has(div.stButton) > *,
+[data-testid="stSidebar"] div[data-testid="stVerticalBlock"]:has(> .stElementContainer div.stButton) > .stElementContainer {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+}
+
+/* ── Botão Sair visível ── */
+[data-testid="stSidebar"] div.stButton:last-of-type > button {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: calc(100% - 36px) !important;
+    height: auto !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    background: transparent !important;
+    color: #6b7280 !important;
+    border: 1px solid #1e2530 !important;
+    border-radius: 7px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 8px 16px !important;
+    margin: 8px 18px !important;
+    transition: all 0.15s ease !important;
+}
+[data-testid="stSidebar"] div.stButton:last-of-type > button:hover {
+    background: #1e2530 !important;
+    color: #e5e7eb !important;
+    border-color: #3a9fd6 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
