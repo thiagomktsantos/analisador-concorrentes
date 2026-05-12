@@ -822,22 +822,8 @@ if not st.session_state.logado:
 
 with st.sidebar:
 
-    # ── Logo
     logo_white_b64 = get_logo_white_base64()
     logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
-    if logo_white_src:
-        st.markdown(
-            f'<div class="sb-logo"><img src="{logo_white_src}" style="width:170px;display:block;margin:0 auto"/>'
-            f'<div class="sb-logo-sub">Competitive Intelligence</div></div>',
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown(
-            '<div class="sb-logo">'
-            '<div style="font-size:16px;font-weight:700;color:#fff;text-align:center">Marketylics</div>'
-            '<div class="sb-logo-sub">Competitive Intelligence</div></div>',
-            unsafe_allow_html=True
-        )
 
     # ── Botões invisíveis — acionados pelo JS do components.html
     paginas = ["home", "cad", "geral", "redes", "sites", "ads", "insights", "sair"]
