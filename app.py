@@ -727,7 +727,7 @@ if not st.session_state.logado:
                         st.error(f"Erro: {err}")
 
         st.markdown("""
-        <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:4px;padding-top:12px;border-top:1px solid #f3f4f6">
+        <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-bottom:16px">
             🔒 Conexão segura com criptografia SSL &nbsp;·&nbsp;
             <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> &nbsp;·&nbsp;
             <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
