@@ -17,7 +17,7 @@ from supabase import create_client, Client
 # ---------------------------------------------------
 
 st.set_page_config(
-    page_title="IA Competitive Intelligence",
+    page_title="Marketylics · Competitive Intelligence",
     layout="wide"
 )
 
@@ -572,6 +572,13 @@ def get_logo_base64():
             return base64.b64encode(f.read()).decode()
     return ""
 
+def get_logo_white_base64():
+    logo_path = Path("images/logo-marketylics-white.png")
+    if logo_path.exists():
+        with open(logo_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return ""
+    
 # No bloco if not st.session_state.logado:
 if not st.session_state.logado:
     logo_b64 = get_logo_base64()
@@ -779,7 +786,18 @@ with st.sidebar:
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="sb-logo"><div class="sb-logo-title">CI Dashboard</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
+    logo_white_b64 = get_logo_white_base64()
+logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
+
+if logo_white_src:
+    st.markdown(f'''
+    <div class="sb-logo">
+        <img src="{logo_white_src}" style="width: 160px; display: block; margin: 0 auto 8px auto;" />
+        <div class="sb-logo-sub" style="text-align:center">Competitive Intelligence</div>
+    </div>
+    ''', unsafe_allow_html=True)
+else:
+    st.markdown('<div class="sb-logo"><div class="sb-logo-title">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sb-section">Dados Principais</div>', unsafe_allow_html=True)
     if st.button("🏛️   Minha Empresa"):   trocar_pagina("home")
