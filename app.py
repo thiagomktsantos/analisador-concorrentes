@@ -1479,54 +1479,79 @@ elif st.session_state.pagina == "redes":
 
     # ── FONTE 3: Scraping via requests + regex (último recurso) ──
     @st.cache_data(ttl=1800, show_spinner=False)
-    def coletar_scraping(handle: str) -> dict:
-        """Extrai seguidores/posts do HTML público do Instagram."""
-        handle = handle.lstrip("@").strip()
+    def coletar_graph_api(handle: str, is_minha: bool) -> dict:
+        handle_limpo = handle.lstrip("@").strip()
+        if not handle_limpo:
+            return {"erro": "Handle vazio"}
         try:
+            rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
+            if not rapidapi_key:
+                return {"erro": "RAPIDAPI_KEY não configurada nos secrets"}
+
             headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/124.0 Safari/537.36"
-                ),
-                "Accept-Language": "pt-BR,pt;q=0.9",
+                "x-rapidapi-key": rapidapi_key,
+                "x-rapidapi-host": "instagram-looter2.p.rapidapi.com"
             }
-            resp = requests.get(
-                f"https://www.instagram.com/{handle}/",
-                headers=headers, timeout=15
+
+            url_profile = f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}"
+            r = requests.get(url_profile, headers=headers, timeout=15)
+            data = r.json()
+
+            # Tenta diferentes estruturas de resposta da API
+            user_data = data
+            if "data" in data:
+                user_data = data["data"]
+            if "user" in data:
+                user_data = data["user"]
+
+            seg         = user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count", 0)
+            total_posts = user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count", 0)
+            pk          = user_data.get("pk") or user_data.get("id", "")
+
+            posts_data = []
+            if pk:
+                url_posts = f"https://instagram-looter2.p.rapidapi.com/feed?id={pk}&count=9"
+                r_posts = requests.get(url_posts, headers=headers, timeout=15)
+                posts_raw = r_posts.json()
+                items = posts_raw if isinstance(posts_raw, list) else posts_raw.get("items", [])
+                for p in items[:9]:
+                    likes    = p.get("like_count", 0)
+                    comments = p.get("comment_count", 0)
+                    thumb    = ""
+                    if p.get("image_versions2"):
+                        candidates = p["image_versions2"].get("candidates", [])
+                        if candidates:
+                            thumb = candidates[-1].get("url", "")
+                    caption = ""
+                    if p.get("caption"):
+                        caption = (p["caption"].get("text", "") or "")[:80]
+                    posts_data.append({
+                        "likes": likes, "comments": comments,
+                        "thumb": thumb, "caption": caption,
+                        "date": "", "is_video": p.get("media_type", 1) == 2,
+                    })
+
+            eng_medio = (
+                sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
+                if posts_data else 0
             )
-            html = resp.text
-
-            # Tenta extrair do JSON embutido
-            seg, posts_total = 0, 0
-            m_seg = re.search(r'"edge_followed_by":\{"count":(\d+)\}', html)
-            m_posts = re.search(r'"edge_owner_to_timeline_media":\{"count":(\d+)', html)
-            if m_seg:   seg = int(m_seg.group(1))
-            if m_posts: posts_total = int(m_posts.group(1))
-
-            if seg == 0:
-                # Tenta padrão alternativo
-                m2 = re.search(r'("followers_count"|"followedBy").*?(\d{3,})', html)
-                if m2: seg = int(m2.group(2))
-
-            if seg == 0:
-                return {"erro": "Instagram bloqueou o acesso. Use a Graph API (ver instruções abaixo)."}
+            eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
 
             return {
-                "handle": "@" + handle,
-                "nome_exibido": handle,
-                "seguidores": seg,
-                "seguindo": 0,
-                "total_posts": posts_total,
-                "bio": "",
-                "is_verified": False,
-                "pic_url": "",
-                "eng_medio": 0,
-                "eng_pct": 0.0,
-                "posts": [],
-                "fonte": "scraping",
-                "erro": None,
-                "aviso": "Dados parciais (scraping HTML). Posts e engajamento indisponíveis.",
+                "handle":       "@" + handle_limpo,
+                "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
+                "seguidores":   seg,
+                "seguindo":     user_data.get("following_count") or user_data.get("edge_follow", {}).get("count", 0),
+                "total_posts":  total_posts,
+                "bio":          (user_data.get("biography") or "")[:120],
+                "is_verified":  user_data.get("is_verified", False),
+                "pic_url":      user_data.get("profile_pic_url", ""),
+                "eng_medio":    round(eng_medio, 1),
+                "eng_pct":      eng_pct,
+                "posts":        posts_data,
+                "fonte":        "graph_api",
+                "erro":         None,
+                "_raw_keys":    list(user_data.keys()),
             }
         except Exception as e:
             return {"erro": str(e)}
@@ -1607,6 +1632,11 @@ elif st.session_state.pagina == "redes":
     if erros:
         for err in erros:
             st.warning(f"⚠️ {err}")
+
+    # DEBUG TEMPORÁRIO — remover depois
+    for r in resultados.values():
+        if r.get("_raw_keys"):
+            st.write(f"🔍 Campos da API para {r.get('handle','?')}:", r["_raw_keys"])
 
     ok = [r for r in resultados.values() if not r.get("erro")]
     if not ok:
