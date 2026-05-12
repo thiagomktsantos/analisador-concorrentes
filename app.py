@@ -431,23 +431,52 @@ section.main { background: #f0f4f8 !important; }
 .page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; font-family: 'Animo', 'DM Sans', sans-serif; }
 .page-subtitle { font-size: 14px; color: #6b7280; margin-top: 3px; }
 
+/* ── BOTÕES PADRÃO (secundário) ── */
 section.main div.stButton > button {
-    border-radius: 7px !important; font-size: 14px !important; font-weight: 500 !important;
-    border: 1px solid #d1d5db !important; background: #ffffff !important;
-    color: #374151 !important; box-shadow: none !important;
-    padding: 8px 16px !important; transition: all 0.12s ease !important;
-    font-family: 'DM Sans', sans-serif !important; min-height: 38px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border: 1px solid #d1d5db !important;
+    background: #ffffff !important;
+    color: #374151 !important;
+    box-shadow: none !important;
+    padding: 8px 16px !important;
+    min-height: 40px !important;
+    transition: all 0.12s ease !important;
+    font-family: 'DM Sans', sans-serif !important;
 }
 section.main div.stButton > button:hover {
-    background: #f9fafb !important; border-color: #9ca3af !important; color: #111827 !important;
+    background: #f9fafb !important;
+    border-color: #9ca3af !important;
+    color: #111827 !important;
 }
-section.main div.stButton > button[kind="primary"],
-section.main div.stFormSubmitButton > button,
-section.main div.stFormSubmitButton > button[kind="primary"] {
-    background: #111827 !important; color: #ffffff !important; border: none !important;
+
+/* ── BOTÃO PRIMARY (Adicionar, Editar Empresa, Salvar Empresa) ── */
+section.main div.stButton > button[kind="primary"] {
+    background: #111827 !important;
+    color: #ffffff !important;
+    border: none !important;
 }
-section.main div.stButton > button[kind="primary"]:hover,
-section.main div.stFormSubmitButton > button:hover { background: #1f2937 !important; }
+section.main div.stButton > button[kind="primary"]:hover {
+    background: #1f2937 !important;
+    color: #ffffff !important;
+}
+
+/* ── BOTÕES DE FORMULÁRIO (Salvar nos forms) ── */
+section.main div.stFormSubmitButton > button {
+    background: #111827 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    min-height: 40px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    transition: all 0.12s ease !important;
+}
+section.main div.stFormSubmitButton > button:hover {
+    background: #1f2937 !important;
+}
 
 .form-section-header {
     font-size: 13px; font-weight: 600; color: #6b7280;
@@ -524,7 +553,7 @@ section.main div[data-testid="stTextArea"] textarea {
     color: #111827 !important; resize: vertical !important;
 }
 
-/* Tabs */
+/* ── Tabs ── */
 div[data-testid="stTabs"] > div:first-child {
     justify-content: center !important; border-bottom: 2px solid #e5e7eb !important; gap: 0 !important;
 }
@@ -538,16 +567,6 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
     color: #111827 !important; border-bottom: 2px solid #111827 !important;
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
-
-/* ── Botão Adicionar da página Concorrentes ── */
-section.main div.stButton > button[kind="primary"] {
-    background: #ef4444 !important;
-    color: #ffffff !important;
-    border: none !important;
-}
-section.main div.stButton > button[kind="primary"]:hover {
-    background: #dc2626 !important;
-}
 
 /* ── Logo do sidebar ── */
 .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
@@ -573,41 +592,6 @@ section.main div.stButton > button[kind="primary"]:hover {
     overflow: hidden !important;
     line-height: 0 !important;
     display: none !important;
-}
-
-/* ── Botão Sair visível ── */
-[data-testid="stSidebar"] div[data-testid="element-container"]:last-child {
-    display: block !important;
-    height: auto !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-[data-testid="stSidebar"] div[data-testid="element-container"]:last-child div.stButton > button {
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    width: calc(100% - 36px) !important;
-    height: auto !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    visibility: visible !important;
-    display: block !important;
-    background: transparent !important;
-    color: #6b7280 !important;
-    border: 1px solid #1e2530 !important;
-    border-radius: 7px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    padding: 8px 16px !important;
-    margin: 8px 18px !important;
-    transition: all 0.15s ease !important;
-}
-[data-testid="stSidebar"] div[data-testid="element-container"]:last-child div.stButton > button:hover {
-    background: #1e2530 !important;
-    color: #e5e7eb !important;
-    border-color: #3a9fd6 !important;
 }
 </style>
 """, unsafe_allow_html=True)
