@@ -1343,45 +1343,51 @@ elif st.session_state.pagina == "redes":
         if not handle_limpo:
             return {"erro": "Handle vazio"}
         try:
+            rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
+            if not rapidapi_key:
+                return {"erro": "RAPIDAPI_KEY não configurada nos secrets"}
+
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-                "Accept-Language": "pt-BR,pt;q=0.9",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "x-rapidapi-key": rapidapi_key,
+                "x-rapidapi-host": "instagram-looter2.p.rapidapi.com"
             }
 
-            # Endpoint público do Instagram
-            url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={handle_limpo}"
-            headers["X-IG-App-ID"] = "936619743392459"
+            # Busca informações do perfil
+            url_profile = f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}"
+            r = requests.get(url_profile, headers=headers, timeout=15)
+            data = r.json()
 
-            resp = requests.get(url, headers=headers, timeout=15)
-            data = resp.json()
+            if not data or "error" in str(data).lower() and "username" not in data:
+                return {"erro": f"Perfil @{handle_limpo} não encontrado."}
 
-            user = data.get("data", {}).get("user", {})
-            if not user:
-                return {"erro": f"Perfil @{handle_limpo} não encontrado ou bloqueado."}
+            seg = data.get("follower_count", 0)
+            total_posts = data.get("media_count", 0)
 
-            seg = user.get("edge_followed_by", {}).get("count", 0)
-            total_posts = user.get("edge_owner_to_timeline_media", {}).get("count", 0)
+            # Busca posts recentes
+            url_posts = f"https://instagram-looter2.p.rapidapi.com/feed?id={data.get('pk', '')}&count=9"
+            r_posts = requests.get(url_posts, headers=headers, timeout=15)
+            posts_raw = r_posts.json()
 
-            # Últimos posts
-            posts_raw = user.get("edge_owner_to_timeline_media", {}).get("edges", [])
             posts_data = []
-            for p in posts_raw[:9]:
-                node = p.get("node", {})
-                likes = node.get("edge_liked_by", {}).get("count", 0)
-                comments = node.get("edge_media_to_comment", {}).get("count", 0)
-                thumb = node.get("thumbnail_src") or node.get("display_url", "")
+            items = posts_raw if isinstance(posts_raw, list) else posts_raw.get("items", [])
+            for p in items[:9]:
+                likes = p.get("like_count", 0)
+                comments = p.get("comment_count", 0)
+                thumb = ""
+                if p.get("image_versions2"):
+                    candidates = p["image_versions2"].get("candidates", [])
+                    if candidates:
+                        thumb = candidates[-1].get("url", "")
                 caption = ""
-                edges_caption = node.get("edge_media_to_caption", {}).get("edges", [])
-                if edges_caption:
-                    caption = edges_caption[0].get("node", {}).get("text", "")[:80]
+                if p.get("caption"):
+                    caption = (p["caption"].get("text", "") or "")[:80]
                 posts_data.append({
                     "likes": likes,
                     "comments": comments,
                     "thumb": thumb,
                     "caption": caption,
                     "date": "",
-                    "is_video": node.get("is_video", False),
+                    "is_video": p.get("media_type", 1) == 2,
                 })
 
             eng_medio = (
@@ -1392,13 +1398,13 @@ elif st.session_state.pagina == "redes":
 
             return {
                 "handle":       "@" + handle_limpo,
-                "nome_exibido": user.get("full_name", handle_limpo),
+                "nome_exibido": data.get("full_name", handle_limpo),
                 "seguidores":   seg,
-                "seguindo":     user.get("edge_follow", {}).get("count", 0),
+                "seguindo":     data.get("following_count", 0),
                 "total_posts":  total_posts,
-                "bio":          (user.get("biography") or "")[:120],
-                "is_verified":  user.get("is_verified", False),
-                "pic_url":      user.get("profile_pic_url", ""),
+                "bio":          (data.get("biography") or "")[:120],
+                "is_verified":  data.get("is_verified", False),
+                "pic_url":      data.get("profile_pic_url", ""),
                 "eng_medio":    round(eng_medio, 1),
                 "eng_pct":      eng_pct,
                 "posts":        posts_data,
