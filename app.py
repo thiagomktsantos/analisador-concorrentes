@@ -1366,9 +1366,9 @@ elif st.session_state.pagina == "redes":
             posts_data = []
             if pk:
                 for endpoint in [
-                    f"https://instagram-looter2.p.rapidapi.com/feed?id={pk}&count=12",
-                    f"https://instagram-looter2.p.rapidapi.com/posts?id={pk}&count=12",
-                    f"https://instagram-looter2.p.rapidapi.com/medias?id={pk}&count=12",
+                    f"https://instagram-looter2.p.rapidapi.com/user-feeds?id={pk}&count=12&allow_restricted_media=false",
+                    f"https://instagram-looter2.p.rapidapi.com/user-medias?id={pk}&count=12",
+                    f"https://instagram-looter2.p.rapidapi.com/media-list?id={pk}&count=12",
                 ]:
                     try:
                         rp = requests.get(endpoint, headers=headers, timeout=15)
