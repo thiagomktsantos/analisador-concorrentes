@@ -687,7 +687,7 @@ if not st.session_state.logado:
         st.markdown(f"""
         <div style="text-align:center;margin-bottom:24px">
             {'<img src="' + logo_src + '" style="width:200px;" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">Marketylics</div>'}
-            <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
+            <div style="font-size:10.6px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
         </div>
         <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
         """, unsafe_allow_html=True)
@@ -767,7 +767,7 @@ with st.sidebar:
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
     .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; }
     .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
-    .sb-logo-sub { font-size: 13px; color: #007dbb; font-family: DM Sans, sans-serif; font-weight: 500; }
+    .sb-logo-sub { font-size: 10px; color:#3a9fd6; font-family: DM Sans, sans-serif; font-weight:600;letter-spacing:2px;text-transform:uppercase }
     .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
     .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
