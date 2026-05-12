@@ -1164,15 +1164,15 @@ def cabecalho_analise(titulo, subtitulo=""):
 # ---------------------------------------------------
 
 if st.session_state.pagina == "home":
- 
+
     emp = st.session_state.dados["minha_empresa"]
     tem_dados = empresa_tem_dados(emp)
- 
+
     # ----------------------------------------------------------
     # MODO EDIÇÃO / CADASTRO
     # ----------------------------------------------------------
     if not tem_dados or st.session_state.editar_empresa:
- 
+
         st.markdown("""
         <style>
         [data-testid="stMain"] div.stButton > button[kind="primary"],
@@ -1187,18 +1187,19 @@ if st.session_state.pagina == "home":
             background: #2e8bbf !important;
             background-color: #2e8bbf !important;
         }
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(div.empresa-form-inner) {
+
+        /* Form sem fundo branco — seletores agressivos */
+        section.main [data-testid="stVerticalBlockBorderWrapper"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div {
             background: transparent !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 14px !important;
+            background-color: transparent !important;
             box-shadow: none !important;
-            padding: 8px 16px !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
- 
-        # Cabeçalho
+
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1212,7 +1213,7 @@ if st.session_state.pagina == "home":
                 "Gerencie as informações e tenha uma visão geral da sua empresa.</p>",
                 unsafe_allow_html=True,
             )
- 
+
         SUBNICHOS = {
             "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
             "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
@@ -1221,7 +1222,7 @@ if st.session_state.pagina == "home":
             "Educação": ["Escola", "Curso Online", "Coaching", "Consultoria", "Idiomas", "Pré-vestibular", "Creche", "Faculdade"],
             "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
         }
- 
+
         def sec_header(label):
             st.markdown(
                 f"<div style='font-size:12px;font-weight:600;color:#6b7280;"
@@ -1230,15 +1231,15 @@ if st.session_state.pagina == "home":
                 f"margin:0;font-family:DM Sans,sans-serif'>{label}</div>",
                 unsafe_allow_html=True,
             )
- 
+
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
- 
+
         with st.container(border=True):
             st.markdown("<div class='empresa-form-inner' style='display:none'></div>", unsafe_allow_html=True)
- 
+
             col_left, col_right = st.columns(2)
- 
+
             with col_left:
                 sec_header("Informações Gerais")
                 emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
@@ -1249,7 +1250,7 @@ if st.session_state.pagina == "home":
                 subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
                 tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
                 emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
- 
+
             with col_right:
                 sec_header("Serviços")
                 servicos_text = st.text_area(
@@ -1260,7 +1261,7 @@ if st.session_state.pagina == "home":
                     placeholder="Ex:\nTráfego Pago\nSEO\nSocial Media",
                 )
                 emp["servicos"] = [s.strip() for s in servicos_text.splitlines() if s.strip()]
- 
+
             divider()
             sec_header("Presença Digital")
             col_ig, col_fb, col_site = st.columns(3)
@@ -1268,7 +1269,7 @@ if st.session_state.pagina == "home":
             emp["fb_page"]   = col_fb.text_input("Facebook", emp["fb_page"])
             site_digitado    = col_site.text_input("Site", emp["site"])
             emp["site"]      = limpar_site(site_digitado)
- 
+
             divider()
             sec_header("Localização")
             loc1, loc2 = st.columns(2)
@@ -1278,11 +1279,11 @@ if st.session_state.pagina == "home":
             cidades       = ESTADOS_CIDADES.get(emp["estado"], [])
             cidade_index  = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
             emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
- 
+
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
         col_salvar, col_cancelar, _ = st.columns([2, 2, 4])
         with col_salvar:
-            if st.button("__salvar__", use_container_width=True, type="primary", key="btn_salvar_empresa"):
+            if st.button("💾  Salvar Empresa", use_container_width=True, type="primary", key="btn_salvar_empresa"):
                 if emp["nome"].strip():
                     st.session_state.editar_empresa = False
                     salvar_dados_usuario(st.session_state.user.id)
@@ -1295,31 +1296,12 @@ if st.session_state.pagina == "home":
                 if st.button("Cancelar", use_container_width=True):
                     st.session_state.editar_empresa = False
                     st.rerun()
- 
-        st.markdown("""
-        <script>
-        (function() {
-            function injectIcons() {
-                const btns = window.parent.document.querySelectorAll(
-                    'section.main div.stButton > button[kind="primary"]'
-                );
-                btns.forEach(btn => {
-                    if (btn.innerText.trim() === '__salvar__') {
-                        btn.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right:8px"></i>Salvar Empresa';
-                    }
-                });
-            }
-            setTimeout(injectIcons, 100);
-            setTimeout(injectIcons, 600);
-        })();
-        </script>
-        """, unsafe_allow_html=True)
- 
+
     # ----------------------------------------------------------
     # MODO VISUALIZAÇÃO
     # ----------------------------------------------------------
     else:
- 
+
         st.markdown("""
         <style>
         [data-testid="stMain"] div.stButton > button[kind="primary"],
@@ -1337,8 +1319,7 @@ if st.session_state.pagina == "home":
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
- 
-        # Cabeçalho
+
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1354,34 +1335,15 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            if st.button("__editar__", use_container_width=True, type="primary", key="btn_editar_empresa"):
+            if st.button("✏️  Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa"):
                 st.session_state.editar_empresa = True
                 st.rerun()
- 
-        st.markdown("""
-        <script>
-        (function() {
-            function injectIcons() {
-                const btns = window.parent.document.querySelectorAll(
-                    'section.main div.stButton > button[kind="primary"]'
-                );
-                btns.forEach(btn => {
-                    if (btn.innerText.trim() === '__editar__') {
-                        btn.innerHTML = '<i class="fa-solid fa-pen" style="margin-right:8px"></i>Editar Empresa';
-                    }
-                });
-            }
-            setTimeout(injectIcons, 100);
-            setTimeout(injectIcons, 600);
-        })();
-        </script>
-        """, unsafe_allow_html=True)
- 
+
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
             unsafe_allow_html=True,
         )
- 
+
         # ── Dados do card
         avatar = gerar_avatar(emp["nome"])
         loc = emp["cidade"] or ""
@@ -1389,7 +1351,7 @@ if st.session_state.pagina == "home":
             loc += (", " if loc else "") + emp["estado"]
         servicos_col_html = (
             "".join([f"<div class='tag'>{s}</div>" for s in emp["servicos"]])
-            if emp["servicos"] else "<span class='val' style='color:#9ca3af'>—</span>"
+            if emp["servicos"] else "<span style='color:#9ca3af;font-size:14px'>—</span>"
         )
 
         card_html = f"""<!DOCTYPE html>
@@ -1399,44 +1361,121 @@ if st.session_state.pagina == "home":
 <style>
 {CARD_CSS}
 body {{ padding-bottom: 2px; }}
-.card {{ background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;margin-bottom:2px; }}
-.card-hero {{ position:relative;height:72px;background:linear-gradient(135deg,#e8f0fe 0%,#dbeafe 60%,#ede9fe 100%);overflow:hidden; }}
-.card-hero svg {{ position:absolute;bottom:0;right:0;width:320px;height:72px;opacity:0.65; }}
-.card-body {{ padding:0 32px 28px 32px; }}
-.top {{ display:flex;align-items:center;gap:18px;margin-top:-24px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #f3f4f6; }}
-.avatar {{ width:56px;height:56px;min-width:56px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff;flex-shrink:0;border:3px solid #fff; }}
-.nome {{ font-size:22px;font-weight:600;color:#111827;margin-bottom:3px;letter-spacing:-0.4px; }}
-.sub {{ font-size:14px;color:#9ca3af; }}
-.grid {{ display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 36px; }}
-.sec-title {{ font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f3f4f6; }}
-.row {{ display:flex;align-items:flex-start;gap:12px;margin-bottom:14px; }}
-.ico {{ width:38px;height:38px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;background-color:#f3f4f6;border-radius:10px;}}
-.ico svg {{ width:20px;height:20px; }}
-.lbl {{ font-size:12px;color:#9ca3af;display:block; }}
-.val {{ font-size:15px;color:#111827;font-weight:500; }}
-.tags-wrap {{ display:flex;flex-wrap:wrap;gap:8px; }}
-.tag {{ background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:5px 13px;border-radius:20px;font-size:13px;font-weight:500;display:inline-block; }}
+
+.card {{
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 2px;
+}}
+
+/* ── Hero com fundo leve e SVG decorativo ── */
+.card-hero {{
+    position: relative;
+    height: 64px;
+    background: linear-gradient(135deg, #eef4ff 0%, #e8f0fe 60%, #ede9fe 100%);
+    overflow: hidden;
+    flex-shrink: 0;
+}}
+.card-hero svg {{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 320px;
+    height: 64px;
+    opacity: 0.6;
+}}
+
+.card-body {{ padding: 0 28px 24px 28px; }}
+
+/* ── Avatar sobe para sobrepor o hero ── */
+.top {{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: -22px;
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #f3f4f6;
+}}
+.avatar {{
+    width: 52px; height: 52px; min-width: 52px;
+    border-radius: 50%;
+    background: #111827;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+    border: 3px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}}
+.nome {{ font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 2px; letter-spacing: -0.3px; }}
+.sub  {{ font-size: 13px; color: #9ca3af; }}
+
+/* ── Grid 3 colunas com divisórias ── */
+.grid {{
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr 1px 1fr;
+    gap: 0;
+}}
+.divider-col {{
+    background: #f3f4f6;
+    margin: 0 28px;
+    align-self: stretch;
+}}
+.col {{ padding: 0 4px; }}
+
+.sec-title {{
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: #9ca3af;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3f4f6;
+}}
+.row {{
+    display: flex; align-items: flex-start;
+    gap: 10px; margin-bottom: 12px;
+}}
+.ico {{
+    width: 36px; height: 36px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #f3f4f6; border-radius: 9px;
+}}
+.ico svg {{ width: 18px; height: 18px; }}
+.lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 1px; }}
+.val {{ font-size: 14px; color: #111827; font-weight: 600; }}
+.tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+.tag {{
+    background: #eff6ff; color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+}}
 </style>
 </head>
 <body>
 <div class="card">
 
+  <!-- Hero com gráfico decorativo -->
   <div class="card-hero">
-    <svg viewBox="0 0 700 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMax meet">
-      <path d="M 80 85 C 200 58 320 72 440 46 C 510 32 580 28 700 15" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
-      <circle cx="440" cy="46" r="4" fill="#60a5fa"/>
-      <circle cx="580" cy="28" r="4" fill="#60a5fa"/>
-      <circle cx="668" cy="17" r="5" fill="#3b82f6"/>
-      <rect x="558" y="54" width="14" height="36" rx="3" fill="#93c5fd" opacity="0.55"/>
-      <rect x="578" y="42" width="14" height="48" rx="3" fill="#60a5fa" opacity="0.65"/>
-      <rect x="598" y="30" width="14" height="60" rx="3" fill="#3b82f6" opacity="0.72"/>
-      <rect x="618" y="19" width="14" height="71" rx="3" fill="#2563eb" opacity="0.78"/>
-      <path d="M 180 96 Q 400 86 600 93 Q 650 95 700 91" stroke="#c7d2fe" stroke-width="1" fill="none" opacity="0.5"/>
-      <path d="M 0 98 Q 300 90 500 96 Q 600 98 700 95" stroke="#ddd6fe" stroke-width="0.8" fill="none" opacity="0.4"/>
+    <svg viewBox="0 0 700 90" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMax meet">
+      <path d="M 60 78 C 180 52 310 68 430 42 C 505 28 575 24 700 12"
+            stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+      <circle cx="430" cy="42" r="3.5" fill="#60a5fa"/>
+      <circle cx="575" cy="24" r="3.5" fill="#60a5fa"/>
+      <circle cx="665" cy="13" r="4.5" fill="#3b82f6"/>
+      <rect x="555" y="50" width="13" height="32" rx="3" fill="#93c5fd" opacity="0.5"/>
+      <rect x="574" y="40" width="13" height="42" rx="3" fill="#60a5fa" opacity="0.6"/>
+      <rect x="593" y="28" width="13" height="54" rx="3" fill="#3b82f6" opacity="0.68"/>
+      <rect x="612" y="18" width="13" height="64" rx="3" fill="#2563eb" opacity="0.75"/>
+      <path d="M 160 88 Q 400 78 600 85 Q 650 87 700 83"
+            stroke="#c7d2fe" stroke-width="0.9" fill="none" opacity="0.5"/>
     </svg>
   </div>
 
   <div class="card-body">
+    <!-- Identidade -->
     <div class="top">
       <div class="avatar">{avatar}</div>
       <div>
@@ -1444,33 +1483,85 @@ body {{ padding-bottom: 2px; }}
         <div class="sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
       </div>
     </div>
+
+    <!-- 3 colunas com divisórias verticais -->
     <div class="grid">
-      <div>
+
+      <!-- Presença Digital -->
+      <div class="col">
         <div class="sec-title">Presença Digital</div>
         <div class="row">
-          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span>
-          <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '—'}</span></div>
+          <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f09433"/>
+                <stop offset="100%" stop-color="#bc1888"/>
+              </linearGradient></defs>
+              <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/>
+              <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+              <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+            </svg>
+          </span>
+          <div>
+            <span class="lbl">Instagram</span>
+            <span class="val">{emp['instagram'] or '—'}</span>
+          </div>
         </div>
         <div class="row">
-          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></span>
-          <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '—'}</span></div>
+          <span class="ico">
+            <svg viewBox="0 0 24 24" fill="#1877F2">
+              <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+            </svg>
+          </span>
+          <div>
+            <span class="lbl">Facebook</span>
+            <span class="val">{emp['fb_page'] or '—'}</span>
+          </div>
         </div>
         <div class="row">
-          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
-          <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
+          <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </span>
+          <div>
+            <span class="lbl">Site</span>
+            <span class="val">{emp['site'] or '—'}</span>
+          </div>
         </div>
       </div>
-      <div>
+
+      <!-- Divisória -->
+      <div class="divider-col"></div>
+
+      <!-- Localização -->
+      <div class="col">
         <div class="sec-title">Localização</div>
         <div class="row">
-          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-          <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
+          <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </span>
+          <div>
+            <span class="lbl">Cidade / Estado</span>
+            <span class="val">{loc or '—'}</span>
+          </div>
         </div>
       </div>
-      <div>
+
+      <!-- Divisória -->
+      <div class="divider-col"></div>
+
+      <!-- Serviços -->
+      <div class="col">
         <div class="sec-title">Serviços</div>
         <div class="tags-wrap">{servicos_col_html}</div>
       </div>
+
     </div>
   </div>
 
@@ -1479,10 +1570,10 @@ body {{ padding-bottom: 2px; }}
 
         n_servicos = len(emp["servicos"])
         linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
-        altura = 320 + (linhas_tags * 44) + 40
+        altura = 310 + (linhas_tags * 44) + 20
         components.html(card_html, height=altura, scrolling=False)
 
-        # ── Bloco "Mantenha" colado abaixo do card
+        # ── Bloco "Mantenha" colado abaixo
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:16px 20px;display:flex;align-items:center;gap:16px;
