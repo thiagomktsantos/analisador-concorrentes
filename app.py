@@ -579,13 +579,13 @@ if not st.session_state.logado:
         background: transparent !important;
     }
 
-    /* Wrapper visual único em volta de tudo */
-    [data-testid="stVerticalBlock"] {
-        background: #ffffff !important;
+    /* Remove borda padrão do container nativo */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {{
         border-radius: 16px !important;
         box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
-        padding: 36px 36px 28px 36px !important;
-    }
+        border: none !important;
+        padding: 36px !important;
+    }}
 
     div[data-testid="stTextInput"] input {
         border: 1.5px solid #e5e7eb !important;
@@ -644,78 +644,79 @@ if not st.session_state.logado:
     """, unsafe_allow_html=True)
 
     # Cabeçalho com logo e título
-    st.markdown(f"""
-    <div style="text-align:center;margin-bottom:24px">
-        {'<img src="' + logo_src + '" style="width:140px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234;margin-bottom:10px">marketylics</div>'}
-        <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px">Competitive Intelligence</div>
-        <div style="font-size:22px;font-weight:700;color:#1a2234;margin-bottom:4px">Bem-vindo de volta</div>
-        <div style="font-size:14px;color:#9ca3af">Acesse sua conta para continuar</div>
-    </div>
-    <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
-    """, unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(f"""
+        <div style="text-align:center;margin-bottom:24px">
+            {'<img src="' + logo_src + '" style="width:140px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">marketylics</div>'}
+            <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px">Competitive Intelligence</div>
+            <div style="font-size:22px;font-weight:700;color:#1a2234;margin-bottom:4px">Bem-vindo de volta</div>
+            <div style="font-size:14px;color:#9ca3af">Acesse sua conta para continuar</div>
+        </div>
+        <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
+        """, unsafe_allow_html=True)
 
-    aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
+        aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
 
-    with aba[0]:
-        with st.form("form_login"):
-            email_login = st.text_input("E-mail", placeholder="seu@email.com")
-            senha_login = st.text_input("Senha", type="password", placeholder="••••••••")
-            submit_login = st.form_submit_button("Entrar na plataforma →", use_container_width=True)
+        with aba[0]:
+            with st.form("form_login"):
+                email_login = st.text_input("E-mail", placeholder="seu@email.com")
+                senha_login = st.text_input("Senha", type="password", placeholder="••••••••")
+                submit_login = st.form_submit_button("Entrar na plataforma →", use_container_width=True)
 
-        if submit_login:
-            if email_login and senha_login:
-                with st.spinner("Autenticando..."):
-                    user, err = login_supabase(email_login, senha_login)
-                if user:
-                    st.session_state.logado = True
-                    st.session_state.user = user
-                    dados_db = carregar_dados_usuario(user.id)
-                    st.session_state.dados = {
-                        "minha_empresa": dados_db["minha_empresa"] or {
-                            "nome": "", "setor": "Marketing", "tipo": "",
-                            "estado": "", "cidade": "",
-                            "instagram": "@", "fb_page": "", "site": "",
-                            "servicos": []
-                        },
-                        "concorrentes": dados_db.get("concorrentes", []),
-                    }
-                    st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
-                    st.rerun()
+            if submit_login:
+                if email_login and senha_login:
+                    with st.spinner("Autenticando..."):
+                        user, err = login_supabase(email_login, senha_login)
+                    if user:
+                        st.session_state.logado = True
+                        st.session_state.user = user
+                        dados_db = carregar_dados_usuario(user.id)
+                        st.session_state.dados = {
+                            "minha_empresa": dados_db["minha_empresa"] or {
+                                "nome": "", "setor": "Marketing", "tipo": "",
+                                "estado": "", "cidade": "",
+                                "instagram": "@", "fb_page": "", "site": "",
+                                "servicos": []
+                            },
+                            "concorrentes": dados_db.get("concorrentes", []),
+                        }
+                        st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
+                        st.rerun()
+                    else:
+                        st.error(f"Erro ao entrar: {err}")
                 else:
-                    st.error(f"Erro ao entrar: {err}")
-            else:
-                st.warning("Preencha e-mail e senha.")
+                    st.warning("Preencha e-mail e senha.")
 
-    with aba[1]:
-        with st.form("form_cadastro"):
-            email_cad  = st.text_input("E-mail", placeholder="seu@email.com", key="cad_email")
-            senha_cad  = st.text_input("Senha", type="password", placeholder="Mínimo 6 caracteres", key="cad_senha")
-            senha_cad2 = st.text_input("Confirmar senha", type="password", placeholder="Repita a senha", key="cad_senha2")
-            submit_cad = st.form_submit_button("Criar conta", use_container_width=True)
+        with aba[1]:
+            with st.form("form_cadastro"):
+                email_cad  = st.text_input("E-mail", placeholder="seu@email.com", key="cad_email")
+                senha_cad  = st.text_input("Senha", type="password", placeholder="Mínimo 6 caracteres", key="cad_senha")
+                senha_cad2 = st.text_input("Confirmar senha", type="password", placeholder="Repita a senha", key="cad_senha2")
+                submit_cad = st.form_submit_button("Criar conta", use_container_width=True)
 
-        if submit_cad:
-            if not email_cad or not senha_cad:
-                st.warning("Preencha todos os campos.")
-            elif senha_cad != senha_cad2:
-                st.error("As senhas não coincidem.")
-            elif len(senha_cad) < 6:
-                st.error("A senha deve ter pelo menos 6 caracteres.")
-            else:
-                with st.spinner("Criando conta..."):
-                    user, err = cadastro_supabase(email_cad, senha_cad)
-                if user:
-                    st.success("Conta criada! Verifique seu e-mail para confirmar, depois faça login.")
+            if submit_cad:
+                if not email_cad or not senha_cad:
+                    st.warning("Preencha todos os campos.")
+                elif senha_cad != senha_cad2:
+                    st.error("As senhas não coincidem.")
+                elif len(senha_cad) < 6:
+                    st.error("A senha deve ter pelo menos 6 caracteres.")
                 else:
-                    st.error(f"Erro: {err}")
+                    with st.spinner("Criando conta..."):
+                        user, err = cadastro_supabase(email_cad, senha_cad)
+                    if user:
+                        st.success("Conta criada! Verifique seu e-mail para confirmar, depois faça login.")
+                    else:
+                        st.error(f"Erro: {err}")
 
-    st.markdown("""
-    <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
-        🔒 Conexão segura com criptografia SSL<br><br>
-        Ao entrar, você concorda com os
-        <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> e
-        <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
+            🔒 Conexão segura com criptografia SSL<br><br>
+            Ao entrar, você concorda com os
+            <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> e
+            <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.stop()
 
