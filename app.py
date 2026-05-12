@@ -632,14 +632,16 @@ if not st.session_state.logado:
         margin-bottom: 8px !important;
     }
     div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 14px !important;
+        font-size: 18px !important;
         font-weight: 600 !important;
-        padding: 8px 28px !important;
+        padding: 8px 0 !important;
         color: #9ca3af !important;
         border-bottom: 2px solid transparent !important;
         margin-bottom: -2px !important;
         background: transparent !important;
         box-shadow: none !important;
+        flex: 1 !important;
+        text-align: center !important;
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
         color: #3a9fd6 !important;
