@@ -1493,7 +1493,7 @@ elif st.session_state.pagina == "redes":
                             <span style='background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>✔ RapidAPI</span>
                         </div>
                     </div>
-                    {f'<div style="font-size:13px;color:#6b7280;font-style:italic;max-width:360px">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else ''}
+                    {f'<div style="flex:1;font-size:13px;color:#6b7280;font-style:italic;max-width:360px">&ldquo;{bio_txt.replace("<","&lt;").replace(">","&gt;")}&rdquo;</div>' if bio_txt else ''}
                 </div>
                 <div style='display:flex;gap:0;'>
                     <div style='flex:1;text-align:center;padding:8px 0'>
@@ -1520,38 +1520,109 @@ elif st.session_state.pagina == "redes":
             </div>
             """, unsafe_allow_html=True)
 
-            # ── Últimas postagens
+            # ── Últimas postagens + Análise IA
             posts_list = r.get("posts", [])
-            st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🖼️ Últimas Postagens</div>", unsafe_allow_html=True)
+            col_posts, col_ia = st.columns([3, 2])
 
-            if not posts_list:
-                st.markdown("<div style='padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px;font-size:14px;color:#9ca3af'>Posts não disponíveis para este perfil.</div>", unsafe_allow_html=True)
-            else:
-                cols_posts = st.columns(min(len(posts_list), 6))
-                for pidx, post in enumerate(posts_list[:6]):
-                    with cols_posts[pidx]:
-                        icon      = "🎥" if post.get("is_video") else "🖼️"
-                        likes_fmt = fmt_num(post.get("likes", 0))
-                        coms_fmt  = fmt_num(post.get("comments", 0))
-                        thumb_url = post.get("thumb", "")
-                        if thumb_url:
-                            st.markdown(f"""
-                            <div style='text-align:center;margin-bottom:4px'>
-                                <img src="{thumb_url}"
-                                     style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:4px'
-                                     onerror="this.style.display='none'" />
-                                <div style='font-size:11px;color:#374151;font-weight:600'>{icon} ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
-                                <div style='font-size:10px;color:#9ca3af'>{post.get("date","")}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                            <div style='text-align:center;margin-bottom:4px'>
-                                <div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:4px'>{icon}</div>
-                                <div style='font-size:11px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
-                                <div style='font-size:10px;color:#9ca3af'>{post.get("date","")}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+            with col_posts:
+                st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🖼️ Últimas Postagens</div>", unsafe_allow_html=True)
+                if not posts_list:
+                    st.markdown("<div style='padding:14px 18px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px;font-size:14px;color:#9ca3af'>Posts não disponíveis para este perfil.</div>", unsafe_allow_html=True)
+                else:
+                    cols_posts = st.columns(3)
+                    for pidx, post in enumerate(posts_list[:6]):
+                        with cols_posts[pidx % 3]:
+                            icon      = "🎥" if post.get("is_video") else "🖼️"
+                            likes_fmt = fmt_num(post.get("likes", 0))
+                            coms_fmt  = fmt_num(post.get("comments", 0))
+                            thumb_url = post.get("thumb", "")
+                            if thumb_url:
+                                st.markdown(f"""
+                                <div style='text-align:center;margin-bottom:8px'>
+                                    <img src="{thumb_url}"
+                                         style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:4px'
+                                         onerror="this.style.display='none'" />
+                                    <div style='font-size:11px;color:#374151;font-weight:600'>{icon} ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                                    <div style='font-size:10px;color:#9ca3af'>{post.get("date","")}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"""
+                                <div style='text-align:center;margin-bottom:8px'>
+                                    <div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:4px'>{icon}</div>
+                                    <div style='font-size:11px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                                    <div style='font-size:10px;color:#9ca3af'>{post.get("date","")}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+
+                    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+                    with st.expander("📋 Ver todos os posts"):
+                        df_posts = pd.DataFrame([{
+                            "Data":           p.get("date", ""),
+                            "Tipo":           "🎥 Vídeo" if p.get("is_video") else "🖼️ Foto",
+                            "❤️ Curtidas":    p.get("likes", 0),
+                            "💬 Comentários": p.get("comments", 0),
+                            "Eng. total":     p.get("likes", 0) + p.get("comments", 0),
+                            "Legenda":        p.get("caption", "")[:60],
+                        } for p in posts_list])
+                        st.dataframe(df_posts, use_container_width=True, hide_index=True)
+
+            with col_ia:
+                st.markdown("<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;margin-bottom:12px'>🤖 Análise de IA</div>", unsafe_allow_html=True)
+                chave_ia = f"ia_analise_{r['handle']}"
+                if chave_ia not in st.session_state:
+                    st.session_state[chave_ia] = ""
+
+                if st.button("✨ Analisar perfil com IA", key=f"btn_ia_{idx}", use_container_width=True):
+                    if gemini_model is None:
+                        st.session_state[chave_ia] = "⚠️ Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        resumo_posts = "\n".join([
+                            f"- {p.get('date','')} | ❤️{p.get('likes',0)} 💬{p.get('comments',0)} | {p.get('caption','')[:60]}"
+                            for p in posts_list[:12]
+                        ]) if posts_list else "Sem posts disponíveis."
+
+                        prompt = f"""
+Analise o perfil do Instagram abaixo e gere um diagnóstico estratégico em português:
+
+**Perfil:** {r.get('handle','')} — {r.get('nome_exibido','')}
+**Bio:** {r.get('bio','')}
+**Seguidores:** {r.get('seguidores',0)}
+**Total de posts:** {r.get('total_posts',0)}
+**Engajamento médio:** {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
+
+**Últimos posts (data | curtidas | comentários | legenda):**
+{resumo_posts}
+
+Gere uma análise com:
+### 💪 Pontos Fortes
+### 🎯 Foco de Conteúdo
+### ⚠️ Pontos de Atenção
+### 💡 Recomendações
+
+Seja direto e objetivo, máximo 3 pontos por seção.
+"""
+                        try:
+                            resp = gemini_model.generate_content(prompt)
+                            st.session_state[chave_ia] = resp.text
+                        except Exception as e:
+                            st.session_state[chave_ia] = f"Erro: {e}"
+
+                if st.session_state[chave_ia]:
+                    st.markdown(f"""
+                    <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+                                padding:16px 18px;font-size:13px;color:#374151;line-height:1.7;
+                                max-height:420px;overflow-y:auto'>
+                        {st.session_state[chave_ia].replace(chr(10), "<br>")}
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown("""
+                    <div style='background:#f9fafb;border:1px dashed #e5e7eb;border-radius:10px;
+                                padding:24px 18px;text-align:center;color:#9ca3af;font-size:13px'>
+                        Clique em <b>Analisar perfil com IA</b> para gerar insights sobre este perfil.
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 # Tabela detalhada
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
