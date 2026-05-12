@@ -561,59 +561,34 @@ def get_logo_base64():
 
 # No bloco if not st.session_state.logado:
 if not st.session_state.logado:
+    logo_b64 = get_logo_base64()
+    logo_src = f"data:image/jpeg;base64,{logo_b64}" if logo_b64 else ""
+
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
 
     header, #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
-    .stApp, .appview-container, section.main, .block-container {
-        padding: 0 !important; margin: 0 !important; max-width: 100% !important;
-    }
-    [data-testid="stAppViewContainer"] {
-        background: #f0f2f5 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-height: 100vh !important;
+
+    [data-testid="stAppViewContainer"] { background: #f0f2f5 !important; }
+
+    section.main .block-container {
+        max-width: 480px !important;
+        padding: 48px 0 48px 0 !important;
+        margin: 0 auto !important;
     }
 
-    .login-card {
-        background: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0 4px 32px rgba(0,0,0,0.10);
-        padding: 48px 48px 36px 48px;
-        width: 100%;
-        max-width: 440px;
-        margin: 40px auto;
+    div[data-testid="stTextInput"] input {
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        background: #fafafa !important;
+        font-size: 15px !important;
     }
-    .login-logo {
-        text-align: center;
-        margin-bottom: 8px;
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #3a9fd6 !important;
+        background: #fff !important;
     }
-    .login-logo img {
-        width: 160px;
-    }
-    .login-title {
-        font-size: 22px;
-        font-weight: 700;
-        color: #1a2234;
-        text-align: center;
-        margin-bottom: 4px;
-    }
-    .login-sub {
-        font-size: 14px;
-        color: #9ca3af;
-        text-align: center;
-        margin-bottom: 28px;
-    }
-    .login-footer {
-        text-align: center;
-        font-size: 11px;
-        color: #c4c9d4;
-        margin-top: 16px;
-    }
-    .login-footer a { color: #3a9fd6; text-decoration: none; }
 
     div.stFormSubmitButton > button {
         background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
@@ -624,27 +599,14 @@ if not st.session_state.logado:
         font-weight: 700 !important;
         padding: 12px !important;
         width: 100% !important;
-        margin-top: 4px !important;
     }
     div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
-
-    div[data-testid="stTextInput"] input {
-        border: 1.5px solid #e5e7eb !important;
-        border-radius: 8px !important;
-        background: #fafafa !important;
-        font-size: 15px !important;
-        padding: 10px 14px !important;
-    }
-    div[data-testid="stTextInput"] input:focus {
-        border-color: #3a9fd6 !important;
-        background: #fff !important;
-    }
 
     div[data-testid="stTabs"] > div:first-child {
         justify-content: center !important;
         border-bottom: 2px solid #e5e7eb !important;
         gap: 0 !important;
-        margin-bottom: 20px !important;
+        margin-bottom: 8px !important;
     }
     div[data-testid="stTabs"] button[role="tab"] {
         font-size: 14px !important;
@@ -661,85 +623,93 @@ if not st.session_state.logado:
     </style>
     """, unsafe_allow_html=True)
 
-    logo_b64 = get_logo_base64()
-    logo_src = f"data:image/jpeg;base64,{logo_b64}" if logo_b64 else ""
-
+    # Card do topo com logo e título
     st.markdown(f"""
-    <div class="login-card">
-        <div class="login-logo">
-            {'<img src="' + logo_src + '" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">marketylics</div>'}
-        </div>
-        <div style="text-align:center;font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px">Competitive Intelligence</div>
-        <div class="login-title">Bem-vindo de volta</div>
-        <div class="login-sub">Acesse sua conta para continuar</div>
+    <div style="
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        padding: 36px 40px 28px 40px;
+        text-align: center;
+        margin-bottom: 16px;
+    ">
+        {'<img src="' + logo_src + '" style="width:150px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234;margin-bottom:10px">marketylics</div>'}
+        <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:18px">Competitive Intelligence</div>
+        <div style="font-size:22px;font-weight:700;color:#1a2234;margin-bottom:4px">Bem-vindo de volta</div>
+        <div style="font-size:14px;color:#9ca3af">Acesse sua conta para continuar</div>
     </div>
     """, unsafe_allow_html=True)
 
-    with st.container():
-        st.markdown("<div style='max-width:440px;margin:0 auto;padding:0 16px'>", unsafe_allow_html=True)
+    # Card do formulário
+    st.markdown("""
+    <div style="
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        padding: 28px 40px 24px 40px;
+    ">
+    """, unsafe_allow_html=True)
 
-        aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
+    aba = st.tabs(["🔑 Entrar", "📝 Criar conta"])
 
-        with aba[0]:
-            with st.form("form_login"):
-                email_login = st.text_input("E-mail", placeholder="seu@email.com")
-                senha_login = st.text_input("Senha", type="password", placeholder="••••••••")
-                submit_login = st.form_submit_button("Entrar na plataforma →", use_container_width=True)
+    with aba[0]:
+        with st.form("form_login"):
+            email_login = st.text_input("E-mail", placeholder="seu@email.com")
+            senha_login = st.text_input("Senha", type="password", placeholder="••••••••")
+            submit_login = st.form_submit_button("Entrar na plataforma →", use_container_width=True)
 
-            if submit_login:
-                if email_login and senha_login:
-                    with st.spinner("Autenticando..."):
-                        user, err = login_supabase(email_login, senha_login)
-                    if user:
-                        st.session_state.logado = True
-                        st.session_state.user = user
-                        dados_db = carregar_dados_usuario(user.id)
-                        st.session_state.dados = {
-                            "minha_empresa": dados_db["minha_empresa"] or {
-                                "nome": "", "setor": "Marketing", "tipo": "",
-                                "estado": "", "cidade": "",
-                                "instagram": "@", "fb_page": "", "site": "",
-                                "servicos": []
-                            },
-                            "concorrentes": dados_db.get("concorrentes", []),
-                        }
-                        st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
-                        st.rerun()
-                    else:
-                        st.error(f"Erro ao entrar: {err}")
+        if submit_login:
+            if email_login and senha_login:
+                with st.spinner("Autenticando..."):
+                    user, err = login_supabase(email_login, senha_login)
+                if user:
+                    st.session_state.logado = True
+                    st.session_state.user = user
+                    dados_db = carregar_dados_usuario(user.id)
+                    st.session_state.dados = {
+                        "minha_empresa": dados_db["minha_empresa"] or {
+                            "nome": "", "setor": "Marketing", "tipo": "",
+                            "estado": "", "cidade": "",
+                            "instagram": "@", "fb_page": "", "site": "",
+                            "servicos": []
+                        },
+                        "concorrentes": dados_db.get("concorrentes", []),
+                    }
+                    st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
+                    st.rerun()
                 else:
-                    st.warning("Preencha e-mail e senha.")
+                    st.error(f"Erro ao entrar: {err}")
+            else:
+                st.warning("Preencha e-mail e senha.")
 
-        with aba[1]:
-            with st.form("form_cadastro"):
-                email_cad  = st.text_input("E-mail", placeholder="seu@email.com", key="cad_email")
-                senha_cad  = st.text_input("Senha", type="password", placeholder="Mínimo 6 caracteres", key="cad_senha")
-                senha_cad2 = st.text_input("Confirmar senha", type="password", placeholder="Repita a senha", key="cad_senha2")
-                submit_cad = st.form_submit_button("Criar conta", use_container_width=True)
+    with aba[1]:
+        with st.form("form_cadastro"):
+            email_cad  = st.text_input("E-mail", placeholder="seu@email.com", key="cad_email")
+            senha_cad  = st.text_input("Senha", type="password", placeholder="Mínimo 6 caracteres", key="cad_senha")
+            senha_cad2 = st.text_input("Confirmar senha", type="password", placeholder="Repita a senha", key="cad_senha2")
+            submit_cad = st.form_submit_button("Criar conta", use_container_width=True)
 
-            if submit_cad:
-                if not email_cad or not senha_cad:
-                    st.warning("Preencha todos os campos.")
-                elif senha_cad != senha_cad2:
-                    st.error("As senhas não coincidem.")
-                elif len(senha_cad) < 6:
-                    st.error("A senha deve ter pelo menos 6 caracteres.")
+        if submit_cad:
+            if not email_cad or not senha_cad:
+                st.warning("Preencha todos os campos.")
+            elif senha_cad != senha_cad2:
+                st.error("As senhas não coincidem.")
+            elif len(senha_cad) < 6:
+                st.error("A senha deve ter pelo menos 6 caracteres.")
+            else:
+                with st.spinner("Criando conta..."):
+                    user, err = cadastro_supabase(email_cad, senha_cad)
+                if user:
+                    st.success("Conta criada! Verifique seu e-mail para confirmar, depois faça login.")
                 else:
-                    with st.spinner("Criando conta..."):
-                        user, err = cadastro_supabase(email_cad, senha_cad)
-                    if user:
-                        st.success("Conta criada! Verifique seu e-mail para confirmar, depois faça login.")
-                    else:
-                        st.error(f"Erro: {err}")
+                    st.error(f"Erro: {err}")
 
-        st.markdown("""
-        <div class="login-footer">
-            🔒 Conexão segura com criptografia SSL<br><br>
-            Ao entrar, você concorda com os <a href="#">Termos de Uso</a> e <a href="#">Privacidade</a>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:16px;padding-top:16px;border-top:1px solid #f3f4f6">
+        🔒 Conexão segura com criptografia SSL<br><br>
+        Ao entrar, você concorda com os <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> e <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.stop()
 
