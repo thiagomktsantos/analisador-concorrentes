@@ -1176,7 +1176,7 @@ if st.session_state.pagina == "home":
         with h2:
             if tem_dados:
                 st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-                if st.button("Cancelar", use_container_width=True):
+                if st.button("Cancelar", use_container_width=True, type="primary"):
                     st.session_state.editar_empresa = False
                     st.rerun()
 
@@ -1237,7 +1237,7 @@ if st.session_state.pagina == "home":
 
         divider()
 
-        if st.button("💾 Salvar Empresa", use_container_width=False):
+        if st.button("💾 Salvar Empresa", use_container_width=True, type="primary"):
             if emp["nome"].strip():
                 st.session_state.editar_empresa = False
                 salvar_dados_usuario(st.session_state.user.id)
@@ -1252,7 +1252,7 @@ if st.session_state.pagina == "home":
             st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>Minha Empresa</h1>", unsafe_allow_html=True)
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            if st.button("✏️ Editar Empresa", use_container_width=True):
+            if st.button("✏️ Editar Empresa", use_container_width=True, type="primary"):
                 st.session_state.editar_empresa = True
                 st.rerun()
 
@@ -1337,47 +1337,17 @@ elif st.session_state.pagina == "cad":
 
     # ── CSS local
     st.markdown("""
-<style>
-/* Apenas o botão Adicionar — fora de formulário */
-section.main > div div.stButton > button[kind="primary"] {
-    background: #ef4444 !important;
-    color: #ffffff !important;
-    border: none !important;
-}
-section.main > div div.stButton > button[kind="primary"]:hover {
-    background: #dc2626 !important;
-}
-
-/* Botão Salvar do formulário — volta para preto */
-section.main div.stFormSubmitButton > button[kind="primary"] {
-    background: #111827 !important;
-    color: #ffffff !important;
-}
-section.main div.stFormSubmitButton > button[kind="primary"]:hover {
-    background: #1f2937 !important;
-}
-
-/* Oculta botões de ação abaixo dos cards */
-section.main div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) {
-    visibility: hidden !important;
-    height: 1px !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Form */
-div[data-testid="stForm"] {
-    background: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 14px !important;
-    padding: 28px 32px !important;
-    margin-bottom: 28px !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-}
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    div[data-testid="stForm"] {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 14px !important;
+        padding: 28px 32px !important;
+        margin-bottom: 28px !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # ── Cabeçalho
     top1, top2 = st.columns([8, 2])
@@ -1420,7 +1390,7 @@ div[data-testid="stForm"] {
             ads_manual = st.text_input("ID Manual Ads (Opcional)", value=(concorrente_edit["ads_id"] if concorrente_edit else ""))
 
             col1, col2 = st.columns(2)
-            salvar = col1.form_submit_button("💾 Salvar", type="primary", use_container_width=True)
+            salvar = col1.form_submit_button("💾 Salvar", use_container_width=True)
             cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
 
             if cancelar:
@@ -1456,7 +1426,6 @@ div[data-testid="stForm"] {
             with cols[i % 2]:
                 avatar = gerar_avatar(c["nome"])
 
-                # Card HTML com dropdown de 3 pontinhos
                 card_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -1467,20 +1436,15 @@ html, body {{
     background: transparent;
     font-family: 'DM Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
-    overflow: visible;
 }}
 body {{ padding-bottom: 4px; }}
-
 .card {{
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 16px;
-    overflow: visible;
-    position: relative;
+    overflow: hidden;
 }}
 .card-body {{ padding: 24px 24px 20px 24px; }}
-
-/* Header */
 .header {{
     display: flex;
     align-items: center;
@@ -1501,63 +1465,6 @@ body {{ padding-bottom: 4px; }}
     font-size: 17px; font-weight: 700; color: #111827;
     flex: 1; letter-spacing: -0.3px;
 }}
-
-/* 3-dot menu */
-.menu-wrap {{
-    position: relative;
-    flex-shrink: 0;
-}}
-.menu-btn {{
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    color: #6b7280;
-    font-size: 18px;
-    user-select: none;
-    transition: background 0.12s;
-}}
-.menu-btn:hover {{ background: #f3f4f6; }}
-
-.dropdown {{
-    display: none;
-    position: absolute;
-    top: 38px; right: 0;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    min-width: 160px;
-    z-index: 9999;
-    overflow: hidden;
-}}
-.dropdown.open {{ display: block; }}
-
-.dd-item {{
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.1s;
-    color: #374151;
-    text-decoration: none;
-    border: none;
-    background: transparent;
-    width: 100%;
-    font-family: 'DM Sans', sans-serif;
-}}
-.dd-item:hover {{ background: #f9fafb; }}
-.dd-item.edit {{ color: #374151; }}
-.dd-item.duplicate {{ color: #374151; }}
-.dd-item.remove {{ color: #ef4444; border-top: 1px solid #f3f4f6; }}
-.dd-item svg {{ width: 15px; height: 15px; flex-shrink: 0; }}
-
-/* Rows */
 .row {{
     display: flex;
     align-items: center;
@@ -1589,47 +1496,11 @@ body {{ padding-bottom: 4px; }}
 <body>
 <div class="card">
   <div class="card-body">
-
     <div class="header">
       <div class="avatar">{avatar}</div>
       <div class="name">{c['nome']}</div>
-
-      <!-- 3-dot menu -->
-      <div class="menu-wrap">
-        <div class="menu-btn" onclick="toggleMenu(event, 'menu_{i}')">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-          </svg>
-        </div>
-        <div class="dropdown" id="menu_{i}">
-          <button class="dd-item edit" onclick="triggerAction('editar_{i}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Editar
-          </button>
-          <button class="dd-item duplicate" onclick="triggerAction('duplicar_{i}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-            </svg>
-            Duplicar
-          </button>
-          <button class="dd-item remove" onclick="triggerAction('remove_{i}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6M14 11v6"/>
-              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-            </svg>
-            Remover
-          </button>
-        </div>
-      </div>
     </div>
 
-    <!-- Site -->
     <div class="row">
       <div class="ico">
         <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -1644,7 +1515,6 @@ body {{ padding-bottom: 4px; }}
       </div>
     </div>
 
-    <!-- Instagram -->
     <div class="row">
       <div class="ico" style="background:#fff0f6;">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1668,7 +1538,6 @@ body {{ padding-bottom: 4px; }}
       </div>
     </div>
 
-    <!-- Facebook -->
     <div class="row">
       <div class="ico" style="background:#e8f0fe;">
         <svg viewBox="0 0 24 24" fill="#1877F2">
@@ -1683,68 +1552,18 @@ body {{ padding-bottom: 4px; }}
 
   </div>
 </div>
-
-<script>
-function toggleMenu(e, id) {{
-    e.stopPropagation();
-    const menu = document.getElementById(id);
-    menu.classList.toggle('open');
-    document.addEventListener('click', function closeMenu() {{
-        menu.classList.remove('open');
-        document.removeEventListener('click', closeMenu);
-    }});
-}}
-
-function triggerAction(btnKey) {{
-    const buttons = window.parent.document.querySelectorAll('button[kind="secondary"]');
-    for (const btn of buttons) {{
-        const container = btn.closest('[data-testid="element-container"]');
-        if (container && container.getAttribute('data-key') === btnKey) {{
-            btn.click();
-            return;
-        }}
-    }}
-    // fallback: busca por texto
-    const allBtns = window.parent.document.querySelectorAll('button');
-    for (const btn of allBtns) {{
-        if (btn.getAttribute('data-testid') === btnKey) {{
-            btn.click();
-            return;
-        }}
-    }}
-    // fallback 2: busca pela key no DOM
-    const keyBtns = window.parent.document.querySelectorAll('[data-testid="baseButton-secondary"]');
-    for (const btn of keyBtns) {{
-        const p = btn.closest('[data-testid="element-container"]');
-        if(p && p.id && p.id.includes(btnKey)) {{
-            btn.click();
-            return;
-        }}
-    }}
-}}
-</script>
 </body>
 </html>"""
 
-                components.html(card_html, height=300, scrolling=False)
+                components.html(card_html, height=280, scrolling=False)
 
-                # Botões Streamlit reais — ficam visíveis abaixo do card
-                b1, b2, b3 = st.columns(3)
+                b1, b2 = st.columns(2)
                 with b1:
                     if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
                         st.session_state.editando_concorrente = i
                         st.session_state.mostrar_form_concorrente = False
                         st.rerun()
                 with b2:
-                    # Duplicar
-                    if st.button("⧉ Duplicar", key=f"duplicar_{i}", use_container_width=True):
-                        import copy
-                        novo = copy.deepcopy(st.session_state.dados["concorrentes"][i])
-                        novo["nome"] = novo["nome"] + " (cópia)"
-                        st.session_state.dados["concorrentes"].append(novo)
-                        salvar_dados_usuario(st.session_state.user.id)
-                        st.rerun()
-                with b3:
                     if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
                         st.session_state.dados["concorrentes"].pop(i)
                         salvar_dados_usuario(st.session_state.user.id)
