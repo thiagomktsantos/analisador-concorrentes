@@ -432,11 +432,10 @@ section.main div.stButton > button:hover {
 section.main div.stButton > button[kind="primary"],
 section.main div.stFormSubmitButton > button,
 section.main div.stFormSubmitButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
-    color: #ffffff !important; border: none !important;
+    background: #111827 !important; color: #ffffff !important; border: none !important;
 }
 section.main div.stButton > button[kind="primary"]:hover,
-section.main div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
+section.main div.stFormSubmitButton > button:hover { background: #1f2937 !important; }
 
 .form-section-header {
     font-size: 13px; font-weight: 600; color: #6b7280;
@@ -524,7 +523,7 @@ div[data-testid="stTabs"] button[role="tab"] {
     margin-bottom: -2px !important;
 }
 div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-    color: #3a9fd6 !important; border-bottom: 2px solid #3a9fd6 !important;
+    color: #111827 !important; border-bottom: 2px solid #111827 !important;
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
 </style>
@@ -747,9 +746,9 @@ with st.sidebar:
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
     .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; margin-bottom: 8px; }
-    .sb-logo-title { font-size: 16px; font-weight: 700; color: #3a9fd6; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
-    .sb-logo-sub { font-size: 11px; color: #2ecc71; margin-top: 3px; font-family: DM Sans, sans-serif; font-weight: 500; }
-    .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #3a9fd6; font-family: DM Sans, sans-serif; }
+    .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
+    .sb-logo-sub { font-size: 11px; color: #3d4f63; margin-top: 3px; font-family: DM Sans, sans-serif; font-weight: 500; }
+    .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
     .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
     [data-testid="stSidebar"] div.stButton > button {
@@ -762,7 +761,7 @@ with st.sidebar:
         font-family: DM Sans, sans-serif !important; line-height: 1.4 !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
-        background-color: #161d2a !important; color: #3a9fd6 !important;
+        background-color: #161d2a !important; color: #e5e7eb !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -986,7 +985,7 @@ if st.session_state.pagina == "home":
 body {{ padding-bottom: 16px; }}
 .card {{ background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:28px 32px;margin-bottom:2px; }}
 .top {{ display:flex;align-items:center;gap:18px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #f3f4f6; }}
-.avatar {{ width:56px;height:56px;min-width:56px;border-radius:50%;background:linear-gradient(135deg,#3a9fd6,#2ecc71);
+.avatar {{ width:56px;height:56px;min-width:56px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff;flex-shrink:0; }}
 .nome {{ font-size:22px;font-weight:600;color:#111827;margin-bottom:3px;letter-spacing:-0.4px; }}
 .sub {{ font-size:14px;color:#9ca3af; }}
 .grid {{ display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 36px; }}
@@ -1106,7 +1105,7 @@ elif st.session_state.pagina == "cad":
 body{{padding-bottom:16px}}
 .card{{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:22px 24px;margin-bottom:2px}}
 .header{{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #f3f4f6}}
-.avatar{{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3a9fd6,#2ecc71);
+.avatar{{width:46px;height:46px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff;flex-shrink:0}}
 .name{{font-size:16px;font-weight:600;color:#111827;letter-spacing:-0.3px}}
 .row{{display:flex;align-items:flex-start;gap:10px;margin-bottom:13px}}
 .ico{{width:20px;height:20px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center}}
