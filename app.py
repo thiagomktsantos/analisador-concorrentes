@@ -767,7 +767,7 @@ with st.sidebar:
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
     .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; }
     .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
-    .sb-logo-sub { font-size: 10px; color:#3a9fd6; font-family: DM Sans, sans-serif; font-weight:600;letter-spacing:2px;text-transform:uppercase }
+    .sb-logo-sub { font-size: 8.4px; color:#3a9fd6; font-family: DM Sans, sans-serif; font-weight:600;letter-spacing:2px;text-transform:uppercase }
     .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
     .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
@@ -792,7 +792,7 @@ with st.sidebar:
     if logo_white_src:
         st.markdown(f'''
         <div class="sb-logo">
-            <img src="{logo_white_src}" style="width: 150px; display: block; margin: 0 auto;" />
+            <img src="{logo_white_src}" style="width: 170px; display: block; margin: 0 auto;" />
             <div class="sb-logo-sub" style="text-align:center">Competitive Intelligence</div>
         </div>
         ''', unsafe_allow_html=True)
