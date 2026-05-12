@@ -762,7 +762,6 @@ if not st.session_state.logado:
 
 with st.sidebar:
 
-    # 1. CSS separado — bloco pequeno
     st.markdown("""
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -774,15 +773,32 @@ with st.sidebar:
     [data-testid="stSidebar"] div.stButton{margin-bottom:0!important}
     [data-testid="stSidebar"] .stElementContainer{margin-bottom:0!important;padding-bottom:0!important}
     [data-testid="stSidebar"] .stVerticalBlock{gap:0!important}
-    [data-testid="stSidebar"] div.stButton>button{width:100%!important;border-radius:7px!important;background:transparent!important;color:#8a95a3!important;border:none!important;text-align:left!important;font-size:15px!important;font-weight:600!important;box-shadow:none!important;font-family:sans-serif!important;padding:9px 14px!important;display:flex!important;align-items:center!important;gap:10px!important}
+    [data-testid="stSidebar"] div.stButton>button{width:100%!important;border-radius:7px!important;background:transparent!important;color:#8a95a3!important;border:none!important;text-align:left!important;font-size:15px!important;font-weight:600!important;box-shadow:none!important;font-family:sans-serif!important;padding:9px 14px!important}
     [data-testid="stSidebar"] div.stButton>button:hover{background:#161d2a!important;color:#e5e7eb!important}
-    [data-testid="stSidebar"] div.stButton>button p{display:flex!important;align-items:center!important;gap:10px!important;margin:0!important}
     .sb-user{padding:12px 18px;font-size:12px;color:#3d4f63;border-top:1px solid #1e2530;margin-top:8px;word-break:break-all;display:flex;align-items:center;gap:8px;font-family:sans-serif}
     .sb-user i{color:#3a9fd6;font-size:14px}
+
+    /* Ícones via ::before usando a classe FA no próprio label — abordagem: span oculto + botão */
+    .sb-btn-wrap { position: relative; }
+    .sb-btn-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #3a9fd6;
+        font-size: 15px;
+        pointer-events: none;
+        z-index: 10;
+        line-height: 1;
+    }
+    .sb-btn-wrap [data-testid="stSidebar"] div.stButton>button,
+    [data-testid="stSidebar"] .sb-btn-wrap div.stButton>button {
+        padding-left: 38px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    # 2. Logo
+    # Logo
     logo_white_b64 = get_logo_white_base64()
     logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
     if logo_white_src:
@@ -790,39 +806,46 @@ with st.sidebar:
     else:
         st.markdown('<div class="sb-logo"><div style="font-size:16px;font-weight:700;color:#fff;text-align:center">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
 
-    # 3. Seções com ícones FA nos headers
     st.markdown('<div class="sb-sep"><i class="fa-solid fa-database"></i> Dados Principais</div>', unsafe_allow_html=True)
 
-    # 4. Botões com ícone FA + texto — o truque: label com caractere de espaço + texto
-    #    O ícone é injetado via CSS ::before em cada botão identificado por key
-    st.markdown("""
-    <style>
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Minha Empresa")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f19c";margin-right:10px;color:#3a9fd6}
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Concorrentes")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f140";margin-right:10px;color:#3a9fd6}
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Visão Geral")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f080";margin-right:10px;color:#3a9fd6}
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Redes Sociais")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f16d";margin-right:10px;color:#3a9fd6;font-family:"Font Awesome 6 Brands"}
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Confronto")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f9d9";margin-right:10px;color:#3a9fd6}
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Biblioteca")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f26c";margin-right:10px;color:#3a9fd6}
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Insights")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f0eb";margin-right:10px;color:#3a9fd6}
-    [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(p:contains("Sair")) p::before{font-family:"Font Awesome 6 Free";font-weight:900;content:"\\f2f5";margin-right:10px;color:#e55353}
-    </style>
-    """, unsafe_allow_html=True)
+    # Helper: ícone flutuando sobre o botão
+    def sb_btn(icon_class, label, destino):
+        st.markdown(f"""
+        <div style="position:relative">
+            <i class="{icon_class}" style="
+                position:absolute;left:14px;top:50%;transform:translateY(-50%);
+                color:#3a9fd6;font-size:15px;pointer-events:none;z-index:9999;
+                line-height:38px;margin-top:1px
+            "></i>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button(f"\u2003{label}", key=f"nav_{destino}"):
+            trocar_pagina(destino)
 
-    if st.button("Minha Empresa"):  trocar_pagina("home")
-    if st.button("Concorrentes"):   trocar_pagina("cad")
+    sb_btn("fa-solid fa-building-columns", "Minha Empresa", "home")
+    sb_btn("fa-solid fa-crosshairs",       "Concorrentes",  "cad")
 
     st.markdown('<div class="sb-sep"><i class="fa-solid fa-chart-line"></i> Análise Competitiva</div>', unsafe_allow_html=True)
 
-    if st.button("Visão Geral"):        trocar_pagina("geral")
-    if st.button("Redes Sociais"):      trocar_pagina("redes")
-    if st.button("Confronto de Sites"): trocar_pagina("sites")
-    if st.button("Biblioteca de Ads"):  trocar_pagina("ads")
-    if st.button("Insights"):           trocar_pagina("insights")
+    sb_btn("fa-solid fa-chart-bar",              "Visão Geral",       "geral")
+    sb_btn("fa-brands fa-instagram",             "Redes Sociais",     "redes")
+    sb_btn("fa-solid fa-magnifying-glass-chart", "Confronto de Sites","sites")
+    sb_btn("fa-solid fa-rectangle-ad",           "Biblioteca de Ads", "ads")
+    sb_btn("fa-solid fa-lightbulb",              "Insights",          "insights")
 
     user_email = st.session_state.user.email if st.session_state.user else ""
     st.markdown(f'<div class="sb-user"><i class="fa-solid fa-circle-user"></i>{user_email}</div>', unsafe_allow_html=True)
 
-    if st.button("Sair"):
+    st.markdown(f"""
+    <div style="position:relative">
+        <i class="fa-solid fa-right-from-bracket" style="
+            position:absolute;left:14px;top:50%;transform:translateY(-50%);
+            color:#e55353;font-size:15px;pointer-events:none;z-index:9999;
+            line-height:38px;margin-top:1px
+        "></i>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("\u2003Sair", key="nav_sair"):
         logout_supabase()
         for k in ["logado","user","dados","metricas_redes","pagina",
                   "mostrar_form_concorrente","editando_concorrente",
