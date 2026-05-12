@@ -1340,56 +1340,69 @@ body {{ padding-bottom: 16px; }}
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "cad":
-
+ 
+    # ── Cabeçalho
     top1, top2 = st.columns([8, 2])
     with top1:
-        st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>Concorrentes</h1>", unsafe_allow_html=True)
+        st.markdown("""
+        <div>
+            <h1 style='font-size:28px;font-weight:700;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>Concorrentes</h1>
+            <p style='font-size:14px;color:#6b7280;margin:0'>Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</p>
+        </div>
+        """, unsafe_allow_html=True)
     with top2:
-        if st.button("➕ Adicionar", use_container_width=True):
+        st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
+        if st.button("＋ Adicionar", use_container_width=True, type="primary"):
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
             st.rerun()
-
-    st.markdown("---")
-
+ 
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
+ 
+    # ── Formulário de cadastro/edição
     if st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None:
         concorrente_edit = None
         if st.session_state.editando_concorrente is not None:
             concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
-
+ 
         st.markdown("""
         <style>
         div[data-testid="stForm"] {
             background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
-            border-radius: 12px !important;
-            padding: 24px 28px !important;
+            border-radius: 14px !important;
+            padding: 28px 32px !important;
+            margin-bottom: 28px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
         </style>
         """, unsafe_allow_html=True)
-
+ 
+        titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
+        st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
+ 
         with st.form("cad_concorrente", clear_on_submit=False):
-            st.markdown("<div style='font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif'>Identificação</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Identificação</div>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
             u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
-
-            st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;margin:0;font-family:DM Sans,sans-serif'>Redes Sociais</div>", unsafe_allow_html=True)
+ 
+            st.markdown("<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Redes Sociais</div>", unsafe_allow_html=True)
             c3, c4 = st.columns(2)
             insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
             fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
             ads_manual = st.text_input("ID Manual Ads (Opcional)", value=(concorrente_edit["ads_id"] if concorrente_edit else ""))
-
+ 
             col1, col2 = st.columns(2)
-            salvar = col1.form_submit_button("Salvar", type="primary")
-            cancelar = col2.form_submit_button("Cancelar")
-
+            salvar = col1.form_submit_button("💾 Salvar", type="primary", use_container_width=True)
+            cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
+ 
             if cancelar:
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
                 st.rerun()
-
+ 
             if salvar:
                 clean_handle = obter_instagram_handle(insta_handle)
                 fb_clean = obter_facebook_handle(fb_p)
@@ -1408,51 +1421,254 @@ elif st.session_state.pagina == "cad":
                 st.session_state.editando_concorrente = None
                 salvar_dados_usuario(st.session_state.user.id)
                 st.rerun()
-
+ 
+    # ── Lista de concorrentes
     concorrentes = st.session_state.dados["concorrentes"]
+ 
     if concorrentes:
-        cols = st.columns(3)
+        # 2 colunas igual à imagem
+        cols = st.columns(2)
         for i, c in enumerate(concorrentes):
-            with cols[i % 3]:
+            with cols[i % 2]:
                 avatar = gerar_avatar(c["nome"])
+ 
                 card_html = f"""<!DOCTYPE html>
 <html>
-<head>{CARD_FONT_IMPORT}
-<style>{CARD_CSS}
-body{{padding-bottom:16px}}
-.card{{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:22px 24px;margin-bottom:2px}}
-.header{{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #f3f4f6}}
-.avatar{{width:46px;height:46px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff;flex-shrink:0}}
-.name{{font-size:16px;font-weight:600;color:#111827;letter-spacing:-0.3px}}
-.row{{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}}
-.ico{{width:38px;height:38px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;background-color: #eeeeee;border-radius: 10px;}}
-.ico svg{{width:25px;height:25px}}
-.lbl{{font-size:11px;color:#9ca3af;display:block}}
-.val{{font-size:14px;color:#374151;font-weight:500;word-break:break-all}}
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}}
+body {{ padding-bottom: 4px; }}
+ 
+.card {{
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px 24px 0 24px;
+    margin-bottom: 2px;
+}}
+ 
+/* Header */
+.header {{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 20px;
+}}
+.avatar {{
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: #111827;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+}}
+.name {{
+    font-size: 18px; font-weight: 700; color: #111827;
+    flex: 1; letter-spacing: -0.3px;
+}}
+.menu-btn {{
+    width: 32px; height: 32px;
+    border-radius: 8px; background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    font-size: 18px; color: #6b7280;
+    letter-spacing: 1px; line-height: 0;
+}}
+ 
+/* Rows */
+.row {{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}}
+.ico {{
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}}
+.ico svg, .ico img {{
+    width: 22px; height: 22px;
+}}
+.info {{ flex: 1; }}
+.lbl {{
+    font-size: 11px; color: #9ca3af;
+    display: block; margin-bottom: 2px;
+    font-weight: 500;
+}}
+.val {{
+    font-size: 14px; color: #111827;
+    font-weight: 600; word-break: break-all;
+}}
+ 
+/* Action buttons */
+.actions {{
+    display: flex;
+    border-top: 1px solid #f3f4f6;
+    margin: 0 -24px;
+}}
+.btn-edit, .btn-remove {{
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    padding: 14px 0;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.12s;
+}}
+.btn-edit {{
+    color: #d97706;
+    border-right: 1px solid #f3f4f6;
+    border-radius: 0 0 0 16px;
+}}
+.btn-edit:hover {{ background: #fffbeb; }}
+.btn-remove {{
+    color: #dc2626;
+    border-radius: 0 0 16px 0;
+}}
+.btn-remove:hover {{ background: #fef2f2; }}
+.btn-edit svg, .btn-remove svg {{
+    width: 15px; height: 15px;
+}}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="header"><div class="avatar">{avatar}</div><span class="name">{c['nome']}</span></div>
-  <div class="row"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><div><span class="lbl">Site</span><span class="val">{c['url'] or '—'}</span></div></div>
-  <div class="row"><span class="ico"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig2)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span><div><span class="lbl">Instagram</span><span class="val">{c['instagram'] or '—'}</span></div></div>
-  <div class="row"><span class="ico"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></span><div><span class="lbl">Facebook</span><span class="val">{c['fb_page'] or '—'}</span></div></div>
+ 
+  <!-- Header -->
+  <div class="header">
+    <div class="avatar">{avatar}</div>
+    <div class="name">{c['nome']}</div>
+    <div class="menu-btn">⋯</div>
+  </div>
+ 
+  <!-- Site -->
+  <div class="row">
+    <div class="ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </div>
+    <div class="info">
+      <span class="lbl">Site</span>
+      <span class="val">{c['url'] or '—'}</span>
+    </div>
+  </div>
+ 
+  <!-- Instagram -->
+  <div class="row">
+    <div class="ico">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="ig3" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#f09433"/>
+            <stop offset="25%" stop-color="#e6683c"/>
+            <stop offset="50%" stop-color="#dc2743"/>
+            <stop offset="75%" stop-color="#cc2366"/>
+            <stop offset="100%" stop-color="#bc1888"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig3)"/>
+        <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+        <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+      </svg>
+    </div>
+    <div class="info">
+      <span class="lbl">Instagram</span>
+      <span class="val">{c['instagram'] or '—'}</span>
+    </div>
+  </div>
+ 
+  <!-- Facebook -->
+  <div class="row">
+    <div class="ico" style="background:#e8f0fe;">
+      <svg viewBox="0 0 24 24" fill="#1877F2">
+        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+      </svg>
+    </div>
+    <div class="info">
+      <span class="lbl">Facebook</span>
+      <span class="val">{c['fb_page'] or '—'}</span>
+    </div>
+  </div>
+ 
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn-edit" onclick="window.parent.document.querySelector('[data-testid=\\'stSidebar\\']')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Editar
+    </button>
+    <button class="btn-remove">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+      Remover
+    </button>
+  </div>
+ 
 </div>
-</body></html>"""
-                components.html(card_html, height=277, scrolling=False)
+</body>
+</html>"""
+ 
+                components.html(card_html, height=320, scrolling=False)
+ 
+                # Botões Streamlit invisíveis que realmente funcionam
                 b1, b2 = st.columns(2)
                 with b1:
-                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
+                    if st.button("Editar", key=f"editar_{i}", use_container_width=True):
                         st.session_state.editando_concorrente = i
                         st.session_state.mostrar_form_concorrente = False
                         st.rerun()
                 with b2:
-                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
+                    if st.button("Remover", key=f"remove_{i}", use_container_width=True):
                         st.session_state.dados["concorrentes"].pop(i)
                         salvar_dados_usuario(st.session_state.user.id)
                         st.rerun()
+ 
+                # Esconde os botões Streamlit mas mantém o HTML visual
+                st.markdown(f"""
+                <style>
+                div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) {{
+                    margin-top: -52px !important;
+                    opacity: 0 !important;
+                    pointer-events: auto !important;
+                    height: 48px !important;
+                    overflow: hidden !important;
+                    position: relative !important;
+                    z-index: 10 !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+ 
     else:
-        st.info("Nenhum concorrente cadastrado ainda. Clique em **➕ Adicionar** para começar.")
+        st.markdown("""
+        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                    padding:48px 32px;text-align:center;margin-top:8px'>
+            <div style='font-size:32px;margin-bottom:12px'>🎯</div>
+            <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum concorrente cadastrado</div>
+            <div style='font-size:14px;color:#9ca3af'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
 # VISÃO GERAL
