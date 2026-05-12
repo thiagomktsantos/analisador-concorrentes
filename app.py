@@ -1552,6 +1552,7 @@ elif st.session_state.pagina == "redes":
                 "fonte":        "graph_api",
                 "erro":         None,
                 "_raw_keys":    list(user_data.keys()),
+                "_raw_debug":   user_data,
             }
         except Exception as e:
             return {"erro": str(e)}
@@ -1636,7 +1637,7 @@ elif st.session_state.pagina == "redes":
     # DEBUG TEMPORÁRIO — remover depois
     for r in resultados.values():
         if r.get("_raw_keys"):
-            st.write(f"🔍 Campos da API para {r.get('handle','?')}:", r["_raw_keys"])
+            st.write(f"🔍 Resposta completa da API para {r.get('handle','?')}:", r.get("_raw_debug"))
 
     ok = [r for r in resultados.values() if not r.get("erro")]
     if not ok:
