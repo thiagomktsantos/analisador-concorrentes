@@ -764,37 +764,62 @@ with st.sidebar:
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
+
+    /* Carrega Font Awesome como webfont para uso nos botões */
+    @font-face {
+        font-family: "FontAwesome";
+        src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/webfonts/fa-solid-900.woff2") format("woff2");
+        font-weight: 900;
+        font-style: normal;
+    }
 
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
     .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; }
-    .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
-    .sb-logo-sub { font-size: 8.4px; color:#3a9fd6; font-family: DM Sans, sans-serif; font-weight:600;letter-spacing:2px;text-transform:uppercase }
-    .sb-section { padding: 5px 0px 5px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #008fcc; font-family: DM Sans, sans-serif;
-    margin: 5px 0 20px; width: 100%; background-color: #052f46; border-radius: 5px;}
-    .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
+    .sb-logo-sub { font-size: 8.4px; color:#3a9fd6; font-family: DM Sans, sans-serif; font-weight:600; letter-spacing:2px; text-transform:uppercase; }
+    .sb-section {
+        padding: 5px 0px 5px 10px;
+        font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1.6px;
+        color: #008fcc; font-family: DM Sans, sans-serif;
+        margin: 5px 0 4px; width: 100%;
+        background-color: #052f46; border-radius: 5px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .sb-section .fa-icon {
+        font-family: "FontAwesome";
+        font-weight: 900;
+        font-size: 12px;
+    }
+    .sb-user {
+        padding: 12px 18px; font-size: 12px; color: #3d4f63;
+        border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .sb-user .fa-icon { font-family: "FontAwesome"; font-weight: 900; color: #3a9fd6; }
+
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
     [data-testid="stSidebar"] .stElementContainer { margin-bottom: 0px !important; padding-bottom: 0px !important; }
     [data-testid="stSidebar"] .stVerticalBlock { gap: 0px !important; }
+
     [data-testid="stSidebar"] div.stButton > button {
-        width: 100% !important; border-radius: 7px !important;
-        background-color: transparent !important; color: #8a95a3 !important;
-        border: none !important; text-align: left !important;
-        font-size: 15px !important; font-weight: 600 !important;
-        box-shadow: none !important; transition: all 0.15s ease !important;
-        font-family: 'DM Sans', sans-serif !important;
-        display: flex !important; align-items: center !important; gap: 10px !important;
+        width: 100% !important;
+        border-radius: 7px !important;
+        background-color: transparent !important;
+        color: #8a95a3 !important;
+        border: none !important;
+        text-align: left !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        box-shadow: none !important;
+        transition: all 0.15s ease !important;
+        font-family: "FontAwesome", "DM Sans", sans-serif !important;
+        letter-spacing: 0px !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
-        background-color: #161d2a !important; color: #e5e7eb !important;
-    }
-
-    /* Ícones Font Awesome nos botões via ::before */
-    [data-testid="stSidebar"] div.stButton > button p {
-        display: flex !important; align-items: center !important; gap: 10px !important;
+        background-color: #161d2a !important;
+        color: #e5e7eb !important;
     }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
     logo_white_b64 = get_logo_white_base64()
@@ -803,31 +828,42 @@ with st.sidebar:
     if logo_white_src:
         st.markdown(f'''
         <div class="sb-logo">
-            <img src="{logo_white_src}" style="width: 170px; display: block; margin: 0 auto;" />
+            <img src="{logo_white_src}" style="width:170px;display:block;margin:0 auto;" />
             <div class="sb-logo-sub" style="text-align:center">Competitive Intelligence</div>
         </div>
         ''', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="sb-logo"><div class="sb-logo-title">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sb-logo"><div style="font-size:16px;font-weight:700;color:#fff">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
 
-    # ── Dados Principais
-    st.markdown('<div class="sb-section"><i class="fa-solid fa-database" style="margin-right:7px"></i>Dados Principais</div>', unsafe_allow_html=True)
+    # ── Seção: Dados Principais
+    # \uf1c0 = fa-database
+    st.markdown('<div class="sb-section"><span class="fa-icon">\uf1c0</span> Dados Principais</div>', unsafe_allow_html=True)
 
-    if st.button("  \uf19c   Minha Empresa"):   trocar_pagina("home")
-    if st.button("  \uf140   Concorrentes"):     trocar_pagina("cad")
+    # \uf19c = fa-building-columns  |  \uf140 = fa-crosshairs
+    if st.button("\uf19c   Minha Empresa"):   trocar_pagina("home")
+    if st.button("\uf140   Concorrentes"):     trocar_pagina("cad")
 
-    # ── Análise Competitiva
-    st.markdown('<div class="sb-section"><i class="fa-solid fa-chart-line" style="margin-right:7px"></i>Análise Competitiva</div>', unsafe_allow_html=True)
+    # ── Seção: Análise Competitiva
+    # \uf201 = fa-chart-line
+    st.markdown('<div class="sb-section"><span class="fa-icon">\uf201</span> Análise Competitiva</div>', unsafe_allow_html=True)
 
-    if st.button("  \uf080   Visão Geral"):      trocar_pagina("geral")
-    if st.button("  \uf16d   Redes Sociais"):    trocar_pagina("redes")
-    if st.button("  \uf002   Confronto de Sites"): trocar_pagina("sites")
-    if st.button("  \uf144   Biblioteca de Ads"): trocar_pagina("ads")
-    if st.button("  \uf0eb   Insights"):         trocar_pagina("insights")
+    # \uf080 = fa-chart-bar
+    # \uf16d = fa-instagram
+    # \uf9d9 = fa-magnifying-glass-chart
+    # \uf144 = fa-circle-play
+    # \uf0eb = fa-lightbulb
+    if st.button("\uf080   Visão Geral"):         trocar_pagina("geral")
+    if st.button("\uf16d   Redes Sociais"):        trocar_pagina("redes")
+    if st.button("\uf9d9   Confronto de Sites"):   trocar_pagina("sites")
+    if st.button("\uf144   Biblioteca de Ads"):    trocar_pagina("ads")
+    if st.button("\uf0eb   Insights"):             trocar_pagina("insights")
 
     user_email = st.session_state.user.email if st.session_state.user else ""
-    st.markdown(f'<div class="sb-user"><i class="fa-solid fa-circle-user" style="margin-right:6px;color:#3a9fd6"></i>{user_email}</div>', unsafe_allow_html=True)
-    if st.button("  \uf2f5   Sair"):
+    # \uf2bd = fa-circle-user
+    st.markdown(f'<div class="sb-user"><span class="fa-icon">\uf2bd</span>{user_email}</div>', unsafe_allow_html=True)
+
+    # \uf2f5 = fa-right-from-bracket
+    if st.button("\uf2f5   Sair"):
         logout_supabase()
         for k in ["logado", "user", "dados", "metricas_redes", "pagina",
                   "mostrar_form_concorrente", "editando_concorrente",
@@ -835,7 +871,7 @@ with st.sidebar:
             if k in st.session_state:
                 del st.session_state[k]
         st.rerun()
-
+        
 # ---------------------------------------------------
 # POPUP ALERTA SAÍDA
 # ---------------------------------------------------
