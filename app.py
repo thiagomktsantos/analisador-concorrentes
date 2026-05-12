@@ -687,7 +687,7 @@ if not st.session_state.logado:
         st.markdown(f"""
         <div style="text-align:center;margin-bottom:24px">
             {'<img src="' + logo_src + '" style="width:200px;" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">Marketylics</div>'}
-            <div style="font-size:10.6px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
+            <div style="font-size:9.6px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
         </div>
         <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
         """, unsafe_allow_html=True)
