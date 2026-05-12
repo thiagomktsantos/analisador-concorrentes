@@ -1482,7 +1482,7 @@ elif st.session_state.pagina == "redes":
 
     h1, h2 = st.columns([7, 3])
     with h1:
-        st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>📱 Redes Sociais</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>Redes Sociais</h1>", unsafe_allow_html=True)
         st.markdown("<div style='font-size:14px;color:#6b7280;margin-top:3px'>Métricas do Instagram via RapidAPI · comparativo visual</div>", unsafe_allow_html=True)
     with h2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
