@@ -1175,31 +1175,32 @@ if st.session_state.pagina == "home":
  
         st.markdown("""
         <style>
-        .empresa-form-wrap {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 28px 32px 24px 32px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-            margin-bottom: 24px;
-        }
-        /* Botão azul — seletor mais específico para ganhar do global */
+        /* Botão primário azul */
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
-            background: #2563eb !important;
-            background-color: #2563eb !important;
+            background: #3a9fd6 !important;
+            background-color: #3a9fd6 !important;
             color: #ffffff !important;
             border: none !important;
         }
         [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
         section.main div.stButton > button[kind="primary"]:hover {
-            background: #1d4ed8 !important;
-            background-color: #1d4ed8 !important;
-            color: #ffffff !important;
+            background: #2e8bbf !important;
+            background-color: #2e8bbf !important;
+        }
+        /* Container do formulário com fundo branco */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(div.empresa-form-inner) {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+            padding: 8px 16px !important;
         }
         </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
  
+        # Cabeçalho
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1235,58 +1236,57 @@ if st.session_state.pagina == "home":
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
  
-        st.markdown("<div class='empresa-form-wrap'>", unsafe_allow_html=True)
+        # st.container(border=True) gera o wrapper detectável pelo CSS :has
+        with st.container(border=True):
+            st.markdown("<div class='empresa-form-inner' style='display:none'></div>", unsafe_allow_html=True)
  
-        col_left, col_right = st.columns(2)
+            col_left, col_right = st.columns(2)
  
-        with col_left:
-            sec_header("Informações Gerais")
-            emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
-            col_s, col_t = st.columns(2)
-            setor_opcoes = list(SUBNICHOS.keys())
-            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
-            emp["setor"] = col_s.selectbox("Setor", setor_opcoes, index=setor_idx)
-            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-            tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
-            emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
+            with col_left:
+                sec_header("Informações Gerais")
+                emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
+                col_s, col_t = st.columns(2)
+                setor_opcoes = list(SUBNICHOS.keys())
+                setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+                emp["setor"] = col_s.selectbox("Setor", setor_opcoes, index=setor_idx)
+                subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+                tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+                emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
  
-        with col_right:
-            sec_header("Serviços")
-            servicos_text = st.text_area(
-                "Serviços (um por linha)",
-                value="\n".join(emp["servicos"]),
-                height=178,
-                label_visibility="collapsed",
-                placeholder="Ex:\nTráfego Pago\nSEO\nSocial Media",
-            )
-            emp["servicos"] = [s.strip() for s in servicos_text.splitlines() if s.strip()]
+            with col_right:
+                sec_header("Serviços")
+                servicos_text = st.text_area(
+                    "Serviços (um por linha)",
+                    value="\n".join(emp["servicos"]),
+                    height=178,
+                    label_visibility="collapsed",
+                    placeholder="Ex:\nTráfego Pago\nSEO\nSocial Media",
+                )
+                emp["servicos"] = [s.strip() for s in servicos_text.splitlines() if s.strip()]
  
-        divider()
-        sec_header("Presença Digital")
-        col_ig, col_fb, col_site = st.columns(3)
-        emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
-        emp["fb_page"]   = col_fb.text_input("Facebook", emp["fb_page"])
-        site_digitado    = col_site.text_input("Site", emp["site"])
-        emp["site"]      = limpar_site(site_digitado)
+            divider()
+            sec_header("Presença Digital")
+            col_ig, col_fb, col_site = st.columns(3)
+            emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
+            emp["fb_page"]   = col_fb.text_input("Facebook", emp["fb_page"])
+            site_digitado    = col_site.text_input("Site", emp["site"])
+            emp["site"]      = limpar_site(site_digitado)
  
-        divider()
-        sec_header("Localização")
-        loc1, loc2 = st.columns(2)
-        estados      = list(ESTADOS_CIDADES.keys())
-        estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
-        emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
-        cidades       = ESTADOS_CIDADES.get(emp["estado"], [])
-        cidade_index  = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
-        emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
+            divider()
+            sec_header("Localização")
+            loc1, loc2 = st.columns(2)
+            estados      = list(ESTADOS_CIDADES.keys())
+            estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
+            emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
+            cidades       = ESTADOS_CIDADES.get(emp["estado"], [])
+            cidade_index  = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
+            emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
  
-        st.markdown("</div>", unsafe_allow_html=True)
- 
-        divider()
- 
-        # Salvar + Cancelar lado a lado
+        # Botões Salvar + Cancelar fora do container, lado a lado
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
         col_salvar, col_cancelar, _ = st.columns([2, 2, 4])
         with col_salvar:
-            if st.button("💾 Salvar Empresa", use_container_width=True, type="primary"):
+            if st.button("__salvar__", use_container_width=True, type="primary", key="btn_salvar_empresa"):
                 if emp["nome"].strip():
                     st.session_state.editar_empresa = False
                     salvar_dados_usuario(st.session_state.user.id)
@@ -1300,28 +1300,47 @@ if st.session_state.pagina == "home":
                     st.session_state.editar_empresa = False
                     st.rerun()
  
+        # Substitui texto __salvar__ por ícone FA + texto via JS
+        st.markdown("""
+        <script>
+        (function() {
+            function injectIcons() {
+                const btns = window.parent.document.querySelectorAll(
+                    'section.main div.stButton > button[kind="primary"]'
+                );
+                btns.forEach(btn => {
+                    if (btn.innerText.trim() === '__salvar__') {
+                        btn.innerHTML = '<i class="fa-solid fa-floppy-disk" style="margin-right:8px"></i>Salvar Empresa';
+                    }
+                });
+            }
+            setTimeout(injectIcons, 100);
+            setTimeout(injectIcons, 600);
+        })();
+        </script>
+        """, unsafe_allow_html=True)
+ 
     # ----------------------------------------------------------
     # MODO VISUALIZAÇÃO
     # ----------------------------------------------------------
     else:
  
-        # ── CSS: botão azul com seletor de alta especificidade
         st.markdown("""
         <style>
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
-            background: #2563eb !important;
-            background-color: #2563eb !important;
+            background: #3a9fd6 !important;
+            background-color: #3a9fd6 !important;
             color: #ffffff !important;
             border: none !important;
         }
         [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
         section.main div.stButton > button[kind="primary"]:hover {
-            background: #1d4ed8 !important;
-            background-color: #1d4ed8 !important;
-            color: #ffffff !important;
+            background: #2e8bbf !important;
+            background-color: #2e8bbf !important;
         }
         </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
  
         # Cabeçalho
@@ -1340,16 +1359,36 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            if st.button("✏️ Editar Empresa", use_container_width=True, type="primary"):
+            if st.button("__editar__", use_container_width=True, type="primary", key="btn_editar_empresa"):
                 st.session_state.editar_empresa = True
                 st.rerun()
+ 
+        # Substitui __editar__ por ícone FA + texto via JS
+        st.markdown("""
+        <script>
+        (function() {
+            function injectIcons() {
+                const btns = window.parent.document.querySelectorAll(
+                    'section.main div.stButton > button[kind="primary"]'
+                );
+                btns.forEach(btn => {
+                    if (btn.innerText.trim() === '__editar__') {
+                        btn.innerHTML = '<i class="fa-solid fa-pen" style="margin-right:8px"></i>Editar Empresa';
+                    }
+                });
+            }
+            setTimeout(injectIcons, 100);
+            setTimeout(injectIcons, 600);
+        })();
+        </script>
+        """, unsafe_allow_html=True)
  
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
             unsafe_allow_html=True,
         )
  
-        # ── Card da empresa (PRIMEIRO)
+        # ── Card da empresa
         avatar = gerar_avatar(emp["nome"])
         loc = emp["cidade"] or ""
         if emp["estado"]:
@@ -1424,30 +1463,27 @@ body {{ padding-bottom: 16px; }}
         altura = 300 + (linhas_tags * 44) + 40
         components.html(card_html, height=altura, scrolling=False)
  
-        # ── Bloco "Mantenha" (DEPOIS do card)
+        # ── Bloco "Mantenha" — colado abaixo do card (margin-top pequeno)
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
-                    padding:16px 20px;display:flex;align-items:center;
-                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
-            <div style='display:flex;align-items:center;gap:16px'>
-                <div style='width:42px;height:42px;border-radius:10px;
-                            background:#eff6ff;display:flex;align-items:center;
-                            justify-content:center;flex-shrink:0'>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 12l2 2 4-4" stroke="#2563eb" stroke-width="2.2"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
-                              stroke="#2563eb" stroke-width="2"
-                              stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    padding:16px 20px;display:flex;align-items:center;gap:16px;
+                    margin-top:4px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+            <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0'>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12l2 2 4-4" stroke="#3a9fd6" stroke-width="2.2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
+                          stroke="#3a9fd6" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div>
+                <div style='font-size:14px;font-weight:600;color:#0f172a'>
+                    Mantenha suas informações atualizadas
                 </div>
-                <div>
-                    <div style='font-size:14px;font-weight:600;color:#0f172a'>
-                        Mantenha suas informações atualizadas
-                    </div>
-                    <div style='font-size:13px;color:#64748b;margin-top:2px'>
-                        Dados atualizados garantem análises mais precisas e relatórios mais completos.
-                    </div>
+                <div style='font-size:13px;color:#64748b;margin-top:2px'>
+                    Dados atualizados garantem análises mais precisas e relatórios mais completos.
                 </div>
             </div>
         </div>
