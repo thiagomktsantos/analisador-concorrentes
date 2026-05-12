@@ -1624,19 +1624,6 @@ Seja direto e objetivo, máximo 3 pontos por seção.
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Tabela detalhada
-                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-                with st.expander("📋 Ver todos os posts"):
-                    df_posts = pd.DataFrame([{
-                        "Data":          p.get("date", ""),
-                        "Tipo":          "🎥 Vídeo" if p.get("is_video") else "🖼️ Foto",
-                        "❤️ Curtidas":   p.get("likes", 0),
-                        "💬 Comentários": p.get("comments", 0),
-                        "Eng. total":    p.get("likes", 0) + p.get("comments", 0),
-                        "Legenda":       p.get("caption", "")[:60],
-                    } for p in posts_list])
-                    st.dataframe(df_posts, use_container_width=True, hide_index=True)
-
             # ── Gráficos comparativos (só na última aba ou em todas?)
             # Mostrar comparativo em todas as abas
             st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
