@@ -760,8 +760,6 @@ if not st.session_state.logado:
 # SIDEBAR (apenas quando logado)
 # ---------------------------------------------------
 
-import streamlit.components.v1 as components
-
 with st.sidebar:
 
     st.markdown("""
@@ -773,7 +771,6 @@ with st.sidebar:
     .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
     .sb-logo-sub { font-size:8.4px; color:#3a9fd6; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-align:center; font-family:sans-serif; }
 
-    /* ── CORREÇÃO: botões invisíveis fora do fluxo completamente ── */
     [data-testid="stSidebar"] div.stButton > button {
         position: fixed !important;
         top: -9999px !important;
@@ -799,12 +796,11 @@ with st.sidebar:
     .sb-user { padding:12px 18px; font-size:12px; color:#3d4f63; border-top:1px solid #1e2530; margin-top:4px; word-break:break-all; display:flex; align-items:center; gap:8px; font-family:sans-serif; }
     .sb-user i { color:#3a9fd6; font-size:14px; }
 
-    /* Botão Sair visível */
     [data-testid="stSidebar"] div.stButton:last-of-type > button {
         position: relative !important;
         top: auto !important;
         left: auto !important;
-        width: auto !important;
+        width: calc(100% - 36px) !important;
         height: auto !important;
         opacity: 1 !important;
         pointer-events: auto !important;
@@ -816,7 +812,6 @@ with st.sidebar:
         font-size: 13px !important;
         font-weight: 500 !important;
         padding: 8px 16px !important;
-        width: calc(100% - 36px) !important;
         margin: 8px 18px !important;
         transition: all 0.15s ease !important;
     }
@@ -860,13 +855,11 @@ with st.sidebar:
                 trocar_pagina(p)
             st.rerun()
 
-    # ── Menu HTML com Font Awesome real
+    # ── Menu HTML
     pagina_atual = st.session_state.pagina
 
     def item_html(icon, label, key):
         ativo = "background:#1e2a3a;color:#e5e7eb;" if pagina_atual == key else "color:#8a95a3;"
-        hover_bg  = "transparent" if pagina_atual != key else "1e2a3a"
-        hover_cor = "8a95a3"      if pagina_atual != key else "e5e7eb"
         return f"""
         <a onclick="nav('{key}')" style="
             display:flex;align-items:center;gap:11px;
@@ -927,7 +920,7 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-    # ── Botão Sair (visível — o CSS acima faz ele aparecer por ser o último)
+    # ── Botão Sair
     if st.button("⇥  Sair", key="nav_sair_visible"):
         logout_supabase()
         for k in ["logado","user","dados","metricas_redes","pagina",
