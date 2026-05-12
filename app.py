@@ -432,10 +432,11 @@ section.main div.stButton > button:hover {
 section.main div.stButton > button[kind="primary"],
 section.main div.stFormSubmitButton > button,
 section.main div.stFormSubmitButton > button[kind="primary"] {
-    background: #111827 !important; color: #ffffff !important; border: none !important;
+    background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+    color: #ffffff !important; border: none !important;
 }
 section.main div.stButton > button[kind="primary"]:hover,
-section.main div.stFormSubmitButton > button:hover { background: #1f2937 !important; }
+section.main div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
 
 .form-section-header {
     font-size: 13px; font-weight: 600; color: #6b7280;
@@ -746,9 +747,9 @@ with st.sidebar:
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
     .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; margin-bottom: 8px; }
-    .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
-    .sb-logo-sub { font-size: 11px; color: #3d4f63; margin-top: 3px; font-family: DM Sans, sans-serif; font-weight: 500; }
-    .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
+    .sb-logo-title { font-size: 16px; font-weight: 700; color: #3a9fd6; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
+    .sb-logo-sub { font-size: 11px; color: #2ecc71; margin-top: 3px; font-family: DM Sans, sans-serif; font-weight: 500; }
+    .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #3a9fd6; font-family: DM Sans, sans-serif; }
     .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
     [data-testid="stSidebar"] div.stButton > button {
@@ -761,7 +762,7 @@ with st.sidebar:
         font-family: DM Sans, sans-serif !important; line-height: 1.4 !important;
     }
     [data-testid="stSidebar"] div.stButton > button:hover {
-        background-color: #161d2a !important; color: #e5e7eb !important;
+        background-color: #161d2a !important; color: #3a9fd6 !important;
     }
     </style>
     """, unsafe_allow_html=True)
