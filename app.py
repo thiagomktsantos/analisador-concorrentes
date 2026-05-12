@@ -398,134 +398,101 @@ Seja direto, objetivo e use dados do conteúdo real dos sites.
 if st.session_state.logado:
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
-
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
 
-    [data-testid="stSidebar"] {
-        background-color: #0f1117 !important;
-        border-right: 1px solid #1e2530 !important;
-    }
-    [data-testid="stSidebar"] > div:first-child { padding-top: 0 !important; }
+    header, #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
+
+    [data-testid="stAppViewContainer"] { background: #f0f2f5 !important; }
+    [data-testid="stAppViewContainer"] > section { background: #f0f2f5 !important; }
+
+    section.main > div { background: #f0f2f5 !important; }
 
     section.main .block-container {
-        padding: 2rem 2.5rem !important;
-        max-width: 1100px !important;
+        max-width: 480px !important;
+        padding: 48px 32px !important;
+        margin: 40px auto !important;
+        background: #ffffff !important;
+        border-radius: 16px !important;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
     }
 
-    .page-header {
-        display: flex; align-items: center; justify-content: space-between;
-        margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;
-    }
-    .page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; }
-    .page-subtitle { font-size: 14px; color: #6b7280; margin-top: 3px; }
-
-    section.main div.stButton > button {
-        border-radius: 7px !important; font-size: 14px !important; font-weight: 500 !important;
-        border: 1px solid #d1d5db !important; background: #ffffff !important;
-        color: #374151 !important; box-shadow: none !important;
-        padding: 8px 16px !important; transition: all 0.12s ease !important;
-        font-family: 'DM Sans', sans-serif !important; min-height: 38px !important;
-    }
-    section.main div.stButton > button:hover {
-        background: #f9fafb !important; border-color: #9ca3af !important; color: #111827 !important;
-    }
-    section.main div.stButton > button[kind="primary"],
-    section.main div.stFormSubmitButton > button,
-    section.main div.stFormSubmitButton > button[kind="primary"] {
-        background: #111827 !important; color: #ffffff !important; border: none !important;
-    }
-    section.main div.stButton > button[kind="primary"]:hover,
-    section.main div.stFormSubmitButton > button:hover { background: #1f2937 !important; }
-
-    .form-section-header {
-        font-size: 13px; font-weight: 600; color: #6b7280;
-        text-transform: uppercase; letter-spacing: 0.8px;
-        padding: 20px 0 12px 0; border-bottom: 1px solid #f3f4f6;
-        margin-bottom: 16px; font-family: 'DM Sans', sans-serif;
+    [data-testid="stVerticalBlockBorderWrapper"],
+    [data-testid="stVerticalBlockBorderWrapper"] > div,
+    [data-testid="stVerticalBlockBorderWrapper"] > div > div {
+        border: none !important;
+        background: #ffffff !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
 
-    section.main div[data-testid="stTextInput"] input,
-    section.main div[data-testid="stSelectbox"] select,
-    section.main div[data-baseweb="select"] {
-        font-size: 15px !important; border-radius: 7px !important;
-        border: 1px solid #e5e7eb !important;
-        font-family: 'DM Sans', sans-serif !important; color: #111827 !important;
+    div[data-testid="stTextInput"] input {
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        background: #fafafa !important;
+        font-size: 15px !important;
+        color: #111827 !important;
     }
-    section.main label {
-        font-size: 14px !important; font-weight: 500 !important;
-        color: #374151 !important; font-family: 'DM Sans', sans-serif !important;
-        margin-bottom: 4px !important;
-    }
-    section.main h1, section.main h2, section.main h3 {
-        font-family: 'DM Sans', sans-serif !important; letter-spacing: -0.4px !important;
-    }
-    section.main h1 { font-size: 28px !important; font-weight: 600 !important; color: #111827 !important; }
-    section.main h2 { font-size: 20px !important; font-weight: 600 !important; color: #111827 !important; margin-top: 28px !important; }
-    section.main h3 { font-size: 16px !important; font-weight: 600 !important; color: #374151 !important; }
-    section.main hr { border: none !important; border-top: 1px solid #f3f4f6 !important; margin: 20px 0 !important; }
-
-    div[data-testid="stInfo"] {
-        background: #f0f9ff !important; border: 1px solid #bae6fd !important;
-        border-radius: 8px !important; font-size: 15px !important;
-        color: #0c4a6e !important; padding: 14px 18px !important;
-    }
-    div[data-testid="stWarning"] {
-        background: #fffbeb !important; border: 1px solid #fcd34d !important;
-        border-radius: 8px !important; font-size: 15px !important; padding: 14px 18px !important;
-    }
-    div[data-testid="stSuccess"] {
-        background: #f0fdf4 !important; border: 1px solid #86efac !important;
-        border-radius: 8px !important; font-size: 15px !important; padding: 14px 18px !important;
-    }
-    div[data-testid="stError"] {
-        background: #fef2f2 !important; border: 1px solid #fca5a5 !important;
-        border-radius: 8px !important; font-size: 15px !important; padding: 14px 18px !important;
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #3a9fd6 !important;
+        background: #fff !important;
+        box-shadow: none !important;
     }
 
-    details summary { font-size: 16px !important; font-weight: 500 !important; padding: 14px 0 !important; }
-
-    .popup-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-        z-index: 999999; backdrop-filter: blur(2px);
+    div.stFormSubmitButton > button {
+        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        padding: 12px 20px !important;
+        width: 100% !important;
+        min-height: 48px !important;
     }
-    .popup-box {
-        position: fixed; top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: #ffffff; width: 480px; border-radius: 14px;
-        padding: 32px; z-index: 9999999; border: 1px solid #e5e7eb;
-        color: #111827; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    div.stFormSubmitButton > button p {
+        color: #ffffff !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
     }
-    .popup-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #111827; }
-    .popup-text { color: #6b7280; margin-bottom: 24px; font-size: 15px; line-height: 1.6; }
-
-    div[data-baseweb="select"] > div {
-        border-radius: 7px !important; min-height: 42px !important;
-        font-size: 15px !important; font-family: 'DM Sans', sans-serif !important;
-    }
-    div[data-testid="stDataFrame"] {
-        border-radius: 10px !important; overflow: hidden !important; border: 1px solid #e5e7eb !important;
-    }
-    section.main div[data-testid="stTextArea"] textarea {
-        font-size: 15px !important; border-radius: 7px !important;
-        border: 1px solid #e5e7eb !important;
-        font-family: 'DM Sans', sans-serif !important;
-        color: #111827 !important; resize: vertical !important;
-    }
+    div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
 
     div[data-testid="stTabs"] > div:first-child {
-        justify-content: center !important; border-bottom: 2px solid #e5e7eb !important; gap: 0 !important;
+        justify-content: center !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        gap: 0 !important;
+        margin-bottom: 8px !important;
+        background: #ffffff !important;
     }
     div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 15px !important; font-weight: 600 !important;
-        font-family: 'DM Sans', sans-serif !important; padding: 10px 32px !important;
-        color: #9ca3af !important; border-bottom: 2px solid transparent !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        padding: 10px 0 !important;
+        color: #9ca3af !important;
+        border-bottom: 2px solid transparent !important;
         margin-bottom: -2px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        flex: 1 !important;
+        text-align: center !important;
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #111827 !important; border-bottom: 2px solid #111827 !important;
+        color: #3a9fd6 !important;
+        border-bottom: 2px solid #3a9fd6 !important;
     }
-    div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
+    div[data-testid="stTabs"] button[role="tab"]:focus,
+    div[data-testid="stTabs"] button[role="tab"]:focus-visible {
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    div[data-baseweb="tab-highlight"] { background-color: #3a9fd6 !important; }
+    div[data-baseweb="tab-panel"] { background: #ffffff !important; }
+
+    section.main label {
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
