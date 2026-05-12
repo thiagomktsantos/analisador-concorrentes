@@ -1375,6 +1375,9 @@ elif st.session_state.pagina == "redes":
                         pr = rp.json()
                         items = pr if isinstance(pr, list) else pr.get("items", [])
                         if items:
+                            # DEBUG temporário
+                            st.write(f"🔍 Endpoint funcionou: {endpoint}")
+                            st.write("Exemplo de post:", items[0] if items else "vazio")
                             for p in items[:12]:
                                 likes    = int(p.get("like_count") or 0)
                                 comments = int(p.get("comment_count") or 0)
