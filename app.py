@@ -787,17 +787,17 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     logo_white_b64 = get_logo_white_base64()
-logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
+    logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
 
-if logo_white_src:
-    st.markdown(f'''
-    <div class="sb-logo">
-        <img src="{logo_white_src}" style="width: 160px; display: block; margin: 0 auto 8px auto;" />
-        <div class="sb-logo-sub" style="text-align:center">Competitive Intelligence</div>
-    </div>
-    ''', unsafe_allow_html=True)
-else:
-    st.markdown('<div class="sb-logo"><div class="sb-logo-title">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
+    if logo_white_src:
+        st.markdown(f'''
+        <div class="sb-logo">
+            <img src="{logo_white_src}" style="width: 160px; display: block; margin: 0 auto 8px auto;" />
+            <div class="sb-logo-sub" style="text-align:center">Competitive Intelligence</div>
+        </div>
+        ''', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="sb-logo"><div class="sb-logo-title">Marketylics</div><div class="sb-logo-sub">Competitive Intelligence</div></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sb-section">Dados Principais</div>', unsafe_allow_html=True)
     if st.button("🏛️   Minha Empresa"):   trocar_pagina("home")
@@ -810,7 +810,6 @@ else:
     if st.button("🎬   Biblioteca de Ads"): trocar_pagina("ads")
     if st.button("💡   Insights"):         trocar_pagina("insights")
 
-    # Usuário + Logout
     user_email = st.session_state.user.email if st.session_state.user else ""
     st.markdown(f'<div class="sb-user">👤 {user_email}</div>', unsafe_allow_html=True)
     if st.button("🚪   Sair"):
