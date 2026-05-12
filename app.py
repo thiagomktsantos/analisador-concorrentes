@@ -1532,31 +1532,20 @@ elif st.session_state.pagina == "redes":
             return {"erro": str(e)}
 
     def coletar_melhor_fonte(handle: str, is_minha: bool) -> dict:
-        token = st.secrets.get("IG_ACCESS_TOKEN", "")
-        graph_err = ""
-        if token:
-            r = coletar_graph_api(handle, is_minha)
-            if r is not None and not r.get("erro"):
-                return r
-            graph_err = r.get("erro", "") if r else "token presente mas retornou None"
-            # Mostra o erro real da Graph API no aviso
-            return {
-                "handle": "@" + handle.lstrip("@"),
-                "nome_exibido": handle,
-                "seguidores": 0,
-                "seguindo": 0,
-                "total_posts": 0,
-                "bio": "",
-                "is_verified": False,
-                "pic_url": "",
-                "eng_medio": 0,
-                "eng_pct": 0.0,
-                "posts": [],
-                "fonte": "erro_debug",
-                "erro": None,
-                "aviso": f"Graph API erro: {graph_err}",
-            }
-        return {"erro": "IG_ACCESS_TOKEN não encontrado nos secrets"}
+    rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
+
+    if rapidapi_key:
+        r = coletar_graph_api(handle, is_minha)
+        if r and not r.get("erro"):
+            return r
+        return r if r else {"erro": "Erro desconhecido na RapidAPI"}
+
+    # Fallback: scraping HTML
+    r = coletar_scraping(handle)
+    if r and not r.get("erro"):
+        return r
+
+    return {"erro": "Configure RAPIDAPI_KEY nos secrets para coletar dados do Instagram."}
 
     # ── Lista de empresas ─────────────────────────────────────────
     emp = st.session_state.dados["minha_empresa"]
