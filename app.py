@@ -559,6 +559,15 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     overflow: hidden !important;
     line-height: 0 !important;
 }
+[data-testid="stSidebar"] .stElementContainer:has(div.stButton) {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+    display: none !important;
+}
 
 /* ── Botão Sair visível — último element-container do sidebar ── */
 [data-testid="stSidebar"] div[data-testid="element-container"]:last-child div.stButton > button {
@@ -903,7 +912,7 @@ with st.sidebar:
     </script>
     """
 
-    components.html(menu_html, height=320, scrolling=False)
+    components.html(menu_html, height=370, scrolling=False)
 
     # ── Usuário
     user_email = st.session_state.user.email if st.session_state.user else ""
