@@ -1390,11 +1390,21 @@ elif st.session_state.pagina == "redes":
                     "is_video": p.get("media_type", 1) == 2,
                 })
 
-            eng_medio = (
-                sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
-                if posts_data else 0
-            )
-            eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
+            # Se posts vieram, calcula pelo engajamento real
+            if posts_data:
+                eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
+                eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
+            else:
+                # Estimativa baseada em benchmarks: ~3% para contas até 10k, ~1.5% acima
+                if seg <= 10000:
+                    eng_pct = 3.0
+                elif seg <= 50000:
+                    eng_pct = 2.0
+                elif seg <= 100000:
+                    eng_pct = 1.5
+                else:
+                    eng_pct = 1.0
+                eng_medio = round(seg * eng_pct / 100, 1)
 
             return {
                 "handle":       "@" + handle_limpo,
