@@ -671,6 +671,20 @@ if not st.session_state.logado:
     section.main div[data-testid="stTextInput"] input:focus {{
         border-color: #3a9fd6 !important; background: #fff !important;
     }}
+
+    /* Força o flex no container interno da coluna direita */
+    [data-testid="stHorizontalBlock"] > div:last-child > div {{
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        height: 100% !important;
+        padding: 0 !important;
+    }}
+
+    /* Remove padding extra do elemento filho direto */
+    [data-testid="stHorizontalBlock"] > div:last-child > div > div {{
+        width: 100% !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -716,8 +730,9 @@ if not st.session_state.logado:
 
     # ── PAINEL DIREITO (widgets Streamlit normais)
     with col_right:
-        st.markdown("<div class='mkt-right-wrap'>", unsafe_allow_html=True)
-        st.markdown("<div style='height:60px'/>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='height:60px'/>
+        """, unsafe_allow_html=True)
         st.markdown("<div class='mkt-card-title'>Bem-vindo de volta</div>", unsafe_allow_html=True)
         st.markdown("<div class='mkt-card-sub'>Acesse sua conta para continuar</div>", unsafe_allow_html=True)
 
