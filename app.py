@@ -570,6 +570,7 @@ if not st.session_state.logado:
     html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
 
     header, #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
+
     [data-testid="stAppViewContainer"] { background: #f0f2f5 !important; }
 
     section.main .block-container {
@@ -579,14 +580,25 @@ if not st.session_state.logado:
         background: transparent !important;
     }
 
-    [data-testid="stVerticalBlockBorderWrapper"],
-    [data-testid="stVerticalBlockBorderWrapper"] > div,
-    [data-testid="stVerticalBlockBorderWrapper"] > div > div {
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border: none !important;
+        background: #ffffff !important;
         border-radius: 16px !important;
         box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
-        border: none !important;
-        padding: 36px !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] > div,
+    [data-testid="stVerticalBlockBorderWrapper"] > div > div {
         background: #ffffff !important;
+        border: none !important;
+        border-radius: 16px !important;
+    }
+    [data-testid="stVerticalBlock"] {
+        width: 100% !important;
+        max-width: 440px !important;
+        margin: 0 auto !important;
+    }
+    div[class*="st-emotion-cache"] {
+        border-color: transparent !important;
     }
 
     div[data-testid="stTextInput"] input {
