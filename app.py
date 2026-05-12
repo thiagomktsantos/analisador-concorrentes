@@ -1520,10 +1520,25 @@ elif st.session_state.pagina == "redes":
 
             posts_data = []
             if pk:
-                url_posts = f"https://instagram-looter2.p.rapidapi.com/posts?id={pk}&count=9"
-                r_posts = requests.get(url_posts, headers=headers, timeout=15)
-                posts_raw = r_posts.json()
-                items = posts_raw if isinstance(posts_raw, list) else posts_raw.get("items", [])
+                posts_raw = None
+                for endpoint in [
+                    f"https://instagram-looter2.p.rapidapi.com/feed?id={pk}&count=9",
+                    f"https://instagram-looter2.p.rapidapi.com/posts?id={pk}&count=9",
+                    f"https://instagram-looter2.p.rapidapi.com/medias?id={pk}&count=9",
+                ]:
+                    try:
+                        r_posts = requests.get(endpoint, headers=headers, timeout=15)
+                        posts_raw = r_posts.json()
+                        if isinstance(posts_raw, list) and len(posts_raw) > 0:
+                            break
+                        if isinstance(posts_raw, dict) and posts_raw.get("items"):
+                            break
+                        posts_raw = None
+                    except Exception:
+                        continue
+                items = []
+                if posts_raw:
+                    items = posts_raw if isinstance(posts_raw, list) else posts_raw.get("items", [])
                 for p in items[:9]:
                     likes    = p.get("like_count", 0)
                     comments = p.get("comment_count", 0)
@@ -1696,33 +1711,32 @@ elif st.session_state.pagina == "redes":
         </div>
         """, unsafe_allow_html=True)
 
-        kpi_cols = st.columns(4)
-        kpis = [
-            ("👥 Seguidores",   fmt_num(r.get("seguidores", 0))),
-            ("📝 Posts totais", fmt_num(r.get("total_posts", 0))),
-            ("❤️ Eng. médio",  fmt_num(int(r.get("eng_medio", 0)))),
-            ("📈 Eng. %",       f"{r.get('eng_pct', 0):.2f}%"),
-        ]
-        for col, (lbl, val) in zip(kpi_cols, kpis):
-            col.markdown(f"""
-            <div style='padding:12px 14px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:8px'>
-                <div class='rs-metric-lbl'>{lbl}</div>
-                <div class='rs-metric-val'>{val}</div>
+        bio_txt = r.get("bio", "")
+        st.markdown(f"""
+        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                    padding:16px 22px;margin-bottom:4px;display:flex;gap:32px;align-items:center;flex-wrap:wrap'>
+            <div style='text-align:center;min-width:80px'>
+                <div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>👥 Seguidores</div>
+                <div style='font-size:22px;font-weight:700;color:#111827;letter-spacing:-1px'>{fmt_num(r.get("seguidores",0))}</div>
             </div>
-            """, unsafe_allow_html=True)
-
-        if r.get("bio"):
-            st.markdown(
-                f"<div style='font-size:13px;color:#6b7280;margin-top:12px;font-style:italic'>&ldquo;{r['bio']}&rdquo;</div>",
-                unsafe_allow_html=True
-            )
-        for aviso_key in ("aviso", "aviso_instaloader"):
-            if r.get(aviso_key):
-                st.markdown(
-                    f"<div style='font-size:12px;color:#d97706;margin-top:8px'>⚡ {r[aviso_key]}</div>",
-                    unsafe_allow_html=True
-                )
-        st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+            <div style='width:1px;height:36px;background:#f3f4f6'></div>
+            <div style='text-align:center;min-width:80px'>
+                <div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>📝 Posts</div>
+                <div style='font-size:22px;font-weight:700;color:#111827;letter-spacing:-1px'>{fmt_num(r.get("total_posts",0))}</div>
+            </div>
+            <div style='width:1px;height:36px;background:#f3f4f6'></div>
+            <div style='text-align:center;min-width:80px'>
+                <div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>❤️ Eng. médio</div>
+                <div style='font-size:22px;font-weight:700;color:#111827;letter-spacing:-1px'>{fmt_num(int(r.get("eng_medio",0)))}</div>
+            </div>
+            <div style='width:1px;height:36px;background:#f3f4f6'></div>
+            <div style='text-align:center;min-width:80px'>
+                <div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>📈 Eng. %</div>
+                <div style='font-size:22px;font-weight:700;color:#111827;letter-spacing:-1px'>{r.get("eng_pct",0):.2f}%</div>
+            </div>
+            {f'<div style="flex:1;font-size:13px;color:#6b7280;font-style:italic;min-width:200px">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else ''}
+        </div>
+        """, unsafe_allow_html=True)
 
     # ── SEÇÃO 2: Gráficos comparativos ───────────────────────────
     st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
