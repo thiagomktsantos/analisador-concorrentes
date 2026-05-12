@@ -915,7 +915,7 @@ body {{
  
 .nav-item {{
     display: flex; align-items: center; gap: 14px;
-    padding: 8px 16px;
+    padding: 7px 16px;
     border-radius: 10px;
     margin-bottom: 3px;
     cursor: pointer;
@@ -942,7 +942,7 @@ body {{
 .nav-item.active .nav-icon {{ color: #e2eaf5; }}
  
 .nav-label {{
-    font-size: 15px; font-weight: 600;
+    font-size: 14px; font-weight: 600;
     color: #8a9bb0; flex: 1;
     letter-spacing: 0.1px;
 }}
