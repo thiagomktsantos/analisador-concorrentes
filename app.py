@@ -567,15 +567,39 @@ if not st.session_state.logado:
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
     section.main .block-container {{ padding: 0 !important; max-width: 100% !important; }}
-    [data-testid="stAppViewContainer"] {{ background: #f0f2f5 !important; }}
+    [data-testid="stAppViewContainer"] {{ background: #ffffff !important; }}
+
+    /* Remove padding padrão do main */
+    [data-testid="stAppViewContainer"] > section.main {{
+        padding: 0 !important;
+    }}
+
+    /* Faz as colunas esticarem full height e remove gap */
+    [data-testid="stHorizontalBlock"] {{
+        gap: 0 !important;
+        align-items: stretch !important;
+        min-height: 100vh !important;
+    }}
+
+    /* Coluna esquerda — fundo escuro */
+    [data-testid="stHorizontalBlock"] > div:first-child {{
+        background: #1a2234 !important;
+        border-right: 1px solid #243047 !important;
+        min-height: 100vh !important;
+    }}
+
+    /* Coluna direita — fundo branco */
+    [data-testid="stHorizontalBlock"] > div:last-child {{
+        background: #ffffff !important;
+        min-height: 100vh !important;
+    }}
 
     .mkt-left {{
-        background: #1a2234;
         display: flex; flex-direction: column; align-items: center;
         justify-content: center; padding: 48px 32px;
         min-height: 100vh;
-        border-right: 1px solid #243047;
     }}
     .mkt-logo {{ width: 180px; margin-bottom: 8px; }}
     .mkt-brand-sub {{
@@ -593,7 +617,7 @@ if not st.session_state.logado:
     .mkt-tagline {{ margin-top: 28px; font-size: 12px; color: #3d5168; text-align: center; line-height: 1.7; }}
 
     .mkt-right-wrap {{
-        background: #ffffff; min-height: 100vh;
+        min-height: 100vh;
         display: flex; flex-direction: column;
         justify-content: center; padding: 48px 32px;
     }}
@@ -608,7 +632,6 @@ if not st.session_state.logado:
     .mkt-footer {{ text-align: center; font-size: 11px; color: #c4c9d4; margin-top: 10px; font-family: 'DM Sans', sans-serif; }}
     .mkt-footer a {{ color: #3a9fd6; text-decoration: none; }}
 
-    /* Botão gradiente da marca */
     section.main div.stFormSubmitButton > button {{
         background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
         color: #fff !important; border: none !important;
