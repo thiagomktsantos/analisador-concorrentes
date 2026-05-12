@@ -768,7 +768,8 @@ with st.sidebar:
     .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; }
     .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
     .sb-logo-sub { font-size: 8.4px; color:#3a9fd6; font-family: DM Sans, sans-serif; font-weight:600;letter-spacing:2px;text-transform:uppercase }
-    .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
+    .sb-section { padding: 5px 0px 5px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #008fcc; font-family: DM Sans, sans-serif;
+    margin: 5px 0 20px; width: 100%; background-color: #052f46; border-radius: 5px;}
     .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
     [data-testid="stSidebar"] .stElementContainer { margin-bottom: 0px !important; padding-bottom: 0px !important; }
