@@ -1188,13 +1188,12 @@ if st.session_state.pagina == "home":
             background-color: #2e8bbf !important;
         }
 
-        /* Form sem fundo branco — seletores agressivos */
+        /* Form COM fundo branco */
         section.main [data-testid="stVerticalBlockBorderWrapper"],
         section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
         section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div {
-            background: transparent !important;
-            background-color: transparent !important;
-            box-shadow: none !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -1236,8 +1235,6 @@ if st.session_state.pagina == "home":
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
         with st.container(border=True):
-            st.markdown("<div class='empresa-form-inner' style='display:none'></div>", unsafe_allow_html=True)
-
             col_left, col_right = st.columns(2)
 
             with col_left:
@@ -1283,7 +1280,7 @@ if st.session_state.pagina == "home":
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
         col_salvar, col_cancelar, _ = st.columns([2, 2, 4])
         with col_salvar:
-            if st.button("💾  Salvar Empresa", use_container_width=True, type="primary", key="btn_salvar_empresa"):
+            if st.button("Salvar Empresa", use_container_width=True, type="primary", key="btn_salvar_empresa"):
                 if emp["nome"].strip():
                     st.session_state.editar_empresa = False
                     salvar_dados_usuario(st.session_state.user.id)
@@ -1310,6 +1307,8 @@ if st.session_state.pagina == "home":
             background-color: #3a9fd6 !important;
             color: #ffffff !important;
             border: none !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
         }
         [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
         section.main div.stButton > button[kind="primary"]:hover {
@@ -1335,9 +1334,25 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            if st.button("✏️  Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa"):
+            if st.button("EDITAR_EMPRESA", use_container_width=True, type="primary", key="btn_editar_empresa"):
                 st.session_state.editar_empresa = True
                 st.rerun()
+
+        # JS injeta ícone FA no botão pelo texto exato
+        st.markdown("""
+        <script>
+        (function tryInject() {
+            const all = window.parent.document.querySelectorAll('button');
+            for (const btn of all) {
+                if (btn.innerText.trim() === 'EDITAR_EMPRESA') {
+                    btn.innerHTML = '<i class="fa-solid fa-pen-to-square" style="margin-right:8px;font-size:13px"></i>Editar Empresa';
+                    return;
+                }
+            }
+            setTimeout(tryInject, 150);
+        })();
+        </script>
+        """, unsafe_allow_html=True)
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
@@ -1368,36 +1383,28 @@ body {{ padding-bottom: 2px; }}
     border-radius: 14px;
     overflow: hidden;
     margin-bottom: 2px;
-}}
-
-/* ── Hero com fundo leve e SVG decorativo ── */
-.card-hero {{
     position: relative;
-    height: 64px;
-    background: linear-gradient(135deg, #eef4ff 0%, #e8f0fe 60%, #ede9fe 100%);
-    overflow: hidden;
-    flex-shrink: 0;
 }}
-.card-hero svg {{
+
+/* SVG decorativo no canto superior direito, SEM fundo colorido */
+.card-deco {{
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 320px;
-    height: 64px;
-    opacity: 0.6;
+    top: 0; right: 0;
+    width: 280px; height: 120px;
+    pointer-events: none;
+    opacity: 0.45;
 }}
 
-.card-body {{ padding: 0 28px 24px 28px; }}
+.card-body {{ padding: 24px 28px 24px 28px; }}
 
-/* ── Avatar sobe para sobrepor o hero ── */
 .top {{
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-top: -22px;
     margin-bottom: 20px;
     padding-bottom: 18px;
     border-bottom: 1px solid #f3f4f6;
+    position: relative;
 }}
 .avatar {{
     width: 52px; height: 52px; min-width: 52px;
@@ -1406,21 +1413,19 @@ body {{ padding-bottom: 2px; }}
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; font-weight: 700; color: #fff;
     flex-shrink: 0;
-    border: 3px solid #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }}
 .nome {{ font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 2px; letter-spacing: -0.3px; }}
 .sub  {{ font-size: 13px; color: #9ca3af; }}
 
-/* ── Grid 3 colunas com divisórias ── */
+/* Grid 3 colunas com divisórias */
 .grid {{
     display: grid;
     grid-template-columns: 1fr 1px 1fr 1px 1fr;
     gap: 0;
 }}
 .divider-col {{
-    background: #f3f4f6;
-    margin: 0 28px;
+    background: #f0f0f0;
+    margin: 0 24px;
     align-self: stretch;
 }}
 .col {{ padding: 0 4px; }}
@@ -1457,22 +1462,18 @@ body {{ padding-bottom: 2px; }}
 <body>
 <div class="card">
 
-  <!-- Hero com gráfico decorativo -->
-  <div class="card-hero">
-    <svg viewBox="0 0 700 90" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMax meet">
-      <path d="M 60 78 C 180 52 310 68 430 42 C 505 28 575 24 700 12"
-            stroke="#93c5fd" stroke-width="1.5" fill="none"/>
-      <circle cx="430" cy="42" r="3.5" fill="#60a5fa"/>
-      <circle cx="575" cy="24" r="3.5" fill="#60a5fa"/>
-      <circle cx="665" cy="13" r="4.5" fill="#3b82f6"/>
-      <rect x="555" y="50" width="13" height="32" rx="3" fill="#93c5fd" opacity="0.5"/>
-      <rect x="574" y="40" width="13" height="42" rx="3" fill="#60a5fa" opacity="0.6"/>
-      <rect x="593" y="28" width="13" height="54" rx="3" fill="#3b82f6" opacity="0.68"/>
-      <rect x="612" y="18" width="13" height="64" rx="3" fill="#2563eb" opacity="0.75"/>
-      <path d="M 160 88 Q 400 78 600 85 Q 650 87 700 83"
-            stroke="#c7d2fe" stroke-width="0.9" fill="none" opacity="0.5"/>
-    </svg>
-  </div>
+  <!-- SVG decorativo flutuante, sem fundo -->
+  <svg class="card-deco" viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
+    <path d="M 0 95 C 60 70 120 82 180 55 C 220 38 250 30 280 18"
+          stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+    <circle cx="180" cy="55" r="3.5" fill="#60a5fa"/>
+    <circle cx="250" cy="30" r="3.5" fill="#60a5fa"/>
+    <circle cx="272" cy="20" r="4.5" fill="#3b82f6"/>
+    <rect x="200" y="62" width="12" height="42" rx="3" fill="#93c5fd" opacity="0.5"/>
+    <rect x="218" y="50" width="12" height="54" rx="3" fill="#60a5fa" opacity="0.6"/>
+    <rect x="236" y="36" width="12" height="68" rx="3" fill="#3b82f6" opacity="0.68"/>
+    <rect x="254" y="22" width="12" height="82" rx="3" fill="#2563eb" opacity="0.75"/>
+  </svg>
 
   <div class="card-body">
     <!-- Identidade -->
@@ -1570,14 +1571,14 @@ body {{ padding-bottom: 2px; }}
 
         n_servicos = len(emp["servicos"])
         linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
-        altura = 310 + (linhas_tags * 44) + 20
+        altura = 290 + (linhas_tags * 44) + 20
         components.html(card_html, height=altura, scrolling=False)
 
-        # ── Bloco "Mantenha" colado abaixo
+        # ── Bloco "Mantenha" — margem negativa grande para compensar padding do iframe
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:16px 20px;display:flex;align-items:center;gap:16px;
-                    margin-top:-10px;position:relative;z-index:1;
+                    margin-top:-32px;position:relative;z-index:10;
                     box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
