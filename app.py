@@ -570,12 +570,11 @@ if not st.session_state.logado:
     html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
 
     header, #MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
-
     [data-testid="stAppViewContainer"] { background: #f0f2f5 !important; }
 
     section.main .block-container {
         max-width: 480px !important;
-        padding: 48px 0 48px 0 !important;
+        padding: 48px 24px !important;
         margin: 0 auto !important;
     }
 
@@ -588,6 +587,7 @@ if not st.session_state.logado:
     div[data-testid="stTextInput"] input:focus {
         border-color: #3a9fd6 !important;
         background: #fff !important;
+        box-shadow: none !important;
     }
 
     div.stFormSubmitButton > button {
@@ -602,6 +602,7 @@ if not st.session_state.logado:
     }
     div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
 
+    /* Cor laranja removida — usa azul da marca */
     div[data-testid="stTabs"] > div:first-child {
         justify-content: center !important;
         border-bottom: 2px solid #e5e7eb !important;
@@ -615,38 +616,49 @@ if not st.session_state.logado:
         color: #9ca3af !important;
         border-bottom: 2px solid transparent !important;
         margin-bottom: -2px !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #1a2234 !important;
-        border-bottom: 2px solid #1a2234 !important;
+        color: #3a9fd6 !important;
+        border-bottom: 2px solid #3a9fd6 !important;
+        background: transparent !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"]:focus,
+    div[data-testid="stTabs"] button[role="tab"]:focus-visible {
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    /* Remove a linha laranja do Streamlit */
+    div[data-testid="stTabs"] > div:first-child > div[role="tablist"]::after,
+    div[data-testid="stTabs"] [aria-selected="true"]::after,
+    div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
+        background-color: #3a9fd6 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # Card do topo com logo e título
     st.markdown(f"""
     <div style="
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-        padding: 36px 40px 28px 40px;
-        text-align: center;
-        margin-bottom: 16px;
+        background:#fff;
+        border-radius:16px;
+        box-shadow:0 2px 16px rgba(0,0,0,0.07);
+        padding:36px 40px 28px 40px;
+        text-align:center;
+        margin-bottom:16px;
     ">
-        {'<img src="' + logo_src + '" style="width:150px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234;margin-bottom:10px">marketylics</div>'}
-        <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:18px">Competitive Intelligence</div>
+        {'<img src="' + logo_src + '" style="width:140px;margin-bottom:10px" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234;margin-bottom:10px">marketylics</div>'}
+        <div style="font-size:11px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px">Competitive Intelligence</div>
         <div style="font-size:22px;font-weight:700;color:#1a2234;margin-bottom:4px">Bem-vindo de volta</div>
         <div style="font-size:14px;color:#9ca3af">Acesse sua conta para continuar</div>
     </div>
-    """, unsafe_allow_html=True)
 
-    # Card do formulário
-    st.markdown("""
     <div style="
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-        padding: 28px 40px 24px 40px;
+        background:#fff;
+        border-radius:16px;
+        box-shadow:0 2px 16px rgba(0,0,0,0.07);
+        padding:28px 40px 24px 40px;
+        margin-bottom:16px;
     ">
     """, unsafe_allow_html=True)
 
@@ -705,9 +717,11 @@ if not st.session_state.logado:
                     st.error(f"Erro: {err}")
 
     st.markdown("""
-    <div style="text-align:center;font-size:11px;color:#c4c9d4;margin-top:16px;padding-top:16px;border-top:1px solid #f3f4f6">
+    <div style="text-align:center;font-size:11px;color:#c4c9d4;padding-top:8px">
         🔒 Conexão segura com criptografia SSL<br><br>
-        Ao entrar, você concorda com os <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> e <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
+        Ao entrar, você concorda com os
+        <a href="#" style="color:#3a9fd6;text-decoration:none">Termos de Uso</a> e
+        <a href="#" style="color:#3a9fd6;text-decoration:none">Privacidade</a>
     </div>
     """, unsafe_allow_html=True)
 
