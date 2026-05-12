@@ -765,9 +765,9 @@ with st.sidebar:
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
     [data-testid="stSidebar"] { background-color: #0f1117 !important; border-right: 1px solid #1e2530 !important; }
-    .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; margin-bottom: 8px; }
+    .sb-logo { padding: 22px 18px 16px; border-bottom: 1px solid #1e2530; }
     .sb-logo-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; font-family: DM Sans, sans-serif; }
-    .sb-logo-sub { font-size: 11px; color: #3d4f63; margin-top: 3px; font-family: DM Sans, sans-serif; font-weight: 500; }
+    .sb-logo-sub { font-size: 13px; color: #007dbb; font-family: DM Sans, sans-serif; font-weight: 500; }
     .sb-section { padding: 18px 18px 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; color: #2d3a4a; font-family: DM Sans, sans-serif; }
     .sb-user { padding: 12px 18px; font-size: 12px; color: #3d4f63; border-top: 1px solid #1e2530; margin-top: 8px; word-break: break-all; }
     [data-testid="stSidebar"] div.stButton { margin-bottom: 0px !important; }
