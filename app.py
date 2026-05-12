@@ -1455,7 +1455,36 @@ elif st.session_state.pagina == "redes":
     with h2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
         coletar = st.button("🔄 Coletar dados agora", type="primary", use_container_width=True)
+        ultima_coleta = carregar_cache_redes().get("ultima_coleta", "")
+        if ultima_coleta:
+            st.markdown(f"<div style='font-size:12px;color:#6b7280;margin-top:6px;text-align:center'>🕐 Última coleta: <b>{ultima_coleta}</b></div>", unsafe_allow_html=True)
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <style>
+    section.main div.stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+    section.main div.stButton > button[kind="primary"]:hover {
+        opacity: 0.9 !important;
+        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        font-size: 20px !important;
+        color: #9ca3af !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        color: #3a9fd6 !important;
+        border-bottom: 2px solid #3a9fd6 !important;
+    }
+    div[data-baseweb="tab-highlight"] {
+        background-color: #3a9fd6 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
