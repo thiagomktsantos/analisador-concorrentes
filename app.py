@@ -2793,9 +2793,10 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
                 <div class="card">
                     {posts_html}
-                </div>
+                    <details style="margin-top:16px">
 
-                <details>
+                </details>
+                </div>
                     <summary>Ver todos os posts</summary>
                     <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
                         <table>
@@ -2815,7 +2816,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         </table>
                     </div>
                 </details>
-                """, height=420 if posts_list else 100, scrolling=False)
+                """, height=460 if posts_list else 100, scrolling=False)
 
             with col_ia:
                 st.markdown(
