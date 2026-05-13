@@ -2669,60 +2669,70 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                     "text-transform:uppercase;margin-bottom:14px;"
-                    "font-family:\"DM Sans\",sans-serif'>"
-                    "📸 Últimas 3 Postagens</div>",
+                    "font-family:\"Source Sans\",sans-serif'>"
+                    "Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
 
-                # Monta HTML das postagens
-                if not posts_list:
-                    posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
-                else:
-                    cards = ""
-                    for post in posts_list[:3]:
-                        likes_fmt = fmt_num(post.get("likes", 0))
-                        coms_fmt  = fmt_num(post.get("comments", 0))
-                        thumb_url = post.get("thumb", "")
-                        date_str  = post.get("date", "")
-                        if thumb_url:
-                            img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror=\"this.style.display='none'\" />"
-                        else:
-                            icon = "Vídeo" if post.get("is_video") else "Foto"
-                            img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>"
-                        cards += f"""
-                        <div style='flex:1;text-align:center'>
-                            {img_html}
-                            <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
-                            <div style='font-size:11px;color:#9ca3af'>{date_str}</div>
-                        </div>"""
-                    posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
+                with st.container(border=True):
+                    st.markdown("""
+                    <style>
+                    [data-testid="stVerticalBlockBorderWrapper"] {
+                        border-radius: 12px !important;
+                        border-color: #e5e7eb !important;
+                        background: #fff !important;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
 
-                components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                            padding:20px;font-family:DM Sans,sans-serif;box-sizing:border-box'>
-                    {posts_html}
-                </div>
-                """, height=280)
+                    if not posts_list:
+                        posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
+                    else:
+                        cards = ""
+                        for post in posts_list[:3]:
+                            likes_fmt = fmt_num(post.get("likes", 0))
+                            coms_fmt  = fmt_num(post.get("comments", 0))
+                            thumb_url = post.get("thumb", "")
+                            date_str  = post.get("date", "")
+                            if thumb_url:
+                                img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror=\"this.style.display='none'\" />"
+                            else:
+                                icon = "Vídeo" if post.get("is_video") else "Foto"
+                                img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>"
+                            cards += f"""
+                            <div style='flex:1;text-align:center'>
+                                {img_html}
+                                <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                                <div style='font-size:11px;color:#9ca3af'>{date_str}</div>
+                            </div>"""
+                        posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
 
-                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-                with st.expander("Ver todos os posts"):
-                    df_posts = pd.DataFrame([{
-                        "Data":        p.get("date", ""),
-                        "Tipo":        "Vídeo" if p.get("is_video") else "Foto",
-                        "Curtidas":    p.get("likes", 0),
-                        "Comentários": p.get("comments", 0),
-                        "Eng. total":  p.get("likes", 0) + p.get("comments", 0),
-                        "Legenda":     p.get("caption", "")[:60],
-                    } for p in posts_list])
-                    st.dataframe(df_posts, use_container_width=True, hide_index=True)
+                    components.html(f"""
+                    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                    <div style='font-family:DM Sans,sans-serif;box-sizing:border-box'>
+                        {posts_html}
+                    </div>
+                    """, height=240)
+
+                    st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+
+                    with st.expander("Ver todos os posts"):
+                        df_posts = pd.DataFrame([{
+                            "Data":        p.get("date", ""),
+                            "Tipo":        "Vídeo" if p.get("is_video") else "Foto",
+                            "Curtidas":    p.get("likes", 0),
+                            "Comentários": p.get("comments", 0),
+                            "Eng. total":  p.get("likes", 0) + p.get("comments", 0),
+                            "Legenda":     p.get("caption", "")[:60],
+                        } for p in posts_list])
+                        st.dataframe(df_posts, use_container_width=True, hide_index=True)
 
             with col_ia:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                     "text-transform:uppercase;margin-bottom:14px;"
-                    "font-family:\"DM Sans\",sans-serif'>"
-                    "🤖 Análise de IA</div>",
+                    "font-family:\"Source Sans\",sans-serif'>"
+                    "Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
 
@@ -2749,11 +2759,14 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                 with st.container(border=True):
                     st.markdown("""
                     <style>
-                    [data-testid="stVerticalBlockBorderWrapper"] {
+                    div[data-testid="stVerticalBlockBorderWrapper"]:nth-of-type(2) {
                         border-radius: 12px !important;
                         border-color: #e5e7eb !important;
-                        padding: 4px 8px !important;
-                        background: #fff !important;
+                        background: #ffffff !important;
+                    }
+                    div[data-testid="stVerticalBlockBorderWrapper"] > div,
+                    div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
+                        background: #ffffff !important;
                     }
                     </style>
                     """, unsafe_allow_html=True)
