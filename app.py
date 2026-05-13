@@ -2515,7 +2515,7 @@ elif st.session_state.pagina == "redes":
             posts_list = r.get("posts", [])
  
             # ── INFORMAÇÕES DE PERFIL
-          st.markdown(
+            st.markdown(
                 "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                 "text-transform:uppercase;margin-bottom:14px;"
                 "font-family:\"DM Sans\",sans-serif'>"
