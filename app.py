@@ -2616,53 +2616,53 @@ elif st.session_state.pagina == "redes":
                                 {r["nome"]}
                                 <span style='font-size:12px;font-weight:400;color:#9ca3af'>{r.get("handle","")}</span>
                             </div>
-                        </div>
-                    </div>
-<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
-                        <div style='padding:14px 16px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:8px;font-weight:600;
-                                        text-transform:uppercase;letter-spacing:0.8px'>Seguidores</div>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>👥</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {fmt_num(r.get("seguidores",0))}
-                                </span>
-                            </div>
-                        </div>
-                        <div style='padding:14px 16px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:8px;font-weight:600;
-                                        text-transform:uppercase;letter-spacing:0.8px'>Posts</div>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>🖼️</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {fmt_num(r.get("total_posts",0))}
-                                </span>
-                            </div>
-                        </div>
-                        <div style='padding:14px 16px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:8px;font-weight:600;
-                                        text-transform:uppercase;letter-spacing:0.8px'>Eng. Médio</div>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>❤️</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {fmt_num(int(r.get("eng_medio",0)))}
-                                </span>
-                            </div>
-                        </div>
-                        <div style='padding:14px 16px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:8px;font-weight:600;
-                                        text-transform:uppercase;letter-spacing:0.8px'>
-                                Eng. %{"*" if eng_est else ""}
-                            </div>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>📈</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {r.get("eng_pct",0):.2f}%
+                            <div style='margin-top:4px;display:flex;gap:6px;flex-wrap:wrap'>
+                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                                             padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>
+                                    {badge_lbl}
                                 </span>
                             </div>
                         </div>
                     </div>
-                    {f'<div style="font-size:11px;color:#9ca3af;margin-top:10px">* Engajamento estimado por benchmark (posts não disponíveis)</div>' if eng_est else ''}
+                    <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center'>
+                            <span style='font-size:26px;line-height:1;margin-bottom:6px'>👥</span>
+                            <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px;margin-bottom:4px'>
+                                {fmt_num(r.get("seguidores",0))}
+                            </span>
+                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
+                                         text-transform:uppercase;letter-spacing:0.8px'>Seguidores</span>
+                        </div>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center'>
+                            <span style='font-size:26px;line-height:1;margin-bottom:6px'>🖼️</span>
+                            <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px;margin-bottom:4px'>
+                                {fmt_num(r.get("total_posts",0))}
+                            </span>
+                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
+                                         text-transform:uppercase;letter-spacing:0.8px'>Posts</span>
+                        </div>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center'>
+                            <span style='font-size:26px;line-height:1;margin-bottom:6px'>❤️</span>
+                            <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px;margin-bottom:4px'>
+                                {fmt_num(int(r.get("eng_medio",0)))}
+                            </span>
+                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
+                                         text-transform:uppercase;letter-spacing:0.8px'>Eng. Médio</span>
+                        </div>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center'>
+                            <span style='font-size:26px;line-height:1;margin-bottom:6px'>📈</span>
+                            <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px;margin-bottom:4px'>
+                                {r.get("eng_pct",0):.2f}%
+                            </span>
+                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
+                                         text-transform:uppercase;letter-spacing:0.8px'>Eng. %{"*" if eng_est else ""}</span>
+                        </div>
+                    </div>
+                    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
                 </div>
                 """, unsafe_allow_html=True)
  
