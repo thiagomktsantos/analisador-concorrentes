@@ -2382,9 +2382,9 @@ elif st.session_state.pagina == "redes":
     cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
 
     st.markdown(
-        "<div style='font-size:18px;font-weight:800;color:#111827;"
-        "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif;"
-        "letter-spacing:0px;margin-bottom:22px;text-transform:uppercase'>"
+        "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+        "font-family:'DM Sans',sans-serif;"
+        "letter-spacing:0px;text-transform:uppercase'>"
         "Comparativo com todos os perfis</div>",
         unsafe_allow_html=True,
     )
@@ -2496,11 +2496,6 @@ elif st.session_state.pagina == "redes":
             Plotly.newPlot('graf_eng', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
         """, height=275)
-
-    st.markdown(
-        "<div style='margin:28px 0 20px 0;border-top:1px solid #e5e7eb'></div>",
-        unsafe_allow_html=True,
-    )
     
     # ══════════════════════════════════════════════════════════════════════
     # ABAS POR PERFIL
