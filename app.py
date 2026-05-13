@@ -2719,7 +2719,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         </div>"""
                     posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
 
-                # Monta tabela de posts para o expander
                 df_posts_rows = ""
                 for p in posts_list:
                     df_posts_rows += f"""
@@ -2848,7 +2847,6 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
-                # Botões Streamlit ocultos
                 st.markdown(f"""
                 <style>
                 .st-key-btn_criativo_{idx} {{ display:none !important; }}
@@ -2939,16 +2937,6 @@ Seja direto e objetivo.
                     border-radius: 12px;
                     overflow: hidden;
                 }}
-                .card-title {{
-                    font-size: 18px;
-                    font-weight: 700;
-                    color: #1a2e4a;
-                    text-transform: uppercase;
-                    font-family: 'DM Sans', sans-serif;
-                    padding: 16px 16px 0 16px;
-                    letter-spacing: 0px;
-                    margin-bottom: 0;
-                }}
                 .btn-row {{
                     display: flex;
                     gap: 8px;
@@ -3015,7 +3003,7 @@ Seja direto e objetivo.
                 </style>
 
                 <div class="card">
-                    <div class="card-title">Análise de IA</div>
+                    <div style='font-size:18px;font-weight:700;color:#1a2e4a;text-transform:uppercase;font-family:"DM Sans",sans-serif;padding:16px 16px 12px 16px;letter-spacing:0px;'>Análise de IA</div>
 
                     <div class="btn-row">
                         <button class="btn-ia" onclick="clickSt('criativo')">Gerar Criativo</button>
