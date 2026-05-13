@@ -2688,12 +2688,12 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 # ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
             col_posts, col_ia = st.columns([3, 2])
 
-            with col_posts:
+            with col_ia:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                     "text-transform:uppercase;margin-bottom:14px;margin-top:20px;"
-                    "font-family:\"Source Sans\",sans-serif'>"
-                    "Últimas 3 Postagens</div>",
+                    "font-family:\"DM Sans\",sans-serif'>"
+                    "Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
 
@@ -2737,14 +2737,15 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; }}
+                body {{ padding-bottom: 4px; }}
                 .card {{
                     background: #ffffff;
                     border: 1px solid #e5e7eb;
                     border-radius: 12px;
                     padding: 20px;
-                    margin-bottom: 8px;
+                    margin-bottom: 12px;
                 }}
-                details {{ margin-top: 8px; }}
+                details {{ margin-top: 0; }}
                 summary {{
                     background: #ffffff;
                     border: 1px solid #e5e7eb;
@@ -2767,10 +2768,17 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     display: inline-block;
                 }}
                 details[open] summary::before {{ transform: rotate(90deg); }}
+                .table-wrap {{
+                    background: #fff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    padding: 8px;
+                    margin-top: 6px;
+                    overflow-x: auto;
+                }}
                 table {{
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 12px;
                     font-size: 13px;
                 }}
                 th {{
@@ -2793,22 +2801,29 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
                 <div class="card">
                     {posts_html}
-                    <details style="margin-top:16px">
-                        <summary>Ver todos os posts</summary>
-                        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Data</th><th>Tipo</th><th>Curtidas</th>
-                                        <th>Comentários</th><th>Eng. total</th><th>Legenda</th>
-                                    </tr>
-                                </thead>
-                                <tbody>{df_posts_rows}</tbody>
-                            </table>
-                        </div>
-                    </details>
                 </div>
-                """, height=600 if posts_list else 100, scrolling=False)
+
+                <details>
+                    <summary>Ver todos os posts</summary>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Curtidas</th>
+                                    <th>Comentários</th>
+                                    <th>Eng. total</th>
+                                    <th>Legenda</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {df_posts_rows}
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+                """, height=600, scrolling=True)
 
             with col_ia:
 
@@ -3005,7 +3020,6 @@ Seja direto e objetivo.
                 </style>
 
                 <div class="card">
-                    <div class="card-title">Análise de IA</div>
 
                     <div class="btn-row">
                         <button class="btn-ia" onclick="clickSt('criativo')">Gerar Criativo</button>
