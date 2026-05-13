@@ -2427,8 +2427,8 @@ elif st.session_state.pagina == "redes":
             )
         )
         fig_seg.update_layout(
-            height=360,
-            margin=dict(t=20, b=30, l=10, r=10),
+            height=320,
+            margin=dict(t=20, b=30, l=45, r=20),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             showlegend=False,
