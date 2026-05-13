@@ -1175,13 +1175,6 @@ if st.session_state.pagina == "home":
 
         st.markdown("""
         <style>
-        /* Fundo branco no container do form de empresa */
-        section.main div[data-testid="stVerticalBlockBorderWrapper"],
-        section.main div[data-testid="stVerticalBlockBorderWrapper"] > div,
-        section.main div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-        }
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
             background: #3a9fd6 !important;
@@ -1232,6 +1225,24 @@ if st.session_state.pagina == "home":
 
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+
+        # Injeta fundo branco no container via JS no head do pai
+        components.html("""
+        <script>
+        (function() {
+            const s = document.createElement('style');
+            s.textContent = `
+                section.main div[data-testid="stVerticalBlockBorderWrapper"],
+                section.main div[data-testid="stVerticalBlockBorderWrapper"] > div,
+                section.main div[data-testid="stVerticalBlockBorderWrapper"] > div > div,
+                section.main div[data-testid="stVerticalBlock"] {
+                    background: #ffffff !important;
+                }
+            `;
+            window.parent.document.head.appendChild(s);
+        })();
+        </script>
+        """, height=0)
 
         with st.container(border=True):
             col_left, col_right = st.columns(2)
@@ -1328,13 +1339,12 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            # Botão real Streamlit — nome atualizado para "Editar Empresa"
             btn_editar = st.button("Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa")
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # Botão HTML visual com ícone FA lápis — busca por "Editar Empresa" no innerText
+        # Botão HTML visual com ícone FA — height=46 para não cortar o ícone
         components.html("""
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <style>
@@ -1367,7 +1377,7 @@ if st.session_state.pagina == "home":
             <i class="fa-solid fa-pen-to-square"></i>
             Editar Empresa
         </button>
-        """, height=0)
+        """, height=46)
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
@@ -1508,11 +1518,14 @@ body {{ padding: 0; margin: 0; overflow: hidden; }}
         altura = 260 + (linhas_tags * 44)
         components.html(card_html, height=altura, scrolling=False)
 
-        # ALTERAÇÃO 3 — margin-bottom negativo para eliminar espaço extra / barra de rolagem
-        st.markdown(f"""
+        st.markdown("""
+        <style>
+        /* Remove padding extra do bloco container após o iframe */
+        section.main .block-container > div:last-child { padding-bottom: 0 !important; }
+        </style>
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:16px 20px;display:flex;align-items:center;gap:16px;
-                    margin-top:8px;margin-bottom:-24px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
