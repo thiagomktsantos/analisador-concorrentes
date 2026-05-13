@@ -1239,14 +1239,34 @@ if st.session_state.get("mostrar_alerta_saida"):
 
     function clickHidden(texto) {{
         try {{
+            // Busca na página principal
             const allBtns = window.parent.document.querySelectorAll('button');
             for (const b of allBtns) {{
                 const txt = (b.textContent || b.innerText || '').trim().replace(/\s+/g, ' ');
                 if (txt === texto) {{
                     b.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true }}));
+                    setTimeout(function() {{ b.click(); }}, 50);
                     return true;
                 }}
             }}
+
+            // Fallback: busca dentro de outros iframes (ex: sidebar)
+            const iframes = window.parent.document.querySelectorAll('iframe');
+            for (const iframe of iframes) {{
+                if (iframe.contentWindow === window) continue;
+                try {{
+                    const btns = iframe.contentDocument.querySelectorAll('button');
+                    for (const b of btns) {{
+                        const txt = (b.textContent || b.innerText || '').trim().replace(/\s+/g, ' ');
+                        if (txt === texto) {{
+                            b.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true }}));
+                            setTimeout(function() {{ b.click(); }}, 50);
+                            return true;
+                        }}
+                    }}
+                }} catch(e) {{}}
+            }}
+
             console.warn('Botão não encontrado:', texto);
             return false;
         }} catch(e) {{
