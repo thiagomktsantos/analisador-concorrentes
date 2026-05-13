@@ -2382,8 +2382,8 @@ elif st.session_state.pagina == "redes":
     cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
 
     st.markdown(
-        "<div style='font-size:15px;font-weight:700;color:#1a2e4a;"
-        "font-family:\"DM Sans\",sans-serif;"
+        "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
+        "font-family:\"Source Sans\",sans-serif;"
         "letter-spacing:0px;text-transform:uppercase'>"
         "Comparativo com todos os perfis</div>",
         unsafe_allow_html=True,
@@ -2516,9 +2516,9 @@ elif st.session_state.pagina == "redes":
  
             # ── INFORMAÇÕES DE PERFIL
             st.markdown(
-                "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
                 "text-transform:uppercase;margin-bottom:14px;"
-                "font-family:\"DM Sans\",sans-serif'>"
+                "font-family:\"Source Sans\",sans-serif'>"
                 "Informações de Perfil</div>",
                 unsafe_allow_html=True,
             )
