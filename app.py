@@ -2410,7 +2410,7 @@ elif st.session_state.pagina == "redes":
         ),
     )
 
-    simport json
+    import json
 
     col_g1, col_g2 = st.columns(2)
 
