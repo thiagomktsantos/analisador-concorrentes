@@ -1340,41 +1340,25 @@ if st.session_state.pagina == "home":
 
         st.markdown("""
         <style>
-        [data-testid="stMain"] div.stButton > button[kind="primary"],
-        section.main div.stButton > button[kind="primary"] {
-            background: #3a9fd6 !important;
-            background-color: #3a9fd6 !important;
-            color: #ffffff !important;
-            border: none !important;
-        }
-        [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
-        section.main div.stButton > button[kind="primary"]:hover {
-            background: #2e8bbf !important;
-            background-color: #2e8bbf !important;
-        }
-        div[data-testid="stVerticalBlockBorderWrapper"],
-        div[data-testid="stVerticalBlockBorderWrapper"] *,
-        div[data-testid="stVerticalBlockBorderWrapper"] div,
-        div[data-testid="stVerticalBlockBorderWrapper"] > div,
-        div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
+        div[data-testid="stForm"] {
             background: #ffffff !important;
-            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 14px !important;
+            padding: 28px 32px !important;
+            margin-bottom: 28px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
-        div[data-testid="stVerticalBlockBorderWrapper"] input,
-        div[data-testid="stVerticalBlockBorderWrapper"] textarea,
-        div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div,
-        div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="input"] > div {
-            background: #fafafa !important;
-            background-color: #fafafa !important;
+        div[data-testid="stForm"] > div,
+        div[data-testid="stForm"] > div > div {
+            background: #ffffff !important;
         }
         </style>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
 
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
-                "<h1 style='font-size:28px;font-weight:600;color:#111827;"
+                "<h1 style='font-size:28px;font-weight:700;color:#111827;"
                 "letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>"
                 "Minha Empresa</h1>",
                 unsafe_allow_html=True,
@@ -1385,6 +1369,17 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
 
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>",
+            unsafe_allow_html=True,
+        )
+
+        titulo_form = "✏️ Editar Empresa" if tem_dados else "➕ Cadastrar Empresa"
+        st.markdown(
+            f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>",
+            unsafe_allow_html=True,
+        )
+
         SUBNICHOS = {
             "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
             "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
@@ -1394,65 +1389,77 @@ if st.session_state.pagina == "home":
             "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
         }
 
-        def sec_header(label):
+        def sec_label(label):
             st.markdown(
-                f"<div style='font-size:12px;font-weight:600;color:#6b7280;"
-                f"text-transform:uppercase;letter-spacing:0.8px;"
-                f"padding:4px 0 4px 12px;border-left:3px solid #e5e7eb;"
-                f"margin:0;font-family:DM Sans,sans-serif'>{label}</div>",
+                f"<div style='font-size:11px;font-weight:700;color:#9ca3af;"
+                f"text-transform:uppercase;letter-spacing:1px;"
+                f"margin-bottom:12px'>{label}</div>",
                 unsafe_allow_html=True,
             )
 
-        def divider():
-            st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+        def form_divider():
+            st.markdown(
+                "<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>",
+                unsafe_allow_html=True,
+            )
 
-        with st.container(border=True):
-            col_left, col_right = st.columns(2)
+        with st.form("cad_empresa", clear_on_submit=False):
 
-            with col_left:
-                sec_header("Informações Gerais")
-                emp["nome"] = st.text_input("Nome da Empresa", emp["nome"])
-                col_s, col_t = st.columns(2)
-                setor_opcoes = list(SUBNICHOS.keys())
-                setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
-                emp["setor"] = col_s.selectbox("Setor", setor_opcoes, index=setor_idx)
-                subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-                tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
-                emp["tipo"] = col_t.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
+            # ── IDENTIFICAÇÃO
+            sec_label("Identificação")
+            c1, c2 = st.columns(2)
+            emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"])
+            site_digitado = c2.text_input("Site", value=emp["site"])
+            emp["site"] = limpar_site(site_digitado)
 
-            with col_right:
-                sec_header("Serviços")
-                servicos_text = st.text_area(
-                    "Serviços (um por linha)",
-                    value="\n".join(emp["servicos"]),
-                    height=178,
-                    label_visibility="collapsed",
-                    placeholder="Ex:\nTráfego Pago\nSEO\nSocial Media",
-                )
-                emp["servicos"] = [s.strip() for s in servicos_text.splitlines() if s.strip()]
+            form_divider()
 
-            divider()
-            sec_header("Presença Digital")
-            col_ig, col_fb, col_site = st.columns(3)
-            emp["instagram"] = col_ig.text_input("Instagram", value=emp["instagram"])
-            emp["fb_page"]   = col_fb.text_input("Facebook", emp["fb_page"])
-            site_digitado    = col_site.text_input("Site", emp["site"])
-            emp["site"]      = limpar_site(site_digitado)
+            # ── SETOR
+            sec_label("Setor")
+            c3, c4 = st.columns(2)
+            setor_opcoes = list(SUBNICHOS.keys())
+            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+            emp["setor"] = c3.selectbox("Setor", setor_opcoes, index=setor_idx)
+            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+            tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+            emp["tipo"] = c4.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
 
-            divider()
-            sec_header("Localização")
+            form_divider()
+
+            # ── REDES SOCIAIS
+            sec_label("Redes Sociais")
+            c5, c6 = st.columns(2)
+            emp["instagram"] = c5.text_input("Instagram", value=emp["instagram"])
+            emp["fb_page"]   = c6.text_input("Facebook",  value=emp["fb_page"])
+
+            servicos_text = st.text_input(
+                "Serviços (separados por vírgula)",
+                value=", ".join(emp["servicos"]),
+            )
+            emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
+
+            form_divider()
+
+            # ── LOCALIZAÇÃO
+            sec_label("Localização")
             loc1, loc2 = st.columns(2)
-            estados      = list(ESTADOS_CIDADES.keys())
+            estados = list(ESTADOS_CIDADES.keys())
             estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
             emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
-            cidades       = ESTADOS_CIDADES.get(emp["estado"], [])
-            cidade_index  = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
+            cidades = ESTADOS_CIDADES.get(emp["estado"], [])
+            cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
             emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
 
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-        col_salvar, col_cancelar, _ = st.columns([2, 2, 4])
-        with col_salvar:
-            if st.button("Salvar Empresa", use_container_width=True, type="primary", key="btn_salvar_empresa"):
+            # ── Botões
+            col_salvar, col_cancelar = st.columns(2)
+            salvar   = col_salvar.form_submit_button("💾 Salvar",   use_container_width=True)
+            cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
+
+            if cancelar:
+                st.session_state.editar_empresa = False
+                st.rerun()
+
+            if salvar:
                 if emp["nome"].strip():
                     st.session_state.editar_empresa = False
                     salvar_dados_usuario(st.session_state.user.id)
@@ -1460,11 +1467,6 @@ if st.session_state.pagina == "home":
                     st.rerun()
                 else:
                     st.error("Informe pelo menos o nome da empresa.")
-        with col_cancelar:
-            if tem_dados:
-                if st.button("Cancelar", use_container_width=True):
-                    st.session_state.editar_empresa = False
-                    st.rerun()
 
     # ----------------------------------------------------------
     # MODO VISUALIZAÇÃO
