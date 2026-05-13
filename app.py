@@ -1187,6 +1187,34 @@ if st.session_state.pagina == "home":
             background: #2e8bbf !important;
             background-color: #2e8bbf !important;
         }
+
+        /* FIX 3 — fundo branco no container de edição
+           F12 confirmou: wrapper usa data-testid="stVerticalBlockBorderWrapper"
+           Os filhos internos são stVerticalBlock, stHorizontalBlock, stColumn, stElementContainer */
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            background: #ffffff !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] > div {
+            background: #ffffff !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
+            background: #ffffff !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlock"] {
+            background: #ffffff !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
+            background: #ffffff !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stColumn"] {
+            background: #ffffff !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stElementContainer"] {
+            background: #ffffff !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stLayoutWrapper"] {
+            background: #ffffff !important;
+        }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
@@ -1225,28 +1253,6 @@ if st.session_state.pagina == "home":
 
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-
-        # FIX 3 — Fundo branco no form: seletores ampliados incluindo stForm
-        components.html("""
-        <script>
-        (function() {
-            const s = document.createElement('style');
-            s.textContent = `
-                section.main div[data-testid="stVerticalBlockBorderWrapper"],
-                section.main div[data-testid="stVerticalBlockBorderWrapper"] > div,
-                section.main div[data-testid="stVerticalBlockBorderWrapper"] > div > div,
-                section.main div[data-testid="stVerticalBlock"],
-                section.main div[data-testid="stForm"],
-                section.main div[data-testid="stForm"] > div,
-                section.main div[data-testid="stForm"] > div > div {
-                    background: #ffffff !important;
-                    border-color: #e5e7eb !important;
-                }
-            `;
-            window.parent.document.head.appendChild(s);
-        })();
-        </script>
-        """, height=0)
 
         with st.container(border=True):
             col_left, col_right = st.columns(2)
@@ -1315,6 +1321,23 @@ if st.session_state.pagina == "home":
 
         st.markdown("""
         <style>
+        /* FIX 1 — esconde o botão Streamlit duplicado.
+           F12 confirmou que ele gera a classe .st-key-btn_editar_empresa */
+        .st-key-btn_editar_empresa {
+            display: none !important;
+        }
+
+        /* FIX 2 — scrollbar causada pelo stAppIframeResizerAnchor + iframe height=46.
+           F12 confirmou o elemento: data-testid="stAppIframeResizerAnchor"
+           Escondemos ele e zeramos o padding inferior do container. */
+        [data-testid="stAppIframeResizerAnchor"] {
+            display: none !important;
+        }
+        section.main .block-container {
+            padding-bottom: 0 !important;
+        }
+
+        /* Botão primário azul */
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
             background: #3a9fd6 !important;
@@ -1323,14 +1346,6 @@ if st.session_state.pagina == "home":
             border: none !important;
             font-size: 14px !important;
             font-weight: 600 !important;
-        }
-        /* FIX 2 — remove padding/margin extra que causava scrollbar */
-        section.main .block-container > div:last-child {
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
-        }
-        section.main .block-container {
-            padding-bottom: 1rem !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -1351,19 +1366,26 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            # Botão Streamlit real (invisível, acionado pelo JS abaixo)
+            # Botão Streamlit real — escondido via .st-key-btn_editar_empresa
+            # É acionado pelo onclick do botão HTML abaixo
             btn_editar = st.button("Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa")
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # FIX 1 — Botão visual HTML com ícone FA fa-pen-to-square
+        # FIX 1 — Botão visual com ícone FA.
+        # height=0 para não somar altura. Posição absoluta via CSS interno do iframe.
         components.html("""
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { background: transparent; display: flex; justify-content: flex-end; padding: 0; }
+        html, body { background: transparent; overflow: visible; height: 0; }
+        .btn-wrap {
+            position: absolute;
+            top: -54px;
+            right: 0;
+        }
         .btn {
             background: #3a9fd6;
             color: #fff;
@@ -1378,20 +1400,22 @@ if st.session_state.pagina == "home":
             align-items: center;
             gap: 8px;
             transition: background 0.15s;
-            margin-top: -48px;
+            white-space: nowrap;
         }
         .btn:hover { background: #2e8bbf; }
         </style>
-        <button class="btn" onclick="
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {
-                if (b.innerText.trim() === 'Editar Empresa') { b.click(); break; }
-            }
-        ">
-            <i class="fa-solid fa-pen-to-square"></i>
-            Editar Empresa
-        </button>
-        """, height=46)
+        <div class="btn-wrap">
+            <button class="btn" onclick="
+                const btns = window.parent.document.querySelectorAll('button');
+                for (const b of btns) {
+                    if (b.innerText.trim() === 'Editar Empresa') { b.click(); break; }
+                }
+            ">
+                <i class="fa-solid fa-pen-to-square"></i>
+                Editar Empresa
+            </button>
+        </div>
+        """, height=0)
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
@@ -1532,11 +1556,11 @@ body {{ padding: 0; margin: 0; overflow: hidden; }}
         altura = 260 + (linhas_tags * 44)
         components.html(card_html, height=altura, scrolling=False)
 
-        # FIX 2 — "Mantenha" sem margin/padding extra para evitar scrollbar
+        # Bloco "Mantenha" — sem margin extra
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:14px 20px;display:flex;align-items:center;gap:16px;
-                    margin-top:4px;margin-bottom:0;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
