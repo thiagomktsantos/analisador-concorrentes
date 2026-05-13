@@ -2114,27 +2114,31 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
-
+ 
     import datetime
     import plotly.graph_objects as go
     import json
-
+ 
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
-
+ 
     st.markdown("""
     <style>
+    /* ── Botão primário: cor #3a9fd6 ── */         /* ← MUDANÇA */
     section.main div.stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+        background: #3a9fd6 !important;
         color: #ffffff !important;
         border: none !important;
         font-size: 15px !important;
         font-weight: 700 !important;
+        transition: opacity 0.15s !important;
     }
     section.main div.stButton > button[kind="primary"]:hover {
-        opacity: 0.9 !important;
-        background: linear-gradient(135deg, #3a9fd6 0%, #2ecc71 100%) !important;
+        opacity: 0.88 !important;
+        background: #3a9fd6 !important;
     }
+ 
+    /* Tabs das análises de IA */
     div[data-testid="stTabs"] button[role="tab"] {
         font-size: 14px !important;
         font-weight: 600 !important;
@@ -2151,26 +2155,47 @@ elif st.session_state.pagina == "redes":
     }
     </style>
     """, unsafe_allow_html=True)
-
+ 
+    # ── Cabeçalho ──────────────────────────────────────────────────────────
     h1, h2 = st.columns([7, 3])
     with h1:
-        st.markdown("<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>Redes Sociais</h1>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:14px;color:#6b7280;margin-top:3px'>Métricas do Instagram via RapidAPI · comparativo visual</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<h1 style='font-size:28px;font-weight:600;color:#111827;"
+            "letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>"
+            "Redes Sociais</h1>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<div style='font-size:14px;color:#6b7280;margin-top:3px'>"
+            "Métricas do Instagram via RapidAPI · comparativo visual</div>",
+            unsafe_allow_html=True,
+        )
     with h2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-        coletar = st.button("Coletar dados agora", type="primary", use_container_width=True)
+        coletar = st.button(
+            "📡 Coletar dados agora",   # ← MUDANÇA: emoji monocromático
+            type="primary",
+            use_container_width=True,
+        )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         if ultima_coleta:
-            st.markdown(f"<div style='font-size:13px;color:#6b7280;text-align:center'>Última coleta: <b>{ultima_coleta}</b></div>", unsafe_allow_html=True)
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>", unsafe_allow_html=True)
-
+            st.markdown(
+                f"<div style='font-size:13px;color:#6b7280;text-align:center'>"
+                f"Última coleta: <b>{ultima_coleta}</b></div>",
+                unsafe_allow_html=True,
+            )
+    st.markdown(
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
+        unsafe_allow_html=True,
+    )
+ 
+    # ── Helpers ────────────────────────────────────────────────────────────
     def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(int(n))
-
-    CACHE_KEY = f"redes_cache_{st.session_state.user.id}"
-
+ 
+    # ── Supabase cache helpers ──────────────────────────────────────────────
     def salvar_cache_redes(dados: list):
         try:
             payload = {
@@ -2179,22 +2204,27 @@ elif st.session_state.pagina == "redes":
                 "concorrentes": st.session_state.dados["concorrentes"],
                 "metricas_redes": {
                     "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                    "dados": dados
+                    "dados": dados,
                 },
             }
             supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache: {e}", icon="⚠️")
-
+ 
     def carregar_cache_redes() -> dict:
         try:
-            res = supabase.table("ci_dados").select("metricas_redes").eq("user_id", st.session_state.user.id).execute()
+            res = (
+                supabase.table("ci_dados")
+                .select("metricas_redes")
+                .eq("user_id", st.session_state.user.id)
+                .execute()
+            )
             if res.data and res.data[0].get("metricas_redes"):
                 return res.data[0]["metricas_redes"]
         except Exception:
             pass
         return {}
-
+ 
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_rapidapi(handle: str) -> dict:
         handle_limpo = handle.lstrip("@").strip()
@@ -2204,29 +2234,30 @@ elif st.session_state.pagina == "redes":
             rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
             if not rapidapi_key:
                 return {"erro": "RAPIDAPI_KEY não configurada"}
-
+ 
             headers = {
                 "x-rapidapi-key": rapidapi_key,
-                "x-rapidapi-host": "instagram-looter2.p.rapidapi.com"
+                "x-rapidapi-host": "instagram-looter2.p.rapidapi.com",
             }
-
+ 
             r = requests.get(
                 f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}",
-                headers=headers, timeout=15
+                headers=headers,
+                timeout=15,
             )
             data = r.json()
             user_data = data
             if isinstance(data, dict):
-                if "data" in data: user_data = data["data"]
+                if "data" in data:   user_data = data["data"]
                 elif "user" in data: user_data = data["user"]
-
+ 
             if not user_data or "message" in user_data:
                 return {"erro": user_data.get("message", "Perfil não encontrado")}
-
+ 
             seg         = int(user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count") or 0)
             total_posts = int(user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count") or 0)
             pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
-
+ 
             posts_data = []
             if pk:
                 for endpoint in [
@@ -2234,22 +2265,26 @@ elif st.session_state.pagina == "redes":
                     f"https://instagram-looter2.p.rapidapi.com/user-medias?id={pk}&count=12",
                 ]:
                     try:
-                        rp = requests.get(endpoint, headers=headers, timeout=15)
-                        pr = rp.json()
+                        rp    = requests.get(endpoint, headers=headers, timeout=15)
+                        pr    = rp.json()
                         items = pr if isinstance(pr, list) else pr.get("items", [])
                         if items:
                             for p in items[:12]:
                                 likes    = int(p.get("like_count") or 0)
                                 comments = int(p.get("comment_count") or 0)
-                                thumb = ""
+                                thumb    = ""
                                 if p.get("image_versions2"):
                                     cands = p["image_versions2"].get("candidates", [])
                                     if cands: thumb = cands[-1].get("url", "")
                                 elif p.get("thumbnail_url"):
                                     thumb = p["thumbnail_url"]
-                                caption = ""
+                                caption  = ""
                                 if p.get("caption"):
-                                    caption = (p["caption"].get("text", "") if isinstance(p["caption"], dict) else str(p["caption"]))[:120]
+                                    caption = (
+                                        p["caption"].get("text", "")
+                                        if isinstance(p["caption"], dict)
+                                        else str(p["caption"])
+                                    )[:120]
                                 taken_at = p.get("taken_at", 0)
                                 date_str = ""
                                 if taken_at:
@@ -2258,22 +2293,24 @@ elif st.session_state.pagina == "redes":
                                     except Exception:
                                         pass
                                 posts_data.append({
-                                    "likes": likes, "comments": comments,
-                                    "thumb": thumb, "caption": caption,
-                                    "date": date_str,
+                                    "likes":    likes,
+                                    "comments": comments,
+                                    "thumb":    thumb,
+                                    "caption":  caption,
+                                    "date":     date_str,
                                     "is_video": p.get("media_type", 1) == 2,
                                 })
                             break
                     except Exception:
                         continue
-
+ 
             if posts_data:
                 eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 eng_pct   = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
             else:
-                eng_pct   = 3.0 if seg <= 10000 else (2.0 if seg <= 50000 else (1.5 if seg <= 100000 else 1.0))
+                eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
-
+ 
             return {
                 "handle":       "@" + handle_limpo,
                 "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
@@ -2290,23 +2327,24 @@ elif st.session_state.pagina == "redes":
             }
         except Exception as e:
             return {"erro": str(e)}
-
+ 
+    # ── Monta lista de perfis ──────────────────────────────────────────────
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
         todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp["instagram"], "tipo": "minha"})
     for i, c in enumerate(concorrentes):
         if c.get("instagram") and c["instagram"] not in ("@", ""):
             todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c["instagram"], "tipo": "concorrente"})
-
+ 
     if not todas:
         st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
         st.stop()
-
+ 
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
-
+ 
     cache = carregar_cache_redes()
-
+ 
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
@@ -2315,23 +2353,155 @@ elif st.session_state.pagina == "redes":
                 r = coletar_rapidapi(e["instagram"])
                 resultados_lista.append({**e, **(r or {"erro": "Sem resposta"})})
         salvar_cache_redes(resultados_lista)
-        cache = {"ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"), "dados": resultados_lista}
+        cache = {
+            "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "dados": resultados_lista,
+        }
         st.toast("✅ Dados coletados e salvos!", icon="✅")
-
-    ok = []
+ 
+    ok    = []
     if cache.get("dados"):
-        ok = [r for r in cache["dados"] if not r.get("erro")]
+        ok    = [r for r in cache["dados"] if not r.get("erro")]
         erros = [r for r in cache["dados"] if r.get("erro")]
         for r in erros:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
-
+ 
     if not ok:
-        st.info("Clique em **Coletar dados agora** para buscar os dados do Instagram.")
+        st.info("Clique em **📡 Coletar dados agora** para buscar os dados do Instagram.")
         st.stop()
-
+ 
+    # ══════════════════════════════════════════════════════════════════════
+    # GRÁFICOS COMPARATIVOS — acima das abas                ← MUDANÇA
+    # ══════════════════════════════════════════════════════════════════════
     CORES = ["#111827", "#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"]
-    abas  = st.tabs([r["nome"] for r in ok])
-
+ 
+    nomes_ok    = [x["nome"]               for x in ok]
+    segs_ok     = [x.get("seguidores", 0)  for x in ok]
+    eng_pct_ok  = [x.get("eng_pct", 0.0)  for x in ok]
+    cores_ok    = [CORES[i % len(CORES)]   for i in range(len(ok))]
+ 
+    # Título de seção maior                                 ← MUDANÇA
+    st.markdown(
+        "<div style='font-size:18px;font-weight:700;color:#111827;"
+        "letter-spacing:-0.2px;margin-bottom:14px'>"
+        "📊 Comparativo com todos os perfis</div>",
+        unsafe_allow_html=True,
+    )
+ 
+    col_g1, col_g2 = st.columns(2)
+ 
+    # Paleta alinhada ao produto: fundo branco, borda sutil   ← MUDANÇA
+    _layout_base = dict(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        margin=dict(t=48, b=24, l=16, r=16),
+        height=280,
+        font=dict(family="DM Sans, sans-serif", color="#374151"),
+        showlegend=False,
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#f3f4f6",
+            gridwidth=1,
+            zeroline=False,
+            tickfont=dict(size=12, color="#6b7280"),
+        ),
+        xaxis=dict(
+            showgrid=False,
+            tickfont=dict(size=13, color="#374151", family="DM Sans"),
+        ),
+        bargap=0.35,
+    )
+ 
+    with col_g1:
+        fig_seg = go.Figure(
+            go.Bar(
+                x=nomes_ok,
+                y=segs_ok,
+                marker=dict(
+                    color=cores_ok,
+                    line=dict(width=0),
+                ),
+                text=[fmt_num(s) for s in segs_ok],
+                textposition="outside",
+                textfont=dict(size=13, family="DM Sans", color="#111827"),
+                cliponaxis=False,
+            )
+        )
+        fig_seg.update_layout(
+            **_layout_base,
+            title=dict(
+                text="<b>Seguidores</b>",
+                font=dict(size=15, family="DM Sans", color="#111827"),
+                x=0,
+                xanchor="left",
+            ),
+        )
+        # Borda arredondada via container                   ← MUDANÇA
+        st.markdown(
+            "<div style='background:#fff;border:1px solid #e5e7eb;"
+            "border-radius:12px;padding:4px 4px 0 4px;overflow:hidden'>",
+            unsafe_allow_html=True,
+        )
+        st.plotly_chart(
+            fig_seg,
+            use_container_width=True,
+            config={"displayModeBar": False},
+            key="graf_seg_global",
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+ 
+    with col_g2:
+        fig_eng = go.Figure(
+            go.Bar(
+                x=nomes_ok,
+                y=eng_pct_ok,
+                marker=dict(
+                    color=cores_ok,
+                    line=dict(width=0),
+                ),
+                text=[f"{v:.2f}%" for v in eng_pct_ok],
+                textposition="outside",
+                textfont=dict(size=13, family="DM Sans", color="#111827"),
+                cliponaxis=False,
+            )
+        )
+        fig_eng.update_layout(
+            **_layout_base,
+            title=dict(
+                text="<b>Taxa de Engajamento (%)</b>",
+                font=dict(size=15, family="DM Sans", color="#111827"),
+                x=0,
+                xanchor="left",
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="#f3f4f6",
+                gridwidth=1,
+                zeroline=False,
+                ticksuffix="%",
+                tickfont=dict(size=12, color="#6b7280"),
+            ),
+        )
+        st.markdown(
+            "<div style='background:#fff;border:1px solid #e5e7eb;"
+            "border-radius:12px;padding:4px 4px 0 4px;overflow:hidden'>",
+            unsafe_allow_html=True,
+        )
+        st.plotly_chart(
+            fig_eng,
+            use_container_width=True,
+            config={"displayModeBar": False},
+            key="graf_eng_global",
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+ 
+    st.markdown("<div style='margin:24px 0 20px 0;border-top:1px solid #e5e7eb'/>", unsafe_allow_html=True)
+ 
+    # ══════════════════════════════════════════════════════════════════════
+    # ABAS POR PERFIL
+    # ══════════════════════════════════════════════════════════════════════
+    abas = st.tabs([r["nome"] for r in ok])
+ 
     for idx, (aba, r) in enumerate(zip(abas, ok)):
         with aba:
             is_minha  = r["tipo"] == "minha"
@@ -2343,94 +2513,106 @@ elif st.session_state.pagina == "redes":
             bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
             eng_est   = len(r.get("posts", [])) == 0
             posts_list = r.get("posts", [])
-
-            # ── 1. GRÁFICOS COMPARATIVOS (topo)
-            nomes_ok   = [x["nome"]              for x in ok]
-            segs_ok    = [x.get("seguidores", 0) for x in ok]
-            eng_pct_ok = [x.get("eng_pct", 0.0)  for x in ok]
-            cores_ok   = [CORES[i % len(CORES)]   for i in range(len(ok))]
-
-            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px'>Comparativo com todos os perfis</div>", unsafe_allow_html=True)
-            col_g1, col_g2 = st.columns(2)
-            with col_g1:
-                fig = go.Figure(go.Bar(x=nomes_ok, y=segs_ok, marker_color=cores_ok,
-                                       text=[fmt_num(s) for s in segs_ok], textposition="outside"))
-                fig.update_layout(title=dict(text="Seguidores", font=dict(size=14, family="DM Sans", color="#111827")),
-                                  plot_bgcolor="#fff", paper_bgcolor="#fff",
-                                  margin=dict(t=40, b=20, l=10, r=10), height=240,
-                                  yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False),
-                                  xaxis=dict(showgrid=False), showlegend=False)
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=f"graf_seg_{idx}")
-
-            with col_g2:
-                fig2 = go.Figure(go.Bar(x=nomes_ok, y=eng_pct_ok, marker_color=cores_ok,
-                                        text=[f"{v:.2f}%" for v in eng_pct_ok], textposition="outside"))
-                fig2.update_layout(title=dict(text="Taxa de Engajamento (%)", font=dict(size=14, family="DM Sans", color="#111827")),
-                                   plot_bgcolor="#fff", paper_bgcolor="#fff",
-                                   margin=dict(t=40, b=20, l=10, r=10), height=240,
-                                   yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%"),
-                                   xaxis=dict(showgrid=False), showlegend=False)
-                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False}, key=f"graf_eng_{idx}")
-
-            st.markdown("<div style='margin:8px 0 16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-
-            # ── 2. INFORMAÇÕES DE PERFIL (2 colunas)
-            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px'>Informações de Perfil</div>", unsafe_allow_html=True)
-
+ 
+            # ── 1. INFORMAÇÕES DE PERFIL ────────────────────────────────
+            st.markdown(
+                "<div style='font-size:16px;font-weight:700;color:#111827;"
+                "letter-spacing:-0.2px;margin-bottom:14px'>👤 Informações de Perfil</div>",   # ← MUDANÇA tamanho
+                unsafe_allow_html=True,
+            )
+ 
             col_metricas, col_bio = st.columns([1, 1])
-
+ 
             with col_metricas:
-                # Card de métricas
+                # Emojis nos cards de métricas               ← MUDANÇA
                 st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;height:100%'>
-                    <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f3f4f6'>
-                        <div style='width:42px;height:42px;border-radius:50%;background:{cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{gerar_avatar(r["nome"])}</div>
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px'>
+                    <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;
+                                padding-bottom:14px;border-bottom:1px solid #f3f4f6'>
+                        <div style='width:42px;height:42px;border-radius:50%;background:{cor};
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>
+                            {gerar_avatar(r["nome"])}
+                        </div>
                         <div style='flex:1'>
-                            <div style='font-size:15px;font-weight:700;color:#111827'>{r["nome"]} <span style='font-size:12px;font-weight:400;color:#9ca3af'>{r.get("handle","")}</span></div>
+                            <div style='font-size:15px;font-weight:700;color:#111827'>
+                                {r["nome"]}
+                                <span style='font-size:12px;font-weight:400;color:#9ca3af'>{r.get("handle","")}</span>
+                            </div>
                             <div style='margin-top:4px;display:flex;gap:6px;flex-wrap:wrap'>
-                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                                <span style='background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>RapidAPI</span>
+                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                                             padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>
+                                    {badge_lbl}
+                                </span>
+                                <span style='background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;
+                                             padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>
+                                    RapidAPI
+                                </span>
                             </div>
                         </div>
                     </div>
                     <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
                         <div style='text-align:center;padding:14px 8px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px'>Seguidores</div>
-                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>{fmt_num(r.get("seguidores",0))}</div>
+                            <div style='font-size:22px;margin-bottom:4px'>👥</div>
+                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;
+                                        text-transform:uppercase;letter-spacing:0.8px'>Seguidores</div>
+                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                {fmt_num(r.get("seguidores",0))}
+                            </div>
                         </div>
                         <div style='text-align:center;padding:14px 8px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px'>Posts</div>
-                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>{fmt_num(r.get("total_posts",0))}</div>
+                            <div style='font-size:22px;margin-bottom:4px'>🖼️</div>
+                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;
+                                        text-transform:uppercase;letter-spacing:0.8px'>Posts</div>
+                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                {fmt_num(r.get("total_posts",0))}
+                            </div>
                         </div>
                         <div style='text-align:center;padding:14px 8px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px'>Eng. Médio</div>
-                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>{fmt_num(int(r.get("eng_medio",0)))}</div>
+                            <div style='font-size:22px;margin-bottom:4px'>❤️</div>
+                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;
+                                        text-transform:uppercase;letter-spacing:0.8px'>Eng. Médio</div>
+                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                {fmt_num(int(r.get("eng_medio",0)))}
+                            </div>
                         </div>
                         <div style='text-align:center;padding:14px 8px;background:#f9fafb;border-radius:10px'>
-                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px'>Eng. %{"*" if eng_est else ""}</div>
-                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>{r.get("eng_pct",0):.2f}%</div>
+                            <div style='font-size:22px;margin-bottom:4px'>📈</div>
+                            <div style='font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;
+                                        text-transform:uppercase;letter-spacing:0.8px'>
+                                Eng. %{"*" if eng_est else ""}
+                            </div>
+                            <div style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                {r.get("eng_pct",0):.2f}%
+                            </div>
                         </div>
                     </div>
                     {f'<div style="font-size:11px;color:#9ca3af;margin-top:10px">* Engajamento estimado por benchmark (posts não disponíveis)</div>' if eng_est else ''}
                 </div>
                 """, unsafe_allow_html=True)
-
+ 
             with col_bio:
-                # Bio + Análise de Bio por IA
                 chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
-
+ 
                 st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:12px'>
-                    <div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Bio</div>
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                            padding:20px 24px;margin-bottom:12px'>
+                    <div style='font-size:11px;font-weight:700;color:#9ca3af;
+                                text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Bio</div>
                     <div style='font-size:14px;color:#374151;line-height:1.7;min-height:40px;font-style:italic'>
-                        {f'&ldquo;{bio_txt}&rdquo;' if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
+                        {f'&ldquo;{bio_txt}&rdquo;' if bio_txt
+                          else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-
-                analisar_bio = st.button("Analisar Bio com IA", key=f"btn_bio_ia_{idx}", use_container_width=True)
+ 
+                analisar_bio = st.button(
+                    "Analisar Bio com IA",
+                    key=f"btn_bio_ia_{idx}",
+                    use_container_width=True,
+                )
                 if analisar_bio:
                     if gemini_model is None:
                         st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
@@ -2439,21 +2621,21 @@ elif st.session_state.pagina == "redes":
                             try:
                                 prompt_bio = f"""
 Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
-
+ 
 Bio: "{bio_txt}"
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
-
+ 
 Responda com:
 ### Posicionamento
 Qual é o posicionamento transmitido pela bio?
-
+ 
 ### Pontos Fortes
 (2 pontos positivos da bio)
-
+ 
 ### O que melhorar
 (2 sugestões concretas de melhoria)
-
+ 
 ### Bio sugerida
 Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
@@ -2461,7 +2643,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                                 st.session_state[chave_bio_ia] = resp.text
                             except Exception as e:
                                 st.session_state[chave_bio_ia] = f"Erro: {e}"
-
+ 
                 if st.session_state.get(chave_bio_ia):
                     st.markdown(f"""
                     <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
@@ -2470,18 +2652,33 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         {st.session_state[chave_bio_ia].replace(chr(10), "<br>")}
                     </div>
                     """, unsafe_allow_html=True)
-
-            st.markdown("<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-
-            # ── 3. ÚLTIMAS POSTAGENS + ANÁLISE DE IA
+ 
+            st.markdown("<div style='margin:20px 0 16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+ 
+            # ── 2. ÚLTIMAS POSTAGENS + ANÁLISE ─────────────────────────
             col_posts, col_ia = st.columns([3, 2])
-
+ 
             with col_posts:
-                st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px'>Últimas 3 Postagens</div>", unsafe_allow_html=True)
-                st.markdown("<div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 20px 16px 20px'>", unsafe_allow_html=True)
-
+                # Título maior                               ← MUDANÇA
+                st.markdown(
+                    "<div style='font-size:16px;font-weight:700;color:#111827;"
+                    "letter-spacing:-0.2px;margin-bottom:14px'>📸 Últimas 3 Postagens</div>",
+                    unsafe_allow_html=True,
+                )
+ 
+                # Caixa completa incluindo o conteúdo        ← MUDANÇA
+                st.markdown(
+                    "<div style='background:#fff;border:1px solid #e5e7eb;"
+                    "border-radius:12px;padding:20px 20px 16px 20px'>",
+                    unsafe_allow_html=True,
+                )
+ 
                 if not posts_list:
-                    st.markdown("<div style='padding:14px 0;font-size:14px;color:#9ca3af;text-align:center'>Posts não disponíveis.</div>", unsafe_allow_html=True)
+                    st.markdown(
+                        "<div style='padding:14px 0;font-size:14px;color:#9ca3af;text-align:center'>"
+                        "Posts não disponíveis.</div>",
+                        unsafe_allow_html=True,
+                    )
                 else:
                     cols_posts = st.columns(3)
                     for pidx, post in enumerate(posts_list[:3]):
@@ -2493,49 +2690,67 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             if thumb_url:
                                 st.markdown(f"""
                                 <div style='text-align:center'>
-                                    <img src="{thumb_url}" style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror="this.style.display='none'" />
-                                    <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                                    <img src="{thumb_url}"
+                                         style='width:100%;aspect-ratio:1;border-radius:8px;
+                                                object-fit:cover;border:1px solid #e5e7eb;
+                                                display:block;margin-bottom:6px'
+                                         onerror="this.style.display='none'" />
+                                    <div style='font-size:12px;color:#374151;font-weight:600'>
+                                        ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}
+                                    </div>
                                     <div style='font-size:11px;color:#9ca3af'>{post.get("date","")}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
                             else:
                                 st.markdown(f"""
                                 <div style='text-align:center'>
-                                    <div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>
-                                    <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                                    <div style='width:100%;aspect-ratio:1;border-radius:8px;
+                                                background:#f3f4f6;display:flex;align-items:center;
+                                                justify-content:center;font-size:13px;
+                                                color:#9ca3af;margin-bottom:6px'>{icon}</div>
+                                    <div style='font-size:12px;color:#374151;font-weight:600'>
+                                        ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}
+                                    </div>
                                     <div style='font-size:11px;color:#9ca3af'>{post.get("date","")}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
-
+ 
+                # Fecha a caixa branca                       ← MUDANÇA
                 st.markdown("</div>", unsafe_allow_html=True)
-
+ 
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
                 with st.expander("Ver todos os posts"):
                     df_posts = pd.DataFrame([{
-                        "Data":           p.get("date", ""),
-                        "Tipo":           "Vídeo" if p.get("is_video") else "Foto",
-                        "Curtidas":       p.get("likes", 0),
-                        "Comentários":    p.get("comments", 0),
-                        "Eng. total":     p.get("likes", 0) + p.get("comments", 0),
-                        "Legenda":        p.get("caption", "")[:60],
+                        "Data":        p.get("date", ""),
+                        "Tipo":        "Vídeo" if p.get("is_video") else "Foto",
+                        "Curtidas":    p.get("likes", 0),
+                        "Comentários": p.get("comments", 0),
+                        "Eng. total":  p.get("likes", 0) + p.get("comments", 0),
+                        "Legenda":     p.get("caption", "")[:60],
                     } for p in posts_list])
                     st.dataframe(df_posts, use_container_width=True, hide_index=True)
-
+ 
             with col_ia:
-                st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px'>Análise de IA</div>", unsafe_allow_html=True)
-
+                # Título maior                               ← MUDANÇA
+                st.markdown(
+                    "<div style='font-size:16px;font-weight:700;color:#111827;"
+                    "letter-spacing:-0.2px;margin-bottom:14px'>🤖 Análise de IA</div>",
+                    unsafe_allow_html=True,
+                )
+ 
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
                 chave_geral    = f"ia_geral_{r['handle']}"
                 for ch in [chave_criativo, chave_copy, chave_geral]:
                     if ch not in st.session_state:
                         st.session_state[ch] = ""
-
+ 
                 resumo_posts = "\n".join([
-                    f"- {p.get('date','')} | {p.get('likes',0)} curtidas {p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+                    f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
+                    f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
                     for p in posts_list[:12]
                 ]) if posts_list else "Sem posts disponíveis."
-
+ 
                 perfil_ctx = f"""
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
@@ -2543,10 +2758,15 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
-
-                # Abas de análise (sem emojis nos labels)
+                # Caixa englobando abas + conteúdo de IA     ← MUDANÇA
+                st.markdown(
+                    "<div style='background:#fff;border:1px solid #e5e7eb;"
+                    "border-radius:12px;padding:20px 20px 16px 20px'>",
+                    unsafe_allow_html=True,
+                )
+ 
                 aba_criativo, aba_copy, aba_geral = st.tabs(["Criativo", "Copy", "Geral"])
-
+ 
                 with aba_criativo:
                     if st.button("Gerar análise", key=f"btn_criativo_{idx}", use_container_width=True):
                         if gemini_model is None:
@@ -2569,18 +2789,22 @@ Seja direto e objetivo.
                                     st.session_state[chave_criativo] = resp.text
                                 except Exception as e:
                                     st.session_state[chave_criativo] = f"Erro: {e}"
-
+ 
                     if st.session_state.get(chave_criativo):
                         st.markdown(f"""
                         <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
                                     padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                    max-height:360px;overflow-y:auto;margin-top:8px'>
+                                    max-height:300px;overflow-y:auto;margin-top:8px'>
                             {st.session_state[chave_criativo].replace(chr(10), "<br>")}
                         </div>
                         """, unsafe_allow_html=True)
                     else:
-                        st.markdown("<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar os criativos.</div>", unsafe_allow_html=True)
-
+                        st.markdown(
+                            "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
+                            "Clique em <b>Gerar análise</b> para analisar os criativos.</div>",
+                            unsafe_allow_html=True,
+                        )
+ 
                 with aba_copy:
                     if st.button("Gerar análise", key=f"btn_copy_{idx}", use_container_width=True):
                         if gemini_model is None:
@@ -2603,18 +2827,22 @@ Seja direto e objetivo.
                                     st.session_state[chave_copy] = resp.text
                                 except Exception as e:
                                     st.session_state[chave_copy] = f"Erro: {e}"
-
+ 
                     if st.session_state.get(chave_copy):
                         st.markdown(f"""
                         <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
                                     padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                    max-height:360px;overflow-y:auto;margin-top:8px'>
+                                    max-height:300px;overflow-y:auto;margin-top:8px'>
                             {st.session_state[chave_copy].replace(chr(10), "<br>")}
                         </div>
                         """, unsafe_allow_html=True)
                     else:
-                        st.markdown("<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar as copies.</div>", unsafe_allow_html=True)
-
+                        st.markdown(
+                            "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
+                            "Clique em <b>Gerar análise</b> para analisar as copies.</div>",
+                            unsafe_allow_html=True,
+                        )
+ 
                 with aba_geral:
                     if st.button("Gerar análise", key=f"btn_geral_{idx}", use_container_width=True):
                         if gemini_model is None:
@@ -2637,14 +2865,21 @@ Seja direto e objetivo.
                                     st.session_state[chave_geral] = resp.text
                                 except Exception as e:
                                     st.session_state[chave_geral] = f"Erro: {e}"
-
+ 
                     if st.session_state.get(chave_geral):
                         st.markdown(f"""
                         <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
                                     padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                    max-height:360px;overflow-y:auto;margin-top:8px'>
+                                    max-height:300px;overflow-y:auto;margin-top:8px'>
                             {st.session_state[chave_geral].replace(chr(10), "<br>")}
                         </div>
                         """, unsafe_allow_html=True)
                     else:
-                        st.markdown("<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para análise estratégica.</div>", unsafe_allow_html=True)
+                        st.markdown(
+                            "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
+                            "Clique em <b>Gerar análise</b> para análise estratégica.</div>",
+                            unsafe_allow_html=True,
+                        )
+ 
+                # Fecha a caixa de Análise de IA              ← MUDANÇA
+                st.markdown("</div>", unsafe_allow_html=True)
