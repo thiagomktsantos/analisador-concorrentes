@@ -233,6 +233,10 @@ if "editando_concorrente" not in st.session_state:
     st.session_state.editando_concorrente = None
 if "editar_empresa" not in st.session_state:
     st.session_state.editar_empresa = False
+if "mostrar_alerta_saida" not in st.session_state:
+    st.session_state.mostrar_alerta_saida = False
+if "pagina_destino" not in st.session_state:
+    st.session_state.pagina_destino = None
 if "relatorio_sites" not in st.session_state:
     st.session_state.relatorio_sites = {}   # cache: {url: conteudo_extraido}
 if "relatorio_gemini" not in st.session_state:
@@ -252,10 +256,18 @@ for campo, valor in campos_padrao.items():
 # ---------------------------------------------------
 
 def trocar_pagina(destino):
-    st.session_state.pagina = destino
-    st.session_state.mostrar_form_concorrente = False
-    st.session_state.editando_concorrente = None
-    st.session_state.editar_empresa = False
+    editando = (
+        st.session_state.mostrar_form_concorrente
+        or st.session_state.editando_concorrente is not None
+    )
+    if st.session_state.pagina == "cad" and destino != "cad" and editando:
+        st.session_state.mostrar_alerta_saida = True
+        st.session_state.pagina_destino = destino
+    else:
+        st.session_state.pagina = destino
+        st.session_state.mostrar_form_concorrente = False
+        st.session_state.editando_concorrente = None
+        st.session_state.editar_empresa = False
 
 # ---------------------------------------------------
 # FUNÇÃO IA — BATTLE CARD
@@ -1068,6 +1080,214 @@ function nav(page) {{
     components.html(menu_html, height=620, scrolling=False)
         
 # ---------------------------------------------------
+# POPUP DE SAIDA
+# ---------------------------------------------------
+
+if st.button("__alerta_sair__", key="_hidden_alerta_sair"):
+    destino = st.session_state.get("pagina_destino")
+    st.session_state.mostrar_alerta_saida = False
+    st.session_state.mostrar_form_concorrente = False
+    st.session_state.editando_concorrente = None
+    st.session_state.editar_empresa = False
+    if destino:
+        st.session_state.pagina = destino
+        st.session_state.pagina_destino = None
+    st.rerun()
+
+if st.button("__alerta_continuar__", key="_hidden_alerta_continuar"):
+    st.session_state.mostrar_alerta_saida = False
+    st.rerun()
+
+if st.session_state.get("mostrar_alerta_saida"):
+
+    if st.session_state.editando_concorrente is not None:
+        try:
+            nome_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente].get("nome", "")
+        except Exception:
+            nome_edit = ""
+        contexto_edicao = f"Concorrente: <b>{nome_edit or 'sem nome'}</b>"
+    elif st.session_state.mostrar_form_concorrente:
+        contexto_edicao = "Novo concorrente (cadastro em andamento)"
+    elif st.session_state.editar_empresa:
+        contexto_edicao = f"Empresa: <b>{st.session_state.dados['minha_empresa'].get('nome', '') or 'sua empresa'}</b>"
+    else:
+        contexto_edicao = "Edição em andamento"
+
+    components.html(f"""
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+    html, body {{
+        background: transparent;
+        font-family: 'DM Sans', sans-serif;
+        overflow: hidden;
+    }}
+    .overlay {{
+        position: fixed; inset: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15, 17, 23, 0.55);
+        backdrop-filter: blur(4px);
+        z-index: 999997;
+    }}
+    .box {{
+        position: fixed; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ffffff;
+        width: 480px;
+        border-radius: 16px;
+        padding: 36px 36px 32px;
+        z-index: 999999;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.14);
+    }}
+    .badge {{
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 5px 13px;
+        font-size: 13px; font-weight: 700;
+        color: #1d4ed8;
+        margin-bottom: 20px;
+        letter-spacing: 0.2px;
+    }}
+    .title {{
+        font-size: 21px; font-weight: 700;
+        color: #111827; margin-bottom: 8px;
+        letter-spacing: -0.4px;
+    }}
+    .context {{
+        display: inline-flex; align-items: center; gap: 7px;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 7px 14px;
+        font-size: 13px; color: #0369a1;
+        margin-bottom: 14px;
+    }}
+    .text {{
+        font-size: 14px; color: #6b7280;
+        line-height: 1.65; margin-bottom: 28px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #f3f4f6;
+    }}
+    .btn-row {{
+        display: flex; gap: 12px;
+        justify-content: center;
+    }}
+    .btn {{
+        padding: 11px 28px;
+        border-radius: 9px;
+        font-size: 14px; font-weight: 700;
+        cursor: pointer;
+        font-family: 'DM Sans', sans-serif;
+        transition: all 0.12s ease;
+        border: none; min-width: 160px;
+    }}
+    .btn-continuar {{
+        background: #ffffff; color: #374151;
+        border: 1.5px solid #d1d5db !important;
+    }}
+    .btn-continuar:hover {{
+        background: #f9fafb;
+        border-color: #9ca3af !important;
+        color: #111827;
+    }}
+    .btn-sair {{
+        background: #111827; color: #ffffff;
+    }}
+    .btn-sair:hover {{ background: #1f2937; }}
+    </style>
+
+    <div class="overlay"></div>
+    <div class="box">
+        <div class="badge">ℹ️ Atenção</div>
+        <div class="title">Cancelar edição?</div>
+        <div class="context">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            {contexto_edicao}
+        </div>
+        <div class="text">
+            Se sair agora, as alterações não salvas serão perdidas e não poderão ser recuperadas.
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-continuar" id="btn-continuar">Continuar editando</button>
+            <button class="btn btn-sair" id="btn-sair">Sair e cancelar</button>
+        </div>
+    </div>
+
+    <script>
+    function expandIframe() {{
+        try {{
+            window.parent.document.querySelectorAll('iframe').forEach(function(iframe) {{
+                if (iframe.contentWindow === window) {{
+                    iframe.style.position = 'fixed';
+                    iframe.style.top = '0';
+                    iframe.style.left = '0';
+                    iframe.style.width = '100vw';
+                    iframe.style.height = '100vh';
+                    iframe.style.zIndex = '999996';
+                    iframe.style.border = 'none';
+                    iframe.style.pointerEvents = 'all';
+                }}
+            }});
+        }} catch(e) {{}}
+    }}
+
+    function clickHidden(texto) {{
+        try {{
+            // Busca na página principal
+            const allBtns = window.parent.document.querySelectorAll('button');
+            for (const b of allBtns) {{
+                const txt = (b.textContent || b.innerText || '').trim().replace(/\s+/g, ' ');
+                if (txt === texto) {{
+                    b.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true }}));
+                    setTimeout(function() {{ b.click(); }}, 50);
+                    return true;
+                }}
+            }}
+
+            // Fallback: busca dentro de outros iframes (ex: sidebar)
+            const iframes = window.parent.document.querySelectorAll('iframe');
+            for (const iframe of iframes) {{
+                if (iframe.contentWindow === window) continue;
+                try {{
+                    const btns = iframe.contentDocument.querySelectorAll('button');
+                    for (const b of btns) {{
+                        const txt = (b.textContent || b.innerText || '').trim().replace(/\s+/g, ' ');
+                        if (txt === texto) {{
+                            b.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true }}));
+                            setTimeout(function() {{ b.click(); }}, 50);
+                            return true;
+                        }}
+                    }}
+                }} catch(e) {{}}
+            }}
+
+            console.warn('Botão não encontrado:', texto);
+            return false;
+        }} catch(e) {{
+            console.error(e);
+            return false;
+        }}
+    }}
+
+    document.getElementById('btn-sair').addEventListener('click', function() {{
+        clickHidden('__alerta_sair__');
+    }});
+
+    document.getElementById('btn-continuar').addEventListener('click', function() {{
+        clickHidden('__alerta_continuar__');
+    }});
+
+    expandIframe();
+    </script>
+    """, height=600, scrolling=False)
+
+# ---------------------------------------------------
 # HELPER — CABEÇALHO COM PERÍODO
 # ---------------------------------------------------
 
@@ -1183,20 +1403,70 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
 
-        col_salvar, col_cancelar = st.columns(2)
-with col_salvar:
-    if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_empresa"):
-        if emp["nome"].strip():
-            st.session_state.editar_empresa = False
-            salvar_dados_usuario(st.session_state.user.id)
-            st.success("Empresa salva com sucesso!")
-            st.rerun()
-        else:
-            st.error("Informe pelo menos o nome da empresa.")
-with col_cancelar:
-    if st.button("Cancelar", use_container_width=True, key="btn_cancelar_empresa"):
-        st.session_state.editar_empresa = False
-        st.rerun()
+        with st.form("cad_empresa", clear_on_submit=False):
+
+            # ── IDENTIFICAÇÃO
+            sec_label("Identificação")
+            c1, c2 = st.columns(2)
+            emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"])
+            site_digitado = c2.text_input("Site", value=emp["site"])
+            emp["site"] = limpar_site(site_digitado)
+
+            form_divider()
+
+            # ── SETOR
+            sec_label("Setor")
+            c3, c4 = st.columns(2)
+            setor_opcoes = list(SUBNICHOS.keys())
+            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+            emp["setor"] = c3.selectbox("Setor", setor_opcoes, index=setor_idx)
+            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+            tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+            emp["tipo"] = c4.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
+
+            form_divider()
+
+            # ── REDES SOCIAIS
+            sec_label("Redes Sociais")
+            c5, c6 = st.columns(2)
+            emp["instagram"] = c5.text_input("Instagram", value=emp["instagram"])
+            emp["fb_page"]   = c6.text_input("Facebook",  value=emp["fb_page"])
+
+            servicos_text = st.text_input(
+                "Serviços (separados por vírgula)",
+                value=", ".join(emp["servicos"]),
+            )
+            emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
+
+            form_divider()
+
+            # ── LOCALIZAÇÃO
+            sec_label("Localização")
+            loc1, loc2 = st.columns(2)
+            estados = list(ESTADOS_CIDADES.keys())
+            estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
+            emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
+            cidades = ESTADOS_CIDADES.get(emp["estado"], [])
+            cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
+            emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
+
+            # ── Botões
+            col_salvar, col_cancelar = st.columns(2)
+            salvar   = col_salvar.form_submit_button("💾 Salvar",   use_container_width=True)
+            cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
+
+            if cancelar:
+                st.session_state.editar_empresa = False
+                st.rerun()
+
+            if salvar:
+                if emp["nome"].strip():
+                    st.session_state.editar_empresa = False
+                    salvar_dados_usuario(st.session_state.user.id)
+                    st.success("Empresa salva com sucesso!")
+                    st.rerun()
+                else:
+                    st.error("Informe pelo menos o nome da empresa.")
 
     # ----------------------------------------------------------
     # MODO VISUALIZAÇÃO
@@ -1593,37 +1863,46 @@ elif st.session_state.pagina == "cad":
         titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
         st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
 
-        n = c1.text_input(...)
-u = c2.text_input(...)
-insta_handle = c3.text_input(...)
-fb_p = c4.text_input(...)
-ads_manual = st.text_input(...)
+        with st.form("cad_concorrente", clear_on_submit=False):
+            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Identificação</div>", unsafe_allow_html=True)
+            c1, c2 = st.columns(2)
+            n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
+            u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
 
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_conc"):
-        clean_handle = obter_instagram_handle(insta_handle)
-        fb_clean = obter_facebook_handle(fb_p)
-        site_clean = limpar_site(u)
-        search_term = ads_manual or fb_clean or clean_handle.lstrip("@") or n
-        dados_novos = {
-            "nome": n, "url": site_clean,
-            "instagram": clean_handle, "fb_page": fb_clean,
-            "ads_id": search_term
-        }
-        if st.session_state.editando_concorrente is not None:
-            st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
-        else:
-            st.session_state.dados["concorrentes"].append(dados_novos)
-        st.session_state.mostrar_form_concorrente = False
-        st.session_state.editando_concorrente = None
-        salvar_dados_usuario(st.session_state.user.id)
-        st.rerun()
-with col2:
-    if st.button("Cancelar", use_container_width=True, key="btn_cancelar_conc"):
-        st.session_state.mostrar_form_concorrente = False
-        st.session_state.editando_concorrente = None
-        st.rerun()
+            st.markdown("<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Redes Sociais</div>", unsafe_allow_html=True)
+            c3, c4 = st.columns(2)
+            insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
+            fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
+            ads_manual = st.text_input("ID Manual Ads (Opcional)", value=(concorrente_edit["ads_id"] if concorrente_edit else ""))
+
+            col1, col2 = st.columns(2)
+            salvar = col1.form_submit_button("💾 Salvar", use_container_width=True)
+            cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
+
+            if cancelar:
+                st.session_state.mostrar_form_concorrente = False
+                st.session_state.editando_concorrente = None
+                st.rerun()
+
+            if salvar:
+                clean_handle = obter_instagram_handle(insta_handle)
+                fb_clean = obter_facebook_handle(fb_p)
+                site_clean = limpar_site(u)
+                search_term = ads_manual or fb_clean or clean_handle.lstrip("@") or n
+                dados_novos = {
+                    "nome": n, "url": site_clean,
+                    "instagram": clean_handle, "fb_page": fb_clean,
+                    "ads_id": search_term
+                }
+                if st.session_state.editando_concorrente is not None:
+                    st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
+                else:
+                    st.session_state.dados["concorrentes"].append(dados_novos)
+                st.session_state.mostrar_form_concorrente = False
+                st.session_state.editando_concorrente = None
+                salvar_dados_usuario(st.session_state.user.id)
+                st.rerun()
 
     # ── Lista de concorrentes
     concorrentes = st.session_state.dados["concorrentes"]
