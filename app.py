@@ -2660,8 +2660,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     </div>
                     """, unsafe_allow_html=True)
  
-            st.markdown("<div style='margin:20px 0 16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
- 
 # ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
             col_posts, col_ia = st.columns([3, 2])
 
@@ -2677,10 +2675,13 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 with st.container(border=True):
                     st.markdown("""
                     <style>
-                    [data-testid="stVerticalBlockBorderWrapper"] {
+                    [data-testid="stVerticalBlockBorderWrapper"],
+                    [data-testid="stVerticalBlockBorderWrapper"] > div,
+                    [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+                    [data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
                         border-radius: 12px !important;
                         border-color: #e5e7eb !important;
-                        background: #fff !important;
+                        background: #ffffff !important;
                     }
                     </style>
                     """, unsafe_allow_html=True)
