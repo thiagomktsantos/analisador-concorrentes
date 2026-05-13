@@ -416,7 +416,7 @@ section.main { background: #f0f4f8 !important; }
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;
 }
-.page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>; }
+.page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; font-family: 'Animo', 'DM Sans', sans-serif; }
 .page-subtitle { font-size: 14px; color: #6b7280; margin-top: 3px; }
 
 /* ── BOTÕES PADRÃO (secundário) ── */
@@ -2159,7 +2159,7 @@ elif st.session_state.pagina == "redes":
     h1, h2 = st.columns([7, 3])
     with h1:
         st.markdown(
-            "<h1 style='font-size:32px;font-weight:700;color:#085682;"
+            "<h1 style='font-size:32px;font-weight:700;color:#111827;"
             "text-transform:uppercase;margin:0;"
             "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
             "Redes Sociais</h1>",
@@ -2383,6 +2383,7 @@ elif st.session_state.pagina == "redes":
 
     st.markdown(
         "<div style='font-size:18px;font-weight:800;color:#111827;"
+        "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif;"
         "letter-spacing:0px;margin-bottom:22px;text-transform:uppercase'>"
         "Comparativo com todos os perfis</div>",
         unsafe_allow_html=True,
@@ -2498,7 +2499,8 @@ elif st.session_state.pagina == "redes":
             # ── INFORMAÇÕES DE PERFIL
             st.markdown(
                 "<div style='font-size:18px;font-weight:700;color:#111827;"
-                "letter-spacing:-0.2px;margin-bottom:14px;"
+                "text-transform:uppercase;margin-bottom:14px;"
+                "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
                 "Informações de Perfil</div>",
                 unsafe_allow_html=True,
             )
@@ -2648,7 +2650,8 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             with col_posts:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#111827;"
-                    "letter-spacing:-0.2px;margin-bottom:14px;"
+                    "text-transform:uppercase;margin-bottom:14px;"
+                    "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
                     "Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
@@ -2714,7 +2717,8 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             with col_ia:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#111827;"
-                    "letter-spacing:-0.2px;margin-bottom:14px;"
+                    "text-transform:uppercase;margin-bottom:14px;"
+                    "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
                     "Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
