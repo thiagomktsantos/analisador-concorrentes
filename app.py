@@ -1183,70 +1183,20 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
 
-        with st.form("cad_empresa", clear_on_submit=False):
-
-            # ── IDENTIFICAÇÃO
-            sec_label("Identificação")
-            c1, c2 = st.columns(2)
-            emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"])
-            site_digitado = c2.text_input("Site", value=emp["site"])
-            emp["site"] = limpar_site(site_digitado)
-
-            form_divider()
-
-            # ── SETOR
-            sec_label("Setor")
-            c3, c4 = st.columns(2)
-            setor_opcoes = list(SUBNICHOS.keys())
-            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
-            emp["setor"] = c3.selectbox("Setor", setor_opcoes, index=setor_idx)
-            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-            tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
-            emp["tipo"] = c4.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
-
-            form_divider()
-
-            # ── REDES SOCIAIS
-            sec_label("Redes Sociais")
-            c5, c6 = st.columns(2)
-            emp["instagram"] = c5.text_input("Instagram", value=emp["instagram"])
-            emp["fb_page"]   = c6.text_input("Facebook",  value=emp["fb_page"])
-
-            servicos_text = st.text_input(
-                "Serviços (separados por vírgula)",
-                value=", ".join(emp["servicos"]),
-            )
-            emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
-
-            form_divider()
-
-            # ── LOCALIZAÇÃO
-            sec_label("Localização")
-            loc1, loc2 = st.columns(2)
-            estados = list(ESTADOS_CIDADES.keys())
-            estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
-            emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
-            cidades = ESTADOS_CIDADES.get(emp["estado"], [])
-            cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
-            emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
-
-            # ── Botões
-            col_salvar, col_cancelar = st.columns(2)
-            salvar   = col_salvar.form_submit_button("💾 Salvar",   use_container_width=True)
-            cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
-
-            if cancelar:
-                st.session_state.editar_empresa = False
-                st.rerun()
-
-            if salvar:
-                if emp["nome"].strip():
-                    st.session_state.editar_empresa = False
-                    salvar_dados_usuario(st.session_state.user.id)
-                    st.success("Empresa salva com sucesso!")
-                    st.rerun()
-                else:
-                    st.error("Informe pelo menos o nome da empresa.")
+        col_salvar, col_cancelar = st.columns(2)
+with col_salvar:
+    if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_empresa"):
+        if emp["nome"].strip():
+            st.session_state.editar_empresa = False
+            salvar_dados_usuario(st.session_state.user.id)
+            st.success("Empresa salva com sucesso!")
+            st.rerun()
+        else:
+            st.error("Informe pelo menos o nome da empresa.")
+with col_cancelar:
+    if st.button("Cancelar", use_container_width=True, key="btn_cancelar_empresa"):
+        st.session_state.editar_empresa = False
+        st.rerun()
 
     # ----------------------------------------------------------
     # MODO VISUALIZAÇÃO
@@ -1643,46 +1593,37 @@ elif st.session_state.pagina == "cad":
         titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
         st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
 
-        with st.form("cad_concorrente", clear_on_submit=False):
-            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Identificação</div>", unsafe_allow_html=True)
-            c1, c2 = st.columns(2)
-            n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
-            u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
+        n = c1.text_input(...)
+u = c2.text_input(...)
+insta_handle = c3.text_input(...)
+fb_p = c4.text_input(...)
+ads_manual = st.text_input(...)
 
-            st.markdown("<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Redes Sociais</div>", unsafe_allow_html=True)
-            c3, c4 = st.columns(2)
-            insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
-            fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
-            ads_manual = st.text_input("ID Manual Ads (Opcional)", value=(concorrente_edit["ads_id"] if concorrente_edit else ""))
-
-            col1, col2 = st.columns(2)
-            salvar = col1.form_submit_button("💾 Salvar", use_container_width=True)
-            cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
-
-            if cancelar:
-                st.session_state.mostrar_form_concorrente = False
-                st.session_state.editando_concorrente = None
-                st.rerun()
-
-            if salvar:
-                clean_handle = obter_instagram_handle(insta_handle)
-                fb_clean = obter_facebook_handle(fb_p)
-                site_clean = limpar_site(u)
-                search_term = ads_manual or fb_clean or clean_handle.lstrip("@") or n
-                dados_novos = {
-                    "nome": n, "url": site_clean,
-                    "instagram": clean_handle, "fb_page": fb_clean,
-                    "ads_id": search_term
-                }
-                if st.session_state.editando_concorrente is not None:
-                    st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
-                else:
-                    st.session_state.dados["concorrentes"].append(dados_novos)
-                st.session_state.mostrar_form_concorrente = False
-                st.session_state.editando_concorrente = None
-                salvar_dados_usuario(st.session_state.user.id)
-                st.rerun()
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_conc"):
+        clean_handle = obter_instagram_handle(insta_handle)
+        fb_clean = obter_facebook_handle(fb_p)
+        site_clean = limpar_site(u)
+        search_term = ads_manual or fb_clean or clean_handle.lstrip("@") or n
+        dados_novos = {
+            "nome": n, "url": site_clean,
+            "instagram": clean_handle, "fb_page": fb_clean,
+            "ads_id": search_term
+        }
+        if st.session_state.editando_concorrente is not None:
+            st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
+        else:
+            st.session_state.dados["concorrentes"].append(dados_novos)
+        st.session_state.mostrar_form_concorrente = False
+        st.session_state.editando_concorrente = None
+        salvar_dados_usuario(st.session_state.user.id)
+        st.rerun()
+with col2:
+    if st.button("Cancelar", use_container_width=True, key="btn_cancelar_conc"):
+        st.session_state.mostrar_form_concorrente = False
+        st.session_state.editando_concorrente = None
+        st.rerun()
 
     # ── Lista de concorrentes
     concorrentes = st.session_state.dados["concorrentes"]
