@@ -2159,7 +2159,7 @@ elif st.session_state.pagina == "redes":
     h1, h2 = st.columns([7, 3])
     with h1:
         st.markdown(
-            "<h1 style='font-size:32px;font-weight:700;color:#111827;"
+            "<h1 style='font-size:32px;font-weight:700;color:#1a2e4a;"
             "text-transform:uppercase;margin:0;"
             "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
             "Redes Sociais</h1>",
@@ -2374,7 +2374,7 @@ elif st.session_state.pagina == "redes":
     # GRÁFICOS COMPARATIVOS
     # ══════════════════════════════════════════════════════════════════════
 
-    CORES = ["#1a2e4a", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#27ae60"]
+    CORES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
 
     nomes_ok   = [x["nome"] for x in ok]
     segs_ok    = [x.get("seguidores", 0) for x in ok]
