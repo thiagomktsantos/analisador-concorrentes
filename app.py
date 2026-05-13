@@ -583,22 +583,20 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
 }
 
 /* ── Containers com borda — fundo branco forçado ── */
-section.main [data-testid="stVerticalBlockBorderWrapper"] {
+[data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
     border-color: #e5e7eb !important;
     border-radius: 12px !important;
 }
-section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+[data-testid="stVerticalBlockBorderWrapper"] > div,
+[data-testid="stVerticalBlockBorderWrapper"] > div > div,
+[data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
     background: #ffffff !important;
 }
-section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
-section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
-section.main [data-testid="stVerticalBlockBorderWrapper"] img,
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stPlotlyChart"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="tab-panel"] {
+[data-testid="stVerticalBlockBorderWrapper"] iframe,
+[data-testid="stVerticalBlockBorderWrapper"] canvas,
+[data-testid="stVerticalBlockBorderWrapper"] img {
     background: transparent !important;
 }
 </style>
