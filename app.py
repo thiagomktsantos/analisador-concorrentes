@@ -1225,8 +1225,10 @@ if st.session_state.get("mostrar_alerta_saida"):
             window.parent.document.querySelectorAll('iframe').forEach(function(iframe) {{
                 if (iframe.contentWindow === window) {{
                     iframe.style.position = 'fixed';
-                    iframe.style.top = '0'; iframe.style.left = '0';
-                    iframe.style.width = '100vw'; iframe.style.height = '100vh';
+                    iframe.style.top = '0';
+                    iframe.style.left = '0';
+                    iframe.style.width = '100vw';
+                    iframe.style.height = '100vh';
                     iframe.style.zIndex = '999996';
                     iframe.style.border = 'none';
                     iframe.style.pointerEvents = 'all';
@@ -1239,9 +1241,9 @@ if st.session_state.get("mostrar_alerta_saida"):
         try {{
             const allBtns = window.parent.document.querySelectorAll('button');
             for (const b of allBtns) {{
-                const txt = (b.textContent || b.innerText || '').trim();
+                const txt = (b.textContent || b.innerText || '').trim().replace(/\s+/g, ' ');
                 if (txt === texto) {{
-                    b.click();
+                    b.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true }}));
                     return true;
                 }}
             }}
@@ -1256,6 +1258,7 @@ if st.session_state.get("mostrar_alerta_saida"):
     document.getElementById('btn-sair').addEventListener('click', function() {{
         clickHidden('__alerta_sair__');
     }});
+
     document.getElementById('btn-continuar').addEventListener('click', function() {{
         clickHidden('__alerta_continuar__');
     }});
@@ -1263,21 +1266,6 @@ if st.session_state.get("mostrar_alerta_saida"):
     expandIframe();
     </script>
     """, height=600, scrolling=False)
-
-# ---------------------------------------------------
-# HELPER — CABEÇALHO SEM PERÍODO (para Sites)
-# ---------------------------------------------------
-
-def cabecalho_simples(titulo, subtitulo=""):
-    h1 = st.columns(1)[0]
-    with h1:
-        st.markdown(
-            f"<h1 style='font-size:28px;font-weight:600;color:#111827;letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>{titulo}</h1>",
-            unsafe_allow_html=True
-        )
-        if subtitulo:
-            st.markdown(f"<div style='font-size:14px;color:#6b7280;margin-top:3px'>{subtitulo}</div>", unsafe_allow_html=True)
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
 
 # ---------------------------------------------------
 # HELPER — CABEÇALHO COM PERÍODO
