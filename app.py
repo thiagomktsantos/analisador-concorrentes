@@ -2385,15 +2385,15 @@ elif st.session_state.pagina == "redes":
     st.markdown(
         """
         <div style="
-            font-size:28px;
-            font-weight:800;
+            font-size:16px;
+            font-weight:700;
             color:#111827;
             font-family:'DM Sans',sans-serif;
-            letter-spacing:-0.5px;
+            letter-spacing:2px;
             margin-bottom:22px;
             text-transform:uppercase;
         ">
-            COMPARATIVO COM TODOS OS PERFIS
+            Comparativo com todos os perfis
         </div>
         """,
         unsafe_allow_html=True,
@@ -2594,7 +2594,7 @@ elif st.session_state.pagina == "redes":
             # ── 1. INFORMAÇÕES DE PERFIL ────────────────────────────────
             st.markdown(
                 "<div style='font-size:16px;font-weight:700;color:#111827;"
-                "letter-spacing:-0.2px;margin-bottom:14px'>👤 Informações de Perfil</div>",   # ← MUDANÇA tamanho
+                "letter-spacing:2px;text-transform:uppercase;margin-bottom:14px'>Informações de Perfil</div>",   # ← MUDANÇA tamanho
                 unsafe_allow_html=True,
             )
  
@@ -2615,16 +2615,6 @@ elif st.session_state.pagina == "redes":
                             <div style='font-size:15px;font-weight:700;color:#111827'>
                                 {r["nome"]}
                                 <span style='font-size:12px;font-weight:400;color:#9ca3af'>{r.get("handle","")}</span>
-                            </div>
-                            <div style='margin-top:4px;display:flex;gap:6px;flex-wrap:wrap'>
-                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
-                                             padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>
-                                    {badge_lbl}
-                                </span>
-                                <span style='background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;
-                                             padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>
-                                    RapidAPI
-                                </span>
                             </div>
                         </div>
                     </div>
@@ -2739,7 +2729,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 # Título maior                               ← MUDANÇA
                 st.markdown(
                     "<div style='font-size:16px;font-weight:700;color:#111827;"
-                    "letter-spacing:-0.2px;margin-bottom:14px'>📸 Últimas 3 Postagens</div>",
+                    "letter-spacing:2px;text-transform:uppercase;margin-bottom:14px'>Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
  
@@ -2811,7 +2801,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 # Título maior                               ← MUDANÇA
                 st.markdown(
                     "<div style='font-size:16px;font-weight:700;color:#111827;"
-                    "letter-spacing:-0.2px;margin-bottom:14px'>🤖 Análise de IA</div>",
+                    "letter-spacing:2px;text-transform:uppercase;margin-bottom:14px'>Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
  
