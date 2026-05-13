@@ -2793,22 +2793,23 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
                 <div class="card">
                     {posts_html}
-                    <details style="margin-top:16px">
-                        <summary>Ver todos os posts</summary>
-                        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Data</th><th>Tipo</th><th>Curtidas</th>
-                                        <th>Comentários</th><th>Eng. total</th><th>Legenda</th>
-                                    </tr>
-                                </thead>
-                                <tbody>{df_posts_rows}</tbody>
-                            </table>
-                        </div>
-                    </details>
                 </div>
-                """, height=600 if posts_list else 100, scrolling=False)
+
+                <details style="margin-top:8px">
+                    <summary>Ver todos os posts</summary>
+                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th><th>Tipo</th><th>Curtidas</th>
+                                    <th>Comentários</th><th>Eng. total</th><th>Legenda</th>
+                                </tr>
+                            </thead>
+                            <tbody>{df_posts_rows}</tbody>
+                        </table>
+                    </div>
+                </details>
+                """, height=420 if posts_list else 100, scrolling=False)
 
             with col_ia:
 
@@ -2938,6 +2939,7 @@ Seja direto e objetivo.
                     font-family: 'DM Sans', sans-serif;
                     padding: 16px 16px 0 16px;
                     letter-spacing: 0px;
+                    margin-bottom: 0;
                 }}
                 .btn-row {{
                     display: flex;
