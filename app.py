@@ -1083,29 +1083,134 @@ function nav(page) {{
 # POPUP ALERTA SAÍDA
 # ---------------------------------------------------
 
-if st.session_state.mostrar_alerta_saida:
-    st.markdown("""
-    <div class="popup-overlay"></div>
-    <div class="popup-box">
-        <div class="popup-title">⚠️ Cancelar edição?</div>
-        <div class="popup-text">
-            Você possui uma edição aberta de concorrente.<br>
-            Se sair agora, as alterações não salvas serão perdidas.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+# ---------------------------------------------------
+# POPUP ALERTA SAÍDA
+# ---------------------------------------------------
 
-    p1, p2, p3 = st.columns([1, 1, 1])
-    with p2:
-        if st.button("✅ Sair e cancelar edição", use_container_width=True):
+if st.session_state.mostrar_alerta_saida:
+    col_sair_hidden, col_continuar_hidden = st.columns(2)
+    with col_sair_hidden:
+        if st.button("__popup_sair__", key="_popup_sair"):
             st.session_state.mostrar_form_concorrente = False
             st.session_state.editando_concorrente = None
             st.session_state.mostrar_alerta_saida = False
             st.session_state.pagina = st.session_state.pagina_destino
             st.rerun()
-        if st.button("❌ Continuar editando", use_container_width=True):
+    with col_continuar_hidden:
+        if st.button("__popup_continuar__", key="_popup_continuar"):
             st.session_state.mostrar_alerta_saida = False
             st.rerun()
+
+    st.markdown("""
+    <style>
+    .st-key-_popup_sair, .st-key-_popup_continuar {
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    components.html("""
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: transparent; overflow: hidden; }
+
+    .overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
+        z-index: 999998;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw; height: 100vh;
+    }
+
+    .box {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ffffff;
+        width: 440px;
+        border-radius: 16px;
+        padding: 32px;
+        z-index: 999999;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .box-icon { font-size: 32px; margin-bottom: 12px; }
+
+    .box-title {
+        font-size: 20px; font-weight: 700;
+        color: #111827; margin-bottom: 10px;
+    }
+
+    .box-text {
+        color: #6b7280; font-size: 15px;
+        line-height: 1.65; margin-bottom: 24px;
+    }
+
+    .btn-row {
+        display: flex; gap: 12px;
+    }
+
+    .btn {
+        flex: 1; padding: 12px 0;
+        border-radius: 10px;
+        font-size: 15px; font-weight: 600;
+        cursor: pointer; border: none;
+        font-family: 'DM Sans', sans-serif;
+        transition: all 0.15s;
+    }
+
+    .btn-sair {
+        background: #111827; color: #ffffff;
+    }
+    .btn-sair:hover { background: #1f2937; }
+
+    .btn-continuar {
+        background: #f3f4f6; color: #374151;
+        border: 1px solid #e5e7eb;
+    }
+    .btn-continuar:hover { background: #e5e7eb; }
+    </style>
+
+    <div class="overlay"></div>
+    <div class="box">
+        <div class="box-icon">⚠️</div>
+        <div class="box-title">Cancelar edição?</div>
+        <div class="box-text">
+            Você possui uma edição aberta de concorrente.<br>
+            Se sair agora, as alterações não salvas serão perdidas.
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-continuar" onclick="clickBtn('__popup_continuar__')">
+                ❌ Continuar editando
+            </button>
+            <button class="btn btn-sair" onclick="clickBtn('__popup_sair__')">
+                ✅ Sair e cancelar
+            </button>
+        </div>
+    </div>
+
+    <script>
+    function clickBtn(label) {
+        const btns = window.parent.document.querySelectorAll('button');
+        for (const b of btns) {
+            if (b.innerText.trim() === label) {
+                b.click();
+                break;
+            }
+        }
+    }
+    </script>
+    """, height=400, scrolling=False)
 
 # ---------------------------------------------------
 # HELPER — CABEÇALHO SEM PERÍODO (para Sites)
