@@ -1232,7 +1232,7 @@ if st.session_state.pagina == "home":
 
             # ── Botões
             col_salvar, col_cancelar = st.columns(2)
-            salvar   = col_salvar.form_submit_button("💾 Salvar",   use_container_width=True)
+            salvar   = col_salvar.form_submit_button("Salvar",   use_container_width=True)
             cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
 
             if cancelar:
@@ -1657,7 +1657,7 @@ elif st.session_state.pagina == "cad":
             ads_manual = st.text_input("ID Manual Ads (Opcional)", value=(concorrente_edit["ads_id"] if concorrente_edit else ""))
 
             col1, col2 = st.columns(2)
-            salvar = col1.form_submit_button("💾 Salvar", use_container_width=True)
+            salvar = col1.form_submit_button("Salvar", use_container_width=True)
             cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
 
             if cancelar:
@@ -1826,12 +1826,12 @@ body {{ padding-bottom: 4px; }}
 
                 b1, b2 = st.columns(2)
                 with b1:
-                    if st.button("✏️ Editar", key=f"editar_{i}", use_container_width=True):
+                    if st.button("Editar Concorrente", key=f"editar_{i}", use_container_width=True):
                         st.session_state.editando_concorrente = i
                         st.session_state.mostrar_form_concorrente = False
                         st.rerun()
                 with b2:
-                    if st.button("🗑️ Remover", key=f"remove_{i}", use_container_width=True):
+                    if st.button("Remover Concorrente", key=f"remove_{i}", use_container_width=True):
                         st.session_state.dados["concorrentes"].pop(i)
                         salvar_dados_usuario(st.session_state.user.id)
                         st.rerun()
