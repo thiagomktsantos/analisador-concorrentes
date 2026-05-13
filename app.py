@@ -1173,28 +1173,15 @@ if st.session_state.pagina == "home":
     # ----------------------------------------------------------
     if not tem_dados or st.session_state.editar_empresa:
 
-        # Injeta CSS no head da página pai para forçar fundo branco
-        components.html("""
-        <script>
-        (function() {
-            const style = document.createElement('style');
-            style.textContent = `
-                section.main [data-testid="stVerticalBlockBorderWrapper"],
-                section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
-                section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-                section.main [data-testid="stVerticalBlock"],
-                section.main [data-testid="stVerticalBlock"] > div {
-                    background: #ffffff !important;
-                    background-color: #ffffff !important;
-                }
-            `;
-            window.parent.document.head.appendChild(style);
-        })();
-        </script>
-        """, height=0)
-
         st.markdown("""
         <style>
+        /* Fundo branco no container do form de empresa */
+        section.main div[data-testid="stVerticalBlockBorderWrapper"],
+        section.main div[data-testid="stVerticalBlockBorderWrapper"] > div,
+        section.main div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
             background: #3a9fd6 !important;
@@ -1341,13 +1328,13 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-            # Botão real do Streamlit — invisível, acionado pelo HTML abaixo
-            btn_editar = st.button("_editar_", use_container_width=True, type="primary", key="btn_editar_empresa")
+            # Botão real Streamlit — nome atualizado para "Editar Empresa"
+            btn_editar = st.button("Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa")
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # HTML que renderiza o botão visual com ícone FA e clica no botão Streamlit real
+        # Botão HTML visual com ícone FA lápis — busca por "Editar Empresa" no innerText
         components.html("""
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <style>
@@ -1374,7 +1361,7 @@ if st.session_state.pagina == "home":
         <button class="btn" onclick="
             const btns = window.parent.document.querySelectorAll('button');
             for (const b of btns) {
-                if (b.innerText.trim() === '_editar_') { b.click(); break; }
+                if (b.innerText.trim() === 'Editar Empresa') { b.click(); break; }
             }
         ">
             <i class="fa-solid fa-pen-to-square"></i>
@@ -1521,10 +1508,11 @@ body {{ padding: 0; margin: 0; overflow: hidden; }}
         altura = 260 + (linhas_tags * 44)
         components.html(card_html, height=altura, scrolling=False)
 
+        # ALTERAÇÃO 3 — margin-bottom negativo para eliminar espaço extra / barra de rolagem
         st.markdown(f"""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:16px 20px;display:flex;align-items:center;gap:16px;
-                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+                    margin-top:8px;margin-bottom:-24px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
