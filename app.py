@@ -2427,7 +2427,7 @@ elif st.session_state.pagina == "redes":
             )
         )
         fig_seg.update_layout(
-            height=250,
+            height=220,
             margin=dict(t=20, b=30, l=45, r=20),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
@@ -2442,7 +2442,7 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 16px 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+                    padding:20px 16px 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);overflow:visible">
             <div style="font-size:15px;font-weight:800;color:#111827;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;
                         padding:0 4px 12px 4px;border-bottom:1px solid #f3f4f6;
@@ -2453,7 +2453,7 @@ elif st.session_state.pagina == "redes":
             var fig = {fig_seg_json};
             Plotly.newPlot('graf_seg', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
-        """, height=330)
+        """, height=300)
 
     with col_g2:
         fig_eng = go.Figure(
@@ -2468,7 +2468,7 @@ elif st.session_state.pagina == "redes":
             )
         )
         fig_eng.update_layout(
-            height=250,
+            height=220,
             margin=dict(t=20, b=30, l=45, r=20),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
@@ -2484,7 +2484,7 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 16px 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+                    padding:20px 16px 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);overflow:visible">
             <div style="font-size:15px;font-weight:800;color:#111827;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;
                         padding:0 4px 12px 4px;border-bottom:1px solid #f3f4f6;
@@ -2495,7 +2495,7 @@ elif st.session_state.pagina == "redes":
             var fig = {fig_eng_json};
             Plotly.newPlot('graf_eng', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
-        """, height=330)
+        """, height=300)
 
     st.markdown(
         "<div style='margin:28px 0 20px 0;border-top:1px solid #e5e7eb'></div>",
