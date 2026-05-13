@@ -599,6 +599,11 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
 [data-testid="stVerticalBlockBorderWrapper"] img {
     background: transparent !important;
 }
+
+/* ── Garante branco em todas as camadas internas do container ── */
+[data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect) {
+    background-color: #ffffff !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
