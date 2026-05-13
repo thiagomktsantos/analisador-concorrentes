@@ -731,7 +731,7 @@ if not st.session_state.logado:
             {'<img src="' + logo_src + '" style="width:200px;" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">Marketylics</div>'}
             <div style="font-size:9.6px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
         </div>
-        <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 20px 0" />
+        <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 10px 0" />
         """, unsafe_allow_html=True)
 
         aba = st.tabs(["Já tenho conta", "Criar conta"])
@@ -2662,64 +2662,49 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
             st.markdown("<div style='margin:20px 0 16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
  
-            # ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
+# ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
             col_posts, col_ia = st.columns([3, 2])
- 
+
             with col_posts:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:10px;"
-                    "font-family:\"Source Sans\",sans-serif;'>"
-                    "Últimas 3 Postagens</div>",
+                    "text-transform:uppercase;margin-bottom:14px;"
+                    "font-family:\"DM Sans\",sans-serif'>"
+                    "📸 Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
-                st.markdown(
-                    "<div style='background:#fff;border:1px solid #e5e7eb;"
-                    "border-radius:12px;padding:20px 20px 16px 20px'>",
-                    unsafe_allow_html=True,
-                )
+
+                # Monta HTML das postagens
                 if not posts_list:
-                    st.markdown(
-                        "<div style='padding:14px 0;font-size:14px;color:#9ca3af;text-align:center'>"
-                        "Posts não disponíveis.</div>",
-                        unsafe_allow_html=True,
-                    )
+                    posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
                 else:
-                    cols_posts = st.columns(3)
-                    for pidx, post in enumerate(posts_list[:3]):
-                        with cols_posts[pidx]:
-                            icon      = "Vídeo" if post.get("is_video") else "Foto"
-                            likes_fmt = fmt_num(post.get("likes", 0))
-                            coms_fmt  = fmt_num(post.get("comments", 0))
-                            thumb_url = post.get("thumb", "")
-                            if thumb_url:
-                                st.markdown(f"""
-                                <div style='text-align:center'>
-                                    <img src="{thumb_url}"
-                                         style='width:100%;aspect-ratio:1;border-radius:8px;
-                                                object-fit:cover;border:1px solid #e5e7eb;
-                                                display:block;margin-bottom:6px'
-                                         onerror="this.style.display='none'" />
-                                    <div style='font-size:12px;color:#374151;font-weight:600'>
-                                        ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}
-                                    </div>
-                                    <div style='font-size:11px;color:#9ca3af'>{post.get("date","")}</div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.markdown(f"""
-                                <div style='text-align:center'>
-                                    <div style='width:100%;aspect-ratio:1;border-radius:8px;
-                                                background:#f3f4f6;display:flex;align-items:center;
-                                                justify-content:center;font-size:13px;
-                                                color:#9ca3af;margin-bottom:6px'>{icon}</div>
-                                    <div style='font-size:12px;color:#374151;font-weight:600'>
-                                        ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}
-                                    </div>
-                                    <div style='font-size:11px;color:#9ca3af'>{post.get("date","")}</div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                st.markdown("</div>", unsafe_allow_html=True)
+                    cards = ""
+                    for post in posts_list[:3]:
+                        likes_fmt = fmt_num(post.get("likes", 0))
+                        coms_fmt  = fmt_num(post.get("comments", 0))
+                        thumb_url = post.get("thumb", "")
+                        date_str  = post.get("date", "")
+                        if thumb_url:
+                            img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror=\"this.style.display='none'\" />"
+                        else:
+                            icon = "Vídeo" if post.get("is_video") else "Foto"
+                            img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>"
+                        cards += f"""
+                        <div style='flex:1;text-align:center'>
+                            {img_html}
+                            <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                            <div style='font-size:11px;color:#9ca3af'>{date_str}</div>
+                        </div>"""
+                    posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
+
+                components.html(f"""
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                            padding:20px;font-family:DM Sans,sans-serif;box-sizing:border-box'>
+                    {posts_html}
+                </div>
+                """, height=280)
+
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
                 with st.expander("Ver todos os posts"):
                     df_posts = pd.DataFrame([{
@@ -2731,29 +2716,29 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         "Legenda":     p.get("caption", "")[:60],
                     } for p in posts_list])
                     st.dataframe(df_posts, use_container_width=True, hide_index=True)
- 
+
             with col_ia:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:10px;"
-                    "font-family:\"Source Sans\",sans-serif;'>"
-                    "Análise de IA</div>",
+                    "text-transform:uppercase;margin-bottom:14px;"
+                    "font-family:\"DM Sans\",sans-serif'>"
+                    "🤖 Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
- 
+
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
                 chave_geral    = f"ia_geral_{r['handle']}"
                 for ch in [chave_criativo, chave_copy, chave_geral]:
                     if ch not in st.session_state:
                         st.session_state[ch] = ""
- 
+
                 resumo_posts = "\n".join([
                     f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
                     f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
                     for p in posts_list[:12]
                 ]) if posts_list else "Sem posts disponíveis."
- 
+
                 perfil_ctx = f"""
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
@@ -2761,22 +2746,28 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
-                st.markdown(
-                    "<div style='background:#fff;border:1px solid #e5e7eb;"
-                    "border-radius:12px;padding:20px 20px 16px 20px'>",
-                    unsafe_allow_html=True,
-                )
- 
-                aba_criativo, aba_copy, aba_geral = st.tabs(["Criativo", "Copy", "Geral"])
- 
-                with aba_criativo:
-                    if st.button("Gerar análise", key=f"btn_criativo_{idx}", use_container_width=True):
-                        if gemini_model is None:
-                            st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
-                        else:
-                            with st.spinner("Analisando criativos…"):
-                                try:
-                                    resp = gemini_model.generate_content(f"""
+                with st.container(border=True):
+                    st.markdown("""
+                    <style>
+                    [data-testid="stVerticalBlockBorderWrapper"] {
+                        border-radius: 12px !important;
+                        border-color: #e5e7eb !important;
+                        padding: 4px 8px !important;
+                        background: #fff !important;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+
+                    aba_criativo, aba_copy, aba_geral = st.tabs(["Criativo", "Copy", "Geral"])
+
+                    with aba_criativo:
+                        if st.button("Gerar análise", key=f"btn_criativo_{idx}", use_container_width=True):
+                            if gemini_model is None:
+                                st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+                            else:
+                                with st.spinner("Analisando criativos…"):
+                                    try:
+                                        resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
 Responda em português com:
@@ -2788,33 +2779,33 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                    st.session_state[chave_criativo] = resp.text
-                                except Exception as e:
-                                    st.session_state[chave_criativo] = f"Erro: {e}"
- 
-                    if st.session_state.get(chave_criativo):
-                        st.markdown(f"""
-                        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                    padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                    max-height:300px;overflow-y:auto;margin-top:8px'>
-                            {st.session_state[chave_criativo].replace(chr(10), "<br>")}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(
-                            "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
-                            "Clique em <b>Gerar análise</b> para analisar os criativos.</div>",
-                            unsafe_allow_html=True,
-                        )
- 
-                with aba_copy:
-                    if st.button("Gerar análise", key=f"btn_copy_{idx}", use_container_width=True):
-                        if gemini_model is None:
-                            st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+                                        st.session_state[chave_criativo] = resp.text
+                                    except Exception as e:
+                                        st.session_state[chave_criativo] = f"Erro: {e}"
+
+                        if st.session_state.get(chave_criativo):
+                            st.markdown(f"""
+                            <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+                                        padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
+                                        max-height:300px;overflow-y:auto;margin-top:8px'>
+                                {st.session_state[chave_criativo].replace(chr(10), "<br>")}
+                            </div>
+                            """, unsafe_allow_html=True)
                         else:
-                            with st.spinner("Analisando copies…"):
-                                try:
-                                    resp = gemini_model.generate_content(f"""
+                            st.markdown(
+                                "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
+                                "Clique em <b>Gerar análise</b> para analisar os criativos.</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                    with aba_copy:
+                        if st.button("Gerar análise", key=f"btn_copy_{idx}", use_container_width=True):
+                            if gemini_model is None:
+                                st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+                            else:
+                                with st.spinner("Analisando copies…"):
+                                    try:
+                                        resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise as LEGENDAS (copy) deste perfil Instagram.
 Responda em português com:
@@ -2826,33 +2817,33 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                    st.session_state[chave_copy] = resp.text
-                                except Exception as e:
-                                    st.session_state[chave_copy] = f"Erro: {e}"
- 
-                    if st.session_state.get(chave_copy):
-                        st.markdown(f"""
-                        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                    padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                    max-height:300px;overflow-y:auto;margin-top:8px'>
-                            {st.session_state[chave_copy].replace(chr(10), "<br>")}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(
-                            "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
-                            "Clique em <b>Gerar análise</b> para analisar as copies.</div>",
-                            unsafe_allow_html=True,
-                        )
- 
-                with aba_geral:
-                    if st.button("Gerar análise", key=f"btn_geral_{idx}", use_container_width=True):
-                        if gemini_model is None:
-                            st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+                                        st.session_state[chave_copy] = resp.text
+                                    except Exception as e:
+                                        st.session_state[chave_copy] = f"Erro: {e}"
+
+                        if st.session_state.get(chave_copy):
+                            st.markdown(f"""
+                            <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+                                        padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
+                                        max-height:300px;overflow-y:auto;margin-top:8px'>
+                                {st.session_state[chave_copy].replace(chr(10), "<br>")}
+                            </div>
+                            """, unsafe_allow_html=True)
                         else:
-                            with st.spinner("Gerando análise geral…"):
-                                try:
-                                    resp = gemini_model.generate_content(f"""
+                            st.markdown(
+                                "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
+                                "Clique em <b>Gerar análise</b> para analisar as copies.</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                    with aba_geral:
+                        if st.button("Gerar análise", key=f"btn_geral_{idx}", use_container_width=True):
+                            if gemini_model is None:
+                                st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+                            else:
+                                with st.spinner("Gerando análise geral…"):
+                                    try:
+                                        resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Faça uma análise geral estratégica deste perfil Instagram.
 Responda em português com:
@@ -2864,23 +2855,21 @@ Responda em português com:
 ### Recomendações Estratégicas (3 ações concretas)
 Seja direto e objetivo.
 """)
-                                    st.session_state[chave_geral] = resp.text
-                                except Exception as e:
-                                    st.session_state[chave_geral] = f"Erro: {e}"
- 
-                    if st.session_state.get(chave_geral):
-                        st.markdown(f"""
-                        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                    padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                    max-height:300px;overflow-y:auto;margin-top:8px'>
-                            {st.session_state[chave_geral].replace(chr(10), "<br>")}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(
-                            "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
-                            "Clique em <b>Gerar análise</b> para análise estratégica.</div>",
-                            unsafe_allow_html=True,
-                        )
- 
-                st.markdown("</div>", unsafe_allow_html=True)
+                                        st.session_state[chave_geral] = resp.text
+                                    except Exception as e:
+                                        st.session_state[chave_geral] = f"Erro: {e}"
+
+                        if st.session_state.get(chave_geral):
+                            st.markdown(f"""
+                            <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+                                        padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
+                                        max-height:300px;overflow-y:auto;margin-top:8px'>
+                                {st.session_state[chave_geral].replace(chr(10), "<br>")}
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(
+                                "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
+                                "Clique em <b>Gerar análise</b> para análise estratégica.</div>",
+                                unsafe_allow_html=True,
+                            )
