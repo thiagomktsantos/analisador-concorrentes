@@ -2659,6 +2659,8 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         {st.session_state[chave_bio_ia].replace(chr(10), "<br>")}
                     </div>
                     """, unsafe_allow_html=True)
+
+                    st.markdown("<div style='margin:20px 0 16px 0'/>", unsafe_allow_html=True)
  
 # ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
             col_posts, col_ia = st.columns([3, 2])
@@ -2675,13 +2677,18 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 with st.container(border=True):
                     st.markdown("""
                     <style>
-                    [data-testid="stVerticalBlockBorderWrapper"],
-                    [data-testid="stVerticalBlockBorderWrapper"] > div,
-                    [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-                    [data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] {
+                        background: #ffffff !important;
                         border-radius: 12px !important;
                         border-color: #e5e7eb !important;
+                    }
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] * {
                         background: #ffffff !important;
+                    }
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] img {
+                        background: transparent !important;
                     }
                     </style>
                     """, unsafe_allow_html=True)
@@ -2760,14 +2767,18 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                 with st.container(border=True):
                     st.markdown("""
                     <style>
-                    div[data-testid="stVerticalBlockBorderWrapper"]:nth-of-type(2) {
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] {
+                        background: #ffffff !important;
                         border-radius: 12px !important;
                         border-color: #e5e7eb !important;
+                    }
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] * {
                         background: #ffffff !important;
                     }
-                    div[data-testid="stVerticalBlockBorderWrapper"] > div,
-                    div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
-                        background: #ffffff !important;
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
+                    section.main [data-testid="stVerticalBlockBorderWrapper"] img {
+                        background: transparent !important;
                     }
                     </style>
                     """, unsafe_allow_html=True)
