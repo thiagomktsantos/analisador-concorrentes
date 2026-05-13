@@ -1079,39 +1079,7 @@ function nav(page) {{
 
     components.html(menu_html, height=620, scrolling=False)
         
-# ---------------------------------------------------
-# POPUP ALERTA SAÍDA
-# ---------------------------------------------------
-
-if st.session_state.mostrar_alerta_saida:
-    # Botões invisíveis acionados pelo JS
-    if st.button("__alerta_sair__", key="_alerta_sair"):
-        st.session_state.mostrar_form_concorrente = False
-        st.session_state.editando_concorrente = None
-        st.session_state.editar_empresa = False
-        st.session_state.mostrar_alerta_saida = False
-        st.session_state.pagina = st.session_state.pagina_destino
-        st.rerun()
-    if st.button("__alerta_continuar__", key="_alerta_continuar"):
-        st.session_state.mostrar_alerta_saida = False
-        st.rerun()
-
-    st.markdown("""
-    <style>
-    .st-key-_alerta_sair,
-    .st-key-_alerta_continuar {
-        position: fixed !important;
-        top: -9999px !important;
-        left: -9999px !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        height: 0 !important;
-        overflow: hidden !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    components.html("""
+components.html("""
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1126,8 +1094,8 @@ if st.session_state.mostrar_alerta_saida:
         inset: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0,0,0,0.55);
-        backdrop-filter: blur(3px);
+        background: rgba(15, 17, 23, 0.6);
+        backdrop-filter: blur(4px);
         z-index: 999997;
     }
 
@@ -1138,54 +1106,72 @@ if st.session_state.mostrar_alerta_saida:
         transform: translate(-50%, -50%);
         background: #ffffff;
         width: 460px;
-        border-radius: 18px;
-        padding: 36px 36px 28px 36px;
+        border-radius: 14px;
+        padding: 32px;
         z-index: 999999;
         border: 1px solid #e5e7eb;
-        box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
     }
 
-    .icon { font-size: 34px; margin-bottom: 14px; }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 20px;
+    }
 
     .title {
-        font-size: 21px;
+        font-size: 20px;
         font-weight: 700;
         color: #111827;
-        margin-bottom: 10px;
-        letter-spacing: -0.3px;
+        margin-bottom: 8px;
+        letter-spacing: -0.4px;
     }
 
     .text {
-        font-size: 15px;
+        font-size: 14px;
         color: #6b7280;
-        line-height: 1.7;
+        line-height: 1.65;
         margin-bottom: 28px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #f3f4f6;
     }
 
     .btn-row {
         display: flex;
-        gap: 12px;
+        gap: 10px;
+        justify-content: flex-end;
     }
 
     .btn {
-        flex: 1;
-        padding: 13px 0;
-        border-radius: 10px;
-        font-size: 15px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
-        border: none;
         font-family: 'DM Sans', sans-serif;
-        transition: all 0.15s;
+        transition: all 0.12s ease;
         letter-spacing: -0.1px;
+        border: none;
     }
 
     .btn-continuar {
-        background: #f3f4f6;
+        background: #ffffff;
         color: #374151;
-        border: 1px solid #e5e7eb !important;
+        border: 1px solid #d1d5db !important;
     }
-    .btn-continuar:hover { background: #e5e7eb; }
+    .btn-continuar:hover {
+        background: #f9fafb;
+        border-color: #9ca3af !important;
+        color: #111827;
+    }
 
     .btn-sair {
         background: #111827;
@@ -1194,52 +1180,75 @@ if st.session_state.mostrar_alerta_saida:
     .btn-sair:hover { background: #1f2937; }
     </style>
 
-    <div class="overlay" onclick="clickBtn('__alerta_continuar__')"></div>
+    <div class="overlay"></div>
 
     <div class="box">
-        <div class="icon">⚠️</div>
+        <div class="badge">⚠️ Atenção</div>
         <div class="title">Cancelar edição?</div>
         <div class="text">
             Você possui uma edição aberta.<br>
             Se sair agora, as alterações não salvas serão perdidas.
         </div>
         <div class="btn-row">
-            <button class="btn btn-continuar" onclick="clickBtn('__alerta_continuar__')">
-                ❌ Continuar editando
+            <button class="btn btn-continuar" id="btn-continuar">
+                Continuar editando
             </button>
-            <button class="btn btn-sair" onclick="clickBtn('__alerta_sair__')">
-                ✅ Sair e cancelar
+            <button class="btn btn-sair" id="btn-sair">
+                Sair e cancelar
             </button>
         </div>
     </div>
 
     <script>
-    function clickBtn(label) {
-        const btns = window.parent.document.querySelectorAll('button');
-        for (const b of btns) {
-            if (b.innerText.trim() === label) {
-                b.click();
-                break;
+    function expandIframe() {
+        try {
+            const iframes = window.parent.document.querySelectorAll('iframe');
+            iframes.forEach(function(iframe) {
+                if (iframe.contentWindow === window) {
+                    iframe.style.position = 'fixed';
+                    iframe.style.top = '0';
+                    iframe.style.left = '0';
+                    iframe.style.width = '100vw';
+                    iframe.style.height = '100vh';
+                    iframe.style.zIndex = '999996';
+                    iframe.style.border = 'none';
+                    iframe.style.pointerEvents = 'all';
+                }
+            });
+        } catch(e) {}
+    }
+
+    function clickStreamlit(key) {
+        try {
+            // Tenta pelo data-testid do key
+            const parent = window.parent.document;
+
+            // Método 1: busca pelo texto exato do botão oculto
+            const allBtns = parent.querySelectorAll('button');
+            for (const b of allBtns) {
+                const txt = b.innerText.trim();
+                if (key === 'sair' && txt === '__alerta_sair__') { b.click(); return; }
+                if (key === 'continuar' && txt === '__alerta_continuar__') { b.click(); return; }
             }
+
+            // Método 2: busca pelo atributo kind
+            console.warn('Botão não encontrado pelo texto, tentando fallback...');
+            for (const b of allBtns) {
+                console.log('btn:', JSON.stringify(b.innerText.trim()));
+            }
+        } catch(e) {
+            console.error(e);
         }
     }
 
-    // Expande o iframe para cobrir a tela toda
-    (function() {
-        const iframes = window.parent.document.querySelectorAll('iframe');
-        iframes.forEach(function(iframe) {
-            if (iframe.contentWindow === window) {
-                iframe.style.position = 'fixed';
-                iframe.style.top = '0';
-                iframe.style.left = '0';
-                iframe.style.width = '100vw';
-                iframe.style.height = '100vh';
-                iframe.style.zIndex = '999996';
-                iframe.style.border = 'none';
-                iframe.style.background = 'transparent';
-            }
-        });
-    })();
+    document.getElementById('btn-sair').addEventListener('click', function() {
+        clickStreamlit('sair');
+    });
+    document.getElementById('btn-continuar').addEventListener('click', function() {
+        clickStreamlit('continuar');
+    });
+
+    expandIframe();
     </script>
     """, height=600, scrolling=False)
 
