@@ -1226,7 +1226,7 @@ if st.session_state.pagina == "home":
         def divider():
             st.markdown("<div style='margin:20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-        # Injeta fundo branco no container via JS no head do pai
+        # FIX 3 — Fundo branco no form: seletores ampliados incluindo stForm
         components.html("""
         <script>
         (function() {
@@ -1235,8 +1235,12 @@ if st.session_state.pagina == "home":
                 section.main div[data-testid="stVerticalBlockBorderWrapper"],
                 section.main div[data-testid="stVerticalBlockBorderWrapper"] > div,
                 section.main div[data-testid="stVerticalBlockBorderWrapper"] > div > div,
-                section.main div[data-testid="stVerticalBlock"] {
+                section.main div[data-testid="stVerticalBlock"],
+                section.main div[data-testid="stForm"],
+                section.main div[data-testid="stForm"] > div,
+                section.main div[data-testid="stForm"] > div > div {
                     background: #ffffff !important;
+                    border-color: #e5e7eb !important;
                 }
             `;
             window.parent.document.head.appendChild(s);
@@ -1320,6 +1324,14 @@ if st.session_state.pagina == "home":
             font-size: 14px !important;
             font-weight: 600 !important;
         }
+        /* FIX 2 — remove padding/margin extra que causava scrollbar */
+        section.main .block-container > div:last-child {
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        section.main .block-container {
+            padding-bottom: 1rem !important;
+        }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
@@ -1339,14 +1351,16 @@ if st.session_state.pagina == "home":
             )
         with h2:
             st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
+            # Botão Streamlit real (invisível, acionado pelo JS abaixo)
             btn_editar = st.button("Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa")
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # Botão HTML visual com ícone FA — height=46 para não cortar o ícone
+        # FIX 1 — Botão visual HTML com ícone FA fa-pen-to-square
         components.html("""
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { background: transparent; display: flex; justify-content: flex-end; padding: 0; }
@@ -1518,14 +1532,11 @@ body {{ padding: 0; margin: 0; overflow: hidden; }}
         altura = 260 + (linhas_tags * 44)
         components.html(card_html, height=altura, scrolling=False)
 
+        # FIX 2 — "Mantenha" sem margin/padding extra para evitar scrollbar
         st.markdown("""
-        <style>
-        /* Remove padding extra do bloco container após o iframe */
-        section.main .block-container > div:last-child { padding-bottom: 0 !important; }
-        </style>
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
-                    padding:16px 20px;display:flex;align-items:center;gap:16px;
-                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+                    padding:14px 20px;display:flex;align-items:center;gap:16px;
+                    margin-top:4px;margin-bottom:0;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
