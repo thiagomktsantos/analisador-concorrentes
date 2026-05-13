@@ -2410,69 +2410,89 @@ elif st.session_state.pagina == "redes":
         ),
     )
 
+    st.markdown("""
+    <style>
+    [data-testid="stVerticalBlock"]:has(> [data-testid="stVerticalBlockBorderWrapper"] .graf-box) {
+        gap: 0 !important;
+    }
+    .graf-box {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 20px 16px 0 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 0;
+    }
+    .graf-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #111827;
+        font-family: 'DM Sans', sans-serif;
+        letter-spacing: 0.3px;
+        padding: 0 4px 10px 4px;
+        border-bottom: 1px solid #f3f4f6;
+        margin-bottom: 0;
+    }
+    /* Remove espaço extra em cima do plotly dentro do container */
+    .graf-box [data-testid="stPlotlyChart"] {
+        margin-top: -8px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
-        st.markdown(
-            "<div style='background:#fff;border:1px solid #e5e7eb;border-radius:16px;"
-            "padding:20px 20px 8px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.03)'>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<div style='font-size:16px;font-weight:800;color:#111827;"
-            "font-family:\"DM Sans\",sans-serif;letter-spacing:0.2px;"
-            "padding:0 4px;margin-bottom:4px'>SEGUIDORES</div>",
-            unsafe_allow_html=True,
-        )
-        fig_seg = go.Figure(
-            go.Bar(
-                x=nomes_ok,
-                y=segs_ok,
-                marker=dict(color=cores_ok, line=dict(width=0)),
-                text=[fmt_num(s) for s in segs_ok],
-                textposition="outside",
-                cliponaxis=False,
-                textfont=dict(family="DM Sans", size=14, color="#111827"),
+        with st.container(border=False):
+            st.markdown(
+                "<div class='graf-box'>"
+                "<div class='graf-title'>SEGUIDORES</div>",
+                unsafe_allow_html=True,
             )
-        )
-        fig_seg.update_layout(**_layout_base)
-        st.plotly_chart(fig_seg, use_container_width=True,
-                        config={"displayModeBar": False}, key="graf_seg_global")
-        st.markdown("</div>", unsafe_allow_html=True)
+            fig_seg = go.Figure(
+                go.Bar(
+                    x=nomes_ok,
+                    y=segs_ok,
+                    marker=dict(color=cores_ok, line=dict(width=0)),
+                    text=[fmt_num(s) for s in segs_ok],
+                    textposition="outside",
+                    cliponaxis=False,
+                    textfont=dict(family="DM Sans", size=14, color="#111827"),
+                )
+            )
+            fig_seg.update_layout(**_layout_base)
+            st.plotly_chart(fig_seg, use_container_width=True,
+                            config={"displayModeBar": False}, key="graf_seg_global")
+            st.markdown("</div>", unsafe_allow_html=True)
 
     with col_g2:
-        st.markdown(
-            "<div style='background:#fff;border:1px solid #e5e7eb;border-radius:16px;"
-            "padding:20px 20px 8px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.03)'>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<div style='font-size:16px;font-weight:800;color:#111827;"
-            "font-family:\"DM Sans\",sans-serif;letter-spacing:0.2px;"
-            "padding:0 4px;margin-bottom:4px'>TAXA DE ENGAJAMENTO (%)</div>",
-            unsafe_allow_html=True,
-        )
-        fig_eng = go.Figure(
-            go.Bar(
-                x=nomes_ok,
-                y=eng_pct_ok,
-                marker=dict(color=cores_ok, line=dict(width=0)),
-                text=[f"{v:.2f}%" for v in eng_pct_ok],
-                textposition="outside",
-                cliponaxis=False,
-                textfont=dict(family="DM Sans", size=14, color="#111827"),
+        with st.container(border=False):
+            st.markdown(
+                "<div class='graf-box'>"
+                "<div class='graf-title'>TAXA DE ENGAJAMENTO (%)</div>",
+                unsafe_allow_html=True,
             )
-        )
-        layout_eng = _layout_base.copy()
-        layout_eng["yaxis"] = dict(
-            showgrid=True, gridcolor="#f3f4f6", zeroline=False,
-            ticksuffix="%",
-            tickfont=dict(family="DM Sans", size=12, color="#6b7280"),
-        )
-        fig_eng.update_layout(**layout_eng)
-        st.plotly_chart(fig_eng, use_container_width=True,
-                        config={"displayModeBar": False}, key="graf_eng_global")
-        st.markdown("</div>", unsafe_allow_html=True)
+            fig_eng = go.Figure(
+                go.Bar(
+                    x=nomes_ok,
+                    y=eng_pct_ok,
+                    marker=dict(color=cores_ok, line=dict(width=0)),
+                    text=[f"{v:.2f}%" for v in eng_pct_ok],
+                    textposition="outside",
+                    cliponaxis=False,
+                    textfont=dict(family="DM Sans", size=14, color="#111827"),
+                )
+            )
+            layout_eng = _layout_base.copy()
+            layout_eng["yaxis"] = dict(
+                showgrid=True, gridcolor="#f3f4f6", zeroline=False,
+                ticksuffix="%",
+                tickfont=dict(family="DM Sans", size=12, color="#6b7280"),
+            )
+            fig_eng.update_layout(**layout_eng)
+            st.plotly_chart(fig_eng, use_container_width=True,
+                            config={"displayModeBar": False}, key="graf_eng_global")
+            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown(
         "<div style='margin:28px 0 20px 0;border-top:1px solid #e5e7eb'></div>",
