@@ -2124,7 +2124,8 @@ elif st.session_state.pagina == "redes":
  
     st.markdown("""
     <style>
-    /* ── Botão primário: cor #3a9fd6 ── */         /* ← MUDANÇA */
+    @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
+
     section.main div.stButton > button[kind="primary"] {
         background: #3a9fd6 !important;
         color: #ffffff !important;
@@ -2137,8 +2138,6 @@ elif st.session_state.pagina == "redes":
         opacity: 0.88 !important;
         background: #3a9fd6 !important;
     }
- 
-    /* Tabs das análises de IA */
     div[data-testid="stTabs"] button[role="tab"] {
         font-size: 14px !important;
         font-weight: 600 !important;
@@ -2156,12 +2155,13 @@ elif st.session_state.pagina == "redes":
     </style>
     """, unsafe_allow_html=True)
  
-    # ── Cabeçalho ──────────────────────────────────────────────────────────
+    # ── Cabeçalho
     h1, h2 = st.columns([7, 3])
     with h1:
         st.markdown(
-            "<h1 style='font-size:28px;font-weight:600;color:#111827;"
-            "letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>"
+            "<h1 style='font-size:32px;font-weight:700;color:#111827;"
+            "letter-spacing:-1px;margin:0;"
+            "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
             "Redes Sociais</h1>",
             unsafe_allow_html=True,
         )
@@ -2173,7 +2173,7 @@ elif st.session_state.pagina == "redes":
     with h2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
         coletar = st.button(
-            "📡 Coletar dados agora",   # ← MUDANÇA: emoji monocromático
+            "📡 Coletar dados agora",
             type="primary",
             use_container_width=True,
         )
@@ -2189,13 +2189,13 @@ elif st.session_state.pagina == "redes":
         unsafe_allow_html=True,
     )
  
-    # ── Helpers ────────────────────────────────────────────────────────────
+    # ── Helpers
     def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(int(n))
  
-    # ── Supabase cache helpers ──────────────────────────────────────────────
+    # ── Supabase cache helpers
     def salvar_cache_redes(dados: list):
         try:
             payload = {
@@ -2328,7 +2328,7 @@ elif st.session_state.pagina == "redes":
         except Exception as e:
             return {"erro": str(e)}
  
-    # ── Monta lista de perfis ──────────────────────────────────────────────
+    # ── Monta lista de perfis
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
         todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp["instagram"], "tipo": "minha"})
@@ -2359,7 +2359,7 @@ elif st.session_state.pagina == "redes":
         }
         st.toast("✅ Dados coletados e salvos!", icon="✅")
  
-    ok    = []
+    ok = []
     if cache.get("dados"):
         ok    = [r for r in cache["dados"] if not r.get("erro")]
         erros = [r for r in cache["dados"] if r.get("erro")]
@@ -2376,34 +2376,22 @@ elif st.session_state.pagina == "redes":
 
     CORES = ["#111827", "#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"]
 
-    nomes_ok    = [x["nome"] for x in ok]
-    segs_ok     = [x.get("seguidores", 0) for x in ok]
-    eng_pct_ok  = [x.get("eng_pct", 0.0) for x in ok]
-    cores_ok    = [CORES[i % len(CORES)] for i in range(len(ok))]
+    nomes_ok   = [x["nome"] for x in ok]
+    segs_ok    = [x.get("seguidores", 0) for x in ok]
+    eng_pct_ok = [x.get("eng_pct", 0.0) for x in ok]
+    cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
 
-    # ── TÍTULO ─────────────────────────────────────────────
     st.markdown(
-        """
-        <div style="
-            font-size:16px;
-            font-weight:700;
-            color:#111827;
-            font-family:'DM Sans',sans-serif;
-            letter-spacing:2px;
-            margin-bottom:22px;
-            text-transform:uppercase;
-        ">
-            Comparativo com todos os perfis
-        </div>
-        """,
+        "<div style='font-size:26px;font-weight:800;color:#111827;"
+        "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif;"
+        "letter-spacing:0px;margin-bottom:22px;text-transform:uppercase'>"
+        "COMPARATIVO COM TODOS OS PERFIS</div>",
         unsafe_allow_html=True,
     )
 
-col_g1, col_g2 = st.columns(2)
-
     _layout_base = dict(
         height=360,
-        margin=dict(t=50, b=30, l=10, r=10),
+        margin=dict(t=20, b=30, l=10, r=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
@@ -2422,6 +2410,8 @@ col_g1, col_g2 = st.columns(2)
         ),
     )
 
+    col_g1, col_g2 = st.columns(2)
+
     with col_g1:
         st.markdown(
             "<div style='background:#fff;border:1px solid #e5e7eb;border-radius:16px;"
@@ -2431,7 +2421,7 @@ col_g1, col_g2 = st.columns(2)
         st.markdown(
             "<div style='font-size:16px;font-weight:800;color:#111827;"
             "font-family:\"DM Sans\",sans-serif;letter-spacing:0.2px;"
-            "padding:0 4px'>SEGUIDORES</div>",
+            "padding:0 4px;margin-bottom:4px'>SEGUIDORES</div>",
             unsafe_allow_html=True,
         )
         fig_seg = go.Figure(
@@ -2459,7 +2449,7 @@ col_g1, col_g2 = st.columns(2)
         st.markdown(
             "<div style='font-size:16px;font-weight:800;color:#111827;"
             "font-family:\"DM Sans\",sans-serif;letter-spacing:0.2px;"
-            "padding:0 4px'>TAXA DE ENGAJAMENTO (%)</div>",
+            "padding:0 4px;margin-bottom:4px'>TAXA DE ENGAJAMENTO (%)</div>",
             unsafe_allow_html=True,
         )
         fig_eng = go.Figure(
@@ -2488,7 +2478,7 @@ col_g1, col_g2 = st.columns(2)
         "<div style='margin:28px 0 20px 0;border-top:1px solid #e5e7eb'></div>",
         unsafe_allow_html=True,
     )
- 
+
     # ══════════════════════════════════════════════════════════════════════
     # ABAS POR PERFIL
     # ══════════════════════════════════════════════════════════════════════
@@ -2506,17 +2496,18 @@ col_g1, col_g2 = st.columns(2)
             eng_est   = len(r.get("posts", [])) == 0
             posts_list = r.get("posts", [])
  
-            # ── 1. INFORMAÇÕES DE PERFIL ────────────────────────────────
+            # ── INFORMAÇÕES DE PERFIL
             st.markdown(
-                "<div style='font-size:16px;font-weight:700;color:#111827;"
-                "letter-spacing:2px;text-transform:uppercase;margin-bottom:14px'>Informações de Perfil</div>",   # ← MUDANÇA tamanho
+                "<div style='font-size:18px;font-weight:700;color:#111827;"
+                "letter-spacing:-0.2px;margin-bottom:14px;"
+                "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
+                "👤 Informações de Perfil</div>",
                 unsafe_allow_html=True,
             )
  
             col_metricas, col_bio = st.columns([1, 1])
  
             with col_metricas:
-                # Emojis nos cards de métricas               ← MUDANÇA
                 st.markdown(f"""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px'>
                     <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;
@@ -2619,21 +2610,21 @@ col_g1, col_g2 = st.columns(2)
                             try:
                                 prompt_bio = f"""
 Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
- 
+
 Bio: "{bio_txt}"
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
- 
+
 Responda com:
 ### Posicionamento
 Qual é o posicionamento transmitido pela bio?
- 
+
 ### Pontos Fortes
 (2 pontos positivos da bio)
- 
+
 ### O que melhorar
 (2 sugestões concretas de melhoria)
- 
+
 ### Bio sugerida
 Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
@@ -2653,24 +2644,22 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
             st.markdown("<div style='margin:20px 0 16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
  
-            # ── 2. ÚLTIMAS POSTAGENS + ANÁLISE ─────────────────────────
+            # ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
             col_posts, col_ia = st.columns([3, 2])
  
             with col_posts:
-                # Título maior                               ← MUDANÇA
                 st.markdown(
-                    "<div style='font-size:16px;font-weight:700;color:#111827;"
-                    "letter-spacing:2px;text-transform:uppercase;margin-bottom:14px'>Últimas 3 Postagens</div>",
+                    "<div style='font-size:18px;font-weight:700;color:#111827;"
+                    "letter-spacing:-0.2px;margin-bottom:14px;"
+                    "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
+                    "📸 Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
- 
-                # Caixa completa incluindo o conteúdo        ← MUDANÇA
                 st.markdown(
                     "<div style='background:#fff;border:1px solid #e5e7eb;"
                     "border-radius:12px;padding:20px 20px 16px 20px'>",
                     unsafe_allow_html=True,
                 )
- 
                 if not posts_list:
                     st.markdown(
                         "<div style='padding:14px 0;font-size:14px;color:#9ca3af;text-align:center'>"
@@ -2712,10 +2701,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                                     <div style='font-size:11px;color:#9ca3af'>{post.get("date","")}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
- 
-                # Fecha a caixa branca                       ← MUDANÇA
                 st.markdown("</div>", unsafe_allow_html=True)
- 
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
                 with st.expander("Ver todos os posts"):
                     df_posts = pd.DataFrame([{
@@ -2729,10 +2715,11 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     st.dataframe(df_posts, use_container_width=True, hide_index=True)
  
             with col_ia:
-                # Título maior                               ← MUDANÇA
                 st.markdown(
-                    "<div style='font-size:16px;font-weight:700;color:#111827;"
-                    "letter-spacing:2px;text-transform:uppercase;margin-bottom:14px'>Análise de IA</div>",
+                    "<div style='font-size:18px;font-weight:700;color:#111827;"
+                    "letter-spacing:-0.2px;margin-bottom:14px;"
+                    "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
+                    "🤖 Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
  
@@ -2756,7 +2743,6 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
-                # Caixa englobando abas + conteúdo de IA     ← MUDANÇA
                 st.markdown(
                     "<div style='background:#fff;border:1px solid #e5e7eb;"
                     "border-radius:12px;padding:20px 20px 16px 20px'>",
@@ -2879,5 +2865,4 @@ Seja direto e objetivo.
                             unsafe_allow_html=True,
                         )
  
-                # Fecha a caixa de Análise de IA              ← MUDANÇA
                 st.markdown("</div>", unsafe_allow_html=True)
