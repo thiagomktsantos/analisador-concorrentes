@@ -2799,31 +2799,18 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Data</th>
-                                        <th>Tipo</th>
-                                        <th>Curtidas</th>
-                                        <th>Comentários</th>
-                                        <th>Eng. total</th>
-                                        <th>Legenda</th>
+                                        <th>Data</th><th>Tipo</th><th>Curtidas</th>
+                                        <th>Comentários</th><th>Eng. total</th><th>Legenda</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    {df_posts_rows}
-                                </tbody>
+                                <tbody>{df_posts_rows}</tbody>
                             </table>
                         </div>
                     </details>
                 </div>
-                """, height=460 if posts_list else 100, scrolling=False)
+                """, height=600 if posts_list else 100, scrolling=False)
 
             with col_ia:
-                st.markdown(
-                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;margin-top:20px;"
-                    "font-family:\"Source Sans\",sans-serif'>"
-                    "Análise de IA</div>",
-                    unsafe_allow_html=True,
-                )
 
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
@@ -2852,7 +2839,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
-                # Botões Streamlit ocultos — acionados pelo JS do components.html
+                # Botões Streamlit ocultos
                 st.markdown(f"""
                 <style>
                 .st-key-btn_criativo_{idx} {{ display:none !important; }}
@@ -2943,6 +2930,39 @@ Seja direto e objetivo.
                     border-radius: 12px;
                     overflow: hidden;
                 }}
+                .card-title {{
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #1a2e4a;
+                    text-transform: uppercase;
+                    font-family: 'DM Sans', sans-serif;
+                    padding: 16px 16px 0 16px;
+                    letter-spacing: 0px;
+                }}
+                .btn-row {{
+                    display: flex;
+                    gap: 8px;
+                    padding: 12px 16px;
+                    background: #ffffff;
+                    border-bottom: 1px solid #f3f4f6;
+                }}
+                .btn-ia {{
+                    flex: 1;
+                    padding: 9px 0;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    background: #ffffff;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #374151;
+                    cursor: pointer;
+                    font-family: 'DM Sans', sans-serif;
+                    transition: background 0.15s, color 0.15s;
+                }}
+                .btn-ia:hover {{
+                    background: #f3f4f6;
+                    color: #111827;
+                }}
                 .tabs {{
                     display: flex;
                     border-bottom: 2px solid #e5e7eb;
@@ -2982,38 +3002,23 @@ Seja direto e objetivo.
                     max-height: 260px;
                     overflow-y: auto;
                 }}
-                .btn-row {{
-                    display: flex;
-                    gap: 8px;
-                    padding: 12px 16px 16px 16px;
-                    background: #ffffff;
-                    border-top: 1px solid #f3f4f6;
-                }}
-                .btn-ia {{
-                    flex: 1;
-                    padding: 9px 0;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 8px;
-                    background: #ffffff;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #374151;
-                    cursor: pointer;
-                    font-family: 'DM Sans', sans-serif;
-                    transition: background 0.15s, color 0.15s;
-                }}
-                .btn-ia:hover {{
-                    background: #f3f4f6;
-                    color: #111827;
-                }}
                 </style>
 
                 <div class="card">
-                    <div class="tabs">
-                        <button class="tab active" onclick="showTab('criativo')">Criativo</button>
-                        <button class="tab" onclick="showTab('copy')">Copy</button>
-                        <button class="tab" onclick="showTab('geral')">Geral</button>
+                    <div class="card-title">Análise de IA</div>
+
+                    <div class="btn-row">
+                        <button class="btn-ia" onclick="clickSt('criativo')">Gerar Criativo</button>
+                        <button class="btn-ia" onclick="clickSt('copy')">Gerar Copy</button>
+                        <button class="btn-ia" onclick="clickSt('geral')">Gerar Geral</button>
                     </div>
+
+                    <div class="tabs">
+                        <button class="tab active" onclick="showTab('criativo', this)">Criativo</button>
+                        <button class="tab" onclick="showTab('copy', this)">Copy</button>
+                        <button class="tab" onclick="showTab('geral', this)">Geral</button>
+                    </div>
+
                     <div id="panel-criativo" class="panel active">
                         {('<div class="result">' + criativo_html + '</div>') if criativo_html else vazio}
                     </div>
@@ -3023,19 +3028,14 @@ Seja direto e objetivo.
                     <div id="panel-geral" class="panel">
                         {('<div class="result">' + geral_html + '</div>') if geral_html else vazio}
                     </div>
-                    <div class="btn-row">
-                        <button class="btn-ia" onclick="clickSt('criativo')">Gerar Criativo</button>
-                        <button class="btn-ia" onclick="clickSt('copy')">Gerar Copy</button>
-                        <button class="btn-ia" onclick="clickSt('geral')">Gerar Geral</button>
-                    </div>
                 </div>
 
                 <script>
-                function showTab(name) {{
+                function showTab(name, el) {{
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
                     document.getElementById('panel-' + name).classList.add('active');
-                    event.target.classList.add('active');
+                    el.classList.add('active');
                 }}
                 function clickSt(tipo) {{
                     const labels = {{
@@ -3044,12 +3044,8 @@ Seja direto e objetivo.
                         'geral': 'Gerar Geral',
                     }};
                     const label = labels[tipo];
-                    const btns = window.parent.document.querySelectorAll('button');
-                    for (const b of btns) {{
-                        if (b.innerText.trim() === label) {{
-                            b.click();
-                            break;
-                        }}
+                    for (const b of window.parent.document.querySelectorAll('button')) {{
+                        if (b.innerText.trim() === label) {{ b.click(); break; }}
                     }}
                 }}
                 </script>
