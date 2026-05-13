@@ -2691,7 +2691,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             with col_posts:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;"
+                    "text-transform:uppercase;margin-bottom:14px;margin-top:20px;"
                     "font-family:\"Source Sans\",sans-serif'>"
                     "Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
@@ -2794,34 +2794,32 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 <div class="card">
                     {posts_html}
                     <details style="margin-top:16px">
-
-                </details>
+                        <summary>Ver todos os posts</summary>
+                        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Tipo</th>
+                                        <th>Curtidas</th>
+                                        <th>Comentários</th>
+                                        <th>Eng. total</th>
+                                        <th>Legenda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {df_posts_rows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
                 </div>
-                    <summary>Ver todos os posts</summary>
-                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Tipo</th>
-                                    <th>Curtidas</th>
-                                    <th>Comentários</th>
-                                    <th>Eng. total</th>
-                                    <th>Legenda</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {df_posts_rows}
-                            </tbody>
-                        </table>
-                    </div>
-                </details>
                 """, height=460 if posts_list else 100, scrolling=False)
 
             with col_ia:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;"
+                    "text-transform:uppercase;margin-bottom:14px;margin-top:20px;"
                     "font-family:\"Source Sans\",sans-serif'>"
                     "Análise de IA</div>",
                     unsafe_allow_html=True,
@@ -2854,88 +2852,14 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
-                components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                # Botões Streamlit ocultos — acionados pelo JS do components.html
+                st.markdown(f"""
                 <style>
-                * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
-                .card {{
-                    background: #ffffff;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    padding-bottom: 8px;
-                }}
-                .tabs {{
-                    display: flex;
-                    border-bottom: 2px solid #e5e7eb;
-                    background: #ffffff;
-                }}
-                .tab {{
-                    flex: 1;
-                    padding: 10px 0;
-                    text-align: center;
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #9ca3af;
-                    cursor: pointer;
-                    border-bottom: 2px solid transparent;
-                    margin-bottom: -2px;
-                    background: #ffffff;
-                    border-top: none;
-                    border-left: none;
-                    border-right: none;
-                    font-family: 'DM Sans', sans-serif;
-                    transition: color 0.15s;
-                }}
-                .tab.active {{
-                    color: #3a9fd6;
-                    border-bottom: 2px solid #3a9fd6;
-                }}
-                .panel {{ display: none; padding: 16px; background: #ffffff; }}
-                .panel.active {{ display: block; }}
-                .result {{
-                    background: #f9fafb;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 10px;
-                    padding: 14px 16px;
-                    font-size: 13px;
-                    color: #374151;
-                    line-height: 1.7;
-                    max-height: 300px;
-                    overflow-y: auto;
-                    margin-top: 8px;
-                }}
+                .st-key-btn_criativo_{idx} {{ display:none !important; }}
+                .st-key-btn_copy_{idx} {{ display:none !important; }}
+                .st-key-btn_geral_{idx} {{ display:none !important; }}
                 </style>
-
-                <div class="card">
-                    <div class="tabs">
-                        <button class="tab active" onclick="showTab('criativo')">Criativo</button>
-                        <button class="tab" onclick="showTab('copy')">Copy</button>
-                        <button class="tab" onclick="showTab('geral')">Geral</button>
-                    </div>
-                    <div id="panel-criativo" class="panel active">
-                        {('<div class="result">' + criativo_html + '</div>') if criativo_html else vazio}
-                    </div>
-                    <div id="panel-copy" class="panel">
-                        {('<div class="result">' + copy_html + '</div>') if copy_html else vazio}
-                    </div>
-                    <div id="panel-geral" class="panel">
-                        {('<div class="result">' + geral_html + '</div>') if geral_html else vazio}
-                    </div>
-                </div>
-
-                <script>
-                function showTab(name) {{
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-                    document.getElementById('panel-' + name).classList.add('active');
-                    event.target.classList.add('active');
-                }}
-                </script>
-                """, height=460, scrolling=False)
-
-                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
                 col_b1, col_b2, col_b3 = st.columns(3)
                 with col_b1:
@@ -3007,3 +2931,126 @@ Seja direto e objetivo.
                                     st.rerun()
                                 except Exception as e:
                                     st.session_state[chave_geral] = f"Erro: {e}"
+
+                components.html(f"""
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <style>
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
+                .card {{
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 12px;
+                    overflow: hidden;
+                }}
+                .tabs {{
+                    display: flex;
+                    border-bottom: 2px solid #e5e7eb;
+                    background: #ffffff;
+                }}
+                .tab {{
+                    flex: 1;
+                    padding: 10px 0;
+                    text-align: center;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #9ca3af;
+                    cursor: pointer;
+                    border-bottom: 2px solid transparent;
+                    margin-bottom: -2px;
+                    background: #ffffff;
+                    border-top: none;
+                    border-left: none;
+                    border-right: none;
+                    font-family: 'DM Sans', sans-serif;
+                    transition: color 0.15s;
+                }}
+                .tab.active {{
+                    color: #3a9fd6;
+                    border-bottom: 2px solid #3a9fd6;
+                }}
+                .panel {{ display: none; padding: 16px; background: #ffffff; min-height: 80px; }}
+                .panel.active {{ display: block; }}
+                .result {{
+                    background: #f9fafb;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                    font-size: 13px;
+                    color: #374151;
+                    line-height: 1.7;
+                    max-height: 260px;
+                    overflow-y: auto;
+                }}
+                .btn-row {{
+                    display: flex;
+                    gap: 8px;
+                    padding: 12px 16px 16px 16px;
+                    background: #ffffff;
+                    border-top: 1px solid #f3f4f6;
+                }}
+                .btn-ia {{
+                    flex: 1;
+                    padding: 9px 0;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    background: #ffffff;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #374151;
+                    cursor: pointer;
+                    font-family: 'DM Sans', sans-serif;
+                    transition: background 0.15s, color 0.15s;
+                }}
+                .btn-ia:hover {{
+                    background: #f3f4f6;
+                    color: #111827;
+                }}
+                </style>
+
+                <div class="card">
+                    <div class="tabs">
+                        <button class="tab active" onclick="showTab('criativo')">Criativo</button>
+                        <button class="tab" onclick="showTab('copy')">Copy</button>
+                        <button class="tab" onclick="showTab('geral')">Geral</button>
+                    </div>
+                    <div id="panel-criativo" class="panel active">
+                        {('<div class="result">' + criativo_html + '</div>') if criativo_html else vazio}
+                    </div>
+                    <div id="panel-copy" class="panel">
+                        {('<div class="result">' + copy_html + '</div>') if copy_html else vazio}
+                    </div>
+                    <div id="panel-geral" class="panel">
+                        {('<div class="result">' + geral_html + '</div>') if geral_html else vazio}
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-ia" onclick="clickSt('criativo')">Gerar Criativo</button>
+                        <button class="btn-ia" onclick="clickSt('copy')">Gerar Copy</button>
+                        <button class="btn-ia" onclick="clickSt('geral')">Gerar Geral</button>
+                    </div>
+                </div>
+
+                <script>
+                function showTab(name) {{
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    document.getElementById('panel-' + name).classList.add('active');
+                    event.target.classList.add('active');
+                }}
+                function clickSt(tipo) {{
+                    const labels = {{
+                        'criativo': 'Gerar Criativo',
+                        'copy': 'Gerar Copy',
+                        'geral': 'Gerar Geral',
+                    }};
+                    const label = labels[tipo];
+                    const btns = window.parent.document.querySelectorAll('button');
+                    for (const b of btns) {{
+                        if (b.innerText.trim() === label) {{
+                            b.click();
+                            break;
+                        }}
+                    }}
+                }}
+                </script>
+                """, height=460, scrolling=False)
