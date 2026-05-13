@@ -1188,7 +1188,7 @@ if st.session_state.pagina == "home":
             background-color: #2e8bbf !important;
         }
 
-        /* FIX 3 — fundo branco no container de edição */
+        /* FIX — fundo branco no container de edição */
         div[data-testid="stVerticalBlockBorderWrapper"],
         div[data-testid="stVerticalBlockBorderWrapper"] > div,
         div[data-testid="stVerticalBlockBorderWrapper"] > div > div,
@@ -1196,8 +1196,14 @@ if st.session_state.pagina == "home":
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"],
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stColumn"],
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stElementContainer"],
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stLayoutWrapper"] {
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stLayoutWrapper"],
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"],
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextArea"],
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-baseweb="select"] > div,
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-baseweb="select"],
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stSelectbox"] {
             background: #ffffff !important;
+            background-color: #ffffff !important;
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -1305,11 +1311,6 @@ if st.session_state.pagina == "home":
 
         st.markdown("""
         <style>
-        /* Esconde o botão Streamlit real — F12 confirmou classe .st-key-btn_editar_empresa */
-        .st-key-btn_editar_empresa {
-            display: none !important;
-        }
-
         /* Botão primário azul */
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
@@ -1320,12 +1321,17 @@ if st.session_state.pagina == "home":
             font-size: 14px !important;
             font-weight: 600 !important;
         }
+        [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
+        section.main div.stButton > button[kind="primary"]:hover {
+            background: #2e8bbf !important;
+            background-color: #2e8bbf !important;
+        }
 
-        /* FIX 2 — remove padding inferior do container que causava scrollbar */
+        /* Remove padding inferior para evitar scrollbar */
         section.main .block-container {
             padding-bottom: 0 !important;
         }
-        /* Esconde o anchor de resize do Streamlit que também somava altura */
+        /* Esconde anchor de resize do Streamlit */
         [data-testid="stAppIframeResizerAnchor"] {
             display: none !important;
         }
@@ -1333,7 +1339,7 @@ if st.session_state.pagina == "home":
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
 
-        # Cabeçalho — botão Streamlit invisível na col h2, acionado pelo HTML abaixo
+        # Cabeçalho — título + botão alinhados na mesma linha
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1348,63 +1354,20 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
         with h2:
-            # Botão real do Streamlit — escondido via CSS, mas necessário para o rerun
-            btn_editar = st.button("Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa")
+            # padding para alinhar verticalmente com o título h1
+            st.markdown("<div style='padding-top:8px'/>", unsafe_allow_html=True)
+            btn_editar = st.button(
+                "✏️ Editar Empresa",
+                use_container_width=True,
+                type="primary",
+                key="btn_editar_empresa",
+            )
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # FIX 1 — botão HTML com ícone FA visível no lugar certo.
-        # Renderizado com height=46 para aparecer, posicionado com margin-top negativo
-        # para subir sobre o espaço que o botão Streamlit escondido ocupa (0px, pois
-        # .st-key-btn_editar_empresa está com display:none — não gera height).
-        # O wrapper do h2 ainda existe, então usamos transform para posicionar.
-        components.html("""
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-        <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            background: transparent;
-            overflow: hidden;
-            height: 40px;
-        }
-        .btn {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: #3a9fd6;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 18px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.15s;
-            white-space: nowrap;
-            line-height: 1;
-        }
-        .btn:hover { background: #2e8bbf; }
-        .btn i { font-size: 13px; }
-        </style>
-        <button class="btn" onclick="
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {
-                if (b.innerText.trim() === 'Editar Empresa') { b.click(); break; }
-            }
-        ">
-            <i class="fa-solid fa-pen-to-square"></i>
-            Editar Empresa
-        </button>
-        """, height=40)
-
         st.markdown(
-            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:12px 0 20px 0'/>",
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
             unsafe_allow_html=True,
         )
 
@@ -1541,7 +1504,6 @@ body {{ padding: 0; margin: 0; overflow: hidden; }}
         altura = 260 + (linhas_tags * 44)
         components.html(card_html, height=altura, scrolling=False)
 
-        # Bloco "Mantenha" — mantido simples, sem margin extra
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:14px 20px;display:flex;align-items:center;gap:16px;
