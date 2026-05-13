@@ -2516,7 +2516,7 @@ elif st.session_state.pagina == "redes":
  
             # ── INFORMAÇÕES DE PERFIL
           st.markdown(
-                "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
+                "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                 "text-transform:uppercase;margin-bottom:14px;"
                 "font-family:\"DM Sans\",sans-serif'>"
                 "Informações de Perfil</div>",
