@@ -2382,7 +2382,7 @@ elif st.session_state.pagina == "redes":
     cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
 
     st.markdown(
-        "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
+        "<div style='font-size:15px;font-weight:700;color:#1a2e4a;"
         "font-family:\"DM Sans\",sans-serif;"
         "letter-spacing:0px;text-transform:uppercase'>"
         "Comparativo com todos os perfis</div>",
@@ -2551,47 +2551,47 @@ elif st.session_state.pagina == "redes":
                     <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
                         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                                     display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
+                            <div style='display:flex;align-items:center;gap:8px'>
                                 <span style='font-size:22px;line-height:1'>👥</span>
                                 <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
                                     {fmt_num(r.get("seguidores",0))}
                                 </span>
                             </div>
-                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
-                                         text-transform:uppercase;letter-spacing:0.8px'>Seguidores</span>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Seguidores</span>
                         </div>
                         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                                     display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
+                            <div style='display:flex;align-items:center;gap:8px'>
                                 <span style='font-size:22px;line-height:1'>🖼️</span>
                                 <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
                                     {fmt_num(r.get("total_posts",0))}
                                 </span>
                             </div>
-                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
-                                         text-transform:uppercase;letter-spacing:0.8px'>Posts</span>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Posts</span>
                         </div>
                         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                                     display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
+                            <div style='display:flex;align-items:center;gap:8px'>
                                 <span style='font-size:22px;line-height:1'>❤️</span>
                                 <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
                                     {fmt_num(int(r.get("eng_medio",0)))}
                                 </span>
                             </div>
-                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
-                                         text-transform:uppercase;letter-spacing:0.8px'>Eng. Médio</span>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Engajamento Médio</span>
                         </div>
                         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                                     display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>
+                            <div style='display:flex;align-items:center;gap:8px'>
                                 <span style='font-size:22px;line-height:1'>📈</span>
                                 <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
                                     {r.get("eng_pct",0):.2f}%
                                 </span>
                             </div>
-                            <span style='font-size:10px;color:#9ca3af;font-weight:600;
-                                         text-transform:uppercase;letter-spacing:0.8px'>Eng. %{"*" if eng_est else ""}</span>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Engajamento %{"*" if eng_est else ""}</span>
                         </div>
                     </div>
                     {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
