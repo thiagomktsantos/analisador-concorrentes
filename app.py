@@ -233,10 +233,6 @@ if "editando_concorrente" not in st.session_state:
     st.session_state.editando_concorrente = None
 if "editar_empresa" not in st.session_state:
     st.session_state.editar_empresa = False
-if "mostrar_alerta_saida" not in st.session_state:
-    st.session_state.mostrar_alerta_saida = False
-if "pagina_destino" not in st.session_state:
-    st.session_state.pagina_destino = None
 if "relatorio_sites" not in st.session_state:
     st.session_state.relatorio_sites = {}   # cache: {url: conteudo_extraido}
 if "relatorio_gemini" not in st.session_state:
@@ -256,18 +252,10 @@ for campo, valor in campos_padrao.items():
 # ---------------------------------------------------
 
 def trocar_pagina(destino):
-    editando = (
-        st.session_state.mostrar_form_concorrente
-        or st.session_state.editando_concorrente is not None
-    )
-    if st.session_state.pagina == "cad" and destino != "cad" and editando:
-        st.session_state.mostrar_alerta_saida = True
-        st.session_state.pagina_destino = destino
-    else:
-        st.session_state.pagina = destino
-        st.session_state.mostrar_form_concorrente = False
-        st.session_state.editando_concorrente = None
-        st.session_state.editar_empresa = False
+    st.session_state.pagina = destino
+    st.session_state.mostrar_form_concorrente = False
+    st.session_state.editando_concorrente = None
+    st.session_state.editar_empresa = False
 
 # ---------------------------------------------------
 # FUNÇÃO IA — BATTLE CARD
@@ -1079,214 +1067,6 @@ function nav(page) {{
 
     components.html(menu_html, height=620, scrolling=False)
         
-# ---------------------------------------------------
-# POPUP DE SAIDA
-# ---------------------------------------------------
-
-if st.button("__alerta_sair__", key="_hidden_alerta_sair"):
-    destino = st.session_state.get("pagina_destino")
-    st.session_state.mostrar_alerta_saida = False
-    st.session_state.mostrar_form_concorrente = False
-    st.session_state.editando_concorrente = None
-    st.session_state.editar_empresa = False
-    if destino:
-        st.session_state.pagina = destino
-        st.session_state.pagina_destino = None
-    st.rerun()
-
-if st.button("__alerta_continuar__", key="_hidden_alerta_continuar"):
-    st.session_state.mostrar_alerta_saida = False
-    st.rerun()
-
-if st.session_state.get("mostrar_alerta_saida"):
-
-    if st.session_state.editando_concorrente is not None:
-        try:
-            nome_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente].get("nome", "")
-        except Exception:
-            nome_edit = ""
-        contexto_edicao = f"Concorrente: <b>{nome_edit or 'sem nome'}</b>"
-    elif st.session_state.mostrar_form_concorrente:
-        contexto_edicao = "Novo concorrente (cadastro em andamento)"
-    elif st.session_state.editar_empresa:
-        contexto_edicao = f"Empresa: <b>{st.session_state.dados['minha_empresa'].get('nome', '') or 'sua empresa'}</b>"
-    else:
-        contexto_edicao = "Edição em andamento"
-
-    components.html(f"""
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-    html, body {{
-        background: transparent;
-        font-family: 'DM Sans', sans-serif;
-        overflow: hidden;
-    }}
-    .overlay {{
-        position: fixed; inset: 0;
-        width: 100vw; height: 100vh;
-        background: rgba(15, 17, 23, 0.55);
-        backdrop-filter: blur(4px);
-        z-index: 999997;
-    }}
-    .box {{
-        position: fixed; top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: #ffffff;
-        width: 480px;
-        border-radius: 16px;
-        padding: 36px 36px 32px;
-        z-index: 999999;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 24px 64px rgba(0,0,0,0.14);
-    }}
-    .badge {{
-        display: inline-flex; align-items: center; gap: 6px;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 8px;
-        padding: 5px 13px;
-        font-size: 13px; font-weight: 700;
-        color: #1d4ed8;
-        margin-bottom: 20px;
-        letter-spacing: 0.2px;
-    }}
-    .title {{
-        font-size: 21px; font-weight: 700;
-        color: #111827; margin-bottom: 8px;
-        letter-spacing: -0.4px;
-    }}
-    .context {{
-        display: inline-flex; align-items: center; gap: 7px;
-        background: #f0f9ff;
-        border: 1px solid #bae6fd;
-        border-radius: 8px;
-        padding: 7px 14px;
-        font-size: 13px; color: #0369a1;
-        margin-bottom: 14px;
-    }}
-    .text {{
-        font-size: 14px; color: #6b7280;
-        line-height: 1.65; margin-bottom: 28px;
-        padding-bottom: 24px;
-        border-bottom: 1px solid #f3f4f6;
-    }}
-    .btn-row {{
-        display: flex; gap: 12px;
-        justify-content: center;
-    }}
-    .btn {{
-        padding: 11px 28px;
-        border-radius: 9px;
-        font-size: 14px; font-weight: 700;
-        cursor: pointer;
-        font-family: 'DM Sans', sans-serif;
-        transition: all 0.12s ease;
-        border: none; min-width: 160px;
-    }}
-    .btn-continuar {{
-        background: #ffffff; color: #374151;
-        border: 1.5px solid #d1d5db !important;
-    }}
-    .btn-continuar:hover {{
-        background: #f9fafb;
-        border-color: #9ca3af !important;
-        color: #111827;
-    }}
-    .btn-sair {{
-        background: #111827; color: #ffffff;
-    }}
-    .btn-sair:hover {{ background: #1f2937; }}
-    </style>
-
-    <div class="overlay"></div>
-    <div class="box">
-        <div class="badge">ℹ️ Atenção</div>
-        <div class="title">Cancelar edição?</div>
-        <div class="context">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            {contexto_edicao}
-        </div>
-        <div class="text">
-            Se sair agora, as alterações não salvas serão perdidas e não poderão ser recuperadas.
-        </div>
-        <div class="btn-row">
-            <button class="btn btn-continuar" id="btn-continuar">Continuar editando</button>
-            <button class="btn btn-sair" id="btn-sair">Sair e cancelar</button>
-        </div>
-    </div>
-
-    <script>
-    function expandIframe() {{
-        try {{
-            window.parent.document.querySelectorAll('iframe').forEach(function(iframe) {{
-                if (iframe.contentWindow === window) {{
-                    iframe.style.position = 'fixed';
-                    iframe.style.top = '0';
-                    iframe.style.left = '0';
-                    iframe.style.width = '100vw';
-                    iframe.style.height = '100vh';
-                    iframe.style.zIndex = '999996';
-                    iframe.style.border = 'none';
-                    iframe.style.pointerEvents = 'all';
-                }}
-            }});
-        }} catch(e) {{}}
-    }}
-
-    function clickHidden(texto) {{
-        try {{
-            // Busca na página principal
-            const allBtns = window.parent.document.querySelectorAll('button');
-            for (const b of allBtns) {{
-                const txt = (b.textContent || b.innerText || '').trim().replace(/\s+/g, ' ');
-                if (txt === texto) {{
-                    b.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true }}));
-                    setTimeout(function() {{ b.click(); }}, 50);
-                    return true;
-                }}
-            }}
-
-            // Fallback: busca dentro de outros iframes (ex: sidebar)
-            const iframes = window.parent.document.querySelectorAll('iframe');
-            for (const iframe of iframes) {{
-                if (iframe.contentWindow === window) continue;
-                try {{
-                    const btns = iframe.contentDocument.querySelectorAll('button');
-                    for (const b of btns) {{
-                        const txt = (b.textContent || b.innerText || '').trim().replace(/\s+/g, ' ');
-                        if (txt === texto) {{
-                            b.dispatchEvent(new MouseEvent('click', {{ bubbles: true, cancelable: true }}));
-                            setTimeout(function() {{ b.click(); }}, 50);
-                            return true;
-                        }}
-                    }}
-                }} catch(e) {{}}
-            }}
-
-            console.warn('Botão não encontrado:', texto);
-            return false;
-        }} catch(e) {{
-            console.error(e);
-            return false;
-        }}
-    }}
-
-    document.getElementById('btn-sair').addEventListener('click', function() {{
-        clickHidden('__alerta_sair__');
-    }});
-
-    document.getElementById('btn-continuar').addEventListener('click', function() {{
-        clickHidden('__alerta_continuar__');
-    }});
-
-    expandIframe();
-    </script>
-    """, height=600, scrolling=False)
-
 # ---------------------------------------------------
 # HELPER — CABEÇALHO COM PERÍODO
 # ---------------------------------------------------
