@@ -2382,7 +2382,7 @@ elif st.session_state.pagina == "redes":
     cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
 
     st.markdown(
-        "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
+        "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
         "font-family:\"Source Sans\",sans-serif;"
         "letter-spacing:0px;text-transform:uppercase'>"
         "Comparativo com todos os perfis</div>",
@@ -2516,8 +2516,8 @@ elif st.session_state.pagina == "redes":
  
             # ── INFORMAÇÕES DE PERFIL
             st.markdown(
-                "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
-                "text-transform:uppercase;margin-bottom:14px;"
+                "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                "text-transform:uppercase;margin-bottom:10px;"
                 "font-family:\"Source Sans\",sans-serif'>"
                 "Informações de Perfil</div>",
                 unsafe_allow_html=True,
@@ -2667,9 +2667,9 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
             with col_posts:
                 st.markdown(
-                    "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;"
-                    "font-family:\"DM Sans\",sans-serif;'>"
+                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                    "text-transform:uppercase;margin-bottom:10px;"
+                    "font-family:\"Source Sans\",sans-serif;'>"
                     "Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
@@ -2734,9 +2734,9 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
             with col_ia:
                 st.markdown(
-                    "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;"
-                    "font-family:\"DM Sans\",sans-serif;'>"
+                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                    "text-transform:uppercase;margin-bottom:10px;"
+                    "font-family:\"Source Sans\",sans-serif;'>"
                     "Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
