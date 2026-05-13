@@ -1192,17 +1192,17 @@ if st.session_state.pagina == "home":
         div[data-testid="stVerticalBlockBorderWrapper"] *,
         div[data-testid="stVerticalBlockBorderWrapper"] div,
         div[data-testid="stVerticalBlockBorderWrapper"] > div,
-        div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
+        div[data-testid="stVerticalBlockBorderWrapper"] > div > div {{
             background: #ffffff !important;
             background-color: #ffffff !important;
-        }
+        }}
         div[data-testid="stVerticalBlockBorderWrapper"] input,
         div[data-testid="stVerticalBlockBorderWrapper"] textarea,
         div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div,
-        div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="input"] > div {
+        div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="input"] > div {{
             background: #fafafa !important;
             background-color: #fafafa !important;
-        }
+        }}
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
@@ -1325,100 +1325,6 @@ if st.session_state.pagina == "home":
             margin-bottom: 0 !important;
         }
         [data-testid="stAppIframeResizerAnchor"] { display: none !important; }
-
-        /* ── Card empresa ── */
-        .empresa-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            overflow: hidden;
-            position: relative;
-            margin-bottom: 12px;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .empresa-card-deco {
-            position: absolute;
-            top: 0; right: 0;
-            width: 260px; height: 110px;
-            pointer-events: none;
-            opacity: 0.4;
-        }
-        .empresa-card-body { padding: 24px 28px; }
-        .empresa-top {
-            display: flex; align-items: center; gap: 16px;
-            margin-bottom: 20px; padding-bottom: 18px;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .empresa-avatar {
-            width: 52px; height: 52px; min-width: 52px;
-            border-radius: 50%; background: #111827;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
-        }
-        .empresa-nome {
-            font-size: 20px; font-weight: 700; color: #111827;
-            margin-bottom: 2px; letter-spacing: -0.3px;
-        }
-        .empresa-sub { font-size: 13px; color: #9ca3af; }
-        .empresa-grid {
-            display: grid;
-            grid-template-columns: 1fr 1px 1fr 1px 1fr;
-            gap: 0;
-        }
-        .empresa-divider {
-            background: #f0f0f0;
-            margin: 0 24px;
-            align-self: stretch;
-        }
-        .empresa-col { padding: 0 4px; }
-        .empresa-sec-title {
-            font-size: 10px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 1.2px;
-            color: #9ca3af; margin-bottom: 14px;
-            padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
-        }
-        .empresa-row {
-            display: flex; align-items: flex-start;
-            gap: 10px; margin-bottom: 12px;
-        }
-        .empresa-ico {
-            width: 36px; height: 36px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            background: #f3f4f6; border-radius: 9px;
-        }
-        .empresa-ico svg { width: 18px; height: 18px; }
-        .empresa-lbl {
-            font-size: 11px; color: #9ca3af;
-            display: block; margin-bottom: 1px;
-        }
-        .empresa-val {
-            font-size: 14px; color: #111827; font-weight: 600;
-        }
-        .empresa-tags-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
-        .empresa-tag {
-            background: #eff6ff; color: #1d4ed8;
-            border: 1px solid #bfdbfe;
-            padding: 4px 12px; border-radius: 20px;
-            font-size: 13px; font-weight: 500;
-        }
-
-        /* ── Responsivo ── */
-        @media (max-width: 768px) {
-            .empresa-grid {
-                grid-template-columns: 1fr !important;
-            }
-            .empresa-divider { display: none !important; }
-            .empresa-col {
-                padding: 16px 0 0 0 !important;
-                border-top: 1px solid #f3f4f6;
-            }
-            .empresa-col:first-child {
-                padding-top: 0 !important;
-                border-top: none;
-            }
-            .empresa-card-deco { display: none; }
-            .empresa-card-body { padding: 20px 18px; }
-        }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
@@ -1493,106 +1399,209 @@ if st.session_state.pagina == "home":
             if emp["servicos"] else "<span style='color:#9ca3af;font-size:14px'>—</span>"
         )
 
-        st.markdown(f"""
-        <div class="empresa-card">
+        n_servicos = len(emp["servicos"])
+        linhas_tags = max(1, -(-n_servicos // 3)) if n_servicos > 0 else 1
+        altura_card = 280 + (linhas_tags * 36)
 
-            <svg class="empresa-card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
-                <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
-                <circle cx="170" cy="50" r="3.5" fill="#60a5fa"/>
-                <circle cx="238" cy="26" r="3.5" fill="#60a5fa"/>
-                <circle cx="254" cy="16" r="4" fill="#3b82f6"/>
-                <rect x="185" y="58" width="11" height="38" rx="3" fill="#93c5fd" opacity="0.5"/>
-                <rect x="202" y="46" width="11" height="50" rx="3" fill="#60a5fa" opacity="0.6"/>
-                <rect x="219" y="33" width="11" height="63" rx="3" fill="#3b82f6" opacity="0.68"/>
-                <rect x="236" y="20" width="11" height="76" rx="3" fill="#2563eb" opacity="0.75"/>
-            </svg>
+        components.html(f"""
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+html, body {{
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+}}
+.empresa-card {{
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+}}
+.empresa-card-deco {{
+    position: absolute; top: 0; right: 0;
+    width: 260px; height: 110px;
+    pointer-events: none; opacity: 0.4;
+}}
+.empresa-card-body {{ padding: 24px 28px; }}
+.empresa-top {{
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 20px; padding-bottom: 18px;
+    border-bottom: 1px solid #f3f4f6;
+}}
+.empresa-avatar {{
+    width: 52px; height: 52px; min-width: 52px;
+    border-radius: 50%; background: #111827;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
+}}
+.empresa-nome {{
+    font-size: 20px; font-weight: 700; color: #111827;
+    margin-bottom: 2px; letter-spacing: -0.3px;
+}}
+.empresa-sub {{ font-size: 13px; color: #9ca3af; }}
+.empresa-grid {{
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr 1px 1fr;
+    gap: 0;
+}}
+.empresa-divider {{
+    background: #f0f0f0; margin: 0 24px; align-self: stretch;
+}}
+.empresa-col {{ padding: 0 4px; }}
+.empresa-sec-title {{
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: #9ca3af; margin-bottom: 14px;
+    padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
+}}
+.empresa-row {{
+    display: flex; align-items: flex-start;
+    gap: 10px; margin-bottom: 12px;
+}}
+.empresa-ico {{
+    width: 36px; height: 36px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #f3f4f6; border-radius: 9px;
+}}
+.empresa-ico svg {{ width: 18px; height: 18px; }}
+.empresa-lbl {{
+    font-size: 11px; color: #9ca3af;
+    display: block; margin-bottom: 1px;
+}}
+.empresa-val {{
+    font-size: 14px; color: #111827; font-weight: 600;
+}}
+.empresa-tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+.empresa-tag {{
+    background: #eff6ff; color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+}}
 
-            <div class="empresa-card-body">
+@media (max-width: 768px) {{
+    .empresa-grid {{ grid-template-columns: 1fr !important; }}
+    .empresa-divider {{ display: none !important; }}
+    .empresa-col {{
+        padding: 16px 0 0 0 !important;
+        border-top: 1px solid #f3f4f6;
+    }}
+    .empresa-col:first-child {{
+        padding-top: 0 !important;
+        border-top: none;
+    }}
+    .empresa-card-deco {{ display: none; }}
+    .empresa-card-body {{ padding: 20px 18px; }}
+}}
+</style>
+</head>
+<body>
+<div class="empresa-card">
 
-                <div class="empresa-top">
-                    <div class="empresa-avatar">{avatar}</div>
-                    <div>
-                        <div class="empresa-nome">{emp['nome']}</div>
-                        <div class="empresa-sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
-                    </div>
-                </div>
+    <svg class="empresa-card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
+        <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+        <circle cx="170" cy="50" r="3.5" fill="#60a5fa"/>
+        <circle cx="238" cy="26" r="3.5" fill="#60a5fa"/>
+        <circle cx="254" cy="16" r="4" fill="#3b82f6"/>
+        <rect x="185" y="58" width="11" height="38" rx="3" fill="#93c5fd" opacity="0.5"/>
+        <rect x="202" y="46" width="11" height="50" rx="3" fill="#60a5fa" opacity="0.6"/>
+        <rect x="219" y="33" width="11" height="63" rx="3" fill="#3b82f6" opacity="0.68"/>
+        <rect x="236" y="20" width="11" height="76" rx="3" fill="#2563eb" opacity="0.75"/>
+    </svg>
 
-                <div class="empresa-grid">
-
-                    <div class="empresa-col">
-                        <div class="empresa-sec-title">Presença Digital</div>
-                        <div class="empresa-row">
-                            <span class="empresa-ico">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <defs><linearGradient id="ig_grad" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#f09433"/>
-                                        <stop offset="100%" stop-color="#bc1888"/>
-                                    </linearGradient></defs>
-                                    <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_grad)"/>
-                                    <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-                                    <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <span class="empresa-lbl">Instagram</span>
-                                <span class="empresa-val">{emp['instagram'] or '—'}</span>
-                            </div>
-                        </div>
-                        <div class="empresa-row">
-                            <span class="empresa-ico">
-                                <svg viewBox="0 0 24 24" fill="#1877F2">
-                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <span class="empresa-lbl">Facebook</span>
-                                <span class="empresa-val">{emp['fb_page'] or '—'}</span>
-                            </div>
-                        </div>
-                        <div class="empresa-row">
-                            <span class="empresa-ico">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="2" y1="12" x2="22" y2="12"/>
-                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <span class="empresa-lbl">Site</span>
-                                <span class="empresa-val">{emp['site'] or '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="empresa-divider"></div>
-
-                    <div class="empresa-col">
-                        <div class="empresa-sec-title">Localização</div>
-                        <div class="empresa-row">
-                            <span class="empresa-ico">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <span class="empresa-lbl">Cidade / Estado</span>
-                                <span class="empresa-val">{loc or '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="empresa-divider"></div>
-
-                    <div class="empresa-col">
-                        <div class="empresa-sec-title">Serviços</div>
-                        <div class="empresa-tags-wrap">{servicos_html}</div>
-                    </div>
-
-                </div>
+    <div class="empresa-card-body">
+        <div class="empresa-top">
+            <div class="empresa-avatar">{avatar}</div>
+            <div>
+                <div class="empresa-nome">{emp['nome']}</div>
+                <div class="empresa-sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+
+        <div class="empresa-grid">
+
+            <div class="empresa-col">
+                <div class="empresa-sec-title">Presença Digital</div>
+                <div class="empresa-row">
+                    <span class="empresa-ico">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs><linearGradient id="ig_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#f09433"/>
+                                <stop offset="100%" stop-color="#bc1888"/>
+                            </linearGradient></defs>
+                            <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_grad)"/>
+                            <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Instagram</span>
+                        <span class="empresa-val">{emp['instagram'] or '—'}</span>
+                    </div>
+                </div>
+                <div class="empresa-row">
+                    <span class="empresa-ico">
+                        <svg viewBox="0 0 24 24" fill="#1877F2">
+                            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Facebook</span>
+                        <span class="empresa-val">{emp['fb_page'] or '—'}</span>
+                    </div>
+                </div>
+                <div class="empresa-row">
+                    <span class="empresa-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Site</span>
+                        <span class="empresa-val">{emp['site'] or '—'}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empresa-divider"></div>
+
+            <div class="empresa-col">
+                <div class="empresa-sec-title">Localização</div>
+                <div class="empresa-row">
+                    <span class="empresa-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Cidade / Estado</span>
+                        <span class="empresa-val">{loc or '—'}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empresa-divider"></div>
+
+            <div class="empresa-col">
+                <div class="empresa-sec-title">Serviços</div>
+                <div class="empresa-tags-wrap">{servicos_html}</div>
+            </div>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>
+        """, height=altura_card, scrolling=False)
 
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
