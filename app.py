@@ -439,7 +439,7 @@ section.main div.stButton > button:hover {
     color: #111827 !important;
 }
 
-/* ── BOTÃO PRIMARY (Adicionar, Editar Empresa, Salvar Empresa) ── */
+/* ── BOTÃO PRIMARY ── */
 section.main div.stButton > button[kind="primary"] {
     background: #111827 !important;
     color: #ffffff !important;
@@ -450,7 +450,7 @@ section.main div.stButton > button[kind="primary"]:hover {
     color: #ffffff !important;
 }
 
-/* ── BOTÕES DE FORMULÁRIO (Salvar nos forms) ── */
+/* ── BOTÕES DE FORMULÁRIO ── */
 section.main div.stFormSubmitButton > button {
     background: #111827 !important;
     color: #ffffff !important;
@@ -580,6 +580,26 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     overflow: hidden !important;
     line-height: 0 !important;
     display: none !important;
+}
+
+/* ── Containers com borda — fundo branco forçado ── */
+section.main [data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
+    border-color: #e5e7eb !important;
+    border-radius: 12px !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+    background: #ffffff !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
+section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
+section.main [data-testid="stVerticalBlockBorderWrapper"] img,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stPlotlyChart"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="tab-panel"] {
+    background: transparent !important;
 }
 </style>
 """, unsafe_allow_html=True)
