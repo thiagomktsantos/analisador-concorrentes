@@ -2697,66 +2697,125 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     unsafe_allow_html=True,
                 )
 
-                with st.container(border=True):
-                    st.markdown("""
-                    <style>
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] {
-                        background: #ffffff !important;
-                        border-radius: 12px !important;
-                        border-color: #e5e7eb !important;
-                    }
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] * {
-                        background: #ffffff !important;
-                    }
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] img {
-                        background: transparent !important;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
+                if not posts_list:
+                    posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
+                else:
+                    cards = ""
+                    for post in posts_list[:3]:
+                        likes_fmt = fmt_num(post.get("likes", 0))
+                        coms_fmt  = fmt_num(post.get("comments", 0))
+                        thumb_url = post.get("thumb", "")
+                        date_str  = post.get("date", "")
+                        if thumb_url:
+                            img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror=\"this.style.display='none'\" />"
+                        else:
+                            icon = "Vídeo" if post.get("is_video") else "Foto"
+                            img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>"
+                        cards += f"""
+                        <div style='flex:1;text-align:center'>
+                            {img_html}
+                            <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
+                            <div style='font-size:11px;color:#9ca3af'>{date_str}</div>
+                        </div>"""
+                    posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
 
-                    if not posts_list:
-                        posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
-                    else:
-                        cards = ""
-                        for post in posts_list[:3]:
-                            likes_fmt = fmt_num(post.get("likes", 0))
-                            coms_fmt  = fmt_num(post.get("comments", 0))
-                            thumb_url = post.get("thumb", "")
-                            date_str  = post.get("date", "")
-                            if thumb_url:
-                                img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror=\"this.style.display='none'\" />"
-                            else:
-                                icon = "Vídeo" if post.get("is_video") else "Foto"
-                                img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>"
-                            cards += f"""
-                            <div style='flex:1;text-align:center'>
-                                {img_html}
-                                <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
-                                <div style='font-size:11px;color:#9ca3af'>{date_str}</div>
-                            </div>"""
-                        posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
+                # Monta tabela de posts para o expander
+                df_posts_rows = ""
+                for p in posts_list:
+                    df_posts_rows += f"""
+                    <tr>
+                        <td>{p.get('date','')}</td>
+                        <td>{'Vídeo' if p.get('is_video') else 'Foto'}</td>
+                        <td>{p.get('likes',0)}</td>
+                        <td>{p.get('comments',0)}</td>
+                        <td>{p.get('likes',0)+p.get('comments',0)}</td>
+                        <td style='max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>{p.get('caption','')[:60]}</td>
+                    </tr>"""
 
-                    components.html(f"""
-                    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-                    <div style='font-family:DM Sans,sans-serif;box-sizing:border-box'>
-                        {posts_html}
+                components.html(f"""
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <style>
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; }}
+                .card {{
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 8px;
+                }}
+                details {{ margin-top: 8px; }}
+                summary {{
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #374151;
+                    list-style: none;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }}
+                summary::-webkit-details-marker {{ display: none; }}
+                summary::before {{
+                    content: '›';
+                    font-size: 18px;
+                    transition: transform 0.2s;
+                    display: inline-block;
+                }}
+                details[open] summary::before {{ transform: rotate(90deg); }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 12px;
+                    font-size: 13px;
+                }}
+                th {{
+                    background: #f9fafb;
+                    color: #6b7280;
+                    font-weight: 600;
+                    padding: 8px 10px;
+                    text-align: left;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 12px;
+                }}
+                td {{
+                    padding: 8px 10px;
+                    border-bottom: 1px solid #f3f4f6;
+                    color: #374151;
+                    background: #ffffff;
+                }}
+                tr:last-child td {{ border-bottom: none; }}
+                </style>
+
+                <div class="card">
+                    {posts_html}
+                </div>
+
+                <details>
+                    <summary>Ver todos os posts</summary>
+                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Curtidas</th>
+                                    <th>Comentários</th>
+                                    <th>Eng. total</th>
+                                    <th>Legenda</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {df_posts_rows}
+                            </tbody>
+                        </table>
                     </div>
-                    """, height=240)
-
-                    st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
-
-                    with st.expander("Ver todos os posts"):
-                        df_posts = pd.DataFrame([{
-                            "Data":        p.get("date", ""),
-                            "Tipo":        "Vídeo" if p.get("is_video") else "Foto",
-                            "Curtidas":    p.get("likes", 0),
-                            "Comentários": p.get("comments", 0),
-                            "Eng. total":  p.get("likes", 0) + p.get("comments", 0),
-                            "Legenda":     p.get("caption", "")[:60],
-                        } for p in posts_list])
-                        st.dataframe(df_posts, use_container_width=True, hide_index=True)
+                </details>
+                """, height=420 if posts_list else 100, scrolling=False)
 
             with col_ia:
                 st.markdown(
@@ -2787,35 +2846,104 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
-                with st.container(border=True):
-                    st.markdown("""
-                    <style>
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] {
-                        background: #ffffff !important;
-                        border-radius: 12px !important;
-                        border-color: #e5e7eb !important;
-                    }
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] * {
-                        background: #ffffff !important;
-                    }
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
-                    section.main [data-testid="stVerticalBlockBorderWrapper"] img {
-                        background: transparent !important;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
 
-                    aba_criativo, aba_copy, aba_geral = st.tabs(["Criativo", "Copy", "Geral"])
+                criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
+                copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
+                geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
 
-                    with aba_criativo:
-                        if st.button("Gerar análise", key=f"btn_criativo_{idx}", use_container_width=True):
-                            if gemini_model is None:
-                                st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
-                            else:
-                                with st.spinner("Analisando criativos…"):
-                                    try:
-                                        resp = gemini_model.generate_content(f"""
+                vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
+
+                components.html(f"""
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <style>
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
+                .card {{
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 12px;
+                    overflow: hidden;
+                }}
+                .tabs {{
+                    display: flex;
+                    border-bottom: 2px solid #e5e7eb;
+                    background: #ffffff;
+                }}
+                .tab {{
+                    flex: 1;
+                    padding: 10px 0;
+                    text-align: center;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #9ca3af;
+                    cursor: pointer;
+                    border-bottom: 2px solid transparent;
+                    margin-bottom: -2px;
+                    background: #ffffff;
+                    border-top: none;
+                    border-left: none;
+                    border-right: none;
+                    font-family: 'DM Sans', sans-serif;
+                    transition: color 0.15s;
+                }}
+                .tab.active {{
+                    color: #3a9fd6;
+                    border-bottom: 2px solid #3a9fd6;
+                }}
+                .panel {{ display: none; padding: 16px; background: #ffffff; }}
+                .panel.active {{ display: block; }}
+                .result {{
+                    background: #f9fafb;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                    font-size: 13px;
+                    color: #374151;
+                    line-height: 1.7;
+                    max-height: 300px;
+                    overflow-y: auto;
+                    margin-top: 8px;
+                }}
+                </style>
+
+                <div class="card">
+                    <div class="tabs">
+                        <button class="tab active" onclick="showTab('criativo')">Criativo</button>
+                        <button class="tab" onclick="showTab('copy')">Copy</button>
+                        <button class="tab" onclick="showTab('geral')">Geral</button>
+                    </div>
+                    <div id="panel-criativo" class="panel active">
+                        {('<div class="result">' + criativo_html + '</div>') if criativo_html else vazio}
+                    </div>
+                    <div id="panel-copy" class="panel">
+                        {('<div class="result">' + copy_html + '</div>') if copy_html else vazio}
+                    </div>
+                    <div id="panel-geral" class="panel">
+                        {('<div class="result">' + geral_html + '</div>') if geral_html else vazio}
+                    </div>
+                </div>
+
+                <script>
+                function showTab(name) {{
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    document.getElementById('panel-' + name).classList.add('active');
+                    event.target.classList.add('active');
+                }}
+                </script>
+                """, height=420, scrolling=False)
+
+                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+
+                col_b1, col_b2, col_b3 = st.columns(3)
+                with col_b1:
+                    if st.button("Gerar Criativo", key=f"btn_criativo_{idx}", use_container_width=True):
+                        if gemini_model is None:
+                            st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+                        else:
+                            with st.spinner("Analisando criativos…"):
+                                try:
+                                    resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
 Responda em português com:
@@ -2827,33 +2955,18 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                        st.session_state[chave_criativo] = resp.text
-                                    except Exception as e:
-                                        st.session_state[chave_criativo] = f"Erro: {e}"
-
-                        if st.session_state.get(chave_criativo):
-                            st.markdown(f"""
-                            <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                        padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                        max-height:300px;overflow-y:auto;margin-top:8px'>
-                                {st.session_state[chave_criativo].replace(chr(10), "<br>")}
-                            </div>
-                            """, unsafe_allow_html=True)
+                                    st.session_state[chave_criativo] = resp.text
+                                    st.rerun()
+                                except Exception as e:
+                                    st.session_state[chave_criativo] = f"Erro: {e}"
+                with col_b2:
+                    if st.button("Gerar Copy", key=f"btn_copy_{idx}", use_container_width=True):
+                        if gemini_model is None:
+                            st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
                         else:
-                            st.markdown(
-                                "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
-                                "Clique em <b>Gerar análise</b> para analisar os criativos.</div>",
-                                unsafe_allow_html=True,
-                            )
-
-                    with aba_copy:
-                        if st.button("Gerar análise", key=f"btn_copy_{idx}", use_container_width=True):
-                            if gemini_model is None:
-                                st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
-                            else:
-                                with st.spinner("Analisando copies…"):
-                                    try:
-                                        resp = gemini_model.generate_content(f"""
+                            with st.spinner("Analisando copies…"):
+                                try:
+                                    resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise as LEGENDAS (copy) deste perfil Instagram.
 Responda em português com:
@@ -2865,33 +2978,18 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                        st.session_state[chave_copy] = resp.text
-                                    except Exception as e:
-                                        st.session_state[chave_copy] = f"Erro: {e}"
-
-                        if st.session_state.get(chave_copy):
-                            st.markdown(f"""
-                            <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                        padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                        max-height:300px;overflow-y:auto;margin-top:8px'>
-                                {st.session_state[chave_copy].replace(chr(10), "<br>")}
-                            </div>
-                            """, unsafe_allow_html=True)
+                                    st.session_state[chave_copy] = resp.text
+                                    st.rerun()
+                                except Exception as e:
+                                    st.session_state[chave_copy] = f"Erro: {e}"
+                with col_b3:
+                    if st.button("Gerar Geral", key=f"btn_geral_{idx}", use_container_width=True):
+                        if gemini_model is None:
+                            st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
                         else:
-                            st.markdown(
-                                "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
-                                "Clique em <b>Gerar análise</b> para analisar as copies.</div>",
-                                unsafe_allow_html=True,
-                            )
-
-                    with aba_geral:
-                        if st.button("Gerar análise", key=f"btn_geral_{idx}", use_container_width=True):
-                            if gemini_model is None:
-                                st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
-                            else:
-                                with st.spinner("Gerando análise geral…"):
-                                    try:
-                                        resp = gemini_model.generate_content(f"""
+                            with st.spinner("Gerando análise geral…"):
+                                try:
+                                    resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Faça uma análise geral estratégica deste perfil Instagram.
 Responda em português com:
@@ -2903,21 +3001,7 @@ Responda em português com:
 ### Recomendações Estratégicas (3 ações concretas)
 Seja direto e objetivo.
 """)
-                                        st.session_state[chave_geral] = resp.text
-                                    except Exception as e:
-                                        st.session_state[chave_geral] = f"Erro: {e}"
-
-                        if st.session_state.get(chave_geral):
-                            st.markdown(f"""
-                            <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                        padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                        max-height:300px;overflow-y:auto;margin-top:8px'>
-                                {st.session_state[chave_geral].replace(chr(10), "<br>")}
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(
-                                "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>"
-                                "Clique em <b>Gerar análise</b> para análise estratégica.</div>",
-                                unsafe_allow_html=True,
-                            )
+                                    st.session_state[chave_geral] = resp.text
+                                    st.rerun()
+                                except Exception as e:
+                                    st.session_state[chave_geral] = f"Erro: {e}"
