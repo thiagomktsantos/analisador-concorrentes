@@ -1083,7 +1083,6 @@ function nav(page) {{
 # POPUP DE SAIDA
 # ---------------------------------------------------
 
-# Botões ocultos do modal — acionados pelo JS
 if st.button("__alerta_sair__", key="_hidden_alerta_sair"):
     destino = st.session_state.get("pagina_destino")
     st.session_state.mostrar_alerta_saida = False
@@ -1246,6 +1245,7 @@ if st.session_state.get("mostrar_alerta_saida"):
                     return true;
                 }}
             }}
+            console.warn('Botão não encontrado:', texto);
             return false;
         }} catch(e) {{
             console.error(e);
