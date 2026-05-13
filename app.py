@@ -1183,6 +1183,60 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
 
+        # ── Campos do formulário
+        sec_label("Identificação")
+        col_nome, col_setor = st.columns(2)
+        with col_nome:
+            emp["nome"] = st.text_input("Nome da empresa", value=emp.get("nome", ""))
+        with col_setor:
+            setores = list(SUBNICHOS.keys())
+            setor_idx = setores.index(emp["setor"]) if emp.get("setor") in setores else 0
+            emp["setor"] = st.selectbox("Setor", setores, index=setor_idx)
+
+        col_tipo, col_subnicho = st.columns(2)
+        with col_tipo:
+            tipos = ["", "MEI", "ME", "EPP", "Startup", "Franquia", "Multinacional"]
+            tipo_idx = tipos.index(emp["tipo"]) if emp.get("tipo") in tipos else 0
+            emp["tipo"] = st.selectbox("Tipo de empresa", tipos, index=tipo_idx)
+        with col_subnicho:
+            subnichos = [""] + SUBNICHOS.get(emp["setor"], [])
+            sub_atual = emp.get("tipo_detalhe", "")
+            sub_idx = subnichos.index(sub_atual) if sub_atual in subnichos else 0
+            emp["tipo_detalhe"] = st.selectbox("Subnicho", subnichos, index=sub_idx)
+
+        form_divider()
+        sec_label("Localização")
+        col_estado, col_cidade = st.columns(2)
+        with col_estado:
+            estados = [""] + sorted(ESTADOS_CIDADES.keys())
+            estado_idx = estados.index(emp["estado"]) if emp.get("estado") in estados else 0
+            emp["estado"] = st.selectbox("Estado", estados, index=estado_idx)
+        with col_cidade:
+            cidades = [""] + ESTADOS_CIDADES.get(emp["estado"], []) if emp.get("estado") else [""]
+            cidade_idx = cidades.index(emp["cidade"]) if emp.get("cidade") in cidades else 0
+            emp["cidade"] = st.selectbox("Cidade", cidades, index=cidade_idx)
+
+        form_divider()
+        sec_label("Presença Digital")
+        col_ig, col_fb = st.columns(2)
+        with col_ig:
+            emp["instagram"] = st.text_input("Instagram", value=emp.get("instagram", "@"), placeholder="@suaempresa")
+        with col_fb:
+            emp["fb_page"] = st.text_input("Facebook", value=emp.get("fb_page", ""), placeholder="suaempresa")
+
+        emp["site"] = st.text_input("Site", value=emp.get("site", ""), placeholder="www.suaempresa.com.br")
+
+        form_divider()
+        sec_label("Serviços / Produtos")
+        servicos_opcoes = SUBNICHOS.get(emp["setor"], [])
+        emp["servicos"] = st.multiselect(
+            "Selecione os serviços oferecidos",
+            options=servicos_opcoes,
+            default=[s for s in emp.get("servicos", []) if s in servicos_opcoes],
+        )
+
+        form_divider()
+
         col_salvar, col_cancelar = st.columns(2)
         with col_salvar:
             if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_empresa"):
