@@ -2453,7 +2453,7 @@ elif st.session_state.pagina == "redes":
             var fig = {fig_seg_json};
             Plotly.newPlot('graf_seg', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
-        """, height=430)
+        """, height=390)
 
     with col_g2:
         fig_eng = go.Figure(
@@ -2468,8 +2468,8 @@ elif st.session_state.pagina == "redes":
             )
         )
         fig_eng.update_layout(
-            height=360,
-            margin=dict(t=20, b=30, l=10, r=10),
+            height=320,
+            margin=dict(t=20, b=30, l=45, r=20),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             showlegend=False,
@@ -2495,7 +2495,7 @@ elif st.session_state.pagina == "redes":
             var fig = {fig_eng_json};
             Plotly.newPlot('graf_eng', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
-        """, height=430)
+        """, height=390)
 
     st.markdown(
         "<div style='margin:28px 0 20px 0;border-top:1px solid #e5e7eb'></div>",
