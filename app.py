@@ -2744,12 +2744,15 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     padding: 20px;
                     margin-bottom: 8px;
                 }}
-                details {{ margin-top: 8px; }}
-                summary {{
-                    background: #ffffff;
+                .ver-todos {{
+                    margin-top: 8px;
                     border: 1px solid #e5e7eb;
-                    border-radius: 8px;
-                    padding: 12px 16px;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    background: #ffffff;
+                }}
+                summary {{
+                    padding: 14px 16px;
                     cursor: pointer;
                     font-size: 14px;
                     font-weight: 600;
@@ -2758,6 +2761,8 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     display: flex;
                     align-items: center;
                     gap: 8px;
+                    background: #ffffff;
+                    user-select: none;
                 }}
                 summary::-webkit-details-marker {{ display: none; }}
                 summary::before {{
@@ -2765,25 +2770,28 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     font-size: 18px;
                     transition: transform 0.2s;
                     display: inline-block;
+                    line-height: 1;
                 }}
                 details[open] summary::before {{ transform: rotate(90deg); }}
+                details[open] summary {{
+                    border-bottom: 1px solid #e5e7eb;
+                }}
                 table {{
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 12px;
                     font-size: 13px;
                 }}
                 th {{
                     background: #f9fafb;
                     color: #6b7280;
                     font-weight: 600;
-                    padding: 8px 10px;
+                    padding: 10px 12px;
                     text-align: left;
                     border-bottom: 1px solid #e5e7eb;
                     font-size: 12px;
                 }}
                 td {{
-                    padding: 8px 10px;
+                    padding: 10px 12px;
                     border-bottom: 1px solid #f3f4f6;
                     color: #374151;
                     background: #ffffff;
@@ -2795,9 +2803,9 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     {posts_html}
                 </div>
 
-                <details style="margin-top:8px">
+                <details class="ver-todos">
                     <summary>Ver todos os posts</summary>
-                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-top:6px;overflow-x:auto'>
+                    <div style='overflow-x:auto'>
                         <table>
                             <thead>
                                 <tr>
@@ -2809,7 +2817,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         </table>
                     </div>
                 </details>
-                """, height=420 if posts_list else 100, scrolling=False)
+                """, height=500 if posts_list else 100, scrolling=True)
 
             with col_ia:
 
