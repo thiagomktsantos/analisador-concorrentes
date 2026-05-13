@@ -2864,6 +2864,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                     border: 1px solid #e5e7eb;
                     border-radius: 12px;
                     overflow: hidden;
+                    padding-bottom: 8px;
                 }}
                 .tabs {{
                     display: flex;
@@ -2932,7 +2933,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                     event.target.classList.add('active');
                 }}
                 </script>
-                """, height=420, scrolling=False)
+                """, height=460, scrolling=False)
 
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
