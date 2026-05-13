@@ -2167,7 +2167,7 @@ elif st.session_state.pagina == "redes":
         )
         st.markdown(
             "<div style='font-size:14px;color:#6b7280;margin-top:3px'>"
-            "Métricas do Instagram via RapidAPI · comparativo visual</div>",
+            "Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>",
             unsafe_allow_html=True,
         )
     with h2:
@@ -2399,174 +2399,89 @@ elif st.session_state.pagina == "redes":
         unsafe_allow_html=True,
     )
 
-    col_g1, col_g2 = st.columns(2)
+col_g1, col_g2 = st.columns(2)
 
-    # ── LAYOUT BASE ───────────────────────────────────────
     _layout_base = dict(
-        height=340,
-        margin=dict(t=60, b=40, l=50, r=20),
-        paper_bgcolor="#ffffff",
-        plot_bgcolor="#ffffff",
+        height=360,
+        margin=dict(t=50, b=30, l=10, r=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
-        font=dict(
-            family="DM Sans, sans-serif",
-            color="#374151",
-            size=13,
-        ),
+        font=dict(family="DM Sans, sans-serif", color="#374151", size=13),
         bargap=0.45,
         xaxis=dict(
             showgrid=False,
-            tickfont=dict(
-                family="DM Sans",
-                size=14,
-                color="#374151",
-            ),
+            tickfont=dict(family="DM Sans", size=13, color="#374151"),
+            showline=False,
         ),
         yaxis=dict(
             showgrid=True,
             gridcolor="#f3f4f6",
             zeroline=False,
-            tickfont=dict(
-                family="DM Sans",
-                size=12,
-                color="#6b7280",
-            ),
+            tickfont=dict(family="DM Sans", size=12, color="#6b7280"),
         ),
     )
 
-    # ══════════════════════════════════════════════════════
     with col_g1:
-
         st.markdown(
-            """
-            <div style="
-                background:#ffffff;
-                border:1px solid #e5e7eb;
-                border-radius:16px;
-                padding:18px;
-                overflow:hidden;
-                box-shadow:0 1px 2px rgba(0,0,0,0.03);
-            ">
-            """,
+            "<div style='background:#fff;border:1px solid #e5e7eb;border-radius:16px;"
+            "padding:20px 20px 8px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.03)'>",
             unsafe_allow_html=True,
         )
-
+        st.markdown(
+            "<div style='font-size:16px;font-weight:800;color:#111827;"
+            "font-family:\"DM Sans\",sans-serif;letter-spacing:0.2px;"
+            "padding:0 4px'>SEGUIDORES</div>",
+            unsafe_allow_html=True,
+        )
         fig_seg = go.Figure(
             go.Bar(
                 x=nomes_ok,
                 y=segs_ok,
-                marker=dict(
-                    color=cores_ok,
-                    line=dict(width=0),
-                ),
+                marker=dict(color=cores_ok, line=dict(width=0)),
                 text=[fmt_num(s) for s in segs_ok],
                 textposition="outside",
                 cliponaxis=False,
-                textfont=dict(
-                    family="DM Sans",
-                    size=15,
-                    color="#111827",
-                ),
+                textfont=dict(family="DM Sans", size=14, color="#111827"),
             )
         )
-
-        fig_seg.update_layout(
-            **_layout_base,
-            title=dict(
-                text="SEGUIDORES",
-                x=0,
-                xanchor="left",
-                font=dict(
-                    family="DM Sans",
-                    size=18,
-                    color="#111827",
-                ),
-            ),
-        )
-
-        st.plotly_chart(
-            fig_seg,
-            use_container_width=True,
-            config={"displayModeBar": False},
-            key="graf_seg_global",
-        )
-
+        fig_seg.update_layout(**_layout_base)
+        st.plotly_chart(fig_seg, use_container_width=True,
+                        config={"displayModeBar": False}, key="graf_seg_global")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ══════════════════════════════════════════════════════
-    # GRÁFICO ENGAJAMENTO
-    # ══════════════════════════════════════════════════════
-
     with col_g2:
-
         st.markdown(
-            """
-            <div style="
-                background:#ffffff;
-                border:1px solid #e5e7eb;
-                border-radius:16px;
-                padding:18px;
-                overflow:hidden;
-                box-shadow:0 1px 2px rgba(0,0,0,0.03);
-            ">
-            """,
+            "<div style='background:#fff;border:1px solid #e5e7eb;border-radius:16px;"
+            "padding:20px 20px 8px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.03)'>",
             unsafe_allow_html=True,
         )
-
+        st.markdown(
+            "<div style='font-size:16px;font-weight:800;color:#111827;"
+            "font-family:\"DM Sans\",sans-serif;letter-spacing:0.2px;"
+            "padding:0 4px'>TAXA DE ENGAJAMENTO (%)</div>",
+            unsafe_allow_html=True,
+        )
         fig_eng = go.Figure(
             go.Bar(
                 x=nomes_ok,
                 y=eng_pct_ok,
-                marker=dict(
-                    color=cores_ok,
-                    line=dict(width=0),
-                ),
+                marker=dict(color=cores_ok, line=dict(width=0)),
                 text=[f"{v:.2f}%" for v in eng_pct_ok],
                 textposition="outside",
                 cliponaxis=False,
-                textfont=dict(
-                    family="DM Sans",
-                    size=15,
-                    color="#111827",
-                ),
+                textfont=dict(family="DM Sans", size=14, color="#111827"),
             )
         )
-
         layout_eng = _layout_base.copy()
-
         layout_eng["yaxis"] = dict(
-            showgrid=True,
-            gridcolor="#f3f4f6",
-            zeroline=False,
+            showgrid=True, gridcolor="#f3f4f6", zeroline=False,
             ticksuffix="%",
-            tickfont=dict(
-                family="DM Sans",
-                size=12,
-                color="#6b7280",
-            ),
+            tickfont=dict(family="DM Sans", size=12, color="#6b7280"),
         )
-
-        fig_eng.update_layout(
-            **layout_eng,
-            title=dict(
-                text="TAXA DE ENGAJAMENTO (%)",
-                x=0,
-                xanchor="left",
-                font=dict(
-                    family="DM Sans",
-                    size=18,
-                    color="#111827",
-                ),
-            ),
-        )
-
-        st.plotly_chart(
-            fig_eng,
-            use_container_width=True,
-            config={"displayModeBar": False},
-            key="graf_eng_global",
-        )
-
+        fig_eng.update_layout(**layout_eng)
+        st.plotly_chart(fig_eng, use_container_width=True,
+                        config={"displayModeBar": False}, key="graf_eng_global")
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown(
