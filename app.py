@@ -1184,19 +1184,19 @@ if st.session_state.pagina == "home":
             )
 
         col_salvar, col_cancelar = st.columns(2)
-with col_salvar:
-    if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_empresa"):
-        if emp["nome"].strip():
-            st.session_state.editar_empresa = False
-            salvar_dados_usuario(st.session_state.user.id)
-            st.success("Empresa salva com sucesso!")
-            st.rerun()
-        else:
-            st.error("Informe pelo menos o nome da empresa.")
-with col_cancelar:
-    if st.button("Cancelar", use_container_width=True, key="btn_cancelar_empresa"):
-        st.session_state.editar_empresa = False
-        st.rerun()
+        with col_salvar:
+            if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_empresa"):
+                if emp["nome"].strip():
+                    st.session_state.editar_empresa = False
+                    salvar_dados_usuario(st.session_state.user.id)
+                    st.success("Empresa salva com sucesso!")
+                    st.rerun()
+                else:
+                    st.error("Informe pelo menos o nome da empresa.")
+        with col_cancelar:
+            if st.button("Cancelar", use_container_width=True, key="btn_cancelar_empresa"):
+                st.session_state.editar_empresa = False
+                st.rerun()
 
     # ----------------------------------------------------------
     # MODO VISUALIZAÇÃO
@@ -1593,37 +1593,16 @@ elif st.session_state.pagina == "cad":
         titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
         st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
 
-        n = c1.text_input(...)
-u = c2.text_input(...)
-insta_handle = c3.text_input(...)
-fb_p = c4.text_input(...)
-ads_manual = st.text_input(...)
+        c1, c2 = st.columns(2)
+        c3, c4 = st.columns(2)
 
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("💾 Salvar", use_container_width=True, key="btn_salvar_conc"):
-        clean_handle = obter_instagram_handle(insta_handle)
-        fb_clean = obter_facebook_handle(fb_p)
-        site_clean = limpar_site(u)
-        search_term = ads_manual or fb_clean or clean_handle.lstrip("@") or n
-        dados_novos = {
-            "nome": n, "url": site_clean,
-            "instagram": clean_handle, "fb_page": fb_clean,
-            "ads_id": search_term
-        }
-        if st.session_state.editando_concorrente is not None:
-            st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
-        else:
-            st.session_state.dados["concorrentes"].append(dados_novos)
-        st.session_state.mostrar_form_concorrente = False
-        st.session_state.editando_concorrente = None
-        salvar_dados_usuario(st.session_state.user.id)
-        st.rerun()
-with col2:
-    if st.button("Cancelar", use_container_width=True, key="btn_cancelar_conc"):
-        st.session_state.mostrar_form_concorrente = False
-        st.session_state.editando_concorrente = None
-        st.rerun()
+        n = c1.text_input("Nome do concorrente", value=concorrente_edit["nome"] if concorrente_edit else "")
+        u = c2.text_input("Site (URL)", value=concorrente_edit["url"] if concorrente_edit else "")
+        insta_handle = c3.text_input("Instagram", value=concorrente_edit["instagram"] if concorrente_edit else "")
+        fb_p = c4.text_input("Facebook", value=concorrente_edit["fb_page"] if concorrente_edit else "")
+        ads_manual = st.text_input("Termo de busca para Ads (opcional)", value=concorrente_edit.get("ads_id", "") if concorrente_edit else "")
+
+        col1, col2 = st.columns(2)
 
     # ── Lista de concorrentes
     concorrentes = st.session_state.dados["concorrentes"]
