@@ -2410,95 +2410,98 @@ elif st.session_state.pagina == "redes":
         ),
     )
 
-    st.markdown("""
-    <style>
-    [data-testid="stVerticalBlock"]:has(> [data-testid="stVerticalBlockBorderWrapper"] .graf-box) {
-        gap: 0 !important;
-    }
-    .graf-box {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        padding: 20px 16px 0 16px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        margin-bottom: 0;
-    }
-    .graf-title {
-        font-size: 15px;
-        font-weight: 800;
-        color: #111827;
-        font-family: 'DM Sans', sans-serif;
-        letter-spacing: 0.3px;
-        padding: 0 4px 10px 4px;
-        border-bottom: 1px solid #f3f4f6;
-        margin-bottom: 0;
-    }
-    /* Remove espaço extra em cima do plotly dentro do container */
-    .graf-box [data-testid="stPlotlyChart"] {
-        margin-top: -8px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    simport json
 
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
-        with st.container(border=False):
-            st.markdown(
-                "<div class='graf-box'>"
-                "<div class='graf-title'>SEGUIDORES</div>",
-                unsafe_allow_html=True,
+        fig_seg = go.Figure(
+            go.Bar(
+                x=nomes_ok,
+                y=segs_ok,
+                marker=dict(color=cores_ok, line=dict(width=0)),
+                text=[fmt_num(s) for s in segs_ok],
+                textposition="outside",
+                cliponaxis=False,
+                textfont=dict(family="DM Sans", size=14, color="#111827"),
             )
-            fig_seg = go.Figure(
-                go.Bar(
-                    x=nomes_ok,
-                    y=segs_ok,
-                    marker=dict(color=cores_ok, line=dict(width=0)),
-                    text=[fmt_num(s) for s in segs_ok],
-                    textposition="outside",
-                    cliponaxis=False,
-                    textfont=dict(family="DM Sans", size=14, color="#111827"),
-                )
-            )
-            fig_seg.update_layout(**_layout_base)
-            st.plotly_chart(fig_seg, use_container_width=True,
-                            config={"displayModeBar": False}, key="graf_seg_global")
-            st.markdown("</div>", unsafe_allow_html=True)
+        )
+        fig_seg.update_layout(
+            height=360,
+            margin=dict(t=20, b=30, l=10, r=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            showlegend=False,
+            font=dict(family="DM Sans, sans-serif", color="#374151", size=13),
+            bargap=0.45,
+            xaxis=dict(showgrid=False, tickfont=dict(family="DM Sans", size=13, color="#374151"), showline=False),
+            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, tickfont=dict(family="DM Sans", size=12, color="#6b7280")),
+        )
+        fig_seg_json = json.dumps(fig_seg.to_dict(), default=str)
+        components.html(f"""
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
+                    padding:20px 16px 8px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:15px;font-weight:800;color:#111827;
+                        font-family:'DM Sans',sans-serif;letter-spacing:0.3px;
+                        padding:0 4px 12px 4px;border-bottom:1px solid #f3f4f6;
+                        margin-bottom:4px">SEGUIDORES</div>
+            <div id="graf_seg"></div>
+        </div>
+        <script>
+            var fig = {fig_seg_json};
+            Plotly.newPlot('graf_seg', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
+        </script>
+        """, height=430)
 
     with col_g2:
-        with st.container(border=False):
-            st.markdown(
-                "<div class='graf-box'>"
-                "<div class='graf-title'>TAXA DE ENGAJAMENTO (%)</div>",
-                unsafe_allow_html=True,
+        fig_eng = go.Figure(
+            go.Bar(
+                x=nomes_ok,
+                y=eng_pct_ok,
+                marker=dict(color=cores_ok, line=dict(width=0)),
+                text=[f"{v:.2f}%" for v in eng_pct_ok],
+                textposition="outside",
+                cliponaxis=False,
+                textfont=dict(family="DM Sans", size=14, color="#111827"),
             )
-            fig_eng = go.Figure(
-                go.Bar(
-                    x=nomes_ok,
-                    y=eng_pct_ok,
-                    marker=dict(color=cores_ok, line=dict(width=0)),
-                    text=[f"{v:.2f}%" for v in eng_pct_ok],
-                    textposition="outside",
-                    cliponaxis=False,
-                    textfont=dict(family="DM Sans", size=14, color="#111827"),
-                )
-            )
-            layout_eng = _layout_base.copy()
-            layout_eng["yaxis"] = dict(
-                showgrid=True, gridcolor="#f3f4f6", zeroline=False,
-                ticksuffix="%",
-                tickfont=dict(family="DM Sans", size=12, color="#6b7280"),
-            )
-            fig_eng.update_layout(**layout_eng)
-            st.plotly_chart(fig_eng, use_container_width=True,
-                            config={"displayModeBar": False}, key="graf_eng_global")
-            st.markdown("</div>", unsafe_allow_html=True)
+        )
+        fig_eng.update_layout(
+            height=360,
+            margin=dict(t=20, b=30, l=10, r=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            showlegend=False,
+            font=dict(family="DM Sans, sans-serif", color="#374151", size=13),
+            bargap=0.45,
+            xaxis=dict(showgrid=False, tickfont=dict(family="DM Sans", size=13, color="#374151"), showline=False),
+            yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%",
+                       tickfont=dict(family="DM Sans", size=12, color="#6b7280")),
+        )
+        fig_eng_json = json.dumps(fig_eng.to_dict(), default=str)
+        components.html(f"""
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
+                    padding:20px 16px 8px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:15px;font-weight:800;color:#111827;
+                        font-family:'DM Sans',sans-serif;letter-spacing:0.3px;
+                        padding:0 4px 12px 4px;border-bottom:1px solid #f3f4f6;
+                        margin-bottom:4px">TAXA DE ENGAJAMENTO (%)</div>
+            <div id="graf_eng"></div>
+        </div>
+        <script>
+            var fig = {fig_eng_json};
+            Plotly.newPlot('graf_eng', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
+        </script>
+        """, height=430)
 
     st.markdown(
         "<div style='margin:28px 0 20px 0;border-top:1px solid #e5e7eb'></div>",
         unsafe_allow_html=True,
     )
-
+    
     # ══════════════════════════════════════════════════════════════════════
     # ABAS POR PERFIL
     # ══════════════════════════════════════════════════════════════════════
