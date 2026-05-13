@@ -2371,48 +2371,86 @@ elif st.session_state.pagina == "redes":
         st.stop()
  
     # ══════════════════════════════════════════════════════════════════════
-    # GRÁFICOS COMPARATIVOS — acima das abas                ← MUDANÇA
+    # GRÁFICOS COMPARATIVOS
     # ══════════════════════════════════════════════════════════════════════
+
     CORES = ["#111827", "#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"]
- 
-    nomes_ok    = [x["nome"]               for x in ok]
-    segs_ok     = [x.get("seguidores", 0)  for x in ok]
-    eng_pct_ok  = [x.get("eng_pct", 0.0)  for x in ok]
-    cores_ok    = [CORES[i % len(CORES)]   for i in range(len(ok))]
- 
-    # Título de seção maior                                 ← MUDANÇA
+
+    nomes_ok    = [x["nome"] for x in ok]
+    segs_ok     = [x.get("seguidores", 0) for x in ok]
+    eng_pct_ok  = [x.get("eng_pct", 0.0) for x in ok]
+    cores_ok    = [CORES[i % len(CORES)] for i in range(len(ok))]
+
+    # ── TÍTULO ─────────────────────────────────────────────
     st.markdown(
-        "<div style='font-size:18px;font-weight:700;color:#111827;"
-        "letter-spacing:-0.2px;margin-bottom:14px'>"
-        "📊 Comparativo com todos os perfis</div>",
+        """
+        <div style="
+            font-size:28px;
+            font-weight:800;
+            color:#111827;
+            font-family:'DM Sans',sans-serif;
+            letter-spacing:-0.5px;
+            margin-bottom:22px;
+            text-transform:uppercase;
+        ">
+            COMPARATIVO COM TODOS OS PERFIS
+        </div>
+        """,
         unsafe_allow_html=True,
     )
- 
+
     col_g1, col_g2 = st.columns(2)
- 
-    # Paleta alinhada ao produto: fundo branco, borda sutil   ← MUDANÇA
+
+    # ── LAYOUT BASE ───────────────────────────────────────
     _layout_base = dict(
-        plot_bgcolor="#ffffff",
+        height=340,
+        margin=dict(t=60, b=40, l=50, r=20),
         paper_bgcolor="#ffffff",
-        margin=dict(t=48, b=24, l=16, r=16),
-        height=280,
-        font=dict(family="DM Sans, sans-serif", color="#374151"),
+        plot_bgcolor="#ffffff",
         showlegend=False,
+        font=dict(
+            family="DM Sans, sans-serif",
+            color="#374151",
+            size=13,
+        ),
+        bargap=0.45,
+        xaxis=dict(
+            showgrid=False,
+            tickfont=dict(
+                family="DM Sans",
+                size=14,
+                color="#374151",
+            ),
+        ),
         yaxis=dict(
             showgrid=True,
             gridcolor="#f3f4f6",
-            gridwidth=1,
             zeroline=False,
-            tickfont=dict(size=12, color="#6b7280"),
+            tickfont=dict(
+                family="DM Sans",
+                size=12,
+                color="#6b7280",
+            ),
         ),
-        xaxis=dict(
-            showgrid=False,
-            tickfont=dict(size=13, color="#374151", family="DM Sans"),
-        ),
-        bargap=0.35,
     )
- 
+
+    # ══════════════════════════════════════════════════════
     with col_g1:
+
+        st.markdown(
+            """
+            <div style="
+                background:#ffffff;
+                border:1px solid #e5e7eb;
+                border-radius:16px;
+                padding:18px;
+                overflow:hidden;
+                box-shadow:0 1px 2px rgba(0,0,0,0.03);
+            ">
+            """,
+            unsafe_allow_html=True,
+        )
+
         fig_seg = go.Figure(
             go.Bar(
                 x=nomes_ok,
@@ -2423,34 +2461,58 @@ elif st.session_state.pagina == "redes":
                 ),
                 text=[fmt_num(s) for s in segs_ok],
                 textposition="outside",
-                textfont=dict(size=13, family="DM Sans", color="#111827"),
                 cliponaxis=False,
+                textfont=dict(
+                    family="DM Sans",
+                    size=15,
+                    color="#111827",
+                ),
             )
         )
+
         fig_seg.update_layout(
             **_layout_base,
             title=dict(
-                text="<b>Seguidores</b>",
-                font=dict(size=15, family="DM Sans", color="#111827"),
+                text="SEGUIDORES",
                 x=0,
                 xanchor="left",
+                font=dict(
+                    family="DM Sans",
+                    size=18,
+                    color="#111827",
+                ),
             ),
         )
-        # Borda arredondada via container                   ← MUDANÇA
-        st.markdown(
-            "<div style='background:#fff;border:1px solid #e5e7eb;"
-            "border-radius:12px;padding:4px 4px 0 4px;overflow:hidden'>",
-            unsafe_allow_html=True,
-        )
+
         st.plotly_chart(
             fig_seg,
             use_container_width=True,
             config={"displayModeBar": False},
             key="graf_seg_global",
         )
+
         st.markdown("</div>", unsafe_allow_html=True)
- 
+
+    # ══════════════════════════════════════════════════════
+    # GRÁFICO ENGAJAMENTO
+    # ══════════════════════════════════════════════════════
+
     with col_g2:
+
+        st.markdown(
+            """
+            <div style="
+                background:#ffffff;
+                border:1px solid #e5e7eb;
+                border-radius:16px;
+                padding:18px;
+                overflow:hidden;
+                box-shadow:0 1px 2px rgba(0,0,0,0.03);
+            ">
+            """,
+            unsafe_allow_html=True,
+        )
+
         fig_eng = go.Figure(
             go.Bar(
                 x=nomes_ok,
@@ -2461,12 +2523,12 @@ elif st.session_state.pagina == "redes":
                 ),
                 text=[f"{v:.2f}%" for v in eng_pct_ok],
                 textposition="outside",
+                cliponaxis=False,
                 textfont=dict(
-                    size=13,
                     family="DM Sans",
+                    size=15,
                     color="#111827",
                 ),
-                cliponaxis=False,
             )
         )
 
@@ -2475,10 +2537,10 @@ elif st.session_state.pagina == "redes":
         layout_eng["yaxis"] = dict(
             showgrid=True,
             gridcolor="#f3f4f6",
-            gridwidth=1,
             zeroline=False,
             ticksuffix="%",
             tickfont=dict(
+                family="DM Sans",
                 size=12,
                 color="#6b7280",
             ),
@@ -2487,21 +2549,15 @@ elif st.session_state.pagina == "redes":
         fig_eng.update_layout(
             **layout_eng,
             title=dict(
-                text="<b>Taxa de Engajamento (%)</b>",
-                font=dict(
-                    size=15,
-                    family="DM Sans",
-                    color="#111827",
-                ),
+                text="TAXA DE ENGAJAMENTO (%)",
                 x=0,
                 xanchor="left",
+                font=dict(
+                    family="DM Sans",
+                    size=18,
+                    color="#111827",
+                ),
             ),
-        )
-
-        st.markdown(
-            "<div style='background:#fff;border:1px solid #e5e7eb;"
-            "border-radius:12px;padding:4px 4px 0 4px;overflow:hidden'>",
-            unsafe_allow_html=True,
         )
 
         st.plotly_chart(
@@ -2512,8 +2568,11 @@ elif st.session_state.pagina == "redes":
         )
 
         st.markdown("</div>", unsafe_allow_html=True)
- 
-    st.markdown("<div style='margin:24px 0 20px 0;border-top:1px solid #e5e7eb'/>", unsafe_allow_html=True)
+
+    st.markdown(
+        "<div style='margin:28px 0 20px 0;border-top:1px solid #e5e7eb'></div>",
+        unsafe_allow_html=True,
+    )
  
     # ══════════════════════════════════════════════════════════════════════
     # ABAS POR PERFIL
