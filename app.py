@@ -1187,22 +1187,21 @@ if st.session_state.pagina == "home":
             background: #2e8bbf !important;
             background-color: #2e8bbf !important;
         }
-
         div[data-testid="stVerticalBlockBorderWrapper"],
         div[data-testid="stVerticalBlockBorderWrapper"] *,
         div[data-testid="stVerticalBlockBorderWrapper"] div,
         div[data-testid="stVerticalBlockBorderWrapper"] > div,
-        div[data-testid="stVerticalBlockBorderWrapper"] > div > div {{
+        div[data-testid="stVerticalBlockBorderWrapper"] > div > div {
             background: #ffffff !important;
             background-color: #ffffff !important;
-        }}
+        }
         div[data-testid="stVerticalBlockBorderWrapper"] input,
         div[data-testid="stVerticalBlockBorderWrapper"] textarea,
         div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div,
-        div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="input"] > div {{
+        div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="input"] > div {
             background: #fafafa !important;
             background-color: #fafafa !important;
-        }}
+        }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
@@ -1329,7 +1328,7 @@ if st.session_state.pagina == "home":
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
 
-        # ── Cabeçalho
+        # ── Cabeçalho com botão alinhado via st.columns
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1344,6 +1343,7 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
         with h2:
+            # Botão Streamlit escondido — necessário para o rerun
             btn_editar = st.button(
                 "Editar Empresa",
                 use_container_width=True,
@@ -1354,35 +1354,37 @@ if st.session_state.pagina == "home":
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # Botão HTML visível com ícone — aciona o botão Streamlit escondido
-        components.html("""
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-        <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { background: transparent; overflow: hidden; height: 40px; }
-        .btn {
-            position: absolute; top: 0; right: 0;
-            background: #3a9fd6; color: #fff; border: none;
-            border-radius: 8px; padding: 10px 18px;
-            font-size: 14px; font-weight: 600; cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-            display: flex; align-items: center; gap: 8px;
-            transition: background 0.15s; white-space: nowrap; line-height: 1;
-        }
-        .btn:hover { background: #2e8bbf; }
-        .btn i { font-size: 13px; }
-        </style>
-        <button class="btn" onclick="
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {
-                if (b.innerText.trim() === 'Editar Empresa') { b.click(); break; }
+            # Botão HTML visível COM ícone, sobreposto via CSS negativo
+            # Renderizado DENTRO do with h2 para ficar na mesma coluna
+            components.html("""
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+            <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+            <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { background: transparent; overflow: hidden; height: 40px; }
+            .btn {
+                position: absolute; top: 0; right: 0; left: 0;
+                background: #3a9fd6; color: #fff; border: none;
+                border-radius: 8px; padding: 10px 18px;
+                font-size: 14px; font-weight: 600; cursor: pointer;
+                font-family: 'DM Sans', sans-serif;
+                display: flex; align-items: center; justify-content: center;
+                gap: 8px; transition: background 0.15s;
+                white-space: nowrap; line-height: 1; width: 100%;
             }
-        ">
-            <i class="fa-solid fa-pen-to-square"></i>
-            Editar Empresa
-        </button>
-        """, height=40)
+            .btn:hover { background: #2e8bbf; }
+            .btn i { font-size: 13px; }
+            </style>
+            <button class="btn" onclick="
+                const btns = window.parent.document.querySelectorAll('button');
+                for (const b of btns) {
+                    if (b.innerText.trim() === 'Editar Empresa') { b.click(); break; }
+                }
+            ">
+                <i class="fa-solid fa-pen-to-square"></i>
+                Editar Empresa
+            </button>
+            """, height=40)
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:12px 0 20px 0'/>",
@@ -1399,10 +1401,7 @@ if st.session_state.pagina == "home":
             if emp["servicos"] else "<span style='color:#9ca3af;font-size:14px'>—</span>"
         )
 
-        n_servicos = len(emp["servicos"])
-        linhas_tags = max(1, -(-n_servicos // 3)) if n_servicos > 0 else 1
-        altura_card = 280 + (linhas_tags * 36)
-
+        # Card com altura auto-ajustável via JS — sem scrollbar, sem corte
         components.html(f"""
 <!DOCTYPE html>
 <html>
@@ -1410,11 +1409,15 @@ if st.session_state.pagina == "home":
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-html, body {{
+html {{
     background: transparent;
     font-family: 'DM Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
+}}
+body {{
+    background: transparent;
     overflow: hidden;
+    padding-bottom: 2px;
 }}
 .empresa-card {{
     background: #fff;
@@ -1485,7 +1488,7 @@ html, body {{
     font-size: 13px; font-weight: 500;
 }}
 
-@media (max-width: 768px) {{
+@media (max-width: 700px) {{
     .empresa-grid {{ grid-template-columns: 1fr !important; }}
     .empresa-divider {{ display: none !important; }}
     .empresa-col {{
@@ -1502,7 +1505,7 @@ html, body {{
 </style>
 </head>
 <body>
-<div class="empresa-card">
+<div class="empresa-card" id="card">
 
     <svg class="empresa-card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
         <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
@@ -1599,9 +1602,27 @@ html, body {{
         </div>
     </div>
 </div>
+
+<script>
+    // Ajusta altura do iframe pai para exatamente o tamanho do card
+    function ajustarAltura() {{
+        const card = document.getElementById('card');
+        const h = card.getBoundingClientRect().height;
+        window.parent.document.querySelectorAll('iframe').forEach(function(iframe) {{
+            if (iframe.contentWindow === window) {{
+                iframe.style.height = (h + 4) + 'px';
+            }}
+        }});
+    }}
+    // Roda após render e após fontes carregarem
+    document.addEventListener('DOMContentLoaded', ajustarAltura);
+    window.addEventListener('load', ajustarAltura);
+    // Garante ajuste se layout mudar (resize de janela)
+    window.addEventListener('resize', ajustarAltura);
+</script>
 </body>
 </html>
-        """, height=altura_card, scrolling=False)
+        """, height=320, scrolling=False)
 
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
