@@ -1188,7 +1188,6 @@ if st.session_state.pagina == "home":
             background-color: #2e8bbf !important;
         }
 
-        /* FIX — fundo branco no container de edição */
         div[data-testid="stVerticalBlockBorderWrapper"],
         div[data-testid="stVerticalBlockBorderWrapper"] *,
         div[data-testid="stVerticalBlockBorderWrapper"] div,
@@ -1197,7 +1196,6 @@ if st.session_state.pagina == "home":
             background: #ffffff !important;
             background-color: #ffffff !important;
         }
-        /* Garante que inputs e selects não herdem o cinza */
         div[data-testid="stVerticalBlockBorderWrapper"] input,
         div[data-testid="stVerticalBlockBorderWrapper"] textarea,
         div[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div,
@@ -1311,40 +1309,121 @@ if st.session_state.pagina == "home":
 
         st.markdown("""
         <style>
-        /* Esconde o botão Streamlit real */
-        .st-key-btn_editar_empresa {
-            display: none !important;
-        }
+        .st-key-btn_editar_empresa { display: none !important; }
 
-        /* Botão primário azul */
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
             background: #3a9fd6 !important;
-            background-color: #3a9fd6 !important;
             color: #ffffff !important;
             border: none !important;
             font-size: 14px !important;
             font-weight: 600 !important;
         }
 
-        /* FIX scrollbar — remove padding inferior e anchor de resize */
         section.main .block-container {
             padding-bottom: 0 !important;
             margin-bottom: 0 !important;
         }
-        [data-testid="stAppIframeResizerAnchor"] {
-            display: none !important;
+        [data-testid="stAppIframeResizerAnchor"] { display: none !important; }
+
+        /* ── Card empresa ── */
+        .empresa-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 12px;
+            font-family: 'DM Sans', sans-serif;
         }
-        /* Remove margem extra do último elemento */
-        section.main .block-container > div:last-child {
-            margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
+        .empresa-card-deco {
+            position: absolute;
+            top: 0; right: 0;
+            width: 260px; height: 110px;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+        .empresa-card-body { padding: 24px 28px; }
+        .empresa-top {
+            display: flex; align-items: center; gap: 16px;
+            margin-bottom: 20px; padding-bottom: 18px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .empresa-avatar {
+            width: 52px; height: 52px; min-width: 52px;
+            border-radius: 50%; background: #111827;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .empresa-nome {
+            font-size: 20px; font-weight: 700; color: #111827;
+            margin-bottom: 2px; letter-spacing: -0.3px;
+        }
+        .empresa-sub { font-size: 13px; color: #9ca3af; }
+        .empresa-grid {
+            display: grid;
+            grid-template-columns: 1fr 1px 1fr 1px 1fr;
+            gap: 0;
+        }
+        .empresa-divider {
+            background: #f0f0f0;
+            margin: 0 24px;
+            align-self: stretch;
+        }
+        .empresa-col { padding: 0 4px; }
+        .empresa-sec-title {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            color: #9ca3af; margin-bottom: 14px;
+            padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
+        }
+        .empresa-row {
+            display: flex; align-items: flex-start;
+            gap: 10px; margin-bottom: 12px;
+        }
+        .empresa-ico {
+            width: 36px; height: 36px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: #f3f4f6; border-radius: 9px;
+        }
+        .empresa-ico svg { width: 18px; height: 18px; }
+        .empresa-lbl {
+            font-size: 11px; color: #9ca3af;
+            display: block; margin-bottom: 1px;
+        }
+        .empresa-val {
+            font-size: 14px; color: #111827; font-weight: 600;
+        }
+        .empresa-tags-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+        .empresa-tag {
+            background: #eff6ff; color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 13px; font-weight: 500;
+        }
+
+        /* ── Responsivo ── */
+        @media (max-width: 768px) {
+            .empresa-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .empresa-divider { display: none !important; }
+            .empresa-col {
+                padding: 16px 0 0 0 !important;
+                border-top: 1px solid #f3f4f6;
+            }
+            .empresa-col:first-child {
+                padding-top: 0 !important;
+                border-top: none;
+            }
+            .empresa-card-deco { display: none; }
+            .empresa-card-body { padding: 20px 18px; }
         }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
 
-        # Cabeçalho — título e botão alinhados na mesma linha
+        # ── Cabeçalho
         h1, h2 = st.columns([8, 2])
         with h1:
             st.markdown(
@@ -1359,42 +1438,31 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
         with h2:
-            # Botão real do Streamlit — escondido via CSS, necessário para o rerun
-            btn_editar = st.button("Editar Empresa", use_container_width=True, type="primary", key="btn_editar_empresa")
+            btn_editar = st.button(
+                "Editar Empresa",
+                use_container_width=True,
+                type="primary",
+                key="btn_editar_empresa",
+            )
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-        # Botão HTML visível — alinhado ao topo da coluna h2
+        # Botão HTML visível com ícone — aciona o botão Streamlit escondido
         components.html("""
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
-            background: transparent;
-            overflow: hidden;
-            height: 40px;
-        }
+        html, body { background: transparent; overflow: hidden; height: 40px; }
         .btn {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: #3a9fd6;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 18px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
+            position: absolute; top: 0; right: 0;
+            background: #3a9fd6; color: #fff; border: none;
+            border-radius: 8px; padding: 10px 18px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
             font-family: 'DM Sans', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.15s;
-            white-space: nowrap;
-            line-height: 1;
+            display: flex; align-items: center; gap: 8px;
+            transition: background 0.15s; white-space: nowrap; line-height: 1;
         }
         .btn:hover { background: #2e8bbf; }
         .btn i { font-size: 13px; }
@@ -1415,138 +1483,116 @@ if st.session_state.pagina == "home":
             unsafe_allow_html=True,
         )
 
-        # ── Dados do card
+        # ── Dados
         avatar = gerar_avatar(emp["nome"])
         loc = emp["cidade"] or ""
         if emp["estado"]:
             loc += (", " if loc else "") + emp["estado"]
-        servicos_col_html = (
-            "".join([f"<div class='tag'>{s}</div>" for s in emp["servicos"]])
+        servicos_html = (
+            "".join([f"<span class='empresa-tag'>{s}</span>" for s in emp["servicos"]])
             if emp["servicos"] else "<span style='color:#9ca3af;font-size:14px'>—</span>"
         )
 
-        card_html = f"""<!DOCTYPE html>
-<html>
-<head>
-{CARD_FONT_IMPORT}
-<style>
-{CARD_CSS}
-body {{ padding: 0; margin: 0; overflow: hidden; }}
-.card {{
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    overflow: hidden;
-    position: relative;
-}}
-.card-deco {{
-    position: absolute;
-    top: 0; right: 0;
-    width: 260px; height: 110px;
-    pointer-events: none;
-    opacity: 0.4;
-}}
-.card-body {{ padding: 24px 28px 24px 28px; }}
-.top {{
-    display: flex; align-items: center; gap: 16px;
-    margin-bottom: 20px; padding-bottom: 18px;
-    border-bottom: 1px solid #f3f4f6;
-    position: relative;
-}}
-.avatar {{
-    width: 52px; height: 52px; min-width: 52px;
-    border-radius: 50%; background: #111827;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
-}}
-.nome {{ font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 2px; letter-spacing: -0.3px; }}
-.sub  {{ font-size: 13px; color: #9ca3af; }}
-.grid {{
-    display: grid;
-    grid-template-columns: 1fr 1px 1fr 1px 1fr;
-    gap: 0;
-}}
-.divider-col {{ background: #f0f0f0; margin: 0 24px; align-self: stretch; }}
-.col {{ padding: 0 4px; }}
-.sec-title {{
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 1.2px; color: #9ca3af;
-    margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
-}}
-.row {{ display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }}
-.ico {{
-    width: 36px; height: 36px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: #f3f4f6; border-radius: 9px;
-}}
-.ico svg {{ width: 18px; height: 18px; }}
-.lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 1px; }}
-.val {{ font-size: 14px; color: #111827; font-weight: 600; }}
-.tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-.tag {{
-    background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
-    padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
-}}
-</style>
-</head>
-<body>
-<div class="card">
-  <svg class="card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
-    <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
-    <circle cx="170" cy="50" r="3.5" fill="#60a5fa"/>
-    <circle cx="238" cy="26" r="3.5" fill="#60a5fa"/>
-    <circle cx="254" cy="16" r="4" fill="#3b82f6"/>
-    <rect x="185" y="58" width="11" height="38" rx="3" fill="#93c5fd" opacity="0.5"/>
-    <rect x="202" y="46" width="11" height="50" rx="3" fill="#60a5fa" opacity="0.6"/>
-    <rect x="219" y="33" width="11" height="63" rx="3" fill="#3b82f6" opacity="0.68"/>
-    <rect x="236" y="20" width="11" height="76" rx="3" fill="#2563eb" opacity="0.75"/>
-  </svg>
-  <div class="card-body">
-    <div class="top">
-      <div class="avatar">{avatar}</div>
-      <div>
-        <div class="nome">{emp['nome']}</div>
-        <div class="sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
-      </div>
-    </div>
-    <div class="grid">
-      <div class="col">
-        <div class="sec-title">Presença Digital</div>
-        <div class="row">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg></span>
-          <div><span class="lbl">Instagram</span><span class="val">{emp['instagram'] or '—'}</span></div>
-        </div>
-        <div class="row">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></span>
-          <div><span class="lbl">Facebook</span><span class="val">{emp['fb_page'] or '—'}</span></div>
-        </div>
-        <div class="row">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
-          <div><span class="lbl">Site</span><span class="val">{emp['site'] or '—'}</span></div>
-        </div>
-      </div>
-      <div class="divider-col"></div>
-      <div class="col">
-        <div class="sec-title">Localização</div>
-        <div class="row">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-          <div><span class="lbl">Cidade / Estado</span><span class="val">{loc or '—'}</span></div>
-        </div>
-      </div>
-      <div class="divider-col"></div>
-      <div class="col">
-        <div class="sec-title">Serviços</div>
-        <div class="tags-wrap">{servicos_col_html}</div>
-      </div>
-    </div>
-  </div>
-</div>
-</body></html>"""
+        st.markdown(f"""
+        <div class="empresa-card">
 
-        n_servicos = len(emp["servicos"])
-        linhas_tags = max(1, -(-n_servicos // 2)) if n_servicos > 0 else 1
-        altura = 260 + (linhas_tags * 44)
-        components.html(card_html, height=altura, scrolling=False)
+            <svg class="empresa-card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
+                <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+                <circle cx="170" cy="50" r="3.5" fill="#60a5fa"/>
+                <circle cx="238" cy="26" r="3.5" fill="#60a5fa"/>
+                <circle cx="254" cy="16" r="4" fill="#3b82f6"/>
+                <rect x="185" y="58" width="11" height="38" rx="3" fill="#93c5fd" opacity="0.5"/>
+                <rect x="202" y="46" width="11" height="50" rx="3" fill="#60a5fa" opacity="0.6"/>
+                <rect x="219" y="33" width="11" height="63" rx="3" fill="#3b82f6" opacity="0.68"/>
+                <rect x="236" y="20" width="11" height="76" rx="3" fill="#2563eb" opacity="0.75"/>
+            </svg>
+
+            <div class="empresa-card-body">
+
+                <div class="empresa-top">
+                    <div class="empresa-avatar">{avatar}</div>
+                    <div>
+                        <div class="empresa-nome">{emp['nome']}</div>
+                        <div class="empresa-sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
+                    </div>
+                </div>
+
+                <div class="empresa-grid">
+
+                    <div class="empresa-col">
+                        <div class="empresa-sec-title">Presença Digital</div>
+                        <div class="empresa-row">
+                            <span class="empresa-ico">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <defs><linearGradient id="ig_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#f09433"/>
+                                        <stop offset="100%" stop-color="#bc1888"/>
+                                    </linearGradient></defs>
+                                    <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_grad)"/>
+                                    <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                                    <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="empresa-lbl">Instagram</span>
+                                <span class="empresa-val">{emp['instagram'] or '—'}</span>
+                            </div>
+                        </div>
+                        <div class="empresa-row">
+                            <span class="empresa-ico">
+                                <svg viewBox="0 0 24 24" fill="#1877F2">
+                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="empresa-lbl">Facebook</span>
+                                <span class="empresa-val">{emp['fb_page'] or '—'}</span>
+                            </div>
+                        </div>
+                        <div class="empresa-row">
+                            <span class="empresa-ico">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="2" y1="12" x2="22" y2="12"/>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="empresa-lbl">Site</span>
+                                <span class="empresa-val">{emp['site'] or '—'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empresa-divider"></div>
+
+                    <div class="empresa-col">
+                        <div class="empresa-sec-title">Localização</div>
+                        <div class="empresa-row">
+                            <span class="empresa-ico">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="empresa-lbl">Cidade / Estado</span>
+                                <span class="empresa-val">{loc or '—'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empresa-divider"></div>
+
+                    <div class="empresa-col">
+                        <div class="empresa-sec-title">Serviços</div>
+                        <div class="empresa-tags-wrap">{servicos_html}</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
