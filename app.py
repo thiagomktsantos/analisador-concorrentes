@@ -2451,49 +2451,69 @@ elif st.session_state.pagina == "redes":
         st.markdown("</div>", unsafe_allow_html=True)
  
     with col_g2:
-        fig_eng = go.Figure(
-            go.Bar(
-                x=nomes_ok,
-                y=eng_pct_ok,
-                marker=dict(
-                    color=cores_ok,
-                    line=dict(width=0),
-                ),
-                text=[f"{v:.2f}%" for v in eng_pct_ok],
-                textposition="outside",
-                textfont=dict(size=13, family="DM Sans", color="#111827"),
-                cliponaxis=False,
-            )
-        )
-        fig_eng.update_layout(
-            **_layout_base,
-            title=dict(
-                text="<b>Taxa de Engajamento (%)</b>",
-                font=dict(size=15, family="DM Sans", color="#111827"),
-                x=0,
-                xanchor="left",
+
+    fig_eng = go.Figure(
+        go.Bar(
+            x=nomes_ok,
+            y=eng_pct_ok,
+            marker=dict(
+                color=cores_ok,
+                line=dict(width=0),
             ),
-            yaxis=dict(
-                showgrid=True,
-                gridcolor="#f3f4f6",
-                gridwidth=1,
-                zeroline=False,
-                ticksuffix="%",
-                tickfont=dict(size=12, color="#6b7280"),
+            text=[f"{v:.2f}%" for v in eng_pct_ok],
+            textposition="outside",
+            textfont=dict(
+                size=13,
+                family="DM Sans",
+                color="#111827",
             ),
+            cliponaxis=False,
         )
-        st.markdown(
-            "<div style='background:#fff;border:1px solid #e5e7eb;"
-            "border-radius:12px;padding:4px 4px 0 4px;overflow:hidden'>",
-            unsafe_allow_html=True,
-        )
-        st.plotly_chart(
-            fig_eng,
-            use_container_width=True,
-            config={"displayModeBar": False},
-            key="graf_eng_global",
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+    )
+
+    # evita conflito de yaxis no update_layout
+    layout_eng = _layout_base.copy()
+
+    layout_eng["yaxis"] = dict(
+        showgrid=True,
+        gridcolor="#f3f4f6",
+        gridwidth=1,
+        zeroline=False,
+        ticksuffix="%",
+        tickfont=dict(
+            size=12,
+            color="#6b7280",
+        ),
+    )
+
+    fig_eng.update_layout(
+        **layout_eng,
+        title=dict(
+            text="<b>Taxa de Engajamento (%)</b>",
+            font=dict(
+                size=15,
+                family="DM Sans",
+                color="#111827",
+            ),
+            x=0,
+            xanchor="left",
+        ),
+    )
+
+    st.markdown(
+        "<div style='background:#fff;border:1px solid #e5e7eb;"
+        "border-radius:12px;padding:4px 4px 0 4px;overflow:hidden'>",
+        unsafe_allow_html=True,
+    )
+
+    st.plotly_chart(
+        fig_eng,
+        use_container_width=True,
+        config={"displayModeBar": False},
+        key="graf_eng_global",
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
  
     st.markdown("<div style='margin:24px 0 20px 0;border-top:1px solid #e5e7eb'/>", unsafe_allow_html=True)
  
