@@ -2555,13 +2555,54 @@ elif st.session_state.pagina == "redes":
             posts_list = r.get("posts", [])
  
             # ── INFORMAÇÕES DE PERFIL
-            st.markdown(
-                "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                "text-transform:uppercase;margin-bottom:10px;"
-                "font-family:\"Source Sans\",sans-serif'>"
-                "Informações de Perfil</div>",
-                unsafe_allow_html=True,
-            )
+            components.html(f"""
+            <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+            <style>
+            * {{ margin:0; padding:0; box-sizing:border-box; }}
+            html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; overflow: hidden; }}
+            .header {{
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding-bottom: 16px;
+                border-bottom: 1px solid #e5e7eb;
+                margin-bottom: 4px;
+            }}
+            .avatar {{
+                width: 52px; height: 52px;
+                border-radius: 50%;
+                background: {cor};
+                display: flex; align-items: center; justify-content: center;
+                font-size: 18px; font-weight: 700; color: #fff;
+                flex-shrink: 0;
+            }}
+            .nome {{
+                font-size: 20px; font-weight: 700; color: #111827;
+                letter-spacing: -0.3px;
+            }}
+            .handle {{
+                font-size: 14px; font-weight: 400; color: #9ca3af; margin-left: 6px;
+            }}
+            .badge {{
+                display: inline-block;
+                background: {badge_bg};
+                color: {badge_txt};
+                border: 1px solid {badge_brd};
+                padding: 2px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                margin-top: 4px;
+            }}
+            </style>
+            <div class="header">
+                <div class="avatar">{gerar_avatar(r["nome"])}</div>
+                <div>
+                    <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
+                    <div class="badge">{badge_lbl}</div>
+                </div>
+            </div>
+            """, height=80, scrolling=False)
  
             col_metricas, col_bio = st.columns([1, 1])
  
