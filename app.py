@@ -2831,7 +2831,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     div[data-testid="column"]:last-child .stVerticalBlock { gap: 0.25rem !important; }
                     </style>
                     <div style='font-size:18px;font-weight:700;color:#1a2e4a;
-                    text-transform:uppercase;margin-bottom:0;margin-top:0;
+                    text-transform:uppercase;margin-bottom:-1;margin-top:0;
                     font-family:"Source Sans",sans-serif'>
                     Análise de IA</div>
                     """,
@@ -2961,7 +2961,6 @@ Seja direto e objetivo.
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
-                html, body {{ margin-top: -1rem !important; }}
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
                 .card {{
