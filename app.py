@@ -2825,13 +2825,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
                     unsafe_allow_html=True,
                 )
-                st.markdown(
-                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;margin-top:0;"
-                    "font-family:\"Source Sans 3\",\"Source Sans Pro\",sans-serif;letter-spacing:0.3px'>"
-                    "Análise de IA</div>",
-                    unsafe_allow_html=True,
-                )
 
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
@@ -2860,6 +2853,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
+                # Botões Streamlit ocultos — acionados via JS
                 st.markdown(f"""
                 <style>
                 .st-key-btn_criativo_{idx} {{ display:none !important; }}
@@ -2954,15 +2948,13 @@ Seja direto e objetivo.
                                     st.session_state[chave_geral] = f"Erro: {e}"
 
                 components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{
                     background: transparent;
                     font-family: 'DM Sans', sans-serif;
                     -webkit-font-smoothing: antialiased;
-                    margin: 0 !important;
-                    padding: 0 !important;
                 }}
                 .card {{
                     background: #ffffff;
@@ -2970,16 +2962,27 @@ Seja direto e objetivo.
                     border-radius: 12px;
                     overflow: hidden;
                 }}
+                .card-header {{
+                    padding: 16px 16px 14px 16px;
+                    border-bottom: 1px solid #f3f4f6;
+                    background: #ffffff;
+                }}
+                .card-title {{
+                    font-size: 18px;
+                    font-weight: 800;
+                    color: #1a2e4a;
+                    text-transform: uppercase;
+                    letter-spacing: 0.3px;
+                    font-family: 'DM Sans', sans-serif;
+                    margin-bottom: 10px;
+                }}
                 .btn-row {{
                     display: flex;
                     gap: 8px;
-                    padding: 12px 16px;
-                    background: #ffffff;
-                    border-bottom: 1px solid #f3f4f6;
                 }}
                 .btn-ia {{
                     flex: 1;
-                    padding: 9px 0;
+                    padding: 8px 0;
                     border: 1px solid #e5e7eb;
                     border-radius: 8px;
                     background: #ffffff;
@@ -2988,11 +2991,13 @@ Seja direto e objetivo.
                     color: #374151;
                     cursor: pointer;
                     font-family: 'DM Sans', sans-serif;
-                    transition: background 0.15s, color 0.15s;
+                    transition: background 0.15s, color 0.15s, border-color 0.15s;
+                    white-space: nowrap;
                 }}
                 .btn-ia:hover {{
                     background: #f3f4f6;
                     color: #111827;
+                    border-color: #9ca3af;
                 }}
                 .tabs {{
                     display: flex;
@@ -3036,10 +3041,14 @@ Seja direto e objetivo.
                 </style>
 
                 <div class="card">
-                    <div class="btn-row">
-                        <button class="btn-ia" onclick="clickSt('criativo')">Analisar Criativos</button>
-                        <button class="btn-ia" onclick="clickSt('copy')">Analisar Copys</button>
-                        <button class="btn-ia" onclick="clickSt('geral')">Análise Geral</button>
+
+                    <div class="card-header">
+                        <div class="card-title">Análise de IA</div>
+                        <div class="btn-row">
+                            <button class="btn-ia" onclick="clickSt('criativo')">Analisar Criativos</button>
+                            <button class="btn-ia" onclick="clickSt('copy')">Analisar Copys</button>
+                            <button class="btn-ia" onclick="clickSt('geral')">Análise Geral</button>
+                        </div>
                     </div>
 
                     <div class="tabs">
