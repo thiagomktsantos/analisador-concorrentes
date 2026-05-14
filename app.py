@@ -2889,7 +2889,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 col_b1, col_b2, col_b3 = st.columns(3)
                 with col_b1:
-                    if st.button("Gerar Criativo", key=f"btn_criativo_{idx}", use_container_width=True):
+                    if st.button("Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
                         if gemini_model is None:
                             st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
                         else:
@@ -2912,7 +2912,7 @@ Seja direto e objetivo.
                                 except Exception as e:
                                     st.session_state[chave_criativo] = f"Erro: {e}"
                 with col_b2:
-                    if st.button("Gerar Copy", key=f"btn_copy_{idx}", use_container_width=True):
+                    if st.button("Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
                         if gemini_model is None:
                             st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
                         else:
@@ -2935,7 +2935,7 @@ Seja direto e objetivo.
                                 except Exception as e:
                                     st.session_state[chave_copy] = f"Erro: {e}"
                 with col_b3:
-                    if st.button("Gerar Geral", key=f"btn_geral_{idx}", use_container_width=True):
+                    if st.button("Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
                         if gemini_model is None:
                             st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
                         else:
