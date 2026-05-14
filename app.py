@@ -3033,7 +3033,7 @@ Seja direto e objetivo.
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
             geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
  
-            ia_height = 220 if (criativo_html or copy_html or geral_html) else 80
+            ia_height = 320 if (criativo_html or copy_html or geral_html) else 80
  
             components.html(f"""
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -3053,7 +3053,7 @@ Seja direto e objetivo.
             .result {{
                 background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
                 padding:12px 14px; font-size:13px; color:#374151; line-height:1.7;
-                max-height:150px; overflow-y:auto;
+                max-height:240px; overflow-y:auto;
             }}
             .empty {{ padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }}
             </style>
