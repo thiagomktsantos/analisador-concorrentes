@@ -2609,26 +2609,6 @@ elif st.session_state.pagina == "redes":
             with col_metricas:
                 st.markdown(f"""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px'>
-                    <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;
-                                padding-bottom:14px;border-bottom:1px solid #f3f4f6'>
-                        <div style='width:42px;height:42px;border-radius:50%;background:{cor};
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>
-                            {gerar_avatar(r["nome"])}
-                        </div>
-                        <div style='flex:1'>
-                            <div style='font-size:15px;font-weight:700;color:#111827'>
-                                {r["nome"]}
-                                <span style='font-size:12px;font-weight:400;color:#9ca3af'>{r.get("handle","")}</span>
-                            </div>
-                            <div style='margin-top:4px;display:flex;gap:6px;flex-wrap:wrap'>
-                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
-                                             padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>
-                                    {badge_lbl}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
                     <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
                         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                                     display:flex;flex-direction:column;align-items:center;text-align:center'>
