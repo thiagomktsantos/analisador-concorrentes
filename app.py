@@ -2626,7 +2626,7 @@ elif st.session_state.pagina == "redes":
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
  
-                # ── CAIXA BIO  (título no mesmo estilo de "Últimas 3 Postagens")
+                # ── CAIXA BIO  
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
@@ -2663,7 +2663,7 @@ elif st.session_state.pagina == "redes":
                         </div>
                     </div>
                 </div>
-                """, height=218, scrolling=False)
+                """, height=178, scrolling=False)
  
                 # CSS para esconder o botão fantasma da bio (mantém funcional mas invisível)
                 st.markdown(f"""
