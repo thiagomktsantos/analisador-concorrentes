@@ -417,7 +417,7 @@ section.main { background: #f0f4f8 !important; }
     margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb;
 }
 .page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; font-family: 'Animo', 'DM Sans', sans-serif; }
-.page-subtitle { font-size: 14px; color: #6b7280; margin-top: 3px; }
+.page-subtitle { font-size: 16px; color: #6b7280; margin-top: 3px; }
 
 /* ── BOTÕES PADRÃO (secundário) ── */
 section.main div.stButton > button {
@@ -1103,7 +1103,7 @@ def cabecalho_analise(titulo, subtitulo=""):
             unsafe_allow_html=True
         )
         if subtitulo:
-            st.markdown(f"<div style='font-size:14px;color:#6b7280;margin-top:3px'>{subtitulo}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:16px;color:#6b7280;margin-top:3px'>{subtitulo}</div>", unsafe_allow_html=True)
     with h2:
         periodo = st.selectbox(
             "Período",
@@ -1167,7 +1167,7 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
             st.markdown(
-                "<p style='font-size:14px;color:#6b7280;margin:0'>"
+                "<p style='font-size:16px;color:#6b7280;margin:0'>"
                 "Gerencie as informações e tenha uma visão geral da sua empresa.</p>",
                 unsafe_allow_html=True,
             )
@@ -1308,7 +1308,7 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
             st.markdown(
-                "<p style='font-size:14px;color:#6b7280;margin:3px 0 0 0'>"
+                "<p style='font-size:16px;color:#6b7280'>"
                 "Gerencie as informações e tenha uma visão geral da sua empresa.</p>",
                 unsafe_allow_html=True,
             )
@@ -1645,7 +1645,7 @@ elif st.session_state.pagina == "cad":
         st.markdown("""
         <div>
             <h1 style='font-size:28px;font-weight:700;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>Concorrentes</h1>
-            <p style='font-size:14px;color:#6b7280;margin:0'>Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</p>
+            <p style='font-size:16px;color:#6b7280;margin:0'>Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</p>
         </div>
         """, unsafe_allow_html=True)
     with top2:
@@ -2206,7 +2206,7 @@ elif st.session_state.pagina == "redes":
             unsafe_allow_html=True,
         )
         st.markdown(
-            "<div style='font-size:14px;color:#6b7280;'>"
+            "<div style='font-size:16px;color:#6b7280;'>"
             "Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>",
             unsafe_allow_html=True,
         )
