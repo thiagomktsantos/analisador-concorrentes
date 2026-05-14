@@ -2763,7 +2763,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         img_html = (
                             f'<img src="{thumb}" style="width:100%;aspect-ratio:1;border-radius:8px;'
                             f'object-fit:cover;border:1px solid #e5e7eb;display:block;" '
-                            f'onerror="this.style.display=\'none\'" />\'
+                            f'onerror="this.style.display=\'none\'" />'
                         ) if thumb else (
                             f'<div style="width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;'
                             f'display:flex;align-items:center;justify-content:center;'
