@@ -2736,24 +2736,24 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     </div>
                     """, unsafe_allow_html=True)
  
-# ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
-
             st.markdown(
                 "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
                 unsafe_allow_html=True,
             )
 
-            col_posts, col_ia = st.columns([3, 2])
+# ── ÚLTIMAS 3 POSTAGENS + TABELA (linha 1)
+
+            st.markdown(
+                "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                "text-transform:uppercase;margin-bottom:14px;"
+                "font-family:\"Source Sans\",sans-serif'>"
+                "Últimas 3 Postagens</div>",
+                unsafe_allow_html=True,
+            )
+
+            col_posts, col_table = st.columns(2)
 
             with col_posts:
-                st.markdown(
-                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;margin-top:0;"
-                    "font-family:\"Source Sans\",sans-serif'>"
-                    "Últimas 3 Postagens</div>",
-                    unsafe_allow_html=True,
-                )
-
                 if not posts_list:
                     posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
                 else:
@@ -2775,6 +2775,18 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         </div>"""
                     posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
 
+                components.html(f"""
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <style>
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
+                body {{ padding-bottom: 4px; }}
+                .card {{ background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }}
+                </style>
+                <div class="card">{posts_html}</div>
+                """, height=240, scrolling=False)
+
+            with col_table:
                 df_posts_rows = ""
                 for p in posts_list:
                     df_posts_rows += f"""
@@ -2784,122 +2796,52 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         <td>{p.get('likes',0)}</td>
                         <td>{p.get('comments',0)}</td>
                         <td>{p.get('likes',0)+p.get('comments',0)}</td>
-                        <td style='max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>{p.get('caption','')[:60]}</td>
+                        <td style='max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>{p.get('caption','')[:60]}</td>
                     </tr>"""
 
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{
-                    background: transparent;
-                    font-family: 'DM Sans', sans-serif;
-                    -webkit-font-smoothing: antialiased;
-                }}
-                body {{ padding-bottom: 4px; }}
-                .card {{
-                    background: #ffffff;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin-bottom: 8px;
-                }}
-                .ver-todos {{
-                    border: 1px solid #e5e7eb;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    background: #ffffff;
-                }}
-                summary {{
-                    padding: 14px 16px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #374151;
-                    list-style: none;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: #ffffff;
-                    user-select: none;
-                }}
-                summary::-webkit-details-marker {{ display: none; }}
-                summary::before {{
-                    content: '›';
-                    font-size: 18px;
-                    transition: transform 0.2s;
-                    display: inline-block;
-                    line-height: 1;
-                }}
-                details[open] summary::before {{ transform: rotate(90deg); }}
-                details[open] summary {{
-                    border-bottom: 1px solid #e5e7eb;
-                }}
-                .table-wrap {{
-                    max-height: 220px;
-                    overflow-y: auto;
-                }}
-                table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 13px;
-                }}
-                th {{
-                    background: #f9fafb;
-                    color: #6b7280;
-                    font-weight: 600;
-                    padding: 10px 12px;
-                    text-align: left;
-                    border-bottom: 1px solid #e5e7eb;
-                    font-size: 12px;
-                    position: sticky;
-                    top: 0;
-                }}
-                td {{
-                    padding: 10px 12px;
-                    border-bottom: 1px solid #f3f4f6;
-                    color: #374151;
-                    background: #ffffff;
-                }}
-                tr:last-child td {{ border-bottom: none; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
+                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+                .header {{ padding:14px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .table-wrap {{ max-height:185px; overflow-y:auto; }}
+                table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+                th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 12px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:12px; position:sticky; top:0; }}
+                td {{ padding:9px 12px; border-bottom:1px solid #f3f4f6; color:#374151; background:#ffffff; }}
+                tr:last-child td {{ border-bottom:none; }}
                 </style>
-
-                <div class="card">
-                    {posts_html}
-                </div>
-
-                <details class="ver-todos">
-                    <summary>Ver todos os posts</summary>
+                <div class="wrap">
+                    <div class="header">Ver todos os posts</div>
                     <div class="table-wrap">
                         <table>
-                            <thead>
-                                <tr>
-                                    <th>Data</th><th>Tipo</th><th>Curtidas</th>
-                                    <th>Comentários</th><th>Eng. total</th><th>Legenda</th>
-                                </tr>
-                            </thead>
-                            <tbody>{df_posts_rows}</tbody>
+                            <thead><tr>
+                                <th>Data</th><th>Tipo</th><th>❤️</th><th>💬</th><th>Eng.</th><th>Legenda</th>
+                            </tr></thead>
+                            <tbody>{df_posts_rows if df_posts_rows else '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px">Sem posts</td></tr>'}</tbody>
                         </table>
                     </div>
-                </details>
-                """, height=500 if posts_list else 100, scrolling=False)
+                </div>
+                """, height=240, scrolling=False)
 
-            with col_ia:
+            # ── ANÁLISE DE IA (linha 2, largura total)
+            st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
 
-                chave_criativo = f"ia_criativo_{r['handle']}"
-                chave_copy     = f"ia_copy_{r['handle']}"
-                chave_geral    = f"ia_geral_{r['handle']}"
-                for ch in [chave_criativo, chave_copy, chave_geral]:
-                    if ch not in st.session_state:
-                        st.session_state[ch] = ""
+            chave_criativo = f"ia_criativo_{r['handle']}"
+            chave_copy     = f"ia_copy_{r['handle']}"
+            chave_geral    = f"ia_geral_{r['handle']}"
+            for ch in [chave_criativo, chave_copy, chave_geral]:
+                if ch not in st.session_state:
+                    st.session_state[ch] = ""
 
-                resumo_posts = "\n".join([
-                    f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
-                    f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
-                    for p in posts_list[:12]
-                ]) if posts_list else "Sem posts disponíveis."
+            resumo_posts = "\n".join([
+                f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
+                f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+                for p in posts_list[:12]
+            ]) if posts_list else "Sem posts disponíveis."
 
-                perfil_ctx = f"""
+            perfil_ctx = f"""
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
 Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
@@ -2907,43 +2849,29 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 {resumo_posts}
 """
 
-                criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
-                copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
-                geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
+            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
+            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
+            geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
 
-                vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
+            vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
-                st.markdown(f"""
-                <style>
-                .st-key-btn_criativo_{idx} {{ display:none !important; }}
-                .st-key-btn_copy_{idx} {{ display:none !important; }}
-                .st-key-btn_geral_{idx} {{ display:none !important; }}
-                .st-key-btn_criativo_{idx},
-                .st-key-btn_copy_{idx},
-                .st-key-btn_geral_{idx} {{
-                    height: 0 !important;
-                    min-height: 0 !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    overflow: hidden !important;
-                }}
-                div[data-testid="column"]:has(.st-key-btn_criativo_{idx}),
-                div[data-testid="column"]:has(.st-key-btn_copy_{idx}),
-                div[data-testid="column"]:has(.st-key-btn_geral_{idx}) {{
-                    display: none !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <style>
+            .st-key-btn_criativo_{idx} {{ display:none !important; }}
+            .st-key-btn_copy_{idx} {{ display:none !important; }}
+            .st-key-btn_geral_{idx} {{ display:none !important; }}
+            </style>
+            """, unsafe_allow_html=True)
 
-                col_b1, col_b2, col_b3 = st.columns(3)
-                with col_b1:
-                    if st.button("Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
-                        if gemini_model is None:
-                            st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
-                        else:
-                            with st.spinner("Analisando criativos…"):
-                                try:
-                                    resp = gemini_model.generate_content(f"""
+            col_b1, col_b2, col_b3, col_bx = st.columns([1,1,1,3])
+            with col_b1:
+                if st.button("Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
+                    if gemini_model is None:
+                        st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner("Analisando criativos…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
 Responda em português com:
@@ -2955,18 +2883,18 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                    st.session_state[chave_criativo] = resp.text
-                                    st.rerun()
-                                except Exception as e:
-                                    st.session_state[chave_criativo] = f"Erro: {e}"
-                with col_b2:
-                    if st.button("Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
-                        if gemini_model is None:
-                            st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
-                        else:
-                            with st.spinner("Analisando copies…"):
-                                try:
-                                    resp = gemini_model.generate_content(f"""
+                                st.session_state[chave_criativo] = resp.text
+                                st.rerun()
+                            except Exception as e:
+                                st.session_state[chave_criativo] = f"Erro: {e}"
+            with col_b2:
+                if st.button("Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
+                    if gemini_model is None:
+                        st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner("Analisando copies…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise as LEGENDAS (copy) deste perfil Instagram.
 Responda em português com:
@@ -2978,18 +2906,18 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                    st.session_state[chave_copy] = resp.text
-                                    st.rerun()
-                                except Exception as e:
-                                    st.session_state[chave_copy] = f"Erro: {e}"
-                with col_b3:
-                    if st.button("Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
-                        if gemini_model is None:
-                            st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
-                        else:
-                            with st.spinner("Gerando análise geral…"):
-                                try:
-                                    resp = gemini_model.generate_content(f"""
+                                st.session_state[chave_copy] = resp.text
+                                st.rerun()
+                            except Exception as e:
+                                st.session_state[chave_copy] = f"Erro: {e}"
+            with col_b3:
+                if st.button("Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
+                    if gemini_model is None:
+                        st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner("Gerando análise geral…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Faça uma análise geral estratégica deste perfil Instagram.
 Responda em português com:
@@ -3001,150 +2929,51 @@ Responda em português com:
 ### Recomendações Estratégicas (3 ações concretas)
 Seja direto e objetivo.
 """)
-                                    st.session_state[chave_geral] = resp.text
-                                    st.rerun()
-                                except Exception as e:
-                                    st.session_state[chave_geral] = f"Erro: {e}"
+                                st.session_state[chave_geral] = resp.text
+                                st.rerun()
+                            except Exception as e:
+                                st.session_state[chave_geral] = f"Erro: {e}"
 
-                components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-                <style>
-                * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{
-                    background: transparent;
-                    font-family: 'DM Sans', sans-serif;
-                    -webkit-font-smoothing: antialiased;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }}
-                .card {{
-                    background: #ffffff;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 12px;
-                    overflow: hidden;
-                }}
-                .card-header {{
-                    padding: 16px 16px 14px 16px;
-                    border-bottom: 1px solid #f3f4f6;
-                    background: #ffffff;
-                }}
-                .card-title {{
-                    font-size: 18px;
-                    font-weight: 800;
-                    color: #1a2e4a;
-                    text-transform: uppercase;
-                    letter-spacing: 0.3px;
-                    font-family: 'DM Sans', sans-serif;
-                    margin-bottom: 10px;
-                }}
-                .btn-row {{
-                    display: flex;
-                    gap: 8px;
-                }}
-                .btn-ia {{
-                    flex: 1;
-                    padding: 8px 0;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 8px;
-                    background: #ffffff;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #374151;
-                    cursor: pointer;
-                    font-family: 'DM Sans', sans-serif;
-                    transition: background 0.15s, color 0.15s, border-color 0.15s;
-                    white-space: nowrap;
-                }}
-                .btn-ia:hover {{
-                    background: #f3f4f6;
-                    color: #111827;
-                    border-color: #9ca3af;
-                }}
-                .tabs {{
-                    display: flex;
-                    border-bottom: 2px solid #e5e7eb;
-                    background: #ffffff;
-                }}
-                .tab {{
-                    flex: 1;
-                    padding: 10px 0;
-                    text-align: center;
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #9ca3af;
-                    cursor: pointer;
-                    border-bottom: 2px solid transparent;
-                    margin-bottom: -2px;
-                    background: #ffffff;
-                    border-top: none;
-                    border-left: none;
-                    border-right: none;
-                    font-family: 'DM Sans', sans-serif;
-                    transition: color 0.15s;
-                }}
-                .tab.active {{
-                    color: #3a9fd6;
-                    border-bottom: 2px solid #3a9fd6;
-                }}
-                .panel {{ display: none; padding: 16px; background: #ffffff; min-height: 80px; }}
-                .panel.active {{ display: block; }}
-                .result {{
-                    background: #f9fafb;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 10px;
-                    padding: 14px 16px;
-                    font-size: 13px;
-                    color: #374151;
-                    line-height: 1.7;
-                    max-height: 260px;
-                    overflow-y: auto;
-                }}
-                </style>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Análise de IA</div>
-                        <div class="btn-row">
-                            <button class="btn-ia" onclick="clickSt('criativo')">Analisar Criativos</button>
-                            <button class="btn-ia" onclick="clickSt('copy')">Analisar Copys</button>
-                            <button class="btn-ia" onclick="clickSt('geral')">Análise Geral</button>
-                        </div>
-                    </div>
-
-                    <div class="tabs">
-                        <button class="tab active" onclick="showTab('criativo', this)">Criativo</button>
-                        <button class="tab" onclick="showTab('copy', this)">Copy</button>
-                        <button class="tab" onclick="showTab('geral', this)">Geral</button>
-                    </div>
-
-                    <div id="panel-criativo" class="panel active">
-                        {('<div class="result">' + criativo_html + '</div>') if criativo_html else vazio}
-                    </div>
-                    <div id="panel-copy" class="panel">
-                        {('<div class="result">' + copy_html + '</div>') if copy_html else vazio}
-                    </div>
-                    <div id="panel-geral" class="panel">
-                        {('<div class="result">' + geral_html + '</div>') if geral_html else vazio}
-                    </div>
+            components.html(f"""
+            <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+            <style>
+            * {{ margin:0; padding:0; box-sizing:border-box; }}
+            html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+            .card {{ background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+            .card-header {{ padding:16px 16px 0 16px; background:#ffffff; }}
+            .card-title {{ font-size:18px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; font-family:'DM Sans',sans-serif; margin-bottom:12px; }}
+            .tabs {{ display:flex; border-bottom:2px solid #e5e7eb; background:#ffffff; }}
+            .tab {{ flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#ffffff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }}
+            .tab.active {{ color:#3a9fd6; border-bottom:2px solid #3a9fd6; }}
+            .panel {{ display:none; padding:16px; background:#ffffff; min-height:60px; }}
+            .panel.active {{ display:block; }}
+            .result {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; font-size:13px; color:#374151; line-height:1.7; max-height:200px; overflow-y:auto; }}
+            </style>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Análise de IA</div>
                 </div>
-
-                <script>
-                function showTab(name, el) {{
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-                    document.getElementById('panel-' + name).classList.add('active');
-                    el.classList.add('active');
-                }}
-                function clickSt(tipo) {{
-                    const labels = {{
-                        'criativo': 'Analisar Criativos',
-                        'copy': 'Analisar Copys',
-                        'geral': 'Análise Geral',
-                    }};
-                    const label = labels[tipo];
-                    for (const b of window.parent.document.querySelectorAll('button')) {{
-                        if (b.innerText.trim() === label) {{ b.click(); break; }}
-                    }}
-                }}
-                </script>
-                """, height=510, scrolling=False)
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('criativo',this)">Criativo</button>
+                    <button class="tab" onclick="showTab('copy',this)">Copy</button>
+                    <button class="tab" onclick="showTab('geral',this)">Geral</button>
+                </div>
+                <div id="panel-criativo" class="panel active">
+                    {('<div class="result">' + criativo_html + '</div>') if criativo_html else vazio}
+                </div>
+                <div id="panel-copy" class="panel">
+                    {('<div class="result">' + copy_html + '</div>') if copy_html else vazio}
+                </div>
+                <div id="panel-geral" class="panel">
+                    {('<div class="result">' + geral_html + '</div>') if geral_html else vazio}
+                </div>
+            </div>
+            <script>
+            function showTab(name, el) {{
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                document.getElementById('panel-' + name).classList.add('active');
+                el.classList.add('active');
+            }}
+            </script>
+            """, height=320, scrolling=False)
