@@ -2414,7 +2414,7 @@ elif st.session_state.pagina == "redes":
     # GRÁFICOS COMPARATIVOS
     # ══════════════════════════════════════════════════════════════════════
 
-    CORES = ["#3a9fd6", "#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
+    CORES = ["#3a9fd6", "#27ae60", "#413ad6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
 
     nomes_ok   = [x["nome"] for x in ok]
     segs_ok    = [x.get("seguidores", 0) for x in ok]
