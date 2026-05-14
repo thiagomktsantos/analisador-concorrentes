@@ -2626,7 +2626,7 @@ elif st.session_state.pagina == "redes":
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
  
-st.markdown(f"""
+                st.markdown(f"""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
                             padding:20px 24px;margin-bottom:12px'>
                     <div style='font-size:11px;font-weight:700;color:#9ca3af;
@@ -2650,6 +2650,12 @@ st.markdown(f"""
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+                analisar_bio = st.button(
+                    "Analisar Bio com IA",
+                    key=f"btn_bio_ia_{idx}",
+                    use_container_width=True,
+                )
 
                 analisar_bio = st.button(
                     "Analisar Bio com IA",
