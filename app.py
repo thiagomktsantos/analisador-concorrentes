@@ -2826,10 +2826,16 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     unsafe_allow_html=True,
                 )
                 st.markdown(
-                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:-1rem;"
-                    "font-family:\"Source Sans\",sans-serif'>"
-                    "Análise de IA</div>",
+                    """
+                    <style>
+                    div[data-testid="column"]:last-child .stElementContainer { gap: 0 !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
+                    div[data-testid="column"]:last-child .stVerticalBlock { gap: 0 !important; }
+                    </style>
+                    <div style='font-size:18px;font-weight:700;color:#1a2e4a;
+                    text-transform:uppercase;margin-bottom:0;margin-top:0;
+                    font-family:"Source Sans",sans-serif'>
+                    Análise de IA</div>
+                    """,
                     unsafe_allow_html=True,
                 )
 
