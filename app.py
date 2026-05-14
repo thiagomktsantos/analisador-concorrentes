@@ -2842,7 +2842,7 @@ function openCopy(txt) {{
                             f'<img src="{thumb}" style="width:36px;height:36px;border-radius:6px;'
                             f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
                             f'onclick="openImg(\'{_esc(thumb)}\')" '
-                            f'onerror="this.outerHTML=\\'<div style=width:36px;height:36px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af>📷</div>\\'"/>' 
+                            f'onerror="this.outerHTML=\'&lt;div style=&quot;width:36px;height:36px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af&quot;&gt;📷&lt;/div&gt;\'" />'
                         ) if thumb else (
                             f'<div style="width:36px;height:36px;border-radius:6px;background:#f3f4f6;'
                             f'display:flex;align-items:center;justify-content:center;font-size:16px">{"🎬" if isVid else "📷"}</div>'
