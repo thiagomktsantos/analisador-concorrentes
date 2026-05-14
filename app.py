@@ -2608,7 +2608,7 @@ elif st.session_state.pagina == "redes":
  
             with col_metricas:
                 st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px'>
+                <div style='background:#fff;border-radius:12px'>
                     <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
                         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                                     display:flex;flex-direction:column;align-items:center;text-align:center'>
