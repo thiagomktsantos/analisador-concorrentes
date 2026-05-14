@@ -2821,7 +2821,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             with col_ia:
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;margin-top:20px;"
+                    "text-transform:uppercase;margin-bottom:8px;margin-top:8px;"
                     "font-family:\"Source Sans\",sans-serif'>"
                     "Análise de IA</div>",
                     unsafe_allow_html=True,
@@ -2859,6 +2859,20 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                 .st-key-btn_criativo_{idx} {{ display:none !important; }}
                 .st-key-btn_copy_{idx} {{ display:none !important; }}
                 .st-key-btn_geral_{idx} {{ display:none !important; }}
+                .st-key-btn_criativo_{idx},
+                .st-key-btn_copy_{idx},
+                .st-key-btn_geral_{idx} {{
+                    height: 0 !important;
+                    min-height: 0 !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    overflow: hidden !important;
+                }}
+                div[data-testid="column"]:has(.st-key-btn_criativo_{idx}),
+                div[data-testid="column"]:has(.st-key-btn_copy_{idx}),
+                div[data-testid="column"]:has(.st-key-btn_geral_{idx}) {{
+                    display: none !important;
+                }}
                 </style>
                 """, unsafe_allow_html=True)
 
