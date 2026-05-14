@@ -2562,31 +2562,64 @@ elif st.session_state.pagina == "redes":
                     <div class="badge">{badge_lbl}</div>
                 </div>
             </div>
-            """, height=72, scrolling=False)
+            """, height=90, scrolling=False)
  
             # ── MÉTRICAS + BIO
             col_metricas, col_bio = st.columns([1, 1])
  
             with col_metricas:
-                components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.grid {{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }}
-.box {{ padding:14px 8px; background:#f9fafb; border-radius:10px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; }}
-.val {{ font-size:22px; font-weight:700; color:#111827; letter-spacing:-1px; display:flex; align-items:center; gap:6px; }}
-.lbl {{ font-size:12px; color:#111827; font-weight:600; letter-spacing:0.6px; }}
-.est {{ font-size:11px; color:#9ca3af; margin-top:6px; }}
-</style>
-<div class="grid">
-  <div class="box"><div class="val"><span>👥</span>{fmt_num(r.get("seguidores",0))}</div><div class="lbl">Seguidores</div></div>
-  <div class="box"><div class="val"><span>🖼️</span>{fmt_num(r.get("total_posts",0))}</div><div class="lbl">Posts</div></div>
-  <div class="box"><div class="val"><span>❤️</span>{fmt_num(int(r.get("eng_medio",0)))}</div><div class="lbl">Engajamento Médio</div></div>
-  <div class="box"><div class="val"><span>📈</span>{r.get("eng_pct",0):.2f}%</div><div class="lbl">Engajamento %{"*" if eng_est else ""}</div></div>
-</div>
-{"<div class='est'>* Engajamento estimado por benchmark</div>" if eng_est else ""}
-""", height=175, scrolling=False)
+                # ── MÉTRICAS — layout original via st.markdown
+                st.markdown(f"""
+                <div style='background:#fff;border-radius:12px'>
+                    <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>👥</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {fmt_num(r.get("seguidores",0))}
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Seguidores</span>
+                        </div>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>🖼️</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {fmt_num(r.get("total_posts",0))}
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Posts</span>
+                        </div>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>❤️</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {fmt_num(int(r.get("eng_medio",0)))}
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Engajamento Médio</span>
+                        </div>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>📈</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {r.get("eng_pct",0):.2f}%
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Engajamento %{"*" if eng_est else ""}</span>
+                        </div>
+                    </div>
+                    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
+                </div>
+                """, unsafe_allow_html=True)
  
             with col_bio:
                 chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
