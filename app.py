@@ -2735,318 +2735,191 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
             # ══════════════════════════════════════════════════════════════
             # ÚLTIMAS 3 POSTAGENS + VER TODOS OS POSTS
+            # (HTML gerado server-side em Python — sem JS de renderização)
             # ══════════════════════════════════════════════════════════════
  
             col_posts, col_table = st.columns(2)
  
+            def _fmt(n):
+                n = int(n or 0)
+                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+                if n >= 1_000:     return f"{n/1_000:.1f}K"
+                return str(n)
+ 
+            def _esc(s):
+                return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
+ 
             with col_posts:
-                # ── serializa posts para JSON e injeta no HTML (sem f-string gigante)
-                posts_json = json.dumps(posts_list[:3], ensure_ascii=False)
+                if not posts_list:
+                    cards_inner = "<div style=\'padding:20px;text-align:center;color:#9ca3af;font-size:14px\'>Posts não disponíveis.</div>"
+                else:
+                    cards_inner = ""
+                    for p in posts_list[:3]:
+                        thumb   = p.get("thumb", "")
+                        cap     = p.get("caption", "")
+                        cap_esc = _esc(cap)
+                        cap_3ln = cap[:160] + ("…" if len(cap) > 160 else "") if cap else ""
+ 
+                        img_html = (
+                            f'<img src="{thumb}" style="width:100%;aspect-ratio:1;border-radius:8px;'
+                            f'object-fit:cover;border:1px solid #e5e7eb;display:block;" '
+                            f'onerror="this.style.display=\'none\'" />\'
+                        ) if thumb else (
+                            f'<div style="width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;'
+                            f'display:flex;align-items:center;justify-content:center;'
+                            f'font-size:13px;color:#9ca3af">{"Vídeo" if p.get("is_video") else "Foto"}</div>'
+                        )
+ 
+                        cap_html = (
+                            f'<div onclick="openCopy(\'{cap_esc}\')" '
+                            f'style="font-size:11px;color:#6b7280;line-height:1.5;font-style:italic;'
+                            f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;'
+                            f'display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;'
+                            f'overflow:hidden;min-height:52px;cursor:pointer;">{cap_3ln}</div>'
+                        ) if cap else (
+                            '<div style="font-size:11px;color:#d1d5db;font-style:italic;'
+                            'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;'
+                            'background:#fafafa;min-height:52px;">Sem legenda</div>'
+                        )
+ 
+                        cards_inner += (
+                            f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">'
+                            f'<div style="font-size:11px;color:#9ca3af;font-weight:500;text-align:center">📅 {p.get("date","")}</div>'
+                            f'{img_html}'
+                            f'<div style="font-size:12px;color:#374151;font-weight:600;white-space:nowrap;text-align:center">'
+                            f'❤️ {_fmt(p.get("likes",0))} &nbsp; 💬 {_fmt(p.get("comments",0))}</div>'
+                            f'{cap_html}'
+                            f'</div>'
+                        )
  
                 components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-                <style>
-                * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
-                        text-transform:uppercase; letter-spacing:0.3px;
-                        border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .body {{ padding:14px 16px; display:flex; gap:10px; }}
-                .pcard {{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }}
-                .date {{ font-size:11px; color:#9ca3af; font-weight:500; text-align:center; }}
-                .thumb {{ width:100%; aspect-ratio:1; border-radius:8px; object-fit:cover;
-                          border:1px solid #e5e7eb; display:block; }}
-                .thumb-ph {{ width:100%; aspect-ratio:1; border-radius:8px; background:#f3f4f6;
-                             display:flex; align-items:center; justify-content:center;
-                             font-size:13px; color:#9ca3af; }}
-                .eng {{ font-size:12px; color:#374151; font-weight:600; white-space:nowrap; text-align:center; }}
-                .caption-box {{
-                    font-size:11px; color:#6b7280; line-height:1.5; font-style:italic;
-                    border:1px solid #f3f4f6; border-radius:6px; padding:5px 7px;
-                    background:#fafafa;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 3;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    min-height: 52px;
-                    cursor: pointer;
-                    transition: background 0.1s;
-                }}
-                .caption-box:hover {{ background:#f0f9ff; border-color:#bae6fd; }}
-                /* Modal */
-                .modal-bg {{
-                    display:none; position:fixed; inset:0;
-                    background:rgba(0,0,0,0.5); z-index:9000;
-                    align-items:center; justify-content:center;
-                }}
-                .modal-bg.open {{ display:flex; }}
-                .modal {{
-                    background:#fff; border-radius:14px; padding:24px;
-                    max-width:360px; width:90%; max-height:80vh; overflow-y:auto;
-                    box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative;
-                }}
-                .modal-title {{
-                    font-size:13px; font-weight:700; color:#1a2e4a;
-                    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;
-                    padding-bottom:8px; border-bottom:1px solid #f3f4f6;
-                }}
-                .modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
-                .modal-close {{
-                    position:absolute; top:14px; right:16px; background:none; border:none;
-                    font-size:18px; color:#9ca3af; cursor:pointer; line-height:1;
-                }}
-                .modal-close:hover {{ color:#111827; }}
-                </style>
- 
-                <div class="wrap">
-                    <div class="hdr">Últimas 3 Postagens</div>
-                    <div class="body" id="posts-body"></div>
-                </div>
- 
-                <!-- Modal copy -->
-                <div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
-                    <div class="modal">
-                        <button class="modal-close" onclick="document.getElementById('modal-bg').classList.remove('open')">✕</button>
-                        <div class="modal-title">Copy completa</div>
-                        <div class="modal-text" id="modal-text"></div>
-                    </div>
-                </div>
- 
-                <script>
-                var posts = {posts_json};
- 
-                function openModal(txt) {{
-                    document.getElementById('modal-text').textContent = txt || '(sem legenda)';
-                    document.getElementById('modal-bg').classList.add('open');
-                }}
-                function closeModal(e) {{
-                    if (e.target === document.getElementById('modal-bg'))
-                        document.getElementById('modal-bg').classList.remove('open');
-                }}
- 
-                function buildPosts() {{
-                    var body = document.getElementById('posts-body');
-                    if (!posts || posts.length === 0) {{
-                        body.innerHTML = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:14px">Posts não disponíveis.</div>';
-                        return;
-                    }}
-                    posts.forEach(function(p) {{
-                        var likes = p.likes || 0;
-                        var coms  = p.comments || 0;
-                        var cap   = p.caption || '';
-                        var thumb = p.thumb || '';
-                        var date  = p.date || '';
-                        var isVid = p.is_video;
- 
-                        var imgHtml = thumb
-                            ? '<img class="thumb" src="' + thumb + '" onerror="this.style.display=\'none\'" />'
-                            : '<div class="thumb-ph">' + (isVid ? 'Vídeo' : 'Foto') + '</div>';
- 
-                        var engHtml = '❤️ ' + fmtNum(likes) + ' &nbsp; 💬 ' + fmtNum(coms);
- 
-                        var capShort = cap.length > 120 ? cap.substring(0,120) + '…' : (cap || '');
-                        var capHtml  = cap
-                            ? '<div class="caption-box" title="Clique para ver copy completa" onclick="openModal(' + JSON.stringify(cap) + ')">' + capShort + '</div>'
-                            : '<div class="caption-box" style="color:#d1d5db">Sem legenda</div>';
- 
-                        var card = document.createElement('div');
-                        card.className = 'pcard';
-                        card.innerHTML =
-                            '<div class="date">📅 ' + date + '</div>' +
-                            imgHtml +
-                            '<div class="eng">' + engHtml + '</div>' +
-                            capHtml;
-                        body.appendChild(card);
-                    }});
-                }}
- 
-                function fmtNum(n) {{
-                    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-                    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
-                    return String(Math.floor(n));
-                }}
- 
-                document.addEventListener('DOMContentLoaded', buildPosts);
-                window.addEventListener('load', buildPosts);
-                buildPosts();  // chama imediatamente — iframes Streamlit já estão prontos</script>
-                """, height=360, scrolling=False)
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
+.modal-bg.open {{ display:flex; }}
+.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:360px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
+.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
+.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
+.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
+.modal-close:hover {{ color:#111827; }}
+</style>
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+    <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Últimas 3 Postagens</div>
+    <div style="padding:14px 16px;display:flex;gap:10px">{cards_inner}</div>
+</div>
+<div class="modal-bg" id="modal-cp" onclick="if(event.target===this)this.classList.remove(\'open\')">
+    <div class="modal">
+        <button class="modal-close" onclick="document.getElementById(\'modal-cp\').classList.remove(\'open\')">✕</button>
+        <div class="modal-title">Copy completa</div>
+        <div class="modal-text" id="modal-cp-txt"></div>
+    </div>
+</div>
+<script>
+function openCopy(txt) {{
+    document.getElementById(\'modal-cp-txt\').textContent = txt;
+    document.getElementById(\'modal-cp\').classList.add(\'open\');
+}}
+</script>
+""", height=370, scrolling=False)
  
             with col_table:
-                # ── serializa TODOS os posts para JSON
-                all_posts_json = json.dumps(posts_list, ensure_ascii=False)
+                if not posts_list:
+                    tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Sem posts</td></tr>'
+                else:
+                    tbl_rows = ""
+                    for p in posts_list:
+                        thumb   = p.get("thumb", "")
+                        cap     = p.get("caption", "")
+                        cap_esc = _esc(cap)
+                        cap_t   = cap[:32] + "…" if len(cap) > 32 else cap
+                        isVid   = p.get("is_video", False)
+                        likes   = p.get("likes", 0)
+                        coms    = p.get("comments", 0)
+ 
+                        img_cell = (
+                            f'<img src="{thumb}" style="width:36px;height:36px;border-radius:6px;'
+                            f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
+                            f'onclick="openImg(\'{_esc(thumb)}\')" '
+                            f'onerror="this.outerHTML=\\'<div style=width:36px;height:36px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af>📷</div>\\'"/>' 
+                        ) if thumb else (
+                            f'<div style="width:36px;height:36px;border-radius:6px;background:#f3f4f6;'
+                            f'display:flex;align-items:center;justify-content:center;font-size:16px">{"🎬" if isVid else "📷"}</div>'
+                        )
+ 
+                        copy_cell = (
+                            f'<span onclick="openCopy2(\'{cap_esc}\')" '
+                            f'style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+                            f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">{cap_t}</span>'
+                        ) if cap else '<span style="color:#d1d5db">—</span>'
+ 
+                        tbl_rows += (
+                            f"<tr>"
+                            f"<td>{img_cell}</td>"
+                            f"<td>{p.get('date','—')}</td>"
+                            f"<td>{'Vídeo' if isVid else 'Foto'}</td>"
+                            f"<td>{_fmt(likes)}</td>"
+                            f"<td>{_fmt(coms)}</td>"
+                            f"<td>{_fmt(likes+coms)}</td>"
+                            f"<td>{copy_cell}</td>"
+                            f"</tr>"
+                        )
  
                 components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-                <style>
-                * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
-                        text-transform:uppercase; letter-spacing:0.3px;
-                        border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .table-wrap {{ max-height:298px; overflow-y:auto; }}
-                table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-                th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 10px;
-                      text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px;
-                      text-transform:uppercase; letter-spacing:0.5px;
-                      position:sticky; top:0; z-index:1; }}
-                td {{ padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
-                tr:last-child td {{ border-bottom:none; }}
-                tr:hover td {{ background:#f9fafb; }}
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 10px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }}
+td {{ padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
+tr:last-child td {{ border-bottom:none; }}
+tr:hover td {{ background:#f9fafb; }}
+.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
+.modal-bg.open {{ display:flex; }}
+.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
+.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
+.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
+.modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }}
+.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
+.modal-close:hover {{ color:#111827; }}
+</style>
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+    <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Ver Todos os Posts</div>
+    <div style="max-height:310px;overflow-y:auto">
+        <table>
+            <thead><tr><th>Img</th><th>Data</th><th>Tipo</th><th>❤️</th><th>💬</th><th>Eng.</th><th>Copy</th></tr></thead>
+            <tbody>{tbl_rows}</tbody>
+        </table>
+    </div>
+</div>
+<div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove(\'open\')">
+    <div class="modal">
+        <button class="modal-close" onclick="document.getElementById(\'modal2\').classList.remove(\'open\')">✕</button>
+        <div class="modal-title" id="modal2-title"></div>
+        <img id="modal2-img" class="modal-img" src="" style="display:none" />
+        <div class="modal-text" id="modal2-text"></div>
+    </div>
+</div>
+<script>
+function openImg(url) {{
+    document.getElementById(\'modal2-title\').textContent = \'Imagem do Post\';
+    var img = document.getElementById(\'modal2-img\');
+    img.src = url; img.style.display = \'block\';
+    document.getElementById(\'modal2-text\').textContent = \'\';
+    document.getElementById(\'modal2\').classList.add(\'open\');
+}}
+function openCopy2(txt) {{
+    document.getElementById(\'modal2-title\').textContent = \'Copy Completa\';
+    document.getElementById(\'modal2-img\').style.display = \'none\';
+    document.getElementById(\'modal2-text\').textContent = txt;
+    document.getElementById(\'modal2\').classList.add(\'open\');
+}}
+</script>
+""", height=370, scrolling=False)
  
-                /* Thumb miniatura */
-                .mini-thumb {{
-                    width:36px; height:36px; border-radius:6px; object-fit:cover;
-                    border:1px solid #e5e7eb; display:block; cursor:pointer;
-                }}
-                .mini-ph {{
-                    width:36px; height:36px; border-radius:6px; background:#f3f4f6;
-                    display:flex; align-items:center; justify-content:center;
-                    font-size:9px; color:#9ca3af; text-align:center; line-height:1.2;
-                    cursor:pointer;
-                }}
- 
-                /* Copy truncada clicável */
-                .copy-cell {{
-                    max-width:100px; overflow:hidden; text-overflow:ellipsis;
-                    white-space:nowrap; cursor:pointer; color:#374151;
-                    font-style:italic; transition:color 0.1s;
-                }}
-                .copy-cell:hover {{ color:#3a9fd6; text-decoration:underline; }}
- 
-                /* Modal */
-                .modal-bg {{
-                    display:none; position:fixed; inset:0;
-                    background:rgba(0,0,0,0.5); z-index:9000;
-                    align-items:center; justify-content:center;
-                }}
-                .modal-bg.open {{ display:flex; }}
-                .modal {{
-                    background:#fff; border-radius:14px; padding:24px;
-                    max-width:400px; width:90%; max-height:80vh; overflow-y:auto;
-                    box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative;
-                }}
-                .modal-title {{
-                    font-size:13px; font-weight:700; color:#1a2e4a;
-                    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;
-                    padding-bottom:8px; border-bottom:1px solid #f3f4f6;
-                }}
-                .modal-body {{ display:flex; flex-direction:column; gap:14px; }}
-                .modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; display:block; }}
-                .modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
-                .modal-close {{
-                    position:absolute; top:14px; right:16px; background:none; border:none;
-                    font-size:18px; color:#9ca3af; cursor:pointer; line-height:1;
-                }}
-                .modal-close:hover {{ color:#111827; }}
-                </style>
- 
-                <div class="wrap">
-                    <div class="hdr">Ver Todos os Posts</div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead><tr>
-                                <th>Img</th>
-                                <th>Data</th>
-                                <th>Tipo</th>
-                                <th>❤️</th>
-                                <th>💬</th>
-                                <th>Eng.</th>
-                                <th>Copy</th>
-                            </tr></thead>
-                            <tbody id="tbl-body">
-                                <tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Carregando…</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
- 
-                <!-- Modal imagem + copy -->
-                <div class="modal-bg" id="modal-bg2" onclick="closeModal2(event)">
-                    <div class="modal">
-                        <button class="modal-close" onclick="document.getElementById('modal-bg2').classList.remove('open')">✕</button>
-                        <div class="modal-title" id="modal2-title">Detalhes do Post</div>
-                        <div class="modal-body">
-                            <img id="modal2-img" class="modal-img" src="" style="display:none" />
-                            <div id="modal2-text" class="modal-text"></div>
-                        </div>
-                    </div>
-                </div>
- 
-                <script>
-                var posts = {all_posts_json};
- 
-                function fmtNum(n) {{
-                    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-                    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
-                    return String(Math.floor(n));
-                }}
- 
-                function openModal2(type, data) {{
-                    var bg = document.getElementById('modal-bg2');
-                    var img = document.getElementById('modal2-img');
-                    var txt = document.getElementById('modal2-text');
-                    var tit = document.getElementById('modal2-title');
-                    if (type === 'img') {{
-                        tit.textContent = 'Imagem do Post';
-                        img.src = data; img.style.display = 'block';
-                        txt.textContent = '';
-                    }} else {{
-                        tit.textContent = 'Copy Completa';
-                        img.style.display = 'none';
-                        txt.textContent = data || '(sem legenda)';
-                    }}
-                    bg.classList.add('open');
-                }}
-                function closeModal2(e) {{
-                    if (e.target === document.getElementById('modal-bg2'))
-                        document.getElementById('modal-bg2').classList.remove('open');
-                }}
- 
-                function buildTable() {{
-                    var tbody = document.getElementById('tbl-body');
-                    if (!posts || posts.length === 0) {{
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Sem posts</td></tr>';
-                        return;
-                    }}
-                    var html = '';
-                    posts.forEach(function(p) {{
-                        var likes = p.likes || 0;
-                        var coms  = p.comments || 0;
-                        var cap   = p.caption || '';
-                        var thumb = p.thumb || '';
-                        var isVid = p.is_video;
- 
-                        var imgCell = thumb
-                            ? '<img class="mini-thumb" src="' + thumb + '" title="Ver imagem" onclick="openModal2(\'img\',' + JSON.stringify(thumb) + ')" onerror="this.outerHTML=\'<div class=mini-ph>Sem img</div>\'" />'
-                            : '<div class="mini-ph" onclick="">' + (isVid ? '🎬' : '📷') + '</div>';
- 
-                        var capTrunc = cap.length > 30 ? cap.substring(0,30) + '…' : (cap || '—');
-                        var copyCell = cap
-                            ? '<span class="copy-cell" title="Ver copy completa" onclick="openModal2(\'copy\',' + JSON.stringify(cap) + ')">' + capTrunc + '</span>'
-                            : '<span style="color:#d1d5db">—</span>';
- 
-                        html += '<tr>' +
-                            '<td>' + imgCell + '</td>' +
-                            '<td>' + (p.date || '—') + '</td>' +
-                            '<td>' + (isVid ? 'Vídeo' : 'Foto') + '</td>' +
-                            '<td>' + fmtNum(likes) + '</td>' +
-                            '<td>' + fmtNum(coms) + '</td>' +
-                            '<td>' + fmtNum(likes + coms) + '</td>' +
-                            '<td>' + copyCell + '</td>' +
-                            '</tr>';
-                    }});
-                    tbody.innerHTML = html;
-                }}
- 
-                document.addEventListener('DOMContentLoaded', buildTable);
-                window.addEventListener('load', buildTable);
-                buildTable();  // chama imediatamente</script>
-                """, height=360, scrolling=False)
- 
-            # ══════════════════════════════════════════════════════════════
+                        # ══════════════════════════════════════════════════════════════
             # ANÁLISE DE IA  (botões visíveis — sem CSS display:none)
             # ══════════════════════════════════════════════════════════════
             st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
