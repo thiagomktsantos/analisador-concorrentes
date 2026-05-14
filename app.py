@@ -2827,7 +2827,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 )
                 st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:8px;margin-top:0;"
+                    "text-transform:uppercase;margin-bottom:0px;margin-top:0;"
                     "font-family:\"Source Sans\",sans-serif'>"
                     "Análise de IA</div>",
                     unsafe_allow_html=True,
