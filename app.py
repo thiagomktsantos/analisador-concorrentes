@@ -2733,8 +2733,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         cards += f"""
                         <div style='flex:1;text-align:center'>
                             {img_html}
-                            <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}</div>
-                            <div style='font-size:11px;color:#9ca3af'>{date_str}</div>
+                            <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt} &nbsp; <span style="color:#9ca3af;font-weight:400">{date_str}</span></div>
                         </div>"""
                     posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
 
@@ -2754,7 +2753,12 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; }}
+                html, body {{
+                    background: transparent;
+                    font-family: 'DM Sans', sans-serif;
+                    -webkit-font-smoothing: antialiased;
+                }}
+                body {{ padding-bottom: 4px; }}
                 .card {{
                     background: #ffffff;
                     border: 1px solid #e5e7eb;
@@ -2763,7 +2767,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     margin-bottom: 8px;
                 }}
                 .ver-todos {{
-                    margin-top: 8px;
                     border: 1px solid #e5e7eb;
                     border-radius: 12px;
                     overflow: hidden;
@@ -2794,6 +2797,10 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 details[open] summary {{
                     border-bottom: 1px solid #e5e7eb;
                 }}
+                .table-wrap {{
+                    max-height: 220px;
+                    overflow-y: auto;
+                }}
                 table {{
                     width: 100%;
                     border-collapse: collapse;
@@ -2807,6 +2814,8 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     text-align: left;
                     border-bottom: 1px solid #e5e7eb;
                     font-size: 12px;
+                    position: sticky;
+                    top: 0;
                 }}
                 td {{
                     padding: 10px 12px;
@@ -2823,7 +2832,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
                 <details class="ver-todos">
                     <summary>Ver todos os posts</summary>
-                    <div style='overflow-x:auto'>
+                    <div class="table-wrap">
                         <table>
                             <thead>
                                 <tr>
@@ -2835,7 +2844,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         </table>
                     </div>
                 </details>
-                """, height=500 if posts_list else 100, scrolling=True)
+                """, height=500 if posts_list else 100, scrolling=False)
 
             with col_ia:
 
