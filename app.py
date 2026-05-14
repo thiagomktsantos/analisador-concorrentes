@@ -3048,53 +3048,57 @@ Seja direto e objetivo.
             ia_height = 320 if (criativo_html or copy_html or geral_html) else 80
  
             components.html(f"""
-            <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-            <style>
-            * {{ margin:0; padding:0; box-sizing:border-box; }}
-            html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-            .tabs {{ display:flex; border-bottom:2px solid #e5e7eb; background:#fff; }}
-            .tab {{
-                flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600;
-                color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent;
-                margin-bottom:-2px; background:#fff; border-top:none; border-left:none;
-                border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s;
-            }}
-            .tab.active {{ color:#3a9fd6; border-bottom:2px solid #3a9fd6; }}
-            .panel {{ display:none; padding:14px 0 4px 0; }}
-            .panel.active {{ display:block; }}
-            .result {{
-                background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
-                padding:12px 14px; font-size:13px; color:#374151; line-height:1.7;
-                max-height:240px; overflow-y:auto;
-            }}
-            .empty {{ padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }}
-            </style>
-            <div class="tabs">
-                <button class="tab active" onclick="showTab('criativo',this);triggerSt('🎨 Analisar Criativos')">🎨 Criativo</button>
-                <button class="tab" onclick="showTab('copy',this);triggerSt('✍️ Analisar Copys')">✍️ Copy</button>
-                <button class="tab" onclick="showTab('geral',this);triggerSt('📊 Análise Geral')">📊 Geral</button>
-            </div>
-            <div id="panel-criativo" class="panel active">
-                {('<div class="result">' + criativo_html + '</div>') if criativo_html else '<div class="empty">Clique em <b>Analisar Criativos</b> acima para gerar.</div>'}
-            </div>
-            <div id="panel-copy" class="panel">
-                {('<div class="result">' + copy_html + '</div>') if copy_html else '<div class="empty">Clique em <b>Analisar Copys</b> acima para gerar.</div>'}
-            </div>
-            <div id="panel-geral" class="panel">
-                {('<div class="result">' + geral_html + '</div>') if geral_html else '<div class="empty">Clique em <b>Análise Geral</b> acima para gerar.</div>'}
-            </div>
-            <script>
-            function triggerSt(label) {
-                const btns = window.parent.document.querySelectorAll('button');
-                for (const b of btns) {
-                    if (b.innerText.trim() === label) { b.click(); break; }
-                }
-            }
-            function showTab(name, el) {{
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-                document.getElementById('panel-' + name).classList.add('active');
-                el.classList.add('active');
-            }}
-            </script>
-            """, height=ia_height, scrolling=False)
+            ia_script = """
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+.tabs { display:flex; border-bottom:2px solid #e5e7eb; background:#fff; }
+.tab {
+    flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600;
+    color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent;
+    margin-bottom:-2px; background:#fff; border-top:none; border-left:none;
+    border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s;
+}
+.tab.active { color:#3a9fd6; border-bottom:2px solid #3a9fd6; }
+.panel { display:none; padding:14px 0 4px 0; }
+.panel.active { display:block; }
+.result {
+    background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
+    padding:12px 14px; font-size:13px; color:#374151; line-height:1.7;
+    max-height:240px; overflow-y:auto;
+}
+.empty { padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }
+</style>
+<div class="tabs">
+    <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
+    <button class="tab" onclick="showTab('copy',this)">✍️ Copy</button>
+    <button class="tab" onclick="showTab('geral',this)">📊 Geral</button>
+</div>
+<div id="panel-criativo" class="panel active">CRIATIVO_PLACEHOLDER</div>
+<div id="panel-copy" class="panel">COPY_PLACEHOLDER</div>
+<div id="panel-geral" class="panel">GERAL_PLACEHOLDER</div>
+<script>
+function showTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+}
+</script>
+"""
+
+def _panel(html_content, btn_label):
+    if html_content:
+        return '<div class="result">' + html_content + '</div>'
+    return f'<div class="empty">Clique em <b>{btn_label}</b> acima para gerar.</div>'
+
+ia_script = ia_script.replace(
+    "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
+).replace(
+    "COPY_PLACEHOLDER", _panel(copy_html, "Analisar Copys")
+).replace(
+    "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
+)
+
+components.html(ia_script, height=ia_height, scrolling=False)
