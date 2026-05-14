@@ -2743,14 +2743,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
 # ── ÚLTIMAS 3 POSTAGENS + TABELA (linha 1)
 
-            st.markdown(
-                "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                "text-transform:uppercase;margin-bottom:14px;"
-                "font-family:\"Source Sans\",sans-serif'>"
-                "Últimas 3 Postagens</div>",
-                unsafe_allow_html=True,
-            )
-
             col_posts, col_table = st.columns(2)
 
             with col_posts:
@@ -2793,7 +2785,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
                 body {{ padding-bottom: 4px; }}
-                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; height:100%; }}
                 .header {{ padding:14px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
                 .body {{ padding:16px; }}
                 </style>
@@ -2801,7 +2793,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     <div class="header">Últimas 3 Postagens</div>
                     <div class="body">{posts_html}</div>
                 </div>
-                """, height=340, scrolling=False)
+                """, height=360, scrolling=False)
 
             with col_table:
                 df_posts_rows = ""
@@ -2817,20 +2809,20 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     </tr>"""
 
                 components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
                 .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
                 .header {{ padding:14px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .table-wrap {{ max-height:185px; overflow-y:auto; }}
+                .table-wrap {{ max-height:295px; overflow-y:auto; }}
                 table {{ width:100%; border-collapse:collapse; font-size:13px; }}
                 th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 12px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:12px; position:sticky; top:0; }}
                 td {{ padding:9px 12px; border-bottom:1px solid #f3f4f6; color:#374151; background:#ffffff; }}
                 tr:last-child td {{ border-bottom:none; }}
                 </style>
                 <div class="wrap">
-                    <div class="header">Ver todos os posts</div>
+                    <div class="header">Ver Todos os Posts</div>
                     <div class="table-wrap">
                         <table>
                             <thead><tr>
@@ -2840,7 +2832,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         </table>
                     </div>
                 </div>
-                """, height=240, scrolling=False)
+                """, height=360, scrolling=False)
 
             # ── ANÁLISE DE IA (linha 2, largura total)
             st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
