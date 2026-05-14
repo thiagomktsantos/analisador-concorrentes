@@ -2568,50 +2568,58 @@ elif st.session_state.pagina == "redes":
             col_metricas, col_bio = st.columns([1, 1])
  
             with col_metricas:
-                # ── CAIXA MÉTRICAS  (título no mesmo estilo de "Últimas 3 Postagens")
-                components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-                <style>
-                * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
-                        text-transform:uppercase; letter-spacing:0.3px;
-                        border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .grid {{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px 16px; }}
-                .cell {{ padding:14px 8px; background:#f9fafb; border-radius:10px;
-                         display:flex; flex-direction:column; align-items:center; text-align:center; }}
-                .val {{ font-size:22px; font-weight:700; color:#111827; letter-spacing:-1px; }}
-                .lbl {{ font-size:11px; color:#000; font-weight:600; letter-spacing:0.8px; margin-top:4px; }}
-                .note {{ font-size:11px; color:#9ca3af; padding:0 14px 10px; }}
-                </style>
-                <div class="wrap">
-                    <div class="hdr">Métricas do Perfil</div>
-                    <div class="grid">
-                        <div class="cell">
-                            <span style="font-size:20px">👥</span>
-                            <span class="val">{fmt_num(r.get("seguidores",0))}</span>
-                            <span class="lbl">Seguidores</span>
+                # ── MÉTRICAS — layout original via st.markdown
+                st.markdown(f"""
+                <div style='background:#fff;border-radius:12px'>
+                    <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>👥</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {fmt_num(r.get("seguidores",0))}
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Seguidores</span>
                         </div>
-                        <div class="cell">
-                            <span style="font-size:20px">🖼️</span>
-                            <span class="val">{fmt_num(r.get("total_posts",0))}</span>
-                            <span class="lbl">Posts</span>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>🖼️</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {fmt_num(r.get("total_posts",0))}
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Posts</span>
                         </div>
-                        <div class="cell">
-                            <span style="font-size:20px">❤️</span>
-                            <span class="val">{fmt_num(int(r.get("eng_medio",0)))}</span>
-                            <span class="lbl">Eng. Médio</span>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>❤️</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {fmt_num(int(r.get("eng_medio",0)))}
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Engajamento Médio</span>
                         </div>
-                        <div class="cell">
-                            <span style="font-size:20px">📈</span>
-                            <span class="val">{r.get("eng_pct",0):.2f}%</span>
-                            <span class="lbl">Engajamento {"*" if eng_est else ""}</span>
+                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+                            <div style='display:flex;align-items:center;gap:8px'>
+                                <span style='font-size:22px;line-height:1'>📈</span>
+                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                                    {r.get("eng_pct",0):.2f}%
+                                </span>
+                            </div>
+                            <span style='font-size:13px;color:#000;font-weight:600;
+                                         letter-spacing:0.8px'>Engajamento %{"*" if eng_est else ""}</span>
                         </div>
                     </div>
-                    {"<div class='note'>* Estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
+                    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
                 </div>
-                """, height=230 if eng_est else 218, scrolling=False)
+                """, unsafe_allow_html=True)
  
             with col_bio:
                 chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
@@ -2656,6 +2664,24 @@ elif st.session_state.pagina == "redes":
                     </div>
                 </div>
                 """, height=218, scrolling=False)
+ 
+                # CSS para esconder o botão fantasma da bio (mantém funcional mas invisível)
+                st.markdown(f"""
+                <style>
+                div[data-testid="stButton"][data-key="btn_bio_ia_{idx}"],
+                .st-key-btn_bio_ia_{idx} {{
+                    position: fixed !important;
+                    top: -9999px !important;
+                    left: -9999px !important;
+                    width: 1px !important;
+                    height: 1px !important;
+                    overflow: hidden !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                    visibility: hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
  
                 analisar_bio = st.button(
                     f"__bio_{idx}__",
@@ -2844,7 +2870,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
                 document.addEventListener('DOMContentLoaded', buildPosts);
                 window.addEventListener('load', buildPosts);
-                </script>
+                buildPosts();  // chama imediatamente — iframes Streamlit já estão prontos</script>
                 """, height=360, scrolling=False)
  
             with col_table:
@@ -3017,7 +3043,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
                 document.addEventListener('DOMContentLoaded', buildTable);
                 window.addEventListener('load', buildTable);
-                </script>
+                buildTable();  // chama imediatamente</script>
                 """, height=360, scrolling=False)
  
             # ══════════════════════════════════════════════════════════════
