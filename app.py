@@ -2822,10 +2822,13 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
             with col_ia:
                 st.markdown(
-                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>"
+                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                     "text-transform:uppercase;margin-bottom:14px;margin-top:0;"
-                    "font-family:\"DM Sans\",sans-serif;letter-spacing:0.3px'>"
+                    "font-family:\"Source Sans 3\",\"Source Sans Pro\",sans-serif;letter-spacing:0.3px'>"
                     "Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
@@ -2857,37 +2860,24 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
-                # Botões Streamlit ocultos via CSS — identificados pelo key único
                 st.markdown(f"""
                 <style>
-                .st-key-btn_criativo_{idx} > div,
-                .st-key-btn_copy_{idx} > div,
-                .st-key-btn_geral_{idx} > div {{
-                    visibility: hidden !important;
-                    height: 0 !important;
-                    min-height: 0 !important;
-                    overflow: hidden !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }}
+                .st-key-btn_criativo_{idx} {{ display:none !important; }}
+                .st-key-btn_copy_{idx} {{ display:none !important; }}
+                .st-key-btn_geral_{idx} {{ display:none !important; }}
                 .st-key-btn_criativo_{idx},
                 .st-key-btn_copy_{idx},
                 .st-key-btn_geral_{idx} {{
                     height: 0 !important;
                     min-height: 0 !important;
-                    overflow: hidden !important;
                     margin: 0 !important;
                     padding: 0 !important;
+                    overflow: hidden !important;
                 }}
-                /* esconde o stHorizontalBlock pai SEM usar display:none para manter os botões clicáveis */
-                [data-testid="stHorizontalBlock"]:has(.st-key-btn_criativo_{idx}) {{
-                    height: 0 !important;
-                    min-height: 0 !important;
-                    overflow: hidden !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    opacity: 0 !important;
-                    pointer-events: none !important;
+                div[data-testid="column"]:has(.st-key-btn_criativo_{idx}),
+                div[data-testid="column"]:has(.st-key-btn_copy_{idx}),
+                div[data-testid="column"]:has(.st-key-btn_geral_{idx}) {{
+                    display: none !important;
                 }}
                 </style>
                 """, unsafe_allow_html=True)
@@ -3077,17 +3067,14 @@ Seja direto e objetivo.
                     el.classList.add('active');
                 }}
                 function clickSt(tipo) {{
-                    // Busca pelo key único do botão Streamlit usando data-testid
-                    const keyMap = {{
-                        'criativo': 'btn_criativo_{idx}',
-                        'copy':     'btn_copy_{idx}',
-                        'geral':    'btn_geral_{idx}',
+                    const labels = {{
+                        'criativo': 'Analisar Criativos',
+                        'copy': 'Analisar Copys',
+                        'geral': 'Análise Geral',
                     }};
-                    const key = keyMap[tipo];
-                    const container = window.parent.document.querySelector('.st-key-' + key);
-                    if (container) {{
-                        const btn = container.querySelector('button');
-                        if (btn) btn.click();
+                    const label = labels[tipo];
+                    for (const b of window.parent.document.querySelectorAll('button')) {{
+                        if (b.innerText.trim() === label) {{ b.click(); break; }}
                     }}
                 }}
                 </script>
