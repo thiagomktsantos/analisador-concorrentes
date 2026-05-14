@@ -2206,14 +2206,14 @@ elif st.session_state.pagina == "redes":
             unsafe_allow_html=True,
         )
         st.markdown(
-            "<div style='font-size:14px;color:#6b7280;margin-top:3px'>"
+            "<div style='font-size:14px;color:#6b7280;'>"
             "Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>",
             unsafe_allow_html=True,
         )
     with h2:
-        st.markdown("<div style='padding-top:6px;background-color:blue;'/>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
         coletar = st.button(
-            "📡 Coletar dados",
+            "Coletar dados",
             type="primary",
             use_container_width=True,
         )
