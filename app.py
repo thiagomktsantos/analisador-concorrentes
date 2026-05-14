@@ -2825,6 +2825,13 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
                     unsafe_allow_html=True,
                 )
+                st.markdown(
+                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                    "text-transform:uppercase;margin-bottom:14px;margin-top:0;"
+                    "font-family:\"Source Sans 3\",\"Source Sans Pro\",sans-serif;letter-spacing:0.3px'>"
+                    "Análise de IA</div>",
+                    unsafe_allow_html=True,
+                )
 
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
@@ -2947,11 +2954,16 @@ Seja direto e objetivo.
                                     st.session_state[chave_geral] = f"Erro: {e}"
 
                 components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@700&display=swap" rel="stylesheet">
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; margin-top: 0; padding-top: 0; }}
+                html, body {{
+                    background: transparent;
+                    font-family: 'DM Sans', sans-serif;
+                    -webkit-font-smoothing: antialiased;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }}
                 .card {{
                     background: #ffffff;
                     border: 1px solid #e5e7eb;
@@ -3022,8 +3034,6 @@ Seja direto e objetivo.
                     overflow-y: auto;
                 }}
                 </style>
-
-                <div style="font-size:18px;font-weight:700;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;font-family:'Source Sans 3','Source Sans Pro',sans-serif;padding:0 0 14px 0;">Análise de IA</div>
 
                 <div class="card">
                     <div class="btn-row">
