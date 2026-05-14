@@ -2627,6 +2627,9 @@ elif st.session_state.pagina == "redes":
                     st.session_state[chave_bio_ia] = ""
  
                 st.markdown(f"""
+                <style>
+                .st-key-btn_bio_ia_{idx} {{ display: none !important; }}
+                </style>
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
                             padding:20px 24px;margin-bottom:12px'>
                     <div style='font-size:11px;font-weight:700;color:#9ca3af;
@@ -2639,12 +2642,11 @@ elif st.session_state.pagina == "redes":
                         <button onclick="
                             const btns = window.parent.document.querySelectorAll('button');
                             for (const b of btns) {{
-                                if (b.innerText.trim() === 'Analisar Bio com IA') {{ b.click(); break; }}
+                                if (b.innerText.trim() === '__bio_{idx}__') {{ b.click(); break; }}
                             }}
                         " style='width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;
                                  background:#fff;font-size:14px;font-weight:600;color:#374151;
-                                 cursor:pointer;font-family:DM Sans,sans-serif;
-                                 transition:background 0.15s'>
+                                 cursor:pointer;font-family:DM Sans,sans-serif;'>
                             Analisar Bio com IA
                         </button>
                     </div>
@@ -2652,13 +2654,7 @@ elif st.session_state.pagina == "redes":
                 """, unsafe_allow_html=True)
 
                 analisar_bio = st.button(
-                    "Analisar Bio com IA",
-                    key=f"btn_bio_ia_{idx}",
-                    use_container_width=True,
-                )
-
-                analisar_bio = st.button(
-                    "Analisar Bio com IA",
+                    f"__bio_{idx}__",
                     key=f"btn_bio_ia_{idx}",
                     use_container_width=True,
                 )
