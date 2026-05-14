@@ -2822,6 +2822,10 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
             with col_ia:
                 st.markdown(
+                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                     "text-transform:uppercase;margin-bottom:8px;margin-top:0;"
                     "font-family:\"Source Sans\",sans-serif'>"
