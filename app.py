@@ -2955,6 +2955,13 @@ Seja direto e objetivo.
                     background: transparent;
                     font-family: 'DM Sans', sans-serif;
                     -webkit-font-smoothing: antialiased;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }}
+                .hr-sep {{
+                    border: none;
+                    border-top: 1px solid #e5e7eb;
+                    margin: 0 0 14px 0;
                 }}
                 .card {{
                     background: #ffffff;
@@ -3040,8 +3047,9 @@ Seja direto e objetivo.
                 }}
                 </style>
 
-                <div class="card">
+                <hr class="hr-sep" />
 
+                <div class="card">
                     <div class="card-header">
                         <div class="card-title">Análise de IA</div>
                         <div class="btn-row">
