@@ -2822,19 +2822,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
             with col_ia:
                 st.markdown(
-                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
-                    unsafe_allow_html=True,
-                )
-                st.markdown(
-                    """
-                    <style>
-                    div[data-testid="column"]:last-child .stVerticalBlock { gap: 0.25rem !important; }
-                    </style>
-                    <div style='font-size:18px;font-weight:700;color:#1a2e4a;
-                    text-transform:uppercase;margin-bottom:-1;margin-top:0;
-                    font-family:"Source Sans",sans-serif'>
-                    Análise de IA</div>
-                    """,
+                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 0 0'/>",
                     unsafe_allow_html=True,
                 )
 
@@ -2963,6 +2951,15 @@ Seja direto e objetivo.
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
+                .section-title {{
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #1a2e4a;
+                    text-transform: uppercase;
+                    font-family: 'DM Sans', sans-serif;
+                    letter-spacing: 0.3px;
+                    padding: 14px 0 14px 0;
+                }}
                 .card {{
                     background: #ffffff;
                     border: 1px solid #e5e7eb;
@@ -3034,6 +3031,8 @@ Seja direto e objetivo.
                 }}
                 </style>
 
+                <div class="section-title">Análise de IA</div>
+
                 <div class="card">
                     <div class="btn-row">
                         <button class="btn-ia" onclick="clickSt('criativo')">Analisar Criativos</button>
@@ -3067,9 +3066,9 @@ Seja direto e objetivo.
                 }}
                 function clickSt(tipo) {{
                     const labels = {{
-                        'criativo': 'Gerar Criativo',
-                        'copy': 'Gerar Copy',
-                        'geral': 'Gerar Geral',
+                        'criativo': 'Analisar Criativos',
+                        'copy': 'Analisar Copys',
+                        'geral': 'Análise Geral',
                     }};
                     const label = labels[tipo];
                     for (const b of window.parent.document.querySelectorAll('button')) {{
@@ -3077,4 +3076,4 @@ Seja direto e objetivo.
                     }}
                 }}
                 </script>
-                """, height=460, scrolling=False)
+                """, height=510, scrolling=False)
