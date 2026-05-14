@@ -2165,7 +2165,7 @@ elif st.session_state.pagina == "redes":
         background: #ffffff !important;
         border: 1px solid #e5e7eb !important;
         border-radius: 12px !important;
-        padding: 6px 8px !important;
+        padding: 12px 16px !important;
         gap: 4px !important;
         margin-bottom: 20px !important;
     }
