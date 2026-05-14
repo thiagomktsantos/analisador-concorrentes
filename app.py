@@ -3036,9 +3036,9 @@ Seja direto e objetivo.
 
                 <div class="card">
                     <div class="btn-row">
-                        <button class="btn-ia" onclick="clickSt('criativo')">Gerar Criativo</button>
-                        <button class="btn-ia" onclick="clickSt('copy')">Gerar Copy</button>
-                        <button class="btn-ia" onclick="clickSt('geral')">Gerar Geral</button>
+                        <button class="btn-ia" onclick="clickSt('criativo')">Analisar Criativos</button>
+                        <button class="btn-ia" onclick="clickSt('copy')">Analisar Copys</button>
+                        <button class="btn-ia" onclick="clickSt('geral')">Análise Geral</button>
                     </div>
 
                     <div class="tabs">
