@@ -3047,7 +3047,6 @@ Seja direto e objetivo.
  
             ia_height = 320 if (criativo_html or copy_html or geral_html) else 80
  
-            components.html(f"""
             ia_script = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
