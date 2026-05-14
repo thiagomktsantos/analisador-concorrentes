@@ -3046,27 +3046,18 @@ Seja direto e objetivo.
             geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
  
             ia_height = 320 if (criativo_html or copy_html or geral_html) else 80
- 
+
             ia_script = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
 .tabs { display:flex; border-bottom:2px solid #e5e7eb; background:#fff; }
-.tab {
-    flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600;
-    color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent;
-    margin-bottom:-2px; background:#fff; border-top:none; border-left:none;
-    border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s;
-}
+.tab { flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#fff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }
 .tab.active { color:#3a9fd6; border-bottom:2px solid #3a9fd6; }
 .panel { display:none; padding:14px 0 4px 0; }
 .panel.active { display:block; }
-.result {
-    background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
-    padding:12px 14px; font-size:13px; color:#374151; line-height:1.7;
-    max-height:240px; overflow-y:auto;
-}
+.result { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; color:#374151; line-height:1.7; max-height:240px; overflow-y:auto; }
 .empty { padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }
 </style>
 <div class="tabs">
@@ -3087,17 +3078,17 @@ function showTab(name, el) {
 </script>
 """
 
-def _panel(html_content, btn_label):
-    if html_content:
-        return '<div class="result">' + html_content + '</div>'
-    return f'<div class="empty">Clique em <b>{btn_label}</b> acima para gerar.</div>'
+            def _panel(html_content, btn_label):
+                if html_content:
+                    return '<div class="result">' + html_content + '</div>'
+                return '<div class="empty">Clique em <b>' + btn_label + '</b> acima para gerar.</div>'
 
-ia_script = ia_script.replace(
-    "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
-).replace(
-    "COPY_PLACEHOLDER", _panel(copy_html, "Analisar Copys")
-).replace(
-    "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
-)
+            ia_script = ia_script.replace(
+                "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
+            ).replace(
+                "COPY_PLACEHOLDER", _panel(copy_html, "Analisar Copys")
+            ).replace(
+                "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
+            )
 
-components.html(ia_script, height=ia_height, scrolling=False)
+            components.html(ia_script, height=ia_height, scrolling=False)
