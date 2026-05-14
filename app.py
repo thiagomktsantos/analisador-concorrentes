@@ -3070,9 +3070,9 @@ Seja direto e objetivo.
             .empty {{ padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }}
             </style>
             <div class="tabs">
-                <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
-                <button class="tab" onclick="showTab('copy',this)">✍️ Copy</button>
-                <button class="tab" onclick="showTab('geral',this)">📊 Geral</button>
+                <button class="tab active" onclick="showTab('criativo',this);triggerSt('🎨 Analisar Criativos')">🎨 Criativo</button>
+                <button class="tab" onclick="showTab('copy',this);triggerSt('✍️ Analisar Copys')">✍️ Copy</button>
+                <button class="tab" onclick="showTab('geral',this);triggerSt('📊 Análise Geral')">📊 Geral</button>
             </div>
             <div id="panel-criativo" class="panel active">
                 {('<div class="result">' + criativo_html + '</div>') if criativo_html else '<div class="empty">Clique em <b>Analisar Criativos</b> acima para gerar.</div>'}
@@ -3084,6 +3084,12 @@ Seja direto e objetivo.
                 {('<div class="result">' + geral_html + '</div>') if geral_html else '<div class="empty">Clique em <b>Análise Geral</b> acima para gerar.</div>'}
             </div>
             <script>
+            function triggerSt(label) {
+                const btns = window.parent.document.querySelectorAll('button');
+                for (const b of btns) {
+                    if (b.innerText.trim() === label) { b.click(); break; }
+                }
+            }
             function showTab(name, el) {{
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
