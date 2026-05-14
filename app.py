@@ -2771,7 +2771,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         cards += f"""
                         <div style='flex:1;text-align:center'>
                             {img_html}
-                            <div style='font-size:12px;color:#374151;font-weight:600'>❤️ {likes_fmt} &nbsp; 💬 {coms_fmt} &nbsp; <span style="color:#9ca3af;font-weight:400">{date_str}</span></div>
+                            <div style='font-size:12px;color:#374151;font-weight:600'>📅 <span style="color:#9ca3af;font-weight:400">{date_str}</span> ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt} &nbsp;</div>
                         </div>"""
                     posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
 
@@ -2781,7 +2781,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
                 body {{ padding-bottom: 4px; }}
-                .card {{ background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }}
+                .card {{ background: #ffffff; }}
                 </style>
                 <div class="card">{posts_html}</div>
                 """, height=240, scrolling=False)
