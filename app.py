@@ -2756,44 +2756,44 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         thumb_url = post.get("thumb", "")
                         date_str  = post.get("date", "")
                         caption   = post.get("caption", "")
-                        caption_display = (caption[:80] + "…") if len(caption) > 80 else caption
                         if thumb_url:
-                            img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror=\"this.style.display='none'\" />"
+                            img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;' onerror=\"this.style.display='none'\" />"
                         else:
                             icon = "Vídeo" if post.get("is_video") else "Foto"
-                            img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>"
+                            img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;'>{icon}</div>"
                         cards += f"""
-                        <div style='flex:1;min-width:0'>
+                        <div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:6px'>
+                            <div style='font-size:11px;color:#9ca3af;font-weight:500;text-align:center'>
+                                📅 {date_str}
+                            </div>
                             {img_html}
-                            <div style='font-size:12px;color:#374151;font-weight:600;margin-bottom:4px;white-space:nowrap'>
-                                📅 <span style="color:#9ca3af;font-weight:400">{date_str}</span>
-                                &nbsp;❤️ {likes_fmt}
-                                &nbsp;💬 {coms_fmt}
+                            <div style='font-size:12px;color:#374151;font-weight:600;white-space:nowrap;text-align:center'>
+                                ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}
                             </div>
                             <div style='font-size:11px;color:#6b7280;line-height:1.5;
-                                        overflow:hidden;display:-webkit-box;
-                                        -webkit-line-clamp:3;-webkit-box-orient:vertical;
-                                        word-break:break-word;font-style:italic'>
-                                {caption_display if caption_display else '<span style="color:#d1d5db">Sem legenda</span>'}
+                                        height:52px;overflow-y:auto;
+                                        word-break:break-word;font-style:italic;
+                                        border:1px solid #f3f4f6;border-radius:6px;
+                                        padding:4px 6px;background:#fafafa'>
+                                {caption if caption else '<span style="color:#d1d5db">Sem legenda</span>'}
                             </div>
                         </div>"""
-                    posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
+                    posts_html = f"<div style='display:flex;gap:10px'>{cards}</div>"
 
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
-                body {{ padding-bottom: 4px; }}
-                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; height:100%; }}
-                .header {{ padding:14px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .body {{ padding:16px; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow:hidden; }}
+                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+                .header {{ padding:12px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .body {{ padding:14px 16px; }}
                 </style>
                 <div class="wrap">
                     <div class="header">Últimas 3 Postagens</div>
                     <div class="body">{posts_html}</div>
                 </div>
-                """, height=360, scrolling=False)
+                """, height=340, scrolling=False)
 
             with col_table:
                 df_posts_rows = ""
@@ -2812,12 +2812,12 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow:hidden; }}
                 .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-                .header {{ padding:14px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .table-wrap {{ max-height:295px; overflow-y:auto; }}
+                .header {{ padding:12px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .table-wrap {{ max-height:278px; overflow-y:auto; }}
                 table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-                th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 12px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:12px; position:sticky; top:0; }}
+                th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 12px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:12px; position:sticky; top:0; z-index:1; }}
                 td {{ padding:9px 12px; border-bottom:1px solid #f3f4f6; color:#374151; background:#ffffff; }}
                 tr:last-child td {{ border-bottom:none; }}
                 </style>
@@ -2832,9 +2832,9 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         </table>
                     </div>
                 </div>
-                """, height=360, scrolling=False)
+                """, height=340, scrolling=False)
 
-            # ── ANÁLISE DE IA (linha 2, largura total)
+# ── ANÁLISE DE IA (linha 2, largura total)
             st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
 
             chave_criativo = f"ia_criativo_{r['handle']}"
