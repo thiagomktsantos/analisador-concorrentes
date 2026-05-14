@@ -2864,10 +2864,12 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 st.markdown(f"""
                 <style>
+                .st-key-btn_criativo_{idx} {{ display:none !important; }}
+                .st-key-btn_copy_{idx} {{ display:none !important; }}
+                .st-key-btn_geral_{idx} {{ display:none !important; }}
                 .st-key-btn_criativo_{idx},
                 .st-key-btn_copy_{idx},
                 .st-key-btn_geral_{idx} {{
-                    display: none !important;
                     height: 0 !important;
                     min-height: 0 !important;
                     margin: 0 !important;
@@ -2878,18 +2880,6 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                 div[data-testid="column"]:has(.st-key-btn_copy_{idx}),
                 div[data-testid="column"]:has(.st-key-btn_geral_{idx}) {{
                     display: none !important;
-                    height: 0 !important;
-                    min-height: 0 !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                }}
-                div[data-testid="stHorizontalBlock"]:has(.st-key-btn_criativo_{idx}) {{
-                    display: none !important;
-                    height: 0 !important;
-                    min-height: 0 !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    gap: 0 !important;
                 }}
                 </style>
                 """, unsafe_allow_html=True)
