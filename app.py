@@ -2153,7 +2153,7 @@ elif st.session_state.pagina == "redes":
         background: #3a9fd6 !important;
         color: #ffffff !important;
         border: none !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         font-weight: 700 !important;
         transition: opacity 0.15s !important;
     }
@@ -2170,11 +2170,11 @@ elif st.session_state.pagina == "redes":
         margin-bottom: 20px !important;
     }
     div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 14px !important;
+        font-size: 15px !important;
         font-weight: 600 !important;
         color: #6b7280 !important;
         border-bottom: none !important;
-        border-radius: 8px !important;
+        border-radius: 8px 8px 0px 0px !important;
         padding: 10px 24px !important;
         background: transparent !important;
         transition: all 0.15s !important;
