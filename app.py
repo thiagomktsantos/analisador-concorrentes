@@ -2771,11 +2771,14 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         )
  
                         cap_html = (
+                            f'<div style="font-size:11px;color:#6b7280;line-height:1.5;font-style:italic;'
+                            f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;min-height:52px;">'
+                            f'<div style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{cap_3ln}</div>'
                             f'<div onclick="openCopy(\'{cap_esc}\')" '
-                            f'style="font-size:11px;color:#6b7280;line-height:1.5;font-style:italic;'
-                            f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;'
-                            f'display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;'
-                            f'overflow:hidden;min-height:52px;cursor:pointer;">{cap_3ln}</div>'
+                            f'style="margin-top:5px;font-size:11px;font-weight:600;color:#3a9fd6;'
+                            f'cursor:pointer;font-style:normal;text-align:center;'
+                            f'border-top:1px solid #f3f4f6;padding-top:4px;">[🔍 ver copy]</div>'
+                            f'</div>'
                         ) if cap else (
                             '<div style="font-size:11px;color:#d1d5db;font-style:italic;'
                             'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;'
