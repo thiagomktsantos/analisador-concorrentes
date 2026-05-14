@@ -2950,7 +2950,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
             # ── Título da seção de IA no mesmo estilo
             st.markdown("""
             <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                        padding:12px 16px;margin-bottom:12px'>
+                        padding:12px 16px;margin-bottom:4px'>
                 <div style='font-size:14px;font-weight:800;color:#1a2e4a;
                             text-transform:uppercase;letter-spacing:0.3px'>Análise de IA</div>
             </div>
@@ -3045,14 +3045,14 @@ Seja direto e objetivo.
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
             geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
  
-            ia_height = 320 if (criativo_html or copy_html or geral_html) else 80
+            ia_height = 320 if (criativo_html or copy_html or geral_html) else 120
 
             ia_script = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
-.tabs { display:flex; border-bottom:2px solid #e5e7eb; background:#fff; }
+.tabs { display:flex; border-bottom:2px solid #e5e7eb; background:#fff; margin-top:-8px; }
 .tab { flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#fff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }
 .tab.active { color:#3a9fd6; border-bottom:2px solid #3a9fd6; }
 .panel { display:none; padding:14px 0 4px 0; }
