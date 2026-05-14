@@ -2961,6 +2961,7 @@ Seja direto e objetivo.
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
+                html, body {{ margin-top: -1rem !important; }}
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
                 .card {{
