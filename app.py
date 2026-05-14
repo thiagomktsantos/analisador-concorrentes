@@ -2947,18 +2947,19 @@ Seja direto e objetivo.
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
             <style>
             * {{ margin:0; padding:0; box-sizing:border-box; }}
-            html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+            html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
             .card {{ background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-            .card-header {{ padding:16px 16px 0 16px; background:#ffffff; }}
-            .card-title {{ font-size:18px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; font-family:'DM Sans',sans-serif; margin-bottom:12px; }}
+            .card-header {{ padding:12px 16px; background:#ffffff; border-bottom:1px solid #e5e7eb; }}
+            .card-title {{ font-size:14px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; font-family:'DM Sans',sans-serif; }}
             .tabs {{ display:flex; border-bottom:2px solid #e5e7eb; background:#ffffff; }}
             .tab {{ flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#ffffff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }}
             .tab.active {{ color:#3a9fd6; border-bottom:2px solid #3a9fd6; }}
-            .panel {{ display:none; padding:16px; background:#ffffff; min-height:60px; }}
+            .panel {{ display:none; padding:14px 16px; background:#ffffff; }}
             .panel.active {{ display:block; }}
-            .result {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; font-size:13px; color:#374151; line-height:1.7; max-height:200px; overflow-y:auto; }}
+            .result {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; color:#374151; line-height:1.7; max-height:160px; overflow-y:auto; }}
+            .empty {{ padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }}
             </style>
-            <div class="card">
+            <div class="card" id="card">
                 <div class="card-header">
                     <div class="card-title">Análise de IA</div>
                 </div>
@@ -2968,13 +2969,13 @@ Seja direto e objetivo.
                     <button class="tab" onclick="showTab('geral',this)">Geral</button>
                 </div>
                 <div id="panel-criativo" class="panel active">
-                    {('<div class="result">' + criativo_html + '</div>') if criativo_html else vazio}
+                    {('<div class="result">' + criativo_html + '</div>') if criativo_html else '<div class="empty">Clique em <b>Gerar análise</b> para analisar.</div>'}
                 </div>
                 <div id="panel-copy" class="panel">
-                    {('<div class="result">' + copy_html + '</div>') if copy_html else vazio}
+                    {('<div class="result">' + copy_html + '</div>') if copy_html else '<div class="empty">Clique em <b>Gerar análise</b> para analisar.</div>'}
                 </div>
                 <div id="panel-geral" class="panel">
-                    {('<div class="result">' + geral_html + '</div>') if geral_html else vazio}
+                    {('<div class="result">' + geral_html + '</div>') if geral_html else '<div class="empty">Clique em <b>Gerar análise</b> para analisar.</div>'}
                 </div>
             </div>
             <script>
@@ -2984,5 +2985,14 @@ Seja direto e objetivo.
                 document.getElementById('panel-' + name).classList.add('active');
                 el.classList.add('active');
             }}
+            // Ajusta altura do iframe ao tamanho real do card
+            function ajustar() {{
+                const h = document.getElementById('card').getBoundingClientRect().height;
+                window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
+                    if (f.contentWindow === window) f.style.height = (h + 4) + 'px';
+                }});
+            }}
+            document.addEventListener('DOMContentLoaded', ajustar);
+            window.addEventListener('load', ajustar);
             </script>
-            """, height=320, scrolling=False)
+            """, height=160, scrolling=False)
