@@ -2539,7 +2539,7 @@ elif st.session_state.pagina == "redes":
             html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; overflow: hidden; }}
             .header {{
                 display: flex; align-items: center; gap: 16px;
-                padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px;
+                padding: 12px 0 16px 0; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px;
             }}
             .avatar {{
                 width: 52px; height: 52px; border-radius: 50%;
@@ -2562,7 +2562,7 @@ elif st.session_state.pagina == "redes":
                     <div class="badge">{badge_lbl}</div>
                 </div>
             </div>
-            """, height=80, scrolling=False)
+            """, height=90, scrolling=False)
  
             # ── MÉTRICAS + BIO
             col_metricas, col_bio = st.columns([1, 1])
