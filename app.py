@@ -2663,7 +2663,7 @@ elif st.session_state.pagina == "redes":
                         </div>
                     </div>
                 </div>
-                """, height=178, scrolling=False)
+                """, height=185, scrolling=False)
  
                 # CSS para esconder o botão fantasma da bio (mantém funcional mas invisível)
                 st.markdown(f"""
