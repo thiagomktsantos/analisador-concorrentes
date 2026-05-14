@@ -2684,11 +2684,20 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     """, unsafe_allow_html=True)
  
 # ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
+
+            st.markdown(
+                "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
+                unsafe_allow_html=True,
+            )
+
             col_posts, col_ia = st.columns([3, 2])
 
             with col_posts:
                 st.markdown(
-                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
+                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                    "text-transform:uppercase;margin-bottom:14px;margin-top:0;"
+                    "font-family:\"Source Sans\",sans-serif'>"
+                    "Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
                 st.markdown(
