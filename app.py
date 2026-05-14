@@ -2819,6 +2819,13 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 """, height=500 if posts_list else 100, scrolling=True)
 
             with col_ia:
+                st.markdown(
+                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+                    "text-transform:uppercase;margin-bottom:14px;margin-top:20px;"
+                    "font-family:\"Source Sans\",sans-serif'>"
+                    "Análise de IA</div>",
+                    unsafe_allow_html=True,
+                )
 
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
@@ -3003,8 +3010,6 @@ Seja direto e objetivo.
                 </style>
 
                 <div class="card">
-                    <div style='font-size:18px;font-weight:700;color:#1a2e4a;text-transform:uppercase;font-family:"DM Sans",sans-serif;padding:16px 16px 12px 16px;letter-spacing:0px;'>Análise de IA</div>
-
                     <div class="btn-row">
                         <button class="btn-ia" onclick="clickSt('criativo')">Gerar Criativo</button>
                         <button class="btn-ia" onclick="clickSt('copy')">Gerar Copy</button>
