@@ -2821,10 +2821,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 """, height=500 if posts_list else 100, scrolling=True)
 
             with col_ia:
-                st.markdown(
-                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
-                    unsafe_allow_html=True,
-                )
 
                 chave_criativo = f"ia_criativo_{r['handle']}"
                 chave_copy     = f"ia_copy_{r['handle']}"
@@ -2853,7 +2849,6 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
-                # Botões Streamlit ocultos — acionados via JS
                 st.markdown(f"""
                 <style>
                 .st-key-btn_criativo_{idx} {{ display:none !important; }}
@@ -2958,11 +2953,6 @@ Seja direto e objetivo.
                     margin: 0 !important;
                     padding: 0 !important;
                 }}
-                .hr-sep {{
-                    border: none;
-                    border-top: 1px solid #e5e7eb;
-                    margin: 0 0 14px 0;
-                }}
                 .card {{
                     background: #ffffff;
                     border: 1px solid #e5e7eb;
@@ -3046,8 +3036,6 @@ Seja direto e objetivo.
                     overflow-y: auto;
                 }}
                 </style>
-
-                <hr class="hr-sep" />
 
                 <div class="card">
                     <div class="card-header">
