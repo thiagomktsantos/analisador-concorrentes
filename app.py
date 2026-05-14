@@ -2763,28 +2763,45 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         coms_fmt  = fmt_num(post.get("comments", 0))
                         thumb_url = post.get("thumb", "")
                         date_str  = post.get("date", "")
+                        caption   = post.get("caption", "")
+                        caption_display = (caption[:80] + "…") if len(caption) > 80 else caption
                         if thumb_url:
                             img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;margin-bottom:6px' onerror=\"this.style.display='none'\" />"
                         else:
                             icon = "Vídeo" if post.get("is_video") else "Foto"
                             img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;margin-bottom:6px'>{icon}</div>"
                         cards += f"""
-                        <div style='flex:1;text-align:center'>
+                        <div style='flex:1;min-width:0'>
                             {img_html}
-                            <div style='font-size:12px;color:#374151;font-weight:600'>📅 <span style="color:#9ca3af;font-weight:400">{date_str}</span> ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt} &nbsp;</div>
+                            <div style='font-size:12px;color:#374151;font-weight:600;margin-bottom:4px;white-space:nowrap'>
+                                📅 <span style="color:#9ca3af;font-weight:400">{date_str}</span>
+                                &nbsp;❤️ {likes_fmt}
+                                &nbsp;💬 {coms_fmt}
+                            </div>
+                            <div style='font-size:11px;color:#6b7280;line-height:1.5;
+                                        overflow:hidden;display:-webkit-box;
+                                        -webkit-line-clamp:3;-webkit-box-orient:vertical;
+                                        word-break:break-word;font-style:italic'>
+                                {caption_display if caption_display else '<span style="color:#d1d5db">Sem legenda</span>'}
+                            </div>
                         </div>"""
                     posts_html = f"<div style='display:flex;gap:12px'>{cards}</div>"
 
                 components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
                 body {{ padding-bottom: 4px; }}
-                .card {{ background: #ffffff; }}
+                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+                .header {{ padding:14px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .body {{ padding:16px; }}
                 </style>
-                <div class="card">{posts_html}</div>
-                """, height=240, scrolling=False)
+                <div class="wrap">
+                    <div class="header">Últimas 3 Postagens</div>
+                    <div class="body">{posts_html}</div>
+                </div>
+                """, height=340, scrolling=False)
 
             with col_table:
                 df_posts_rows = ""
