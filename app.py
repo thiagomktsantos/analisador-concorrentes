@@ -2857,25 +2857,37 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
-                # CSS para esconder botões Streamlit E o bloco de colunas inteiro
+                # Botões Streamlit ocultos via CSS — identificados pelo key único
                 st.markdown(f"""
                 <style>
+                .st-key-btn_criativo_{idx} > div,
+                .st-key-btn_copy_{idx} > div,
+                .st-key-btn_geral_{idx} > div {{
+                    visibility: hidden !important;
+                    height: 0 !important;
+                    min-height: 0 !important;
+                    overflow: hidden !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }}
                 .st-key-btn_criativo_{idx},
                 .st-key-btn_copy_{idx},
                 .st-key-btn_geral_{idx} {{
-                    display: none !important;
                     height: 0 !important;
                     min-height: 0 !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
                     overflow: hidden !important;
-                }}
-                [data-testid="stHorizontalBlock"]:has(.st-key-btn_criativo_{idx}) {{
-                    display: none !important;
-                    height: 0 !important;
-                    min-height: 0 !important;
                     margin: 0 !important;
                     padding: 0 !important;
+                }}
+                /* esconde o stHorizontalBlock pai SEM usar display:none para manter os botões clicáveis */
+                [data-testid="stHorizontalBlock"]:has(.st-key-btn_criativo_{idx}) {{
+                    height: 0 !important;
+                    min-height: 0 !important;
+                    overflow: hidden !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
                 }}
                 </style>
                 """, unsafe_allow_html=True)
@@ -3065,14 +3077,17 @@ Seja direto e objetivo.
                     el.classList.add('active');
                 }}
                 function clickSt(tipo) {{
-                    const labels = {{
-                        'criativo': 'Analisar Criativos',
-                        'copy': 'Analisar Copys',
-                        'geral': 'Análise Geral',
+                    // Busca pelo key único do botão Streamlit usando data-testid
+                    const keyMap = {{
+                        'criativo': 'btn_criativo_{idx}',
+                        'copy':     'btn_copy_{idx}',
+                        'geral':    'btn_geral_{idx}',
                     }};
-                    const label = labels[tipo];
-                    for (const b of window.parent.document.querySelectorAll('button')) {{
-                        if (b.innerText.trim() === label) {{ b.click(); break; }}
+                    const key = keyMap[tipo];
+                    const container = window.parent.document.querySelector('.st-key-' + key);
+                    if (container) {{
+                        const btn = container.querySelector('button');
+                        if (btn) btn.click();
                     }}
                 }}
                 </script>
