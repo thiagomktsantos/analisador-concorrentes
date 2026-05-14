@@ -2805,9 +2805,10 @@ html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webki
 .modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
 .modal-close:hover {{ color:#111827; }}
 </style>
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;position:relative;">
     <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Últimas 3 Postagens</div>
-    <div style="padding:14px 16px;display:flex;gap:10px">{cards_inner}</div>
+    <div style="padding:14px 16px;display:flex;gap:10px;position:relative;z-index:1">{cards_inner}</div>
+    <div style="position:absolute;bottom:-18px;right:-14px;font-size:110px;opacity:0.04;line-height:1;pointer-events:none;z-index:0;user-select:none;">🔍</div>
 </div>
 <div class="modal-bg" id="modal-cp" onclick="if(event.target===this)this.classList.remove(\'open\')">
     <div class="modal">
