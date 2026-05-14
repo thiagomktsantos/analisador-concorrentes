@@ -2148,7 +2148,7 @@ elif st.session_state.pagina == "redes":
     st.markdown("""
     <style>
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
-
+ 
     section.main div.stButton > button[kind="primary"] {
         background: #3a9fd6 !important;
         color: #ffffff !important;
@@ -2206,7 +2206,7 @@ elif st.session_state.pagina == "redes":
             unsafe_allow_html=True,
         )
         st.markdown(
-            "<div style='font-size:16px;color:#6b7280;'>"
+            "<div style='font-size:14px;color:#6b7280;'>"
             "Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>",
             unsafe_allow_html=True,
         )
@@ -2324,7 +2324,7 @@ elif st.session_state.pagina == "redes":
                                         p["caption"].get("text", "")
                                         if isinstance(p["caption"], dict)
                                         else str(p["caption"])
-                                    )[:120]
+                                    )[:500]          # ← guarda até 500 chars para o modal
                                 taken_at = p.get("taken_at", 0)
                                 date_str = ""
                                 if taken_at:
@@ -2407,20 +2407,20 @@ elif st.session_state.pagina == "redes":
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
  
     if not ok:
-        st.info("Clique em **📡 Coletar dados agora** para buscar os dados do Instagram.")
+        st.info("Clique em **Coletar dados** para buscar os dados do Instagram.")
         st.stop()
  
     # ══════════════════════════════════════════════════════════════════════
     # GRÁFICOS COMPARATIVOS
     # ══════════════════════════════════════════════════════════════════════
-
-    CORES = ["#3a9fd6", "#27ae60", "#413ad6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
-
+ 
+    CORES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
+ 
     nomes_ok   = [x["nome"] for x in ok]
     segs_ok    = [x.get("seguidores", 0) for x in ok]
     eng_pct_ok = [x.get("eng_pct", 0.0) for x in ok]
     cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
-
+ 
     st.markdown(
         "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
         "font-family:\"Source Sans\",sans-serif;"
@@ -2428,32 +2428,9 @@ elif st.session_state.pagina == "redes":
         "Comparativo com todos os perfis</div>",
         unsafe_allow_html=True,
     )
-
-    _layout_base = dict(
-        height=360,
-        margin=dict(t=20, b=30, l=10, r=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        showlegend=False,
-        font=dict(family="DM Sans, sans-serif", color="#374151", size=13),
-        bargap=0.45,
-        xaxis=dict(
-            showgrid=False,
-            tickfont=dict(family="DM Sans", size=13, color="#374151"),
-            showline=False,
-        ),
-        yaxis=dict(
-            showgrid=True,
-            gridcolor="#f3f4f6",
-            zeroline=False,
-            tickfont=dict(family="DM Sans", size=12, color="#6b7280"),
-        ),
-    )
-
-    import json
-
+ 
     col_g1, col_g2 = st.columns(2)
-
+ 
     with col_g1:
         fig_seg = go.Figure(
             go.Bar(
@@ -2483,9 +2460,9 @@ elif st.session_state.pagina == "redes":
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
                     padding:20px 16px 24px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);overflow:visible">
-            <div style="font-size:15px;font-weight:800;color:#111827;
-                        font-family:'DM Sans',sans-serif;letter-spacing:0.3px;
-                        padding:0 4px 12px 4px;border-bottom:1px solid #f3f4f6;
+            <div style="font-size:14px;font-weight:800;color:#1a2e4a;
+                        font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
+                        padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
                         margin-bottom:4px">NÚMERO DE SEGUIDORES</div>
             <div id="graf_seg"></div>
         </div>
@@ -2494,7 +2471,7 @@ elif st.session_state.pagina == "redes":
             Plotly.newPlot('graf_seg', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
         """, height=275)
-
+ 
     with col_g2:
         fig_eng = go.Figure(
             go.Bar(
@@ -2525,9 +2502,9 @@ elif st.session_state.pagina == "redes":
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
                     padding:20px 16px 24px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);overflow:visible">
-            <div style="font-size:15px;font-weight:800;color:#111827;
-                        font-family:'DM Sans',sans-serif;letter-spacing:0.3px;
-                        padding:0 4px 12px 4px;border-bottom:1px solid #f3f4f6;
+            <div style="font-size:14px;font-weight:800;color:#1a2e4a;
+                        font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
+                        padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
                         margin-bottom:4px">TAXA DE ENGAJAMENTO (%)</div>
             <div id="graf_eng"></div>
         </div>
@@ -2536,7 +2513,7 @@ elif st.session_state.pagina == "redes":
             Plotly.newPlot('graf_eng', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
         """, height=275)
-    
+ 
     # ══════════════════════════════════════════════════════════════════════
     # ABAS POR PERFIL
     # ══════════════════════════════════════════════════════════════════════
@@ -2554,45 +2531,28 @@ elif st.session_state.pagina == "redes":
             eng_est   = len(r.get("posts", [])) == 0
             posts_list = r.get("posts", [])
  
-            # ── INFORMAÇÕES DE PERFIL
+            # ── CABEÇALHO DO PERFIL
             components.html(f"""
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
             <style>
             * {{ margin:0; padding:0; box-sizing:border-box; }}
             html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; overflow: hidden; }}
             .header {{
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                padding-bottom: 16px;
-                border-bottom: 1px solid #e5e7eb;
-                margin-bottom: 4px;
+                display: flex; align-items: center; gap: 16px;
+                padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px;
             }}
             .avatar {{
-                width: 52px; height: 52px;
-                border-radius: 50%;
+                width: 52px; height: 52px; border-radius: 50%;
                 background: {cor};
                 display: flex; align-items: center; justify-content: center;
-                font-size: 18px; font-weight: 700; color: #fff;
-                flex-shrink: 0;
+                font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
             }}
-            .nome {{
-                font-size: 20px; font-weight: 700; color: #111827;
-                letter-spacing: -0.3px;
-            }}
-            .handle {{
-                font-size: 14px; font-weight: 400; color: #9ca3af; margin-left: 6px;
-            }}
+            .nome {{ font-size: 20px; font-weight: 700; color: #111827; letter-spacing: -0.3px; }}
+            .handle {{ font-size: 14px; font-weight: 400; color: #9ca3af; margin-left: 6px; }}
             .badge {{
-                display: inline-block;
-                background: {badge_bg};
-                color: {badge_txt};
-                border: 1px solid {badge_brd};
-                padding: 2px 10px;
-                border-radius: 20px;
-                font-size: 11px;
-                font-weight: 600;
-                margin-top: 4px;
+                display: inline-block; background: {badge_bg}; color: {badge_txt};
+                border: 1px solid {badge_brd}; padding: 2px 10px; border-radius: 20px;
+                font-size: 11px; font-weight: 600; margin-top: 4px;
             }}
             </style>
             <div class="header">
@@ -2604,93 +2564,99 @@ elif st.session_state.pagina == "redes":
             </div>
             """, height=80, scrolling=False)
  
+            # ── MÉTRICAS + BIO
             col_metricas, col_bio = st.columns([1, 1])
  
             with col_metricas:
-                st.markdown(f"""
-                <div style='background:#fff;border-radius:12px'>
-                    <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
-                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>👥</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {fmt_num(r.get("seguidores",0))}
-                                </span>
-                            </div>
-                            <span style='font-size:13px;color:#000;font-weight:600;
-                                         letter-spacing:0.8px'>Seguidores</span>
+                # ── CAIXA MÉTRICAS  (título no mesmo estilo de "Últimas 3 Postagens")
+                components.html(f"""
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+                <style>
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
+                        text-transform:uppercase; letter-spacing:0.3px;
+                        border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .grid {{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px 16px; }}
+                .cell {{ padding:14px 8px; background:#f9fafb; border-radius:10px;
+                         display:flex; flex-direction:column; align-items:center; text-align:center; }}
+                .val {{ font-size:22px; font-weight:700; color:#111827; letter-spacing:-1px; }}
+                .lbl {{ font-size:11px; color:#000; font-weight:600; letter-spacing:0.8px; margin-top:4px; }}
+                .note {{ font-size:11px; color:#9ca3af; padding:0 14px 10px; }}
+                </style>
+                <div class="wrap">
+                    <div class="hdr">Métricas do Perfil</div>
+                    <div class="grid">
+                        <div class="cell">
+                            <span style="font-size:20px">👥</span>
+                            <span class="val">{fmt_num(r.get("seguidores",0))}</span>
+                            <span class="lbl">Seguidores</span>
                         </div>
-                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>🖼️</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {fmt_num(r.get("total_posts",0))}
-                                </span>
-                            </div>
-                            <span style='font-size:13px;color:#000;font-weight:600;
-                                         letter-spacing:0.8px'>Posts</span>
+                        <div class="cell">
+                            <span style="font-size:20px">🖼️</span>
+                            <span class="val">{fmt_num(r.get("total_posts",0))}</span>
+                            <span class="lbl">Posts</span>
                         </div>
-                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>❤️</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {fmt_num(int(r.get("eng_medio",0)))}
-                                </span>
-                            </div>
-                            <span style='font-size:13px;color:#000;font-weight:600;
-                                         letter-spacing:0.8px'>Engajamento Médio</span>
+                        <div class="cell">
+                            <span style="font-size:20px">❤️</span>
+                            <span class="val">{fmt_num(int(r.get("eng_medio",0)))}</span>
+                            <span class="lbl">Eng. Médio</span>
                         </div>
-                        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-                            <div style='display:flex;align-items:center;gap:8px'>
-                                <span style='font-size:22px;line-height:1'>📈</span>
-                                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                                    {r.get("eng_pct",0):.2f}%
-                                </span>
-                            </div>
-                            <span style='font-size:13px;color:#000;font-weight:600;
-                                         letter-spacing:0.8px'>Engajamento %{"*" if eng_est else ""}</span>
+                        <div class="cell">
+                            <span style="font-size:20px">📈</span>
+                            <span class="val">{r.get("eng_pct",0):.2f}%</span>
+                            <span class="lbl">Engajamento {"*" if eng_est else ""}</span>
                         </div>
                     </div>
-                    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
+                    {"<div class='note'>* Estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
                 </div>
-                """, unsafe_allow_html=True)
+                """, height=230 if eng_est else 218, scrolling=False)
  
             with col_bio:
                 chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
  
-                st.markdown(f"""
+                # ── CAIXA BIO  (título no mesmo estilo de "Últimas 3 Postagens")
+                components.html(f"""
+                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
-                .st-key-btn_bio_ia_{idx} {{ display: none !important; }}
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
+                        text-transform:uppercase; letter-spacing:0.3px;
+                        border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .body {{ padding:14px 16px; }}
+                .bio-text {{ font-size:14px; color:#374151; line-height:1.7; min-height:40px;
+                             font-style:italic; margin-bottom:16px; }}
+                .btn-ia {{
+                    width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:8px;
+                    background:#fff; font-size:14px; font-weight:600; color:#374151;
+                    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+                }}
+                .btn-ia:hover {{ background:#f3f4f6; }}
                 </style>
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                            padding:20px 24px;margin-bottom:12px'>
-                    <div style='font-size:14px;font-weight:700;color:#1a2e4a;
-                                text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Bio</div>
-                    <div style='font-size:14px;color:#374151;line-height:1.7;min-height:40px;font-style:italic;margin-bottom:16px'>
-                        {f'&ldquo;{bio_txt}&rdquo;' if bio_txt
-                          else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
-                    </div>
-                    <div style='border-top:1px solid #f3f4f6;padding-top:14px'>
-                        <button onclick="
-                            const btns = window.parent.document.querySelectorAll('button');
-                            for (const b of btns) {{
-                                if (b.innerText.trim() === '__bio_{idx}__') {{ b.click(); break; }}
-                            }}
-                        " style='width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;
-                                 background:#fff;font-size:14px;font-weight:600;color:#374151;
-                                 cursor:pointer;font-family:DM Sans,sans-serif;'>
-                            Analisar Bio com IA
-                        </button>
+                <div class="wrap">
+                    <div class="hdr">Bio</div>
+                    <div class="body">
+                        <div class="bio-text">
+                            {f'&ldquo;{bio_txt}&rdquo;' if bio_txt
+                              else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
+                        </div>
+                        <div style="border-top:1px solid #f3f4f6;padding-top:14px">
+                            <button class="btn-ia" onclick="
+                                const btns = window.parent.document.querySelectorAll('button');
+                                for (const b of btns) {{
+                                    if (b.innerText.trim() === '__bio_{idx}__') {{ b.click(); break; }}
+                                }}
+                            ">Analisar Bio com IA</button>
+                        </div>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
-
+                """, height=218, scrolling=False)
+ 
                 analisar_bio = st.button(
                     f"__bio_{idx}__",
                     key=f"btn_bio_ia_{idx}",
@@ -2704,21 +2670,21 @@ elif st.session_state.pagina == "redes":
                             try:
                                 prompt_bio = f"""
 Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
-
+ 
 Bio: "{bio_txt}"
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
-
+ 
 Responda com:
 ### Posicionamento
 Qual é o posicionamento transmitido pela bio?
-
+ 
 ### Pontos Fortes
 (2 pontos positivos da bio)
-
+ 
 ### O que melhorar
 (2 sugestões concretas de melhoria)
-
+ 
 ### Bio sugerida
 Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
@@ -2740,116 +2706,338 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
                 unsafe_allow_html=True,
             )
-
-# ── ÚLTIMAS 3 POSTAGENS + TABELA (linha 1)
-
+ 
+            # ══════════════════════════════════════════════════════════════
+            # ÚLTIMAS 3 POSTAGENS + VER TODOS OS POSTS
+            # ══════════════════════════════════════════════════════════════
+ 
             col_posts, col_table = st.columns(2)
-
+ 
             with col_posts:
-                if not posts_list:
-                    posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
-                else:
-                    cards = ""
-                    for post in posts_list[:3]:
-                        likes_fmt = fmt_num(post.get("likes", 0))
-                        coms_fmt  = fmt_num(post.get("comments", 0))
-                        thumb_url = post.get("thumb", "")
-                        date_str  = post.get("date", "")
-                        caption   = post.get("caption", "")
-                        if thumb_url:
-                            img_html = f"<img src='{thumb_url}' style='width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;' onerror=\"this.style.display='none'\" />"
-                        else:
-                            icon = "Vídeo" if post.get("is_video") else "Foto"
-                            img_html = f"<div style='width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;'>{icon}</div>"
-                        cards += f"""
-                        <div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:6px'>
-                            <div style='font-size:11px;color:#9ca3af;font-weight:500;text-align:center'>
-                                📅 {date_str}
-                            </div>
-                            {img_html}
-                            <div style='font-size:12px;color:#374151;font-weight:600;white-space:nowrap;text-align:center'>
-                                ❤️ {likes_fmt} &nbsp; 💬 {coms_fmt}
-                            </div>
-                            <div style='font-size:11px;color:#6b7280;line-height:1.5;
-                                        height:52px;overflow-y:auto;
-                                        word-break:break-word;font-style:italic;
-                                        border:1px solid #f3f4f6;border-radius:6px;
-                                        padding:4px 6px;background:#fafafa'>
-                                {caption if caption else '<span style="color:#d1d5db">Sem legenda</span>'}
-                            </div>
-                        </div>"""
-                    posts_html = f"<div style='display:flex;gap:10px'>{cards}</div>"
-
+                # ── serializa posts para JSON e injeta no HTML (sem f-string gigante)
+                posts_json = json.dumps(posts_list[:3], ensure_ascii=False)
+ 
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow:hidden; }}
+                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
                 .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-                .header {{ padding:12px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .body {{ padding:14px 16px; }}
+                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
+                        text-transform:uppercase; letter-spacing:0.3px;
+                        border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .body {{ padding:14px 16px; display:flex; gap:10px; }}
+                .pcard {{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }}
+                .date {{ font-size:11px; color:#9ca3af; font-weight:500; text-align:center; }}
+                .thumb {{ width:100%; aspect-ratio:1; border-radius:8px; object-fit:cover;
+                          border:1px solid #e5e7eb; display:block; }}
+                .thumb-ph {{ width:100%; aspect-ratio:1; border-radius:8px; background:#f3f4f6;
+                             display:flex; align-items:center; justify-content:center;
+                             font-size:13px; color:#9ca3af; }}
+                .eng {{ font-size:12px; color:#374151; font-weight:600; white-space:nowrap; text-align:center; }}
+                .caption-box {{
+                    font-size:11px; color:#6b7280; line-height:1.5; font-style:italic;
+                    border:1px solid #f3f4f6; border-radius:6px; padding:5px 7px;
+                    background:#fafafa;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 3;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    min-height: 52px;
+                    cursor: pointer;
+                    transition: background 0.1s;
+                }}
+                .caption-box:hover {{ background:#f0f9ff; border-color:#bae6fd; }}
+                /* Modal */
+                .modal-bg {{
+                    display:none; position:fixed; inset:0;
+                    background:rgba(0,0,0,0.5); z-index:9000;
+                    align-items:center; justify-content:center;
+                }}
+                .modal-bg.open {{ display:flex; }}
+                .modal {{
+                    background:#fff; border-radius:14px; padding:24px;
+                    max-width:360px; width:90%; max-height:80vh; overflow-y:auto;
+                    box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative;
+                }}
+                .modal-title {{
+                    font-size:13px; font-weight:700; color:#1a2e4a;
+                    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;
+                    padding-bottom:8px; border-bottom:1px solid #f3f4f6;
+                }}
+                .modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
+                .modal-close {{
+                    position:absolute; top:14px; right:16px; background:none; border:none;
+                    font-size:18px; color:#9ca3af; cursor:pointer; line-height:1;
+                }}
+                .modal-close:hover {{ color:#111827; }}
                 </style>
+ 
                 <div class="wrap">
-                    <div class="header">Últimas 3 Postagens</div>
-                    <div class="body">{posts_html}</div>
+                    <div class="hdr">Últimas 3 Postagens</div>
+                    <div class="body" id="posts-body"></div>
                 </div>
-                """, height=340, scrolling=False)
-
+ 
+                <!-- Modal copy -->
+                <div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+                    <div class="modal">
+                        <button class="modal-close" onclick="document.getElementById('modal-bg').classList.remove('open')">✕</button>
+                        <div class="modal-title">Copy completa</div>
+                        <div class="modal-text" id="modal-text"></div>
+                    </div>
+                </div>
+ 
+                <script>
+                var posts = {posts_json};
+ 
+                function openModal(txt) {{
+                    document.getElementById('modal-text').textContent = txt || '(sem legenda)';
+                    document.getElementById('modal-bg').classList.add('open');
+                }}
+                function closeModal(e) {{
+                    if (e.target === document.getElementById('modal-bg'))
+                        document.getElementById('modal-bg').classList.remove('open');
+                }}
+ 
+                function buildPosts() {{
+                    var body = document.getElementById('posts-body');
+                    if (!posts || posts.length === 0) {{
+                        body.innerHTML = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:14px">Posts não disponíveis.</div>';
+                        return;
+                    }}
+                    posts.forEach(function(p) {{
+                        var likes = p.likes || 0;
+                        var coms  = p.comments || 0;
+                        var cap   = p.caption || '';
+                        var thumb = p.thumb || '';
+                        var date  = p.date || '';
+                        var isVid = p.is_video;
+ 
+                        var imgHtml = thumb
+                            ? '<img class="thumb" src="' + thumb + '" onerror="this.style.display=\'none\'" />'
+                            : '<div class="thumb-ph">' + (isVid ? 'Vídeo' : 'Foto') + '</div>';
+ 
+                        var engHtml = '❤️ ' + fmtNum(likes) + ' &nbsp; 💬 ' + fmtNum(coms);
+ 
+                        var capShort = cap.length > 120 ? cap.substring(0,120) + '…' : (cap || '');
+                        var capHtml  = cap
+                            ? '<div class="caption-box" title="Clique para ver copy completa" onclick="openModal(' + JSON.stringify(cap) + ')">' + capShort + '</div>'
+                            : '<div class="caption-box" style="color:#d1d5db">Sem legenda</div>';
+ 
+                        var card = document.createElement('div');
+                        card.className = 'pcard';
+                        card.innerHTML =
+                            '<div class="date">📅 ' + date + '</div>' +
+                            imgHtml +
+                            '<div class="eng">' + engHtml + '</div>' +
+                            capHtml;
+                        body.appendChild(card);
+                    }});
+                }}
+ 
+                function fmtNum(n) {{
+                    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+                    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
+                    return String(Math.floor(n));
+                }}
+ 
+                document.addEventListener('DOMContentLoaded', buildPosts);
+                window.addEventListener('load', buildPosts);
+                </script>
+                """, height=360, scrolling=False)
+ 
             with col_table:
-                df_posts_rows = ""
-                for p in posts_list:
-                    df_posts_rows += f"""
-                    <tr>
-                        <td>{p.get('date','')}</td>
-                        <td>{'Vídeo' if p.get('is_video') else 'Foto'}</td>
-                        <td>{p.get('likes',0)}</td>
-                        <td>{p.get('comments',0)}</td>
-                        <td>{p.get('likes',0)+p.get('comments',0)}</td>
-                        <td style='max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>{p.get('caption','')[:60]}</td>
-                    </tr>"""
-
+                # ── serializa TODOS os posts para JSON
+                all_posts_json = json.dumps(posts_list, ensure_ascii=False)
+ 
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow:hidden; }}
+                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
                 .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-                .header {{ padding:12px 16px; font-size:14px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .table-wrap {{ max-height:278px; overflow-y:auto; }}
+                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
+                        text-transform:uppercase; letter-spacing:0.3px;
+                        border-bottom:1px solid #e5e7eb; background:#fff; }}
+                .table-wrap {{ max-height:298px; overflow-y:auto; }}
                 table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-                th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 12px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:12px; position:sticky; top:0; z-index:1; }}
-                td {{ padding:9px 12px; border-bottom:1px solid #f3f4f6; color:#374151; background:#ffffff; }}
+                th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 10px;
+                      text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px;
+                      text-transform:uppercase; letter-spacing:0.5px;
+                      position:sticky; top:0; z-index:1; }}
+                td {{ padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
                 tr:last-child td {{ border-bottom:none; }}
+                tr:hover td {{ background:#f9fafb; }}
+ 
+                /* Thumb miniatura */
+                .mini-thumb {{
+                    width:36px; height:36px; border-radius:6px; object-fit:cover;
+                    border:1px solid #e5e7eb; display:block; cursor:pointer;
+                }}
+                .mini-ph {{
+                    width:36px; height:36px; border-radius:6px; background:#f3f4f6;
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:9px; color:#9ca3af; text-align:center; line-height:1.2;
+                    cursor:pointer;
+                }}
+ 
+                /* Copy truncada clicável */
+                .copy-cell {{
+                    max-width:100px; overflow:hidden; text-overflow:ellipsis;
+                    white-space:nowrap; cursor:pointer; color:#374151;
+                    font-style:italic; transition:color 0.1s;
+                }}
+                .copy-cell:hover {{ color:#3a9fd6; text-decoration:underline; }}
+ 
+                /* Modal */
+                .modal-bg {{
+                    display:none; position:fixed; inset:0;
+                    background:rgba(0,0,0,0.5); z-index:9000;
+                    align-items:center; justify-content:center;
+                }}
+                .modal-bg.open {{ display:flex; }}
+                .modal {{
+                    background:#fff; border-radius:14px; padding:24px;
+                    max-width:400px; width:90%; max-height:80vh; overflow-y:auto;
+                    box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative;
+                }}
+                .modal-title {{
+                    font-size:13px; font-weight:700; color:#1a2e4a;
+                    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;
+                    padding-bottom:8px; border-bottom:1px solid #f3f4f6;
+                }}
+                .modal-body {{ display:flex; flex-direction:column; gap:14px; }}
+                .modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; display:block; }}
+                .modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
+                .modal-close {{
+                    position:absolute; top:14px; right:16px; background:none; border:none;
+                    font-size:18px; color:#9ca3af; cursor:pointer; line-height:1;
+                }}
+                .modal-close:hover {{ color:#111827; }}
                 </style>
+ 
                 <div class="wrap">
-                    <div class="header">Ver Todos os Posts</div>
+                    <div class="hdr">Ver Todos os Posts</div>
                     <div class="table-wrap">
                         <table>
                             <thead><tr>
-                                <th>Data</th><th>Tipo</th><th>❤️</th><th>💬</th><th>Eng.</th><th>Legenda</th>
+                                <th>Img</th>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>❤️</th>
+                                <th>💬</th>
+                                <th>Eng.</th>
+                                <th>Copy</th>
                             </tr></thead>
-                            <tbody>{df_posts_rows if df_posts_rows else '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px">Sem posts</td></tr>'}</tbody>
+                            <tbody id="tbl-body">
+                                <tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Carregando…</td></tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
-                """, height=340, scrolling=False)
-
-# ── ANÁLISE DE IA (linha 2, largura total)
+ 
+                <!-- Modal imagem + copy -->
+                <div class="modal-bg" id="modal-bg2" onclick="closeModal2(event)">
+                    <div class="modal">
+                        <button class="modal-close" onclick="document.getElementById('modal-bg2').classList.remove('open')">✕</button>
+                        <div class="modal-title" id="modal2-title">Detalhes do Post</div>
+                        <div class="modal-body">
+                            <img id="modal2-img" class="modal-img" src="" style="display:none" />
+                            <div id="modal2-text" class="modal-text"></div>
+                        </div>
+                    </div>
+                </div>
+ 
+                <script>
+                var posts = {all_posts_json};
+ 
+                function fmtNum(n) {{
+                    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+                    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
+                    return String(Math.floor(n));
+                }}
+ 
+                function openModal2(type, data) {{
+                    var bg = document.getElementById('modal-bg2');
+                    var img = document.getElementById('modal2-img');
+                    var txt = document.getElementById('modal2-text');
+                    var tit = document.getElementById('modal2-title');
+                    if (type === 'img') {{
+                        tit.textContent = 'Imagem do Post';
+                        img.src = data; img.style.display = 'block';
+                        txt.textContent = '';
+                    }} else {{
+                        tit.textContent = 'Copy Completa';
+                        img.style.display = 'none';
+                        txt.textContent = data || '(sem legenda)';
+                    }}
+                    bg.classList.add('open');
+                }}
+                function closeModal2(e) {{
+                    if (e.target === document.getElementById('modal-bg2'))
+                        document.getElementById('modal-bg2').classList.remove('open');
+                }}
+ 
+                function buildTable() {{
+                    var tbody = document.getElementById('tbl-body');
+                    if (!posts || posts.length === 0) {{
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Sem posts</td></tr>';
+                        return;
+                    }}
+                    var html = '';
+                    posts.forEach(function(p) {{
+                        var likes = p.likes || 0;
+                        var coms  = p.comments || 0;
+                        var cap   = p.caption || '';
+                        var thumb = p.thumb || '';
+                        var isVid = p.is_video;
+ 
+                        var imgCell = thumb
+                            ? '<img class="mini-thumb" src="' + thumb + '" title="Ver imagem" onclick="openModal2(\'img\',' + JSON.stringify(thumb) + ')" onerror="this.outerHTML=\'<div class=mini-ph>Sem img</div>\'" />'
+                            : '<div class="mini-ph" onclick="">' + (isVid ? '🎬' : '📷') + '</div>';
+ 
+                        var capTrunc = cap.length > 30 ? cap.substring(0,30) + '…' : (cap || '—');
+                        var copyCell = cap
+                            ? '<span class="copy-cell" title="Ver copy completa" onclick="openModal2(\'copy\',' + JSON.stringify(cap) + ')">' + capTrunc + '</span>'
+                            : '<span style="color:#d1d5db">—</span>';
+ 
+                        html += '<tr>' +
+                            '<td>' + imgCell + '</td>' +
+                            '<td>' + (p.date || '—') + '</td>' +
+                            '<td>' + (isVid ? 'Vídeo' : 'Foto') + '</td>' +
+                            '<td>' + fmtNum(likes) + '</td>' +
+                            '<td>' + fmtNum(coms) + '</td>' +
+                            '<td>' + fmtNum(likes + coms) + '</td>' +
+                            '<td>' + copyCell + '</td>' +
+                            '</tr>';
+                    }});
+                    tbody.innerHTML = html;
+                }}
+ 
+                document.addEventListener('DOMContentLoaded', buildTable);
+                window.addEventListener('load', buildTable);
+                </script>
+                """, height=360, scrolling=False)
+ 
+            # ══════════════════════════════════════════════════════════════
+            # ANÁLISE DE IA  (botões visíveis — sem CSS display:none)
+            # ══════════════════════════════════════════════════════════════
             st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
-
+ 
             chave_criativo = f"ia_criativo_{r['handle']}"
             chave_copy     = f"ia_copy_{r['handle']}"
             chave_geral    = f"ia_geral_{r['handle']}"
             for ch in [chave_criativo, chave_copy, chave_geral]:
                 if ch not in st.session_state:
                     st.session_state[ch] = ""
-
+ 
             resumo_posts = "\n".join([
                 f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
                 f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
                 for p in posts_list[:12]
             ]) if posts_list else "Sem posts disponíveis."
-
+ 
             perfil_ctx = f"""
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
@@ -2857,24 +3045,20 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
-
-            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
-            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
-            geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
-
-            vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
-
-            st.markdown(f"""
-            <style>
-            .st-key-btn_criativo_{idx} {{ display:none !important; }}
-            .st-key-btn_copy_{idx} {{ display:none !important; }}
-            .st-key-btn_geral_{idx} {{ display:none !important; }}
-            </style>
+            # ── Título da seção de IA no mesmo estilo
+            st.markdown("""
+            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                        padding:12px 16px;margin-bottom:12px'>
+                <div style='font-size:14px;font-weight:800;color:#1a2e4a;
+                            text-transform:uppercase;letter-spacing:0.3px'>Análise de IA</div>
+            </div>
             """, unsafe_allow_html=True)
-
-            col_b1, col_b2, col_b3, col_bx = st.columns([1,1,1,3])
+ 
+            # ── Botões visíveis (sem CSS de esconder)
+            col_b1, col_b2, col_b3 = st.columns(3)
+ 
             with col_b1:
-                if st.button("Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
+                if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
                     if gemini_model is None:
                         st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
                     else:
@@ -2896,8 +3080,9 @@ Seja direto e objetivo.
                                 st.rerun()
                             except Exception as e:
                                 st.session_state[chave_criativo] = f"Erro: {e}"
+ 
             with col_b2:
-                if st.button("Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
+                if st.button("✍️ Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
                     if gemini_model is None:
                         st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
                     else:
@@ -2919,8 +3104,9 @@ Seja direto e objetivo.
                                 st.rerun()
                             except Exception as e:
                                 st.session_state[chave_copy] = f"Erro: {e}"
+ 
             with col_b3:
-                if st.button("Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
+                if st.button("📊 Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
                     if gemini_model is None:
                         st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
                     else:
@@ -2942,41 +3128,49 @@ Seja direto e objetivo.
                                 st.rerun()
                             except Exception as e:
                                 st.session_state[chave_geral] = f"Erro: {e}"
-
+ 
+            # ── Resultado da IA em abas HTML (sem depender de botões escondidos)
+            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
+            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
+            geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
+ 
+            ia_height = 220 if (criativo_html or copy_html or geral_html) else 80
+ 
             components.html(f"""
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
             <style>
             * {{ margin:0; padding:0; box-sizing:border-box; }}
             html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-            .card {{ background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-            .card-header {{ padding:12px 16px; background:#ffffff; border-bottom:1px solid #e5e7eb; }}
-            .card-title {{ font-size:14px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; font-family:'DM Sans',sans-serif; }}
-            .tabs {{ display:flex; border-bottom:2px solid #e5e7eb; background:#ffffff; }}
-            .tab {{ flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#ffffff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }}
+            .tabs {{ display:flex; border-bottom:2px solid #e5e7eb; background:#fff; }}
+            .tab {{
+                flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600;
+                color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent;
+                margin-bottom:-2px; background:#fff; border-top:none; border-left:none;
+                border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s;
+            }}
             .tab.active {{ color:#3a9fd6; border-bottom:2px solid #3a9fd6; }}
-            .panel {{ display:none; padding:14px 16px; background:#ffffff; }}
+            .panel {{ display:none; padding:14px 0 4px 0; }}
             .panel.active {{ display:block; }}
-            .result {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; color:#374151; line-height:1.7; max-height:160px; overflow-y:auto; }}
+            .result {{
+                background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
+                padding:12px 14px; font-size:13px; color:#374151; line-height:1.7;
+                max-height:150px; overflow-y:auto;
+            }}
             .empty {{ padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }}
             </style>
-            <div class="card" id="card">
-                <div class="card-header">
-                    <div class="card-title">Análise de IA</div>
-                </div>
-                <div class="tabs">
-                    <button class="tab active" onclick="showTab('criativo',this)">Criativo</button>
-                    <button class="tab" onclick="showTab('copy',this)">Copy</button>
-                    <button class="tab" onclick="showTab('geral',this)">Geral</button>
-                </div>
-                <div id="panel-criativo" class="panel active">
-                    {('<div class="result">' + criativo_html + '</div>') if criativo_html else '<div class="empty">Clique em <b>Gerar análise</b> para analisar.</div>'}
-                </div>
-                <div id="panel-copy" class="panel">
-                    {('<div class="result">' + copy_html + '</div>') if copy_html else '<div class="empty">Clique em <b>Gerar análise</b> para analisar.</div>'}
-                </div>
-                <div id="panel-geral" class="panel">
-                    {('<div class="result">' + geral_html + '</div>') if geral_html else '<div class="empty">Clique em <b>Gerar análise</b> para analisar.</div>'}
-                </div>
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
+                <button class="tab" onclick="showTab('copy',this)">✍️ Copy</button>
+                <button class="tab" onclick="showTab('geral',this)">📊 Geral</button>
+            </div>
+            <div id="panel-criativo" class="panel active">
+                {('<div class="result">' + criativo_html + '</div>') if criativo_html else '<div class="empty">Clique em <b>Analisar Criativos</b> acima para gerar.</div>'}
+            </div>
+            <div id="panel-copy" class="panel">
+                {('<div class="result">' + copy_html + '</div>') if copy_html else '<div class="empty">Clique em <b>Analisar Copys</b> acima para gerar.</div>'}
+            </div>
+            <div id="panel-geral" class="panel">
+                {('<div class="result">' + geral_html + '</div>') if geral_html else '<div class="empty">Clique em <b>Análise Geral</b> acima para gerar.</div>'}
             </div>
             <script>
             function showTab(name, el) {{
@@ -2985,14 +3179,5 @@ Seja direto e objetivo.
                 document.getElementById('panel-' + name).classList.add('active');
                 el.classList.add('active');
             }}
-            // Ajusta altura do iframe ao tamanho real do card
-            function ajustar() {{
-                const h = document.getElementById('card').getBoundingClientRect().height;
-                window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-                    if (f.contentWindow === window) f.style.height = (h + 4) + 'px';
-                }});
-            }}
-            document.addEventListener('DOMContentLoaded', ajustar);
-            window.addEventListener('load', ajustar);
             </script>
-            """, height=160, scrolling=False)
+            """, height=ia_height, scrolling=False)
