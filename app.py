@@ -2822,13 +2822,10 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
             with col_ia:
                 st.markdown(
-                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
-                    unsafe_allow_html=True,
-                )
-                st.markdown(
+                    "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>"
                     "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
                     "text-transform:uppercase;margin-bottom:14px;margin-top:0;"
-                    "font-family:\"Source Sans 3\",\"Source Sans Pro\",sans-serif;letter-spacing:0.3px'>"
+                    "font-family:\"DM Sans\",sans-serif;letter-spacing:0.3px'>"
                     "Análise de IA</div>",
                     unsafe_allow_html=True,
                 )
@@ -2860,24 +2857,25 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 
                 vazio = "<div style='padding:20px 0;text-align:center;font-size:13px;color:#9ca3af'>Clique em <b>Gerar análise</b> para analisar.</div>"
 
+                # CSS para esconder botões Streamlit E o bloco de colunas inteiro
                 st.markdown(f"""
                 <style>
-                .st-key-btn_criativo_{idx} {{ display:none !important; }}
-                .st-key-btn_copy_{idx} {{ display:none !important; }}
-                .st-key-btn_geral_{idx} {{ display:none !important; }}
                 .st-key-btn_criativo_{idx},
                 .st-key-btn_copy_{idx},
                 .st-key-btn_geral_{idx} {{
+                    display: none !important;
                     height: 0 !important;
                     min-height: 0 !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     overflow: hidden !important;
                 }}
-                div[data-testid="column"]:has(.st-key-btn_criativo_{idx}),
-                div[data-testid="column"]:has(.st-key-btn_copy_{idx}),
-                div[data-testid="column"]:has(.st-key-btn_geral_{idx}) {{
+                [data-testid="stHorizontalBlock"]:has(.st-key-btn_criativo_{idx}) {{
                     display: none !important;
+                    height: 0 !important;
+                    min-height: 0 !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
                 }}
                 </style>
                 """, unsafe_allow_html=True)
