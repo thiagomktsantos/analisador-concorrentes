@@ -2682,8 +2682,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         {st.session_state[chave_bio_ia].replace(chr(10), "<br>")}
                     </div>
                     """, unsafe_allow_html=True)
-
-                    st.markdown("<div style='margin:20px 0 16px 0'/>", unsafe_allow_html=True)
  
 # ── ÚLTIMAS POSTAGENS + ANÁLISE DE IA
             col_posts, col_ia = st.columns([3, 2])
