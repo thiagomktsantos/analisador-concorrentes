@@ -2957,8 +2957,17 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
             """, unsafe_allow_html=True)
  
             # ── Botões visíveis (sem CSS de esconder)
+            st.markdown(f"""
+            <style>
+            .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
             col_b1, col_b2, col_b3 = st.columns(3)
- 
             with col_b1:
                 if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
                     if gemini_model is None:
