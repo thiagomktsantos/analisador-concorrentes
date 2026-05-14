@@ -2161,19 +2161,36 @@ elif st.session_state.pagina == "redes":
         opacity: 0.88 !important;
         background: #3a9fd6 !important;
     }
+    div[data-testid="stTabs"] > div:first-child {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 6px 8px !important;
+        gap: 4px !important;
+        margin-bottom: 20px !important;
+    }
     div[data-testid="stTabs"] button[role="tab"] {
         font-size: 14px !important;
         font-weight: 600 !important;
-        color: #9ca3af !important;
-        border-bottom: 2px solid transparent !important;
-        padding: 8px 20px !important;
+        color: #6b7280 !important;
+        border-bottom: none !important;
+        border-radius: 8px !important;
+        padding: 10px 24px !important;
+        background: transparent !important;
+        transition: all 0.15s !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"]:hover {
+        background: #f3f4f6 !important;
+        color: #111827 !important;
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #3a9fd6 !important;
-        border-bottom: 2px solid #3a9fd6 !important;
+        background: #0e2a47 !important;
+        color: #ffffff !important;
+        border-bottom: none !important;
+        box-shadow: 0 2px 8px rgba(14,42,71,0.18) !important;
     }
     div[data-baseweb="tab-highlight"] {
-        background-color: #3a9fd6 !important;
+        display: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
