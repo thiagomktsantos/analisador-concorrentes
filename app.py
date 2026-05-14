@@ -2539,7 +2539,7 @@ elif st.session_state.pagina == "redes":
             html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; overflow: hidden; }}
             .header {{
                 display: flex; align-items: center; gap: 16px;
-                padding: 12px 0 16px 0; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px;
+                padding: 12px 0 16px 0; border-bottom: 1px solid #e5e7eb; margin: 4px 0 8px;
             }}
             .avatar {{
                 width: 52px; height: 52px; border-radius: 50%;
