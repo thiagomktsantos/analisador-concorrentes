@@ -2700,13 +2700,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     "Últimas 3 Postagens</div>",
                     unsafe_allow_html=True,
                 )
-                st.markdown(
-                    "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
-                    "text-transform:uppercase;margin-bottom:14px;margin-top:0;"
-                    "font-family:\"Source Sans\",sans-serif'>"
-                    "Últimas 3 Postagens</div>",
-                    unsafe_allow_html=True,
-                )
 
                 if not posts_list:
                     posts_html = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
