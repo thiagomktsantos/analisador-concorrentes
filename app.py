@@ -2775,9 +2775,9 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;min-height:52px;">'
                             f'<div style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{cap_3ln}</div>'
                             f'<div onclick="openCopy(\'{cap_esc}\')" '
-                            f'style="margin-top:5px;font-size:11px;font-weight:600;color:#3a9fd6;'
+                            f'style="margin-top:5px;font-size:11px;font-weight:600;color:#000;'
                             f'cursor:pointer;font-style:normal;text-align:center;'
-                            f'border-top:1px solid #f3f4f6;padding-top:4px;">[🔍 ver copy]</div>'
+                            f'border-top:1px solid #f3f4f6;padding-top:4px;">🔍 ver legenda</div>'
                             f'</div>'
                         ) if cap else (
                             '<div style="font-size:11px;color:#d1d5db;font-style:italic;'
