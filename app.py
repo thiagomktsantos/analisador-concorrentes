@@ -2825,7 +2825,7 @@ function openCopy(txt) {{
     document.getElementById(\'modal-cp\').classList.add(\'open\');
 }}
 </script>
-""", height=460, scrolling=False)
+""", height=420, scrolling=False)
  
             with col_table:
                 if not posts_list:
