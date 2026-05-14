@@ -2950,15 +2950,15 @@ Seja direto e objetivo.
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }}
+                html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; margin-top: 0; padding-top: 0; }}
                 .section-title {{
                     font-size: 18px;
                     font-weight: 700;
                     color: #1a2e4a;
                     text-transform: uppercase;
-                    font-family: 'DM Sans', sans-serif;
+                    font-family: 'Source Sans', sans-serif;
                     letter-spacing: 0.3px;
-                    padding: 14px 0 14px 0;
+                    padding: 0 0 14px 0;
                 }}
                 .card {{
                     background: #ffffff;
