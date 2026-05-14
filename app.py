@@ -2626,18 +2626,31 @@ elif st.session_state.pagina == "redes":
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
  
-                st.markdown(f"""
+st.markdown(f"""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
                             padding:20px 24px;margin-bottom:12px'>
                     <div style='font-size:11px;font-weight:700;color:#9ca3af;
                                 text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Bio</div>
-                    <div style='font-size:14px;color:#374151;line-height:1.7;min-height:40px;font-style:italic'>
+                    <div style='font-size:14px;color:#374151;line-height:1.7;min-height:40px;font-style:italic;margin-bottom:16px'>
                         {f'&ldquo;{bio_txt}&rdquo;' if bio_txt
                           else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
                     </div>
+                    <div style='border-top:1px solid #f3f4f6;padding-top:14px'>
+                        <button onclick="
+                            const btns = window.parent.document.querySelectorAll('button');
+                            for (const b of btns) {{
+                                if (b.innerText.trim() === 'Analisar Bio com IA') {{ b.click(); break; }}
+                            }}
+                        " style='width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;
+                                 background:#fff;font-size:14px;font-weight:600;color:#374151;
+                                 cursor:pointer;font-family:DM Sans,sans-serif;
+                                 transition:background 0.15s'>
+                            Analisar Bio com IA
+                        </button>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
- 
+
                 analisar_bio = st.button(
                     "Analisar Bio com IA",
                     key=f"btn_bio_ia_{idx}",
