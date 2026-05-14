@@ -894,7 +894,7 @@ body {{
 }}
 .logo-wrap img {{ width: 180px; display: block; margin: 0 auto 6px; }}
 .logo-sub {{
-    font-size: 9px; font-weight: 700; letter-spacing: 3px;
+    font-size: 8.3px; font-weight: 700; letter-spacing: 3px;
     text-transform: uppercase; color: #3a9fd6;
     font-family: 'DM Sans', sans-serif;
 }}
@@ -2211,9 +2211,9 @@ elif st.session_state.pagina == "redes":
             unsafe_allow_html=True,
         )
     with h2:
-        st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top:6px;background-color:blue;'/>", unsafe_allow_html=True)
         coletar = st.button(
-            "📡 Coletar dados agora",
+            "📡 Coletar dados",
             type="primary",
             use_container_width=True,
         )
@@ -2221,7 +2221,7 @@ elif st.session_state.pagina == "redes":
         if ultima_coleta:
             st.markdown(
                 f"<div style='font-size:13px;color:#6b7280;text-align:center'>"
-                f"Última coleta: <b>{ultima_coleta}</b></div>",
+                f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
                 unsafe_allow_html=True,
             )
     st.markdown(
