@@ -2670,7 +2670,7 @@ elif st.session_state.pagina == "redes":
                 </style>
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
                             padding:20px 24px;margin-bottom:12px'>
-                    <div style='font-size:11px;font-weight:700;color:#9ca3af;
+                    <div style='font-size:14px;font-weight:700;color:#1a2e4a;
                                 text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>Bio</div>
                     <div style='font-size:14px;color:#374151;line-height:1.7;min-height:40px;font-style:italic;margin-bottom:16px'>
                         {f'&ldquo;{bio_txt}&rdquo;' if bio_txt
