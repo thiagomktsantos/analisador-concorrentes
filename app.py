@@ -2243,16 +2243,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         unsafe_allow_html=True,
     )
  
-    col_info = st.columns(1)[0]
-    with col_info:
-        st.markdown("""
-        <div style='padding:10px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;
-                    font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:16px'>
-            O Trafilatura lê o conteúdo de cada site e o Gemini gera um relatório comparativo
-            de posicionamento, mensagens-chave e recomendações estratégicas.
-            Use o botão <b>Gerar Relatório</b> no topo para gerar a análise geral.
-        </div>
-        """, unsafe_allow_html=True)
+
  
     # ── Gerar relatório geral
     if gerar_btn:
