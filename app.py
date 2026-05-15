@@ -2882,7 +2882,8 @@ function openCopy2(txt) {{
 # ══════════════════════════════════════════════════════════════
 # PAGINA - REDES SOCIAIS - ANÁLISE DE IA
 # ══════════════════════════════════════════════════════════════
-            st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
+ 
+            st.markdown("<div style='margin-top:16px'/>", unsafe_allow_html=True)
  
             chave_criativo = f"ia_criativo_{r['handle']}"
             chave_copy     = f"ia_copy_{r['handle']}"
@@ -2904,16 +2905,8 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
-            # ── Título da seção de IA no mesmo estilo
-            st.markdown("""
-            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                        padding:12px 16px;margin-bottom:4px'>
-                <div style='font-size:14px;font-weight:800;color:#1a2e4a;
-                            text-transform:uppercase;letter-spacing:0.3px'>Análise de IA</div>
-            </div>
-            """, unsafe_allow_html=True)
  
-            # ── Botões visíveis (sem CSS de esconder)
+            # ── Botões fantasma (invisíveis, acionados via JS)
             st.markdown(f"""
             <style>
             .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
@@ -2923,7 +2916,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
             }}
             </style>
             """, unsafe_allow_html=True)
-
+ 
             col_b1, col_b2, col_b3 = st.columns(3)
             with col_b1:
                 if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
@@ -2997,55 +2990,96 @@ Seja direto e objetivo.
                             except Exception as e:
                                 st.session_state[chave_geral] = f"Erro: {e}"
  
-            # ── Resultado da IA em abas HTML (sem depender de botões escondidos)
+            # ── Resultados da IA — mesmo design das outras caixas
             criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
             geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
  
-            ia_height = 320 if (criativo_html or copy_html or geral_html) else 120
-
-            ia_script = """
+            ia_height = 340 if (criativo_html or copy_html or geral_html) else 130
+ 
+            def _panel_ia(html_content, btn_label):
+                if html_content:
+                    return (
+                        f'<div style="padding:16px 18px;font-size:14px;color:#374151;'
+                        f'line-height:1.75;max-height:260px;overflow-y:auto">'
+                        f'{html_content}</div>'
+                    )
+                return (
+                    f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">'
+                    f'Clique em <b>{btn_label}</b> acima para gerar.</div>'
+                )
+ 
+            ia_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
-.tabs { display:flex; border-bottom:2px solid #e5e7eb; background:#fff; margin-top:-8px; }
-.tab { flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#fff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }
-.tab.active { color:#3a9fd6; border-bottom:2px solid #3a9fd6; }
-.panel { display:none; padding:14px 0 4px 0; }
-.panel.active { display:block; }
-.result { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; color:#374151; line-height:1.7; max-height:240px; overflow-y:auto; }
-.empty { padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+ 
+/* ── Caixa principal — mesmo padrão das outras ── */
+.ia-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    overflow:hidden;
+}}
+.ia-header {{
+    padding:14px 18px;
+    font-size:14px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.3px;
+    border-bottom:1px solid #e5e7eb;
+    background:#fff;
+}}
+ 
+/* ── Tabs internas ── */
+.tabs {{
+    display:flex;
+    border-bottom:1px solid #e5e7eb;
+    background:#f9fafb;
+}}
+.tab {{
+    flex:1; padding:11px 0; text-align:center;
+    font-size:14px; font-weight:600; color:#9ca3af;
+    cursor:pointer; border:none; background:transparent;
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    font-family:'DM Sans',sans-serif; transition:color 0.15s;
+}}
+.tab:hover {{ color:#374151; background:#f3f4f6; }}
+.tab.active {{
+    color:#1a2e4a;
+    border-bottom:2px solid #3a9fd6;
+    background:#fff;
+}}
+ 
+/* ── Painéis ── */
+.panel {{ display:none; }}
+.panel.active {{ display:block; }}
 </style>
-<div class="tabs">
-    <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
-    <button class="tab" onclick="showTab('copy',this)">✍️ Copy</button>
-    <button class="tab" onclick="showTab('geral',this)">📊 Geral</button>
+ 
+<div class="ia-wrap">
+    <div class="ia-header">Análise de IA</div>
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
+        <button class="tab"        onclick="showTab('copy',this)">✍️ Copy</button>
+        <button class="tab"        onclick="showTab('geral',this)">📊 Geral</button>
+    </div>
+    <div id="panel-criativo" class="panel active">
+        {_panel_ia(criativo_html, "Analisar Criativos")}
+    </div>
+    <div id="panel-copy" class="panel">
+        {_panel_ia(copy_html, "Analisar Copys")}
+    </div>
+    <div id="panel-geral" class="panel">
+        {_panel_ia(geral_html, "Análise Geral")}
+    </div>
 </div>
-<div id="panel-criativo" class="panel active">CRIATIVO_PLACEHOLDER</div>
-<div id="panel-copy" class="panel">COPY_PLACEHOLDER</div>
-<div id="panel-geral" class="panel">GERAL_PLACEHOLDER</div>
+ 
 <script>
-function showTab(name, el) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+function showTab(name, el) {{
+    document.querySelectorAll('.tab').forEach(function(t){{ t.classList.remove('active'); }});
+    document.querySelectorAll('.panel').forEach(function(p){{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
-}
+}}
 </script>
 """
-
-            def _panel(html_content, btn_label):
-                if html_content:
-                    return '<div class="result">' + html_content + '</div>'
-                return '<div class="empty">Clique em <b>' + btn_label + '</b> acima para gerar.</div>'
-
-            ia_script = ia_script.replace(
-                "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
-            ).replace(
-                "COPY_PLACEHOLDER", _panel(copy_html, "Analisar Copys")
-            ).replace(
-                "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
-            )
-
-            components.html(ia_script, height=ia_height, scrolling=False)
+            components.html(ia_html, height=ia_height, scrolling=False)
