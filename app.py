@@ -2748,7 +2748,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
             # ── TABELA COMPLETA DE POSTS (ocupa largura total)
             if not posts_list:
-                tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
+                tbl_rows = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
             else:
                 tbl_rows = ""
                 for p in posts_list:
