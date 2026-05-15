@@ -2641,7 +2641,7 @@ elif st.session_state.pagina == "redes":
                 <style>
                 * {{ margin:0; padding:0; box-sizing:border-box; }}
                 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;margin-left: 16px; }}
                 .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
                         text-transform:uppercase; letter-spacing:0.3px;
                         border-bottom:1px solid #e5e7eb; background:#fff; }}
