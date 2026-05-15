@@ -3013,9 +3013,8 @@ Seja direto e objetivo.
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
- 
-/* ── Caixa principal — mesmo padrão das outras ── */
+html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 .ia-wrap {{
     background:#fff;
     border:1px solid #e5e7eb;
@@ -3029,8 +3028,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     border-bottom:1px solid #e5e7eb;
     background:#fff;
 }}
- 
-/* ── Tabs internas ── */
 .tabs {{
     display:flex;
     border-bottom:1px solid #e5e7eb;
@@ -3049,12 +3046,10 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     border-bottom:2px solid #3a9fd6;
     background:#fff;
 }}
- 
-/* ── Painéis ── */
 .panel {{ display:none; }}
 .panel.active {{ display:block; }}
 </style>
- 
+
 <div class="ia-wrap">
     <div class="ia-header">Análise de IA</div>
     <div class="tabs">
@@ -3072,14 +3067,29 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
         {_panel_ia(geral_html, "Análise Geral")}
     </div>
 </div>
- 
+
 <script>
+function ajustarAltura() {{
+    var h = document.body.scrollHeight || document.documentElement.scrollHeight;
+    window.parent.document.querySelectorAll('iframe').forEach(function(iframe) {{
+        if (iframe.contentWindow === window) {{
+            iframe.style.height = (h + 8) + 'px';
+        }}
+    }});
+}}
+
 function showTab(name, el) {{
     document.querySelectorAll('.tab').forEach(function(t){{ t.classList.remove('active'); }});
     document.querySelectorAll('.panel').forEach(function(p){{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
+    setTimeout(ajustarAltura, 50);
 }}
+
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+window.addEventListener('resize', ajustarAltura);
+setTimeout(ajustarAltura, 200);
 </script>
 """
-            components.html(ia_html, height=ia_height, scrolling=False)
+            components.html(ia_html, height=600, scrolling=False)
