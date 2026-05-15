@@ -2737,29 +2737,30 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 # PAGINA - REDES SOCIAIS - POSTAGENS
 # ══════════════════════════════════════════════════════════════
  
-            def _fmt(n):
+def _fmt(n):
                 n = int(n or 0)
                 if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
                 if n >= 1_000:     return f"{n/1_000:.1f}K"
                 return str(n)
- 
+
             def _esc(s):
                 return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
- 
-            # ── TABELA COMPLETA DE POSTS (ocupa largura total)
+
+            # ── TABELA COMPLETA DE POSTS
             if not posts_list:
-                tbl_rows = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
+                tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
             else:
                 tbl_rows = ""
                 for p in posts_list:
                     thumb   = p.get("thumb", "")
                     cap     = p.get("caption", "")
                     cap_esc = _esc(cap)
-                    cap_t   = (cap[:90] + "… <b>[ver copy]</b>") if len(cap) > 90 else cap
+                    cap_preview = _esc(cap[:110]) if len(cap) > 110 else _esc(cap)
+                    has_more = len(cap) > 110
                     isVid   = p.get("is_video", False)
                     likes   = p.get("likes", 0)
                     coms    = p.get("comments", 0)
- 
+
                     img_cell = (
                         f'<img src="{thumb}" style="width:48px;height:48px;border-radius:8px;'
                         f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
@@ -2769,17 +2770,17 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f'<div style="width:48px;height:48px;border-radius:8px;background:#f3f4f6;'
                         f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
                     )
- 
+
                     copy_cell = (
                         f'<span onclick="openCopy2(\'{cap_esc}\')" '
-                        f'style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+                        f'style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
                         f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'
-                        f'{cap_t}</span>'
+                        f'{cap_preview}{"… <b style=\'color:#3a9fd6\'>[ver copy]</b>" if has_more else ""}</span>'
                     ) if cap else '<span style="color:#d1d5db">—</span>'
- 
+
                     tbl_rows += (
                         f"<tr>"
-                        f"<td>{p.get('date','—')}</td>"   # ← Data como 1ª coluna
+                        f"<td>{p.get('date','—')}</td>"
                         f"<td>{img_cell}</td>"
                         f"<td>{'Vídeo' if isVid else 'Foto'}</td>"
                         f"<td>{_fmt(likes)}</td>"
@@ -2788,13 +2789,13 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f"<td>{copy_cell}</td>"
                         f"</tr>"
                     )
- 
+
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-table {{ width:100%; border-collapse:collapse; font-size:14px; }}
+table {{ width:100%; border-collapse:collapse; font-size:14px; table-layout:fixed; }}
 th {{
     background:#f9fafb; color:#6b7280; font-weight:700;
     padding:12px 14px; text-align:left; border-bottom:2px solid #e5e7eb;
@@ -2804,16 +2805,17 @@ th {{
 td {{
     padding:8px 14px; border-bottom:1px solid #f3f4f6;
     color:#374151; background:#fff; vertical-align:middle;
-    line-height:1.4;
+    line-height:1.4; overflow:hidden;
 }}
 tr:last-child td {{ border-bottom:none; }}
 tr:hover td {{ background:#f9fafb; }}
-th:last-child, td:last-child {{ min-width:320px; }}
-th:nth-child(2), td:nth-child(2),
-th:nth-child(3), td:nth-child(3),
-th:nth-child(4), td:nth-child(4),
-th:nth-child(5), td:nth-child(5),
-th:nth-child(6), td:nth-child(6) {{ text-align:center; }}
+th:nth-child(1), td:nth-child(1) {{ width:90px; }}
+th:nth-child(2), td:nth-child(2) {{ width:68px; text-align:center; }}
+th:nth-child(3), td:nth-child(3) {{ width:60px; text-align:center; }}
+th:nth-child(4), td:nth-child(4) {{ width:80px; text-align:center; }}
+th:nth-child(5), td:nth-child(5) {{ width:100px; text-align:center; }}
+th:nth-child(6), td:nth-child(6) {{ width:100px; text-align:center; }}
+th:nth-child(7), td:nth-child(7) {{ width:auto; }}
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
 .modal-bg.open {{ display:flex; }}
 .modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
@@ -2827,7 +2829,7 @@ th:nth-child(6), td:nth-child(6) {{ text-align:center; }}
     <div style="padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
                 text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;
                 background:#fff;">Postagens</div>
-    <div style="max-height:460px;overflow-y:auto">
+    <div style="max-height:460px;overflow-y:auto;overflow-x:hidden">
         <table>
             <thead>
                 <tr>
