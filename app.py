@@ -2132,9 +2132,6 @@ elif st.session_state.pagina == "insights":
     else:
         st.info("Adicione concorrentes para gerar insights estratégicos.")
 
-
-Copiar
-
 # ---------------------------------------------------
 # REDES SOCIAIS
 # ---------------------------------------------------
