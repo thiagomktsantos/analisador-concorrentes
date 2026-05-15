@@ -2058,7 +2058,7 @@ elif st.session_state.pagina == "sites":
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 .card {{
     background:#fff; border:1px solid #e5e7eb; border-radius:14px;
     overflow:hidden; padding:0;
@@ -2096,8 +2096,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     display:flex; align-items:center; gap:6px;
 }}
 .url-label {{
-    font-size:10px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:0.8px;
+    font-size:10px; font-weight:700; color:#6b7280;
+    letter-spacing:0.8px;
     flex-shrink:0;
 }}
 .preview-wrap {{
@@ -2131,7 +2131,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
         </div>
     </div>
     <div class="url-row">
-        <span class="url-label">site</span>
+        <span class="url-label">site:</span>
         <span>{s['url']}</span>
     </div>
     <div class="preview-wrap">
@@ -2159,8 +2159,19 @@ function triggerAnalise(idx) {{
         }}
     }}
 }}
+function ajustarAltura() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    iframes.forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 4) + 'px'; }} catch(e) {{}}
+    }});
+}}
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 300);
+setTimeout(ajustarAltura, 800);
 </script>
-""", height=330, scrolling=False)
+""", height=480, scrolling=False)
  
             # ── Processa clique do botão fantasma
             if site_ia_triggers[idx_s]:
