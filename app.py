@@ -2773,13 +2773,13 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 
                     ver_copy = ""
                     if has_more:
-                        ver_copy = "<b style='color:#3a9fd6;margin-left:4px;font-style:normal;flex-shrink:0'>[ver copy]</b>"
+                        ver_copy = "<span style='color:#3a9fd6;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[ver copy]</span>"
 
                     copy_cell = (
                         f'<div onclick="openCopy2(\'{cap_esc}\')" '
-                        f'style="max-width:260px;cursor:pointer;display:flex;align-items:center;gap:0;overflow:hidden">'
-                        f'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
-                        f'color:#374151;font-style:italic;min-width:0">{cap_preview}{"…" if has_more else ""}</span>'
+                        f'style="cursor:pointer;display:flex;align-items:center;width:100%;overflow:hidden">'
+                        f'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+                        f'color:#374151;font-style:italic">{cap_preview}{"…" if has_more else ""}</span>'
                         f'{ver_copy}'
                         f'</div>'
                     ) if cap else '<span style="color:#d1d5db">—</span>'
