@@ -2824,13 +2824,13 @@ tr:hover td {{ background:#f9fafb; }}
         <table>
             <thead>
                 <tr>
-                    <th>📅 Data</th>
-                    <th>🖼️ Criativo</th>
-                    <th>📱 Tipo</th>
-                    <th>❤️ Curtidas</th>
-                    <th>💬 Comentários</th>
-                    <th>📈 Engajamento</th>
-                    <th>📝 Copy</th>
+                    <th>Data</th>
+                    <th>Criativo</th>
+                    <th>Tipo</th>
+                    <th>Curtidas</th>
+                    <th>Comentários</th>
+                    <th>Engajamento</th>
+                    <th>Copy</th>
                 </tr>
             </thead>
             <tbody>{tbl_rows}</tbody>
