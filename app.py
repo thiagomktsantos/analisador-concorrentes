@@ -2429,7 +2429,7 @@ elif st.session_state.pagina == "redes":
         unsafe_allow_html=True,
     )
  
-    col_g1, col_g2 = st.columns(2)
+    col_g1, col_g2 = st.columns(2, gap="small")
  
     with col_g1:
         fig_seg = go.Figure(
@@ -2459,7 +2459,7 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 16px 24px 16px;overflow:visible">
+                    padding:20px 10px 24px 10px;overflow:visible">
             <div style="font-size:14px;font-weight:800;color:#1a2e4a;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
                         padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
@@ -2501,7 +2501,7 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 16px 24px 16px;overflow:visible">
+                    padding:20px 10px 24px 10px;overflow:visible">
             <div style="font-size:14px;font-weight:800;color:#1a2e4a;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
                         padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
