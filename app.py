@@ -2734,7 +2734,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             )
  
 # ══════════════════════════════════════════════════════════════
-# POSTAGENS 
+# POSTAGENS
 # ══════════════════════════════════════════════════════════════
  
             def _fmt(n):
@@ -2824,13 +2824,13 @@ tr:hover td {{ background:#f9fafb; }}
         <table>
             <thead>
                 <tr>
-                    <th>Data</th>
-                    <th>Img</th>
-                    <th>Tipo</th>
+                    <th>📅 Data</th>
+                    <th>🖼️ Criativo</th>
+                    <th>📱 Tipo</th>
                     <th>❤️ Curtidas</th>
                     <th>💬 Comentários</th>
-                    <th>📈 Eng.</th>
-                    <th>Copy</th>
+                    <th>📈 Engajamento</th>
+                    <th>📝 Copy</th>
                 </tr>
             </thead>
             <tbody>{tbl_rows}</tbody>
@@ -2862,3 +2862,174 @@ function openCopy2(txt) {{
 </script>
 """, height=520, scrolling=False)
  
+ 
+# ══════════════════════════════════════════════════════════════
+# ANÁLISE DE IA
+# ══════════════════════════════════════════════════════════════
+            st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
+ 
+            chave_criativo = f"ia_criativo_{r['handle']}"
+            chave_copy     = f"ia_copy_{r['handle']}"
+            chave_geral    = f"ia_geral_{r['handle']}"
+            for ch in [chave_criativo, chave_copy, chave_geral]:
+                if ch not in st.session_state:
+                    st.session_state[ch] = ""
+ 
+            resumo_posts = "\n".join([
+                f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
+                f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+                for p in posts_list[:12]
+            ]) if posts_list else "Sem posts disponíveis."
+ 
+            perfil_ctx = f"""
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Bio: {r.get('bio','')}
+Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
+Últimos posts:
+{resumo_posts}
+"""
+            # ── Título da seção de IA no mesmo estilo
+            st.markdown("""
+            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                        padding:12px 16px;margin-bottom:4px'>
+                <div style='font-size:14px;font-weight:800;color:#1a2e4a;
+                            text-transform:uppercase;letter-spacing:0.3px'>Análise de IA</div>
+            </div>
+            """, unsafe_allow_html=True)
+ 
+            # ── Botões visíveis (sem CSS de esconder)
+            st.markdown(f"""
+            <style>
+            .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
+            col_b1, col_b2, col_b3 = st.columns(3)
+            with col_b1:
+                if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
+                    if gemini_model is None:
+                        st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner("Analisando criativos…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
+Responda em português com:
+### Análise de Criativo
+**Estilo visual predominante:** ...
+**Formatos mais usados:** ...
+**Posts com melhor desempenho:** ...
+**Pontos fortes visuais:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""")
+                                st.session_state[chave_criativo] = resp.text
+                                st.rerun()
+                            except Exception as e:
+                                st.session_state[chave_criativo] = f"Erro: {e}"
+ 
+            with col_b2:
+                if st.button("✍️ Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
+                    if gemini_model is None:
+                        st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner("Analisando copies…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Analise as LEGENDAS (copy) deste perfil Instagram.
+Responda em português com:
+### Análise de Copy
+**Tom de voz predominante:** ...
+**Uso de CTAs:** ...
+**Uso de hashtags:** ...
+**Pontos fortes nas legendas:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""")
+                                st.session_state[chave_copy] = resp.text
+                                st.rerun()
+                            except Exception as e:
+                                st.session_state[chave_copy] = f"Erro: {e}"
+ 
+            with col_b3:
+                if st.button("📊 Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
+                    if gemini_model is None:
+                        st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner("Gerando análise geral…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Faça uma análise geral estratégica deste perfil Instagram.
+Responda em português com:
+### Análise Geral
+**Posicionamento:** ...
+**Frequência de posts:** ...
+### Pontos Fortes (3 pontos)
+### Pontos de Atenção (2 pontos)
+### Recomendações Estratégicas (3 ações concretas)
+Seja direto e objetivo.
+""")
+                                st.session_state[chave_geral] = resp.text
+                                st.rerun()
+                            except Exception as e:
+                                st.session_state[chave_geral] = f"Erro: {e}"
+ 
+            # ── Resultado da IA em abas HTML (sem depender de botões escondidos)
+            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
+            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
+            geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
+ 
+            ia_height = 320 if (criativo_html or copy_html or geral_html) else 120
+
+            ia_script = """
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+.tabs { display:flex; border-bottom:2px solid #e5e7eb; background:#fff; margin-top:-8px; }
+.tab { flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#fff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }
+.tab.active { color:#3a9fd6; border-bottom:2px solid #3a9fd6; }
+.panel { display:none; padding:14px 0 4px 0; }
+.panel.active { display:block; }
+.result { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; color:#374151; line-height:1.7; max-height:240px; overflow-y:auto; }
+.empty { padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }
+</style>
+<div class="tabs">
+    <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
+    <button class="tab" onclick="showTab('copy',this)">✍️ Copy</button>
+    <button class="tab" onclick="showTab('geral',this)">📊 Geral</button>
+</div>
+<div id="panel-criativo" class="panel active">CRIATIVO_PLACEHOLDER</div>
+<div id="panel-copy" class="panel">COPY_PLACEHOLDER</div>
+<div id="panel-geral" class="panel">GERAL_PLACEHOLDER</div>
+<script>
+function showTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+}
+</script>
+"""
+
+            def _panel(html_content, btn_label):
+                if html_content:
+                    return '<div class="result">' + html_content + '</div>'
+                return '<div class="empty">Clique em <b>' + btn_label + '</b> acima para gerar.</div>'
+
+            ia_script = ia_script.replace(
+                "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
+            ).replace(
+                "COPY_PLACEHOLDER", _panel(copy_html, "Analisar Copys")
+            ).replace(
+                "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
+            )
+
+            components.html(ia_script, height=ia_height, scrolling=False)
