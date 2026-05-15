@@ -1926,201 +1926,484 @@ elif st.session_state.pagina == "geral":
 # ---------------------------------------------------
 # PAGINA - CONFRONTO DE SITES
 # ---------------------------------------------------
-
+ 
 elif st.session_state.pagina == "sites":
-
-    cabecalho_simples("🌐 Confronto de Sites", "Análise comparativa de posicionamento via IA")
-
+ 
+    import datetime as _dt
+ 
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
-
+ 
+    # ── Mesmos estilos de Redes Sociais
+    st.markdown("""
+    <style>
+    @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
+ 
+    section.main div.stButton > button[kind="primary"] {
+        background: #3a9fd6 !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        transition: opacity 0.15s !important;
+    }
+    section.main div.stButton > button[kind="primary"]:hover {
+        opacity: 0.88 !important;
+        background: #3a9fd6 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+ 
+    # ── Cabeçalho igual ao de Redes Sociais
+    h1, h2 = st.columns([7, 3])
+    with h1:
+        st.markdown(
+            "<h1 style='font-size:32px;font-weight:700;color:#1a2e4a;"
+            "text-transform:uppercase;margin:0;"
+            "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
+            "Confronto de Sites</h1>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<div style='font-size:14px;color:#6b7280;'>"
+            "Análise comparativa de posicionamento via IA.</div>",
+            unsafe_allow_html=True,
+        )
+    with h2:
+        st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
+        gerar_btn = st.button(
+            "🔍 Gerar Relatório",
+            type="primary",
+            use_container_width=True,
+        )
+        ultimo_relatorio = st.session_state.get("sites_ultima_geracao", "")
+        if ultimo_relatorio:
+            st.markdown(
+                f"<div style='font-size:13px;color:#6b7280;text-align:center'>"
+                f"🕒 Última análise: <b>{ultimo_relatorio}</b></div>",
+                unsafe_allow_html=True,
+            )
+ 
+    st.markdown(
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
+        unsafe_allow_html=True,
+    )
+ 
+    # ── Monta lista de sites
     sites_disponiveis = []
     if emp.get("site"):
-        sites_disponiveis.append({"nome": emp["nome"], "url": emp["site"], "tipo": "minha"})
+        sites_disponiveis.append({"nome": emp["nome"], "url": emp["site"], "tipo": "minha", "instagram": emp.get("instagram", "")})
     for c in concorrentes:
         if c.get("url"):
-            sites_disponiveis.append({"nome": c["nome"], "url": c["url"], "tipo": "concorrente"})
-
+            sites_disponiveis.append({"nome": c["nome"], "url": c["url"], "tipo": "concorrente", "instagram": c.get("instagram", "")})
+ 
     if not sites_disponiveis:
         st.info("Cadastre o site da sua empresa e de pelo menos um concorrente para usar esta funcionalidade.")
-    else:
-        st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Sites cadastrados</div>", unsafe_allow_html=True)
-
-        cols_sites = st.columns(min(len(sites_disponiveis), 4))
-        for idx, s in enumerate(sites_disponiveis):
-            with cols_sites[idx % 4]:
-                is_minha = s["tipo"] == "minha"
-                badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-                badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-                badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-                badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-                st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:8px'>
-                    <div style='display:flex;align-items:center;gap:10px;margin-bottom:8px'>
-                        <div style='width:34px;height:34px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0'>{gerar_avatar(s['nome'])}</div>
-                        <div style='flex:1;min-width:0'>
-                            <div style='font-size:14px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>{s['nome']}</div>
-                        </div>
-                    </div>
-                    <div style='font-size:12px;color:#9ca3af;word-break:break-all;margin-bottom:8px'>{s['url']}</div>
-                    <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                    <div style='margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;background:#f9fafb;min-height:120px;'>
-                        <img
-                            src="https://api.microlink.io/?url=https://{s['url']}&screenshot=true&meta=false&embed=screenshot.url"
-                            onerror="this.parentElement.innerHTML='<div style=\\'padding:32px 16px;text-align:center;font-size:12px;color:#9ca3af\\'>📷 Prévia indisponível</div>'"
-                            style='width:100%;display:block;border-radius:8px;'
-                            loading='lazy'
-                            alt='Preview {s["nome"]}'
-                        />
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        st.markdown("<div style='margin:8px 0 20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
-
-        col_btn, col_info = st.columns([2, 5])
-        with col_btn:
-            gerar = st.button("🔍 Gerar Relatório de Posicionamento", type="primary", use_container_width=True)
-        with col_info:
-            st.markdown("""
-            <div style='padding:10px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;color:#6b7280;line-height:1.6'>
-                O Trafilatura lê o conteúdo de cada site e o Gemini gera um relatório comparativo de posicionamento, mensagens-chave e recomendações estratégicas.
+        st.stop()
+ 
+    # ── CORES por índice (mesmo padrão de Redes Sociais)
+    CORES_SITES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
+ 
+    # ── Cards dos sites com avatar igual à imagem enviada
+    st.markdown(
+        "<div style='font-size:14px;font-weight:800;color:#1a2e4a;"
+        "text-transform:uppercase;letter-spacing:0.3px;margin-bottom:14px'>"
+        "Sites cadastrados</div>",
+        unsafe_allow_html=True,
+    )
+ 
+    cols_sites = st.columns(min(len(sites_disponiveis), 4))
+ 
+    # Inicializa estados de análise individual
+    for idx_s, s in enumerate(sites_disponiveis):
+        chave = f"sites_analise_{idx_s}"
+        if chave not in st.session_state:
+            st.session_state[chave] = ""
+ 
+    for idx_s, s in enumerate(sites_disponiveis):
+        with cols_sites[idx_s % 4]:
+            is_minha  = s["tipo"] == "minha"
+            cor_avatar = CORES_SITES[idx_s % len(CORES_SITES)]
+            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+            avatar_letras = gerar_avatar(s["nome"])
+            handle_txt = s["instagram"] if s["instagram"] and s["instagram"] != "@" else ""
+ 
+            # Card com avatar igual à imagem: círculo colorido + nome + handle + badge
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+.card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    overflow:hidden; padding:0;
+}}
+.card-header {{
+    display:flex; align-items:center; gap:12px;
+    padding:16px 16px 14px 16px;
+    border-bottom:1px solid #f3f4f6;
+}}
+.avatar {{
+    width:44px; height:44px; border-radius:50%;
+    background:{cor_avatar};
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; color:#fff; flex-shrink:0;
+    letter-spacing:0.5px;
+}}
+.nome-wrap {{ flex:1; min-width:0; }}
+.nome-linha {{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+}}
+.nome {{
+    font-size:16px; font-weight:700; color:#111827;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    letter-spacing:-0.2px;
+}}
+.handle {{
+    font-size:13px; font-weight:400; color:#9ca3af;
+    white-space:nowrap;
+}}
+.badge {{
+    display:inline-block;
+    background:{badge_bg}; color:{badge_txt};
+    border:1px solid {badge_brd};
+    padding:2px 10px; border-radius:20px;
+    font-size:11px; font-weight:600; margin-top:4px;
+}}
+.url-row {{
+    padding:10px 16px 12px 16px;
+    font-size:12px; color:#9ca3af;
+    word-break:break-all;
+    border-bottom:1px solid #f3f4f6;
+}}
+.preview-wrap {{
+    margin:12px 12px 0 12px;
+    border-radius:8px; overflow:hidden;
+    border:1px solid #e5e7eb; background:#f9fafb;
+    min-height:110px;
+    margin-bottom: 12px;
+}}
+.preview-wrap img {{
+    width:100%; display:block; border-radius:8px;
+}}
+</style>
+<div class="card">
+    <div class="card-header">
+        <div class="avatar">{avatar_letras}</div>
+        <div class="nome-wrap">
+            <div class="nome-linha">
+                <span class="nome">{s['nome']}</span>
+                {f'<span class="handle">{handle_txt}</span>' if handle_txt else ''}
             </div>
-            """, unsafe_allow_html=True)
-
-        if gerar:
-            st.session_state.relatorio_gemini = ""
-            st.session_state.relatorio_sites = {}
-
-            with st.status("📡 Lendo os sites...", expanded=True) as status:
-                for s in sites_disponiveis:
-                    st.write(f"Acessando **{s['nome']}** ({s['url']})…")
-                    conteudo = extrair_conteudo_site(s["url"])
-                    st.session_state.relatorio_sites[s["url"]] = conteudo
-                    if conteudo and not conteudo.startswith("[Erro"):
-                        palavras = len(conteudo.split())
-                        st.write(f"✅ {palavras} palavras extraídas")
-                    else:
-                        st.write(f"⚠️ Não foi possível extrair conteúdo")
-                status.update(label="✅ Sites lidos! Gerando análise com Gemini…", state="running")
-
-                empresa_principal = None
-                concorrentes_data = []
-                for s in sites_disponiveis:
-                    item = {
-                        "nome": s["nome"],
-                        "url": s["url"],
-                        "conteudo": st.session_state.relatorio_sites.get(s["url"], ""),
-                    }
-                    if s["tipo"] == "minha":
-                        empresa_principal = item
-                    else:
-                        concorrentes_data.append(item)
-
-                if empresa_principal is None and sites_disponiveis:
-                    empresa_principal = {
-                        "nome": sites_disponiveis[0]["nome"],
-                        "url": sites_disponiveis[0]["url"],
-                        "conteudo": st.session_state.relatorio_sites.get(sites_disponiveis[0]["url"], ""),
-                    }
-
-                relatorio = gerar_relatorio_posicionamento(empresa_principal, concorrentes_data)
-                st.session_state.relatorio_gemini = relatorio
-                status.update(label="✅ Relatório gerado!", state="complete")
-
-        # ── Exibe relatório gerado
-        if st.session_state.relatorio_gemini:
-            st.markdown("<div style='margin:24px 0 16px 0;border-top:1px solid #e5e7eb'/>", unsafe_allow_html=True)
-
-            col_titulo, col_salvar = st.columns([6, 2])
-            with col_titulo:
-                st.markdown("""
-                <div style='font-size:20px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif;margin-bottom:4px'>
-                    📋 Relatório de Posicionamento Competitivo
-                </div>
-                """, unsafe_allow_html=True)
-            with col_salvar:
-                nome_analise = st.text_input(
-                    "Nome para salvar",
-                    placeholder="Ex: Análise maio/2025",
-                    label_visibility="collapsed",
-                    key="nome_analise_input",
-                )
-                if st.button("💾 Salvar Análise", use_container_width=True):
-                    import datetime as _dt
-                    titulo_salvo = nome_analise.strip() or _dt.datetime.now().strftime("Análise %d/%m/%Y %H:%M")
-                    st.session_state.analises_salvas.append({
-                        "titulo": titulo_salvo,
-                        "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "relatorio": st.session_state.relatorio_gemini,
-                        "sites": [s["nome"] for s in sites_disponiveis],
-                    })
-                    st.toast(f"✅ Análise «{titulo_salvo}» salva!", icon="✅")
-
-            st.markdown("""
+            <div class="badge">{badge_lbl}</div>
+        </div>
+    </div>
+    <div class="url-row">{s['url']}</div>
+    <div class="preview-wrap">
+        <img
+            src="https://api.microlink.io/?url=https://{s['url']}&screenshot=true&meta=false&embed=screenshot.url"
+            onerror="this.parentElement.innerHTML='<div style=\\'padding:32px 10px;text-align:center;font-size:12px;color:#9ca3af\\'>📷 Prévia indisponível</div>'"
+            loading="lazy"
+            alt="Preview {s['nome']}"
+        />
+    </div>
+</div>
+""", height=260, scrolling=False)
+ 
+            # ── Botão de análise individual abaixo de cada preview
+            # Botão fantasma invisível (acionado pelo JS)
+            st.markdown(f"""
             <style>
-            .relatorio-box { background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:28px 32px; font-family:'DM Sans',sans-serif; line-height:1.75; color:#1f2937; }
-            .relatorio-box h3 { font-size:17px;font-weight:700;color:#111827;margin:24px 0 10px; }
-            .relatorio-box p  { font-size:15px;color:#374151;margin-bottom:10px; }
-            .relatorio-box ul { padding-left:20px;margin-bottom:10px; }
-            .relatorio-box li { font-size:15px;color:#374151;margin-bottom:6px; }
+            .st-key-btn_site_ia_{idx_s} {{
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }}
             </style>
             """, unsafe_allow_html=True)
-
-            st.markdown(st.session_state.relatorio_gemini)
-
-            with st.expander("🔎 Ver conteúdo extraído dos sites"):
-                for s in sites_disponiveis:
-                    conteudo = st.session_state.relatorio_sites.get(s["url"], "")
-                    st.markdown(f"**{s['nome']}** — `{s['url']}`")
-                    if conteudo:
-                        st.text_area(
-                            label="",
-                            value=conteudo[:2000] + ("…" if len(conteudo) > 2000 else ""),
-                            height=180,
-                            key=f"txt_{s['url']}",
-                            disabled=True,
-                        )
-                    else:
-                        st.warning("Nenhum conteúdo extraído.")
-                    st.markdown("---")
-
-        # ── Seção: Análises Salvas
-        st.markdown("<div style='margin:32px 0 0 0;border-top:2px solid #e5e7eb'/>", unsafe_allow_html=True)
+ 
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; height:44px; }}
+.btn {{
+    width:100%; padding:10px 0; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}}
+.btn:hover {{ background:#dbeafe; }}
+</style>
+<button class="btn" onclick="
+    const btns = window.parent.document.querySelectorAll('button');
+    for (const b of btns) {{
+        if (b.innerText.trim() === '__site_ia_{idx_s}__') {{ b.click(); break; }}
+    }}
+">🤖 Analisar este site</button>
+""", height=44)
+ 
+            if st.button(f"__site_ia_{idx_s}__", key=f"btn_site_ia_{idx_s}", use_container_width=True):
+                if gemini_model is None:
+                    st.session_state[f"sites_analise_{idx_s}"] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner(f"Analisando {s['nome']}…"):
+                        conteudo_site = extrair_conteudo_site(s["url"])
+                        try:
+                            prompt_individual = f"""
+Você é um especialista em marketing digital e posicionamento de marca.
+Analise o conteúdo extraído do site abaixo e gere uma análise individual detalhada em português.
+ 
+Empresa: {s['nome']}
+URL: {s['url']}
+Tipo: {"Minha Empresa" if is_minha else "Concorrente"}
+ 
+Conteúdo extraído do site:
+{conteudo_site[:4000] if conteudo_site else "Não foi possível extrair conteúdo."}
+ 
+---
+ 
+Responda com as seguintes seções:
+ 
+### 📌 Proposta de Valor
+Qual é a proposta central comunicada no site?
+ 
+### 🎯 Posicionamento
+Como esta empresa se posiciona no mercado? (premium, popular, nicho, generalista etc.)
+ 
+### 🔑 Mensagens Principais
+Quais são os termos, promessas e mensagens mais repetidos?
+ 
+### 🛠️ Serviços / Produtos Destacados
+Liste os principais serviços ou produtos apresentados no site.
+ 
+### ✅ Pontos Fortes
+3 pontos positivos observados na comunicação do site.
+ 
+### ⚠️ Pontos de Atenção
+2 pontos que poderiam ser melhorados.
+ 
+### 💡 Recomendação
+1 ação concreta de alto impacto para melhorar o posicionamento.
+ 
+Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
+"""
+                            resp = gemini_model.generate_content(prompt_individual)
+                            st.session_state[f"sites_analise_{idx_s}"] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
+ 
+            # Exibe análise individual se disponível
+            analise_ind = st.session_state.get(f"sites_analise_{idx_s}", "")
+            if analise_ind:
+                st.markdown(f"""
+                <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+                            padding:14px 16px;font-size:13px;color:#374151;line-height:1.75;
+                            max-height:280px;overflow-y:auto;margin-top:6px;margin-bottom:4px'>
+                    {analise_ind.replace(chr(10), "<br>")}
+                </div>
+                """, unsafe_allow_html=True)
+ 
+    st.markdown(
+        "<div style='margin:24px 0 20px 0;border-top:1px solid #e5e7eb'/>",
+        unsafe_allow_html=True,
+    )
+ 
+    # ── Botão Gerar Relatório Geral (já capturado no cabeçalho acima)
+    col_info = st.columns(1)[0]
+    with col_info:
         st.markdown("""
-        <div style='display:flex;align-items:center;gap:10px;margin:20px 0 16px 0'>
-            <div style='font-size:20px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif'>🗂️ Análises Salvas</div>
+        <div style='padding:10px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;
+                    font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:16px'>
+            O Trafilatura lê o conteúdo de cada site e o Gemini gera um relatório comparativo
+            de posicionamento, mensagens-chave e recomendações estratégicas.
+            Use o botão <b>🔍 Gerar Relatório</b> no topo para gerar a análise geral.
         </div>
         """, unsafe_allow_html=True)
-
-        analises = st.session_state.get("analises_salvas", [])
-
-        if not analises:
-            st.markdown("""
-            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
-                        padding:36px 32px;text-align:center;color:#9ca3af;font-size:14px'>
-                Nenhuma análise salva ainda. Gere um relatório e clique em <b>💾 Salvar Análise</b>.
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            for i, analise in enumerate(reversed(analises)):
-                idx_real = len(analises) - 1 - i
-                with st.expander(f"📄 {analise['titulo']} — {analise['data']} · {', '.join(analise['sites'])}"):
-                    st.markdown(analise["relatorio"])
-                    col_dl, col_rm = st.columns([3, 1])
-                    with col_dl:
-                        st.download_button(
-                            label="⬇️ Baixar como .txt",
-                            data=analise["relatorio"],
-                            file_name=f"{analise['titulo'].replace(' ', '_')}.txt",
-                            mime="text/plain",
-                            key=f"dl_{idx_real}",
-                            use_container_width=True,
-                        )
-                    with col_rm:
-                        if st.button("🗑️ Remover", key=f"rm_{idx_real}", use_container_width=True):
-                            st.session_state.analises_salvas.pop(idx_real)
-                            st.rerun()
+ 
+    if gerar_btn:
+        st.session_state.relatorio_gemini = ""
+        st.session_state.relatorio_sites = {}
+ 
+        with st.status("📡 Lendo os sites...", expanded=True) as status:
+            for s in sites_disponiveis:
+                st.write(f"Acessando **{s['nome']}** ({s['url']})…")
+                conteudo = extrair_conteudo_site(s["url"])
+                st.session_state.relatorio_sites[s["url"]] = conteudo
+                if conteudo and not conteudo.startswith("[Erro"):
+                    palavras = len(conteudo.split())
+                    st.write(f"✅ {palavras} palavras extraídas")
+                else:
+                    st.write(f"⚠️ Não foi possível extrair conteúdo")
+            status.update(label="✅ Sites lidos! Gerando análise com Gemini…", state="running")
+ 
+            empresa_principal = None
+            concorrentes_data = []
+            for s in sites_disponiveis:
+                item = {
+                    "nome": s["nome"],
+                    "url":  s["url"],
+                    "conteudo": st.session_state.relatorio_sites.get(s["url"], ""),
+                }
+                if s["tipo"] == "minha":
+                    empresa_principal = item
+                else:
+                    concorrentes_data.append(item)
+ 
+            if empresa_principal is None and sites_disponiveis:
+                empresa_principal = {
+                    "nome": sites_disponiveis[0]["nome"],
+                    "url":  sites_disponiveis[0]["url"],
+                    "conteudo": st.session_state.relatorio_sites.get(sites_disponiveis[0]["url"], ""),
+                }
+ 
+            relatorio = gerar_relatorio_posicionamento(empresa_principal, concorrentes_data)
+            st.session_state.relatorio_gemini = relatorio
+            st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
+            status.update(label="✅ Relatório gerado!", state="complete")
+ 
+    # ── Exibe relatório geral gerado
+    if st.session_state.relatorio_gemini:
+        st.markdown(
+            "<div style='font-size:20px;font-weight:700;color:#111827;"
+            "font-family:DM Sans,sans-serif;margin-bottom:12px'>"
+            "📋 Relatório Geral de Posicionamento Competitivo</div>",
+            unsafe_allow_html=True,
+        )
+ 
+        col_titulo_salvar, col_btn_salvar = st.columns([5, 2])
+        with col_titulo_salvar:
+            nome_analise = st.text_input(
+                "Nome para salvar",
+                placeholder="Ex: Análise maio/2025",
+                label_visibility="collapsed",
+                key="nome_analise_input",
+            )
+        with col_btn_salvar:
+            if st.button("💾 Salvar Análise Geral", use_container_width=True):
+                titulo_salvo = nome_analise.strip() or _dt.datetime.now().strftime("Análise %d/%m/%Y %H:%M")
+                if "analises_salvas" not in st.session_state:
+                    st.session_state.analises_salvas = []
+                st.session_state.analises_salvas.append({
+                    "titulo": titulo_salvo,
+                    "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "relatorio": st.session_state.relatorio_gemini,
+                    "sites": [s["nome"] for s in sites_disponiveis],
+                    "tipo": "geral",
+                })
+                st.toast(f"✅ Análise «{titulo_salvo}» salva!", icon="✅")
+ 
+        st.markdown(st.session_state.relatorio_gemini)
+ 
+        with st.expander("🔎 Ver conteúdo extraído dos sites"):
+            for s in sites_disponiveis:
+                conteudo = st.session_state.relatorio_sites.get(s["url"], "")
+                st.markdown(f"**{s['nome']}** — `{s['url']}`")
+                if conteudo:
+                    st.text_area(
+                        label="",
+                        value=conteudo[:2000] + ("…" if len(conteudo) > 2000 else ""),
+                        height=180,
+                        key=f"txt_{s['url']}",
+                        disabled=True,
+                    )
+                else:
+                    st.warning("Nenhum conteúdo extraído.")
+                st.markdown("---")
+ 
+    # ── ANÁLISES SALVAS — divididas em Geral e Por Site
+    st.markdown(
+        "<div style='margin:32px 0 0 0;border-top:2px solid #e5e7eb'/>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<div style='font-size:20px;font-weight:700;color:#111827;"
+        "font-family:DM Sans,sans-serif;margin:20px 0 16px 0'>"
+        "🗂️ Análises Salvas</div>",
+        unsafe_allow_html=True,
+    )
+ 
+    analises = st.session_state.get("analises_salvas", [])
+ 
+    if not analises:
+        st.markdown("""
+        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
+                    padding:36px 32px;text-align:center;color:#9ca3af;font-size:14px'>
+            Nenhuma análise salva ainda. Gere um relatório e clique em
+            <b>💾 Salvar Análise</b>.
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Divide em gerais e individuais
+        analises_gerais     = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
+        analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
+ 
+        # ── Aba Análise Geral
+        tab_geral, tab_individual = st.tabs(["📊 Análise Geral", "🔍 Análise por Site"])
+ 
+        with tab_geral:
+            if not analises_gerais:
+                st.markdown("""
+                <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
+                            padding:28px 24px;text-align:center;color:#9ca3af;font-size:14px;margin-top:8px'>
+                    Nenhuma análise geral salva ainda.
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                for idx_real, analise in reversed(analises_gerais):
+                    with st.expander(
+                        f"📄 {analise['titulo']} — {analise['data']} · {', '.join(analise.get('sites', []))}"
+                    ):
+                        st.markdown(analise["relatorio"])
+                        col_dl, col_rm = st.columns([3, 1])
+                        with col_dl:
+                            st.download_button(
+                                label="⬇️ Baixar como .txt",
+                                data=analise["relatorio"],
+                                file_name=f"{analise['titulo'].replace(' ', '_')}.txt",
+                                mime="text/plain",
+                                key=f"dl_g_{idx_real}",
+                                use_container_width=True,
+                            )
+                        with col_rm:
+                            if st.button("🗑️ Remover", key=f"rm_g_{idx_real}", use_container_width=True):
+                                st.session_state.analises_salvas.pop(idx_real)
+                                st.rerun()
+ 
+        with tab_individual:
+            if not analises_individuais:
+                st.markdown("""
+                <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
+                            padding:28px 24px;text-align:center;color:#9ca3af;font-size:14px;margin-top:8px'>
+                    Nenhuma análise por site salva ainda.
+                    Use o botão <b>🤖 Analisar este site</b> abaixo de cada card
+                    e salve a análise.
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                for idx_real, analise in reversed(analises_individuais):
+                    site_nome = analise.get("site_nome", analise.get("titulo", "Site"))
+                    with st.expander(
+                        f"🌐 {analise['titulo']} — {analise['data']} · {site_nome}"
+                    ):
+                        st.markdown(analise["relatorio"])
+                        col_dl2, col_rm2 = st.columns([3, 1])
+                        with col_dl2:
+                            st.download_button(
+                                label="⬇️ Baixar como .txt",
+                                data=analise["relatorio"],
+                                file_name=f"{analise['titulo'].replace(' ', '_')}.txt",
+                                mime="text/plain",
+                                key=f"dl_i_{idx_real}",
+                                use_container_width=True,
+                            )
+                        with col_rm2:
+                            if st.button("🗑️ Remover", key=f"rm_i_{idx_real}", use_container_width=True):
+                                st.session_state.analises_salvas.pop(idx_real)
+                                st.rerun()
 
 # ---------------------------------------------------
 # PAGINA - ADS
