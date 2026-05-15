@@ -1125,7 +1125,7 @@ def cabecalho_analise(titulo, subtitulo=""):
         data_inicio = None
     return periodo, data_inicio
 
-    def cabecalho_simples(titulo, subtitulo=""):
+def cabecalho_simples(titulo, subtitulo=""):
     st.markdown(
         f"<h1 style='font-size:28px;font-weight:600;color:#111827;"
         f"letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>{titulo}</h1>",
