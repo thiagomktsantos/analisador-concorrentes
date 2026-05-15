@@ -2144,7 +2144,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     </div>
     <div class="btn-wrap">
         <button class="btn-analisar" onclick="triggerAnalise({idx_s})">
-            🤖 Analisar este site
+            Analisar este site 🤖
         </button>
     </div>
 </div>
@@ -2422,7 +2422,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         <div style='padding:36px 24px;text-align:center;color:#9ca3af;font-size:14px;
                     border:1px dashed #d1d5db;border-radius:10px;margin:16px 0'>
             Nenhuma análise por site salva ainda.<br>
-            Use o botão <b>🤖 Analisar este site</b> em cada card.
+            Use o botão <b>Analisar este site 🤖</b> em cada card.
         </div>"""
 
     analises_html = f"""
@@ -2531,10 +2531,10 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 </style>
 
 <div class="wrap">
-    <div class="wrap-header">🗂️ Análises Salvas</div>
+    <div class="wrap-header">Análises Salvas</div>
     <div class="tabs">
-        <button class="tab active" onclick="showTab('geral', this)">📊 Análise Geral</button>
-        <button class="tab"        onclick="showTab('individual', this)">🔍 Análise por Site</button>
+        <button class="tab active" onclick="showTab('geral', this)">Análise Geral 📊</button>
+        <button class="tab"        onclick="showTab('individual', this)">Análise por Site 🔍</button>
     </div>
     <div id="panel-geral" class="panel active">
         {itens_geral}
