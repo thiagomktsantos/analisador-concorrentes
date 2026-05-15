@@ -461,12 +461,12 @@ section.main div.stButton > button:hover {
 
 /* ── BOTÃO PRIMARY ── */
 section.main div.stButton > button[kind="primary"] {
-    background: #111827 !important;
+    background: #0780c0 !important;
     color: #ffffff !important;
     border: none !important;
 }
 section.main div.stButton > button[kind="primary"]:hover {
-    background: #1f2937 !important;
+    background: #065f9e !important;
     color: #ffffff !important;
 }
 
@@ -1321,15 +1321,6 @@ if st.session_state.pagina == "home":
         <style>
         .st-key-btn_editar_empresa { display: none !important; }
 
-        [data-testid="stMain"] div.stButton > button[kind="primary"],
-        section.main div.stButton > button[kind="primary"] {
-            background: #0780c0 !important;
-            color: #ffffff !important;
-            border: none !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-        }
-
         section.main .block-container {
             padding-bottom: 0 !important;
             margin-bottom: 0 !important;
@@ -1957,18 +1948,6 @@ elif st.session_state.pagina == "sites":
     <style>
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
  
-    section.main div.stButton > button[kind="primary"] {
-        background: #0780c0 !important;
-        color: #ffffff !important;
-        border: none !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        transition: opacity 0.15s !important;
-    }
-    section.main div.stButton > button[kind="primary"]:hover {
-        opacity: 0.88 !important;
-        background: #0780c0 !important;
-    }
     </style>
     """, unsafe_allow_html=True)
  
@@ -2674,18 +2653,6 @@ elif st.session_state.pagina == "redes":
     <style>
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
  
-    section.main div.stButton > button[kind="primary"] {
-        background: #0780c0 !important;
-        color: #ffffff !important;
-        border: none !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        transition: opacity 0.15s !important;
-    }
-    section.main div.stButton > button[kind="primary"]:hover {
-        opacity: 0.88 !important;
-        background: #3a9fd6 !important;
-    }
     div[data-testid="stTabs"] > div:first-child {
         background: #ffffff !important;
         border: 1px solid #e5e7eb !important;
