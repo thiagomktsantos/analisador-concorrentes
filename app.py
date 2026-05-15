@@ -2735,7 +2735,6 @@ html, body { background: transparent; overflow: hidden; }
 """, height=65)
 
     with h2:
-        st.markdown("<div style='padding-top:0px;margin-top:-10px;'/>", unsafe_allow_html=True)
         coletar = st.button(
             "Coletar dados",
             type="primary",
@@ -2744,7 +2743,7 @@ html, body { background: transparent; overflow: hidden; }
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         if ultima_coleta:
             st.markdown(
-                f"<div style='font-size:13px;color:#6b7280;text-align:center'>"
+                f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
                 f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
                 unsafe_allow_html=True,
             )
