@@ -2748,7 +2748,7 @@ html, body { background: transparent; overflow: hidden; }
                 unsafe_allow_html=True,
             )
     st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:-8px 0 20px 0'/>",
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
         unsafe_allow_html=True,
     )
  
