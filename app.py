@@ -2424,14 +2424,14 @@ elif st.session_state.pagina == "redes":
     st.markdown(
         "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
         "font-family:\"Source Sans\",sans-serif;"
-        "letter-spacing:0px;text-transform:uppercase;"
-        "margin-bottom:8px'>"
+        "letter-spacing:0px;text-transform:uppercase'>"
         "Comparativo com todos os perfis</div>",
         unsafe_allow_html=True,
     )
-
+ 
     st.markdown("""
     <style>
+    /* Força gap mínimo entre colunas — sobrescreve o Streamlit */
     [data-testid="stHorizontalBlock"] {
         gap: 0px !important;
     }
@@ -2454,7 +2454,7 @@ elif st.session_state.pagina == "redes":
         )
         fig_seg.update_layout(
             height=190,
-            margin=dict(t=20, b=30, l=10, r=10),
+            margin=dict(t=20, b=30, l=45, r=20),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             showlegend=False,
@@ -2468,10 +2468,10 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 20px 24px 20px;overflow:visible;margin-right:8px">
+                    padding:20px 16px 24px 16px;overflow:visible">
             <div style="font-size:14px;font-weight:800;color:#1a2e4a;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
-                        padding:0 0 12px 0;border-bottom:1px solid #e5e7eb;
+                        padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
                         margin-bottom:4px">NÚMERO DE SEGUIDORES</div>
             <div id="graf_seg"></div>
         </div>
@@ -2495,7 +2495,7 @@ elif st.session_state.pagina == "redes":
         )
         fig_eng.update_layout(
             height=190,
-            margin=dict(t=20, b=30, l=10, r=10),
+            margin=dict(t=20, b=30, l=45, r=20),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             showlegend=False,
@@ -2510,10 +2510,10 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 20px 24px 20px;overflow:visible;margin-left:8px">
+                    padding:20px 16px 24px 16px;overflow:visible">
             <div style="font-size:14px;font-weight:800;color:#1a2e4a;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
-                        padding:0 0 12px 0;border-bottom:1px solid #e5e7eb;
+                        padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
                         margin-bottom:4px">TAXA DE ENGAJAMENTO (%)</div>
             <div id="graf_eng"></div>
         </div>
