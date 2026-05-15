@@ -2241,9 +2241,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         "<div style='margin:24px 0 20px 0;border-top:1px solid #e5e7eb'/>",
         unsafe_allow_html=True,
     )
- 
 
- 
     # ── Gerar relatório geral
     if gerar_btn:
         st.session_state.relatorio_gemini = ""
@@ -2334,10 +2332,10 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                 else:
                     st.warning("Nenhum conteúdo extraído.")
                 st.markdown("---")
- 
-    # ── Análises Salvas
+
+    # ── Separador antes das análises salvas
     st.markdown(
-        "<div style='margin:32px 0 0 0;border-top:2px solid #e5e7eb'/>",
+        "<div style='margin:16px 0 0 0;border-top:1px solid #e5e7eb'/>",
         unsafe_allow_html=True,
     )
 
@@ -2345,12 +2343,10 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
     analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
     analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
 
-    # ── Botões fantasma para remover e baixar análises salvas
-    # Gerados antes do components.html para garantir existência no DOM
+    # ── Botões fantasma para remover análises salvas
     acoes_salvas = {}
     for i, a in enumerate(analises):
-        acoes_salvas[f"rm_{i}"]  = st.button(f"_rm_analise_{i}_",  key=f"btn_rm_analise_{i}")
-        acoes_salvas[f"dl_{i}"]  = False  # download tratado pelo st.download_button abaixo
+        acoes_salvas[f"rm_{i}"] = st.button(f"_rm_analise_{i}_", key=f"btn_rm_analise_{i}")
 
     # CSS para esconder botões fantasma de remoção
     rm_css = "\n".join([
@@ -2372,7 +2368,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         sites_str = ", ".join(analise.get("sites", []))
         relatorio = (analise.get("relatorio") or "").replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
         icone    = "📄" if tipo == "geral" else "🌐"
-        preview  = (analise.get("relatorio") or "")[:180].replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
 
         return f"""
         <div class="item" id="item_{idx_real}">
@@ -2456,7 +2451,6 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 .panel {{ display:none; padding:12px 14px; }}
 .panel.active {{ display:block; }}
 
-/* Itens */
 .item {{
     border:1px solid #e5e7eb;
     border-radius:10px;
@@ -2585,7 +2579,7 @@ setTimeout(ajustarAltura, 600);
 </script>
 """
 
-    components.html(analises_html, height=300, scrolling=False)
+    components.html(analises_html, height=60, scrolling=False)
 
 # ---------------------------------------------------
 # PAGINA - ADS
