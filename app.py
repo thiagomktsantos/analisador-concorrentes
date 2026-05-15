@@ -2574,7 +2574,7 @@ elif st.session_state.pagina == "redes":
             """, height=90, scrolling=False)
  
             # ── MÉTRICAS + BIO
-            col_metricas, col_bio = st.columns([1, 1])
+            col_metricas, col_bio = st.columns([1, 1], gap="large")
  
             with col_metricas:
                 # ── MÉTRICAS — layout original via st.markdown
@@ -2649,8 +2649,8 @@ elif st.session_state.pagina == "redes":
                 .bio-text {{ font-size:14px; color:#374151; line-height:1.7; min-height:40px;
                              font-style:italic; margin-bottom:16px; }}
                 .btn-ia {{
-                    width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:8px;
-                    background:#fff; font-size:14px; font-weight:600; color:#374151;
+                    width:100%; padding:10px; border: 1px solid rgb(58, 159, 214); border-radius:8px;
+                    background: rgb(239, 246, 255); font-size:14px; font-weight:600; rgb(29, 78, 216);
                     cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
                 }}
                 .btn-ia:hover {{ background:#f3f4f6; }}
@@ -3074,18 +3074,18 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 <div class="ia-wrap">
     <div class="ia-header">Análise de Conteúdos</div>
     <div class="tabs">
-        <button class="tab"        onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
-        <button class="tab active" onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
+        <button class="tab active"        onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
+        <button class="tab"        onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
         <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
     </div>
     <div id="panel-geral" class="panel">
-        {_panel_ia(geral_html, "Análisar Postagens 🤖", f"__geral_{idx}__")}
+        {_panel_ia(geral_html, "Gerar Análise Postagens 🤖", f"__geral_{idx}__")}
     </div>
     <div id="panel-criativo" class="panel active">
-        {_panel_ia(criativo_html, "Analisar Criativos 🤖", f"__criativo_{idx}__")}
+        {_panel_ia(criativo_html, "Gerar Análise Criativos 🤖", f"__criativo_{idx}__")}
     </div>
     <div id="panel-copy" class="panel">
-        {_panel_ia(copy_html, "Analisar Copys 🤖", f"__copy_{idx}__")}
+        {_panel_ia(copy_html, "Gerar Análise Copys 🤖", f"__copy_{idx}__")}
     </div>
 </div>
 
