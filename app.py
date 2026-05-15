@@ -2736,7 +2736,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 # ══════════════════════════════════════════════════════════════
 # PAGINA - REDES SOCIAIS - POSTAGENS
 # ══════════════════════════════════════════════════════════════
- 
+
             def _fmt(n):
                 n = int(n or 0)
                 if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
@@ -2771,8 +2771,9 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
                     )
 
+                    # ── CORREÇÃO: [ver copy] aparece em qualquer post com legenda
                     ver_copy = ""
-                    if has_more:
+                    if cap:
                         ver_copy = "<span style='color:#3a9fd6;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[ver copy]</span>"
 
                     copy_cell = (
@@ -2877,7 +2878,6 @@ function openCopy2(txt) {{
 }}
 </script>
 """, height=520, scrolling=False)
- 
  
 # ══════════════════════════════════════════════════════════════
 # PAGINA - REDES SOCIAIS - ANÁLISE DE IA
