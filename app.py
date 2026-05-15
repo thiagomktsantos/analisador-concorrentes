@@ -2752,14 +2752,14 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             else:
                 tbl_rows = ""
                 for p in posts_list:
-                    thumb   = p.get("thumb", "")
-                    cap     = p.get("caption", "")
-                    cap_esc = _esc(cap)
+                    thumb    = p.get("thumb", "")
+                    cap      = p.get("caption", "")
+                    cap_esc  = _esc(cap)
                     cap_preview = _esc(cap[:110]) if len(cap) > 110 else _esc(cap)
                     has_more = len(cap) > 110
-                    isVid   = p.get("is_video", False)
-                    likes   = p.get("likes", 0)
-                    coms    = p.get("comments", 0)
+                    isVid    = p.get("is_video", False)
+                    likes    = p.get("likes", 0)
+                    coms     = p.get("comments", 0)
 
                     img_cell = (
                         f'<img src="{thumb}" style="width:48px;height:48px;border-radius:8px;'
@@ -2771,11 +2771,17 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
                     )
 
+                    ver_copy = ""
+                    if has_more:
+                        ver_copy = "<b style='color:#3a9fd6;margin-left:4px;font-style:normal;flex-shrink:0'>[ver copy]</b>"
+
                     copy_cell = (
-                        f'<span onclick="openCopy2(\'{cap_esc}\')" '
-                        f'style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
-                        f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'
-                        f'{cap_preview}{"… <b style=\'color:#3a9fd6\'>[ver copy]</b>" if has_more else ""}</span>'
+                        f'<div onclick="openCopy2(\'{cap_esc}\')" '
+                        f'style="max-width:260px;cursor:pointer;display:flex;align-items:center;gap:0;overflow:hidden">'
+                        f'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+                        f'color:#374151;font-style:italic;min-width:0">{cap_preview}{"…" if has_more else ""}</span>'
+                        f'{ver_copy}'
+                        f'</div>'
                     ) if cap else '<span style="color:#d1d5db">—</span>'
 
                     tbl_rows += (
@@ -2815,7 +2821,8 @@ th:nth-child(3), td:nth-child(3) {{ width:60px; text-align:center; }}
 th:nth-child(4), td:nth-child(4) {{ width:80px; text-align:center; }}
 th:nth-child(5), td:nth-child(5) {{ width:100px; text-align:center; }}
 th:nth-child(6), td:nth-child(6) {{ width:100px; text-align:center; }}
-th:nth-child(7), td:nth-child(7) {{ width:auto; }}
+th:nth-child(7), td:nth-child(7) {{ width:auto; min-width:0; }}
+td:nth-child(7) {{ overflow:hidden; }}
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
 .modal-bg.open {{ display:flex; }}
 .modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
