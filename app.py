@@ -2433,7 +2433,7 @@ elif st.session_state.pagina == "redes":
     <style>
     /* Força gap mínimo entre colunas — sobrescreve o Streamlit */
     [data-testid="stHorizontalBlock"] {
-        gap: 8px !important;
+        gap: 0px !important;
     }
     </style>
     """, unsafe_allow_html=True)
