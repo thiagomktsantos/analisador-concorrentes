@@ -2029,9 +2029,22 @@ elif st.session_state.pagina == "sites":
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
             avatar_letras = gerar_avatar(s["nome"])
-            handle_txt = s["instagram"] if s["instagram"] and s["instagram"] != "@" else ""
+            # Remove @ do handle para exibição
+            handle_raw = s["instagram"] if s["instagram"] and s["instagram"] != "@" else ""
+            handle_txt = handle_raw.lstrip("@")
  
-            # Card com avatar igual à imagem: círculo colorido + nome + handle + badge
+            # ── Botão fantasma invisível (acionado pelo JS dentro do card)
+            st.markdown(f"""
+            <style>
+            .st-key-btn_site_ia_{idx_s} {{
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+ 
+            # Card completo com botão DENTRO do card
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -2074,7 +2087,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     font-size:11px; font-weight:600; margin-top:4px;
 }}
 .url-row {{
-    padding:10px 16px 12px 16px;
+    padding:10px 16px 10px 16px;
     font-size:12px; color:#9ca3af;
     word-break:break-all;
     border-bottom:1px solid #f3f4f6;
@@ -2084,11 +2097,22 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     border-radius:8px; overflow:hidden;
     border:1px solid #e5e7eb; background:#f9fafb;
     min-height:110px;
-    margin-bottom: 12px;
 }}
 .preview-wrap img {{
     width:100%; display:block; border-radius:8px;
 }}
+.btn-wrap {{
+    padding:12px 12px 14px 12px;
+}}
+.btn-analisar {{
+    width:100%; padding:10px 0;
+    border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+}}
+.btn-analisar:hover {{ background:#dbeafe; }}
 </style>
 <div class="card">
     <div class="card-header">
@@ -2110,40 +2134,16 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             alt="Preview {s['nome']}"
         />
     </div>
-</div>
-""", height=260, scrolling=False)
- 
-            # ── Botão de análise individual abaixo de cada preview
-            # Botão fantasma invisível (acionado pelo JS)
-            st.markdown(f"""
-            <style>
-            .st-key-btn_site_ia_{idx_s} {{
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+    <div class="btn-wrap">
+        <button class="btn-analisar" onclick="
+            const btns = window.parent.document.querySelectorAll('button');
+            for (const b of btns) {{
+                if (b.innerText.trim() === '__site_ia_{idx_s}__') {{ b.click(); break; }}
             }}
-            </style>
-            """, unsafe_allow_html=True)
- 
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; height:44px; }}
-.btn {{
-    width:100%; padding:10px 0; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-}}
-.btn:hover {{ background:#dbeafe; }}
-</style>
-<button class="btn" onclick="
-    const btns = window.parent.document.querySelectorAll('button');
-    for (const b of btns) {{
-        if (b.innerText.trim() === '__site_ia_{idx_s}__') {{ b.click(); break; }}
-    }}
-">🤖 Analisar este site</button>
-""", height=44)
+        ">🤖 Analisar este site</button>
+    </div>
+</div>
+""", height=310, scrolling=False)
  
             if st.button(f"__site_ia_{idx_s}__", key=f"btn_site_ia_{idx_s}", use_container_width=True):
                 if gemini_model is None:
@@ -2220,7 +2220,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:16px'>
             O Trafilatura lê o conteúdo de cada site e o Gemini gera um relatório comparativo
             de posicionamento, mensagens-chave e recomendações estratégicas.
-            Use o botão <b>🔍 Gerar Relatório</b> no topo para gerar a análise geral.
+            Use o botão <b>Gerar Relatório</b> no topo para gerar a análise geral.
         </div>
         """, unsafe_allow_html=True)
  
@@ -2379,7 +2379,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                 <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
                             padding:28px 24px;text-align:center;color:#9ca3af;font-size:14px;margin-top:8px'>
                     Nenhuma análise por site salva ainda.
-                    Use o botão <b>🤖 Analisar este site</b> abaixo de cada card
+                    Use o botão <b>Analisar este site 🤖</b> abaixo de cada card
                     e salve a análise.
                 </div>
                 """, unsafe_allow_html=True)
