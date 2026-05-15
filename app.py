@@ -1323,7 +1323,7 @@ if st.session_state.pagina == "home":
 
         [data-testid="stMain"] div.stButton > button[kind="primary"],
         section.main div.stButton > button[kind="primary"] {
-            background: #3a9fd6 !important;
+            background: #0780c0 !important;
             color: #ffffff !important;
             border: none !important;
             font-size: 14px !important;
@@ -1958,7 +1958,7 @@ elif st.session_state.pagina == "sites":
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
  
     section.main div.stButton > button[kind="primary"] {
-        background: #3a9fd6 !important;
+        background: #0780c0 !important;
         color: #ffffff !important;
         border: none !important;
         font-size: 16px !important;
@@ -1967,7 +1967,7 @@ elif st.session_state.pagina == "sites":
     }
     section.main div.stButton > button[kind="primary"]:hover {
         opacity: 0.88 !important;
-        background: #3a9fd6 !important;
+        background: #0780c0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -2675,7 +2675,7 @@ elif st.session_state.pagina == "redes":
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
  
     section.main div.stButton > button[kind="primary"] {
-        background: #3a9fd6 !important;
+        background: #0780c0 !important;
         color: #ffffff !important;
         border: none !important;
         font-size: 16px !important;
