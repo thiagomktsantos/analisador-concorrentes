@@ -1906,7 +1906,7 @@ elif st.session_state.pagina == "geral":
         st.dataframe(df[["Nome", "Site", "Instagram", "Facebook"]], use_container_width=True, height=min(400, 60 + len(concorrentes) * 55))
 
 # ---------------------------------------------------
-# CONFRONTO DE SITES  ← NOVA VERSÃO
+# PAGINA - CONFRONTO DE SITES
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "sites":
@@ -2054,7 +2054,7 @@ elif st.session_state.pagina == "sites":
                     st.markdown("---")
 
 # ---------------------------------------------------
-# ADS
+# PAGINA - ADS
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "ads":
@@ -2106,7 +2106,7 @@ elif st.session_state.pagina == "ads":
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# INSIGHTS
+# PAGINA - INSIGHTS
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "insights":
@@ -2755,7 +2755,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     thumb   = p.get("thumb", "")
                     cap     = p.get("caption", "")
                     cap_esc = _esc(cap)
-                    cap_t   = (cap[:120] + "… <b>[ver copy]</b>") if len(cap) > 120 else cap
+                    cap_t   = (cap[:110] + "… <b>[ver copy]</b>") if len(cap) > 110 else cap
                     isVid   = p.get("is_video", False)
                     likes   = p.get("likes", 0)
                     coms    = p.get("comments", 0)
