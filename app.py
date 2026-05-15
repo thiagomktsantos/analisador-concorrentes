@@ -1203,28 +1203,41 @@ if st.session_state.pagina == "home":
         </style>
         """, unsafe_allow_html=True)
 
-        h1, h2 = st.columns([8, 2])
+        st.markdown("""
+        <style>
+        @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
+        .st-key-btn_editar_empresa { display: none !important; }
+        </style>
+        """, unsafe_allow_html=True)
+
+        h1, h2 = st.columns([7, 3])
         with h1:
             st.markdown(
-                "<h1 style='font-size:28px;font-weight:700;color:#111827;"
-                "letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>"
+                "<h1 style='font-size:32px;font-weight:700;color:#1a2e4a;"
+                "text-transform:uppercase;margin:0;"
+                "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
                 "Minha Empresa</h1>",
                 unsafe_allow_html=True,
             )
             st.markdown(
-                "<p style='font-size:16px;color:#6b7280;margin:0'>"
-                "Gerencie as informações e tenha uma visão geral da sua empresa.</p>",
+                "<div style='font-size:14px;color:#6b7280;'>"
+                "Gerencie as informações e tenha uma visão geral da sua empresa.</div>",
                 unsafe_allow_html=True,
             )
+        with h2:
+            st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
+            btn_editar = st.button(
+                "Editar Empresa",
+                type="primary",
+                use_container_width=True,
+                key="btn_editar_empresa",
+            )
+            if btn_editar:
+                st.session_state.editar_empresa = True
+                st.rerun()
 
         st.markdown(
-            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>",
-            unsafe_allow_html=True,
-        )
-
-        titulo_form = "✏️ Editar Empresa" if tem_dados else "➕ Cadastrar Empresa"
-        st.markdown(
-            f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>",
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
             unsafe_allow_html=True,
         )
 
