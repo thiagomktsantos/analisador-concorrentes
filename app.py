@@ -3081,27 +3081,51 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 </div>
 
 <script>
-function ajustarAltura() {{
-    var h = document.body.scrollHeight || document.documentElement.scrollHeight;
-    window.parent.document.querySelectorAll('iframe').forEach(function(iframe) {{
-        if (iframe.contentWindow === window) {{
-            iframe.style.height = (h + 8) + 'px';
-        }}
-    }});
+function enviarAltura() {{
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    window.parent.postMessage({{ type: 'setHeight', height: h }}, '*');
 }}
 
 function showTab(name, el) {{
-    document.querySelectorAll('.tab').forEach(function(t){{ t.classList.remove('active'); }});
-    document.querySelectorAll('.panel').forEach(function(p){{ p.classList.remove('active'); }});
+    document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
+    document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
-    setTimeout(ajustarAltura, 50);
+    setTimeout(enviarAltura, 50);
 }}
 
-document.addEventListener('DOMContentLoaded', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
-window.addEventListener('resize', ajustarAltura);
-setTimeout(ajustarAltura, 200);
+var ro = new ResizeObserver(enviarAltura);
+ro.observe(document.body);
+document.addEventListener('DOMContentLoaded', enviarAltura);
+window.addEventListener('load', enviarAltura);
+setTimeout(enviarAltura, 100);
+setTimeout(enviarAltura, 500);
+setTimeout(enviarAltura, 1000);
 </script>
 """
             components.html(ia_html, height=420, scrolling=False)
+
+            # ── Receptor postMessage — ajusta altura do iframe na página pai
+            st.markdown(f"""
+<script>
+(function() {{
+    var listeners = window._iaListeners || 0;
+    if (listeners >= {idx + 1}) return;   // evita duplicar listener por aba
+    window._iaListeners = listeners + 1;
+
+    window.addEventListener('message', function(e) {{
+        if (!e.data || e.data.type !== 'setHeight') return;
+        var iframes = document.querySelectorAll('iframe');
+        iframes.forEach(function(iframe) {{
+            try {{
+                if (iframe.contentWindow === e.source) {{
+                    iframe.style.height = e.data.height + 'px';
+                    iframe.style.minHeight = 'unset';
+                    iframe.style.maxHeight = 'none';
+                }}
+            }} catch(err) {{}}
+        }});
+    }});
+}})();
+</script>
+""", unsafe_allow_html=True)
