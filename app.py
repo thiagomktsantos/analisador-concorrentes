@@ -2090,14 +2090,13 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
 }}
 .url-row {{
     padding:10px 16px;
-    font-size:12px; color:#374151;
+    font-size:15px; color:#0f1117;
     word-break:break-all;
     border-bottom:1px solid #f3f4f6;
     display:flex; align-items:center; gap:6px;
 }}
 .url-label {{
-    font-size:10px; font-weight:700; color:#6b7280;
-    letter-spacing:0.8px;
+    font-size:15px; font-weight:700; color:#0f1117;
     flex-shrink:0;
 }}
 .preview-wrap {{
