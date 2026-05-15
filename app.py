@@ -2192,6 +2192,9 @@ elif st.session_state.pagina == "redes":
     div[data-baseweb="tab-highlight"] {
         display: none !important;
     }
+    [data-testid="stHorizontalBlock"] {
+    gap: 24px !important;   /* ajuste o valor conforme preferir */
+}
     </style>
     """, unsafe_allow_html=True)
  
@@ -2650,7 +2653,7 @@ elif st.session_state.pagina == "redes":
                              font-style:italic; margin-bottom:16px; }}
                 .btn-ia {{
                     width:100%; padding:10px; border: 1px solid rgb(58, 159, 214); border-radius:8px;
-                    background: rgb(239, 246, 255); font-size:14px; font-weight:600; rgb(29, 78, 216);
+                    background: rgb(239, 246, 255); font-size:14px; font-weight:600; color: rgb(29, 78, 216);
                     cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
                 }}
                 .btn-ia:hover {{ background:#f3f4f6; }}
@@ -3079,13 +3082,13 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
         <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
     </div>
     <div id="panel-geral" class="panel">
-        {_panel_ia(geral_html, "Gerar Análise Postagens 🤖", f"__geral_{idx}__")}
+        {_panel_ia(geral_html, "Gerar Análise de Postagens 🤖", f"__geral_{idx}__")}
     </div>
     <div id="panel-criativo" class="panel active">
-        {_panel_ia(criativo_html, "Gerar Análise Criativos 🤖", f"__criativo_{idx}__")}
+        {_panel_ia(criativo_html, "Gerar Análise de Criativos 🤖", f"__criativo_{idx}__")}
     </div>
     <div id="panel-copy" class="panel">
-        {_panel_ia(copy_html, "Gerar Análise Copys 🤖", f"__copy_{idx}__")}
+        {_panel_ia(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{idx}__")}
     </div>
 </div>
 
