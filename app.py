@@ -1336,79 +1336,56 @@ if st.session_state.pagina == "home":
 
         st.markdown("""
         <style>
-        .st-key-btn_editar_empresa { display: none !important; }
-
-        section.main .block-container {
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
-        }
-        [data-testid="stAppIframeResizerAnchor"] { display: none !important; }
+        .st-key-btn_editar_empresa_hidden { display: none !important; }
         </style>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         """, unsafe_allow_html=True)
 
-        # ── Cabeçalho com botão alinhado via st.columns
-        h1, h2 = st.columns([8, 2])
+        h1, h2 = st.columns([7, 3])
         with h1:
-            st.markdown(
-                "<h1 style='font-size:28px;font-weight:600;color:#111827;"
-                "letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>"
-                "Minha Empresa</h1>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                "<p style='font-size:16px;color:#6b7280'>"
-                "Gerencie as informações e tenha uma visão geral da sua empresa.</p>",
-                unsafe_allow_html=True,
-            )
+            components.html("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a2e4a;
+    text-transform: uppercase;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.5px;
+}
+.sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+}
+</style>
+<div class="titulo">Minha Empresa</div>
+<div class="sub">Gerencie as informações e tenha uma visão geral da sua empresa.</div>
+""", height=70)
+
         with h2:
-            # Botão Streamlit escondido — necessário para o rerun
+            st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
             btn_editar = st.button(
                 "Editar Empresa",
-                use_container_width=True,
                 type="primary",
+                use_container_width=True,
                 key="btn_editar_empresa",
             )
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
 
-            # Botão HTML visível COM ícone, sobreposto via CSS negativo
-            components.html("""
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-            <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-            <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body { background: transparent; overflow: hidden; height: 40px; }
-            .btn {
-                position: absolute; top: 0; right: 0; left: 0;
-                background: #3a9fd6; color: #fff; border: none;
-                border-radius: 8px; padding: 10px 18px;
-                font-size: 14px; font-weight: 600; cursor: pointer;
-                font-family: 'DM Sans', sans-serif;
-                display: flex; align-items: center; justify-content: center;
-                gap: 8px; transition: background 0.15s;
-                white-space: nowrap; line-height: 1; width: 100%;
-            }
-            .btn:hover { background: #2e8bbf; }
-            .btn i { font-size: 13px; }
-            </style>
-            <button class="btn" onclick="
-                const btns = window.parent.document.querySelectorAll('button');
-                for (const b of btns) {
-                    if (b.innerText.trim() === 'Editar Empresa') { b.click(); break; }
-                }
-            ">
-                <i class="fa-solid fa-pen-to-square"></i>
-                Editar Empresa
-            </button>
-            """, height=40)
-
         st.markdown(
-            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:12px 0 20px 0'/>",
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
             unsafe_allow_html=True,
         )
-
         # ── Dados
         # Usa a cor fixa de "Minha Empresa" (índice 0 da paleta)
         cor_empresa = get_minha_empresa_color()
