@@ -2023,13 +2023,6 @@ elif st.session_state.pagina == "sites":
         st.info("Cadastre o site da sua empresa e de pelo menos um concorrente para usar esta funcionalidade.")
         st.stop()
  
-    st.markdown(
-        "<div style='font-size:14px;font-weight:800;color:#1a2e4a;"
-        "text-transform:uppercase;letter-spacing:0.3px;margin-bottom:14px'>"
-        "Sites cadastrados</div>",
-        unsafe_allow_html=True,
-    )
- 
     cols_sites = st.columns(min(len(sites_disponiveis), 4))
  
     # Inicializa estados de análise individual
@@ -2167,7 +2160,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
         <div class="nome-wrap">
             <div class="nome-linha">
                 <span class="nome">{s['nome']}</span>
-                {f'<span class="handle">{handle_txt}</span>' if handle_txt else ''}
             </div>
             <div class="badge">{badge_lbl}</div>
         </div>
