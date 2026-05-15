@@ -2883,7 +2883,7 @@ function openCopy2(txt) {{
 # PAGINA - REDES SOCIAIS - ANÁLISE DE IA
 # ══════════════════════════════════════════════════════════════
  
-            st.markdown("<div style='margin-top:16px'/>", unsafe_allow_html=True)
+            st.markdown("<div/>", unsafe_allow_html=True)
  
             chave_criativo = f"ia_criativo_{r['handle']}"
             chave_copy     = f"ia_copy_{r['handle']}"
@@ -3104,4 +3104,4 @@ window.addEventListener('resize', ajustarAltura);
 setTimeout(ajustarAltura, 200);
 </script>
 """
-            components.html(ia_html, height=600, scrolling=False)
+            components.html(ia_html, height=420, scrolling=False)
