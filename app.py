@@ -460,12 +460,16 @@ section.main div.stButton > button:hover {
 }
 
 /* ── BOTÃO PRIMARY ── */
-section.main div.stButton > button[kind="primary"] {
+section.main div.stButton > button[kind="primary"],
+[data-testid="stMainBlockContainer"] button[kind="primary"],
+button[data-testid="baseButton-primary"] {
     background: #0780c0 !important;
     color: #ffffff !important;
     border: none !important;
 }
-section.main div.stButton > button[kind="primary"]:hover {
+section.main div.stButton > button[kind="primary"]:hover,
+[data-testid="stMainBlockContainer"] button[kind="primary"]:hover,
+button[data-testid="baseButton-primary"]:hover {
     background: #065f9e !important;
     color: #ffffff !important;
 }
