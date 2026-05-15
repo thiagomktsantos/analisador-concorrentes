@@ -2733,25 +2733,15 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 unsafe_allow_html=True,
             )
  
-            # ══════════════════════════════════════════════════════════════
-            # ÚLTIMAS 3 POSTAGENS + VER TODOS OS POSTS
-            # (HTML gerado server-side em Python — sem JS de renderização)
-            # ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
+# POSTAGENS
+# ══════════════════════════════════════════════════════════════
  
             col_posts, col_table = st.columns(2)
- 
-            def _fmt(n):
-                n = int(n or 0)
-                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
-                if n >= 1_000:     return f"{n/1_000:.1f}K"
-                return str(n)
- 
-            def _esc(s):
-                return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
- 
+
             with col_posts:
                 if not posts_list:
-                    cards_inner = "<div style=\'padding:20px;text-align:center;color:#9ca3af;font-size:14px\'>Posts não disponíveis.</div>"
+                    cards_inner = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
                 else:
                     cards_inner = ""
                     for p in posts_list[:3]:
@@ -2759,7 +2749,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         cap     = p.get("caption", "")
                         cap_esc = _esc(cap)
                         cap_3ln = cap[:160] + ("…" if len(cap) > 160 else "") if cap else ""
- 
+
                         img_html = (
                             f'<img src="{thumb}" style="width:100%;aspect-ratio:1;border-radius:8px;'
                             f'object-fit:cover;border:1px solid #e5e7eb;display:block;" '
@@ -2769,7 +2759,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             f'display:flex;align-items:center;justify-content:center;'
                             f'font-size:13px;color:#9ca3af">{"Vídeo" if p.get("is_video") else "Foto"}</div>'
                         )
- 
+
                         cap_html = (
                             f'<div style="font-size:11px;color:#6b7280;line-height:1.5;font-style:italic;'
                             f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;min-height:52px;">'
@@ -2784,7 +2774,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;'
                             'background:#fafafa;min-height:52px;">Sem legenda</div>'
                         )
- 
+
                         cards_inner += (
                             f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">'
                             f'<div style="font-size:11px;color:#9ca3af;font-weight:500;text-align:center">📅 {p.get("date","")}</div>'
@@ -2794,12 +2784,12 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             f'{cap_html}'
                             f'</div>'
                         )
- 
+
                 components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
 .modal-bg.open {{ display:flex; }}
 .modal {{ background:#fff; border-radius:14px; padding:24px; max-width:360px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
@@ -2809,76 +2799,68 @@ html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webki
 .modal-close:hover {{ color:#111827; }}
 </style>
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;position:relative;">
-    <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Últimas 3 Postagens</div>
     <div style="padding:14px 16px;display:flex;gap:10px;align-items:stretch;position:relative;z-index:1">{cards_inner}</div>
 </div>
-<div class="modal-bg" id="modal-cp" onclick="if(event.target===this)this.classList.remove(\'open\')">
+<div class="modal-bg" id="modal-cp" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal">
-        <button class="modal-close" onclick="document.getElementById(\'modal-cp\').classList.remove(\'open\')">✕</button>
+        <button class="modal-close" onclick="document.getElementById('modal-cp').classList.remove('open')">✕</button>
         <div class="modal-title">Copy completa</div>
         <div class="modal-text" id="modal-cp-txt"></div>
     </div>
 </div>
 <script>
 function openCopy(txt) {{
-    document.getElementById(\'modal-cp-txt\').textContent = txt;
-    document.getElementById(\'modal-cp\').classList.add(\'open\');
+    document.getElementById('modal-cp-txt').textContent = txt;
+    document.getElementById('modal-cp').classList.add('open');
 }}
 </script>
-""", height=360, scrolling=False)
- 
+""", height=340, scrolling=False)
+
             with col_table:
                 if not posts_list:
-                    tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Sem posts</td></tr>'
+                    tbl_rows_json = "[]"
                 else:
-                    tbl_rows = ""
+                    import json as _json
+                    rows_data = []
                     for p in posts_list:
-                        thumb   = p.get("thumb", "")
-                        cap     = p.get("caption", "")
-                        cap_esc = _esc(cap)
-                        cap_t   = cap[:32] + "…" if len(cap) > 32 else cap
-                        isVid   = p.get("is_video", False)
-                        likes   = p.get("likes", 0)
-                        coms    = p.get("comments", 0)
- 
-                        img_cell = (
-                            f'<img src="{thumb}" style="width:36px;height:36px;border-radius:6px;'
-                            f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
-                            f'onclick="openImg(\'{_esc(thumb)}\')" '
-                            f'onerror="this.outerHTML=\'&lt;div style=&quot;width:36px;height:36px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af&quot;&gt;📷&lt;/div&gt;\'" />'
-                        ) if thumb else (
-                            f'<div style="width:36px;height:36px;border-radius:6px;background:#f3f4f6;'
-                            f'display:flex;align-items:center;justify-content:center;font-size:16px">{"🎬" if isVid else "📷"}</div>'
-                        )
- 
-                        copy_cell = (
-                            f'<span onclick="openCopy2(\'{cap_esc}\')" '
-                            f'style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
-                            f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">{cap_t}</span>'
-                        ) if cap else '<span style="color:#d1d5db">—</span>'
- 
-                        tbl_rows += (
-                            f"<tr>"
-                            f"<td>{img_cell}</td>"
-                            f"<td>{p.get('date','—')}</td>"
-                            f"<td>{'Vídeo' if isVid else 'Foto'}</td>"
-                            f"<td>{_fmt(likes)}</td>"
-                            f"<td>{_fmt(coms)}</td>"
-                            f"<td>{_fmt(likes+coms)}</td>"
-                            f"<td>{copy_cell}</td>"
-                            f"</tr>"
-                        )
- 
+                        rows_data.append({
+                            "thumb":   p.get("thumb", ""),
+                            "date":    p.get("date", "—"),
+                            "tipo":    "Vídeo" if p.get("is_video") else "Foto",
+                            "likes":   p.get("likes", 0),
+                            "coms":    p.get("comments", 0),
+                            "eng":     p.get("likes", 0) + p.get("comments", 0),
+                            "cap":     _esc(p.get("caption", "")),
+                            "cap_t":   (_esc(p.get("caption", ""))[:32] + "…") if len(p.get("caption","")) > 32 else _esc(p.get("caption","")),
+                        })
+                    tbl_rows_json = _json.dumps(rows_data)
+
                 components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+.filters {{ display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; align-items:center; }}
+.filter-select {{
+    font-size:12px; font-weight:600; color:#374151;
+    border:1px solid #e5e7eb; border-radius:6px;
+    padding:4px 8px; background:#f9fafb;
+    font-family:'DM Sans',sans-serif; cursor:pointer;
+}}
+.filter-label {{ font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }}
 table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 10px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }}
-td {{ padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
+th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }}
+th.check-col {{ width:32px; }}
+td {{ padding:7px 8px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
 tr:last-child td {{ border-bottom:none; }}
 tr:hover td {{ background:#f9fafb; }}
+tr.selected td {{ background:#eff6ff !important; }}
+.cb {{ width:15px; height:15px; cursor:pointer; accent-color:#3a9fd6; }}
+.badge {{ display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }}
+.badge-foto {{ background:#f0fdf4; color:#16a34a; }}
+.badge-video {{ background:#eff6ff; color:#1d4ed8; }}
+.sel-bar {{ display:none; background:#0e2a47; color:#fff; padding:6px 12px; font-size:12px; font-weight:600; border-radius:0 0 8px 8px; }}
+.sel-bar.show {{ display:flex; align-items:center; justify-content:space-between; }}
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
 .modal-bg.open {{ display:flex; }}
 .modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
@@ -2888,39 +2870,164 @@ tr:hover td {{ background:#f9fafb; }}
 .modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
 .modal-close:hover {{ color:#111827; }}
 </style>
+
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
-    <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Ver Todos os Posts</div>
-    <div style="max-height:310px;overflow-y:auto">
-        <table>
-            <thead><tr><th>Img</th><th>Data</th><th>Tipo</th><th>❤️</th><th>💬</th><th>Eng.</th><th>Copy</th></tr></thead>
-            <tbody>{tbl_rows}</tbody>
+    <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">
+        Postagens
+    </div>
+
+    <div class="sel-bar" id="sel-bar">
+        <span id="sel-count">0 selecionados</span>
+        <span style="cursor:pointer;opacity:0.7" onclick="clearSel()">✕ limpar</span>
+    </div>
+
+    <div class="filters">
+        <span class="filter-label">Filtrar:</span>
+        <select class="filter-select" id="f-tipo" onchange="applyFilters()">
+            <option value="">Tipo</option>
+            <option value="Foto">Foto</option>
+            <option value="Vídeo">Vídeo</option>
+        </select>
+        <select class="filter-select" id="f-sort" onchange="applyFilters()">
+            <option value="">Ordenar por</option>
+            <option value="eng_desc">Maior Eng.</option>
+            <option value="eng_asc">Menor Eng.</option>
+            <option value="likes_desc">Mais Curtidas</option>
+            <option value="date_desc">Mais Recente</option>
+            <option value="date_asc">Mais Antigo</option>
+        </select>
+        <select class="filter-select" id="f-sel" onchange="applyFilters()">
+            <option value="">Seleção</option>
+            <option value="sel">Selecionados</option>
+            <option value="nsel">Não selecionados</option>
+        </select>
+    </div>
+
+    <div style="max-height:290px;overflow-y:auto" id="tbl-wrap">
+        <table id="main-table">
+            <thead>
+                <tr>
+                    <th class="check-col"><input type="checkbox" class="cb" id="check-all" onchange="toggleAll(this)"></th>
+                    <th>Img</th><th>Data</th><th>Tipo</th>
+                    <th>❤️</th><th>💬</th><th>Eng.</th><th>Copy</th>
+                </tr>
+            </thead>
+            <tbody id="tbl-body"></tbody>
         </table>
     </div>
 </div>
-<div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove(\'open\')">
+
+<div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal">
-        <button class="modal-close" onclick="document.getElementById(\'modal2\').classList.remove(\'open\')">✕</button>
+        <button class="modal-close" onclick="document.getElementById('modal2').classList.remove('open')">✕</button>
         <div class="modal-title" id="modal2-title"></div>
         <img id="modal2-img" class="modal-img" src="" style="display:none" />
         <div class="modal-text" id="modal2-text"></div>
     </div>
 </div>
+
 <script>
+var allRows = {tbl_rows_json};
+var selected = {{}};
+
+function fmt(n) {{
+    n = parseInt(n) || 0;
+    if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+    if (n >= 1000) return (n/1000).toFixed(1)+'K';
+    return String(n);
+}}
+
+function renderTable(rows) {{
+    var tb = document.getElementById('tbl-body');
+    tb.innerHTML = '';
+    rows.forEach(function(p, i) {{
+        var isVid = p.tipo === 'Vídeo';
+        var imgCell = p.thumb
+            ? '<img src="'+p.thumb+'" style="width:34px;height:34px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(\''+p.thumb+'\')" onerror="this.style.display=\'none\'" />'
+            : '<div style="width:34px;height:34px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:14px">'+(isVid?'🎬':'📷')+'</div>';
+        var copyCell = p.cap
+            ? '<span onclick="openCopy2(\''+p.cap+'\')" style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'+p.cap_t+'</span>'
+            : '<span style="color:#d1d5db">—</span>';
+        var badge = isVid
+            ? '<span class="badge badge-video">Vídeo</span>'
+            : '<span class="badge badge-foto">Foto</span>';
+        var chk = selected[p.date+'_'+i] ? 'checked' : '';
+        var selClass = selected[p.date+'_'+i] ? 'selected' : '';
+        tb.innerHTML += '<tr class="'+selClass+'" id="row_'+i+'">'
+            +'<td><input type="checkbox" class="cb" '+chk+' onchange="toggleRow(this,'+i+')"></td>'
+            +'<td>'+imgCell+'</td>'
+            +'<td style="white-space:nowrap">'+p.date+'</td>'
+            +'<td>'+badge+'</td>'
+            +'<td>'+fmt(p.likes)+'</td>'
+            +'<td>'+fmt(p.coms)+'</td>'
+            +'<td style="font-weight:700;color:#1a2e4a">'+fmt(p.eng)+'</td>'
+            +'<td>'+copyCell+'</td>'
+            +'</tr>';
+    }});
+}}
+
+function applyFilters() {{
+    var tipo = document.getElementById('f-tipo').value;
+    var sort = document.getElementById('f-sort').value;
+    var selF = document.getElementById('f-sel').value;
+    var rows = allRows.slice();
+    if (tipo) rows = rows.filter(function(r){{ return r.tipo === tipo; }});
+    if (selF === 'sel') rows = rows.filter(function(r,i){{ return selected[r.date+'_'+i]; }});
+    if (selF === 'nsel') rows = rows.filter(function(r,i){{ return !selected[r.date+'_'+i]; }});
+    if (sort === 'eng_desc') rows.sort(function(a,b){{ return b.eng-a.eng; }});
+    if (sort === 'eng_asc')  rows.sort(function(a,b){{ return a.eng-b.eng; }});
+    if (sort === 'likes_desc') rows.sort(function(a,b){{ return b.likes-a.likes; }});
+    if (sort === 'date_desc') rows.sort(function(a,b){{ return b.date.localeCompare(a.date); }});
+    if (sort === 'date_asc')  rows.sort(function(a,b){{ return a.date.localeCompare(b.date); }});
+    renderTable(rows);
+}}
+
+function toggleRow(el, i) {{
+    var row = allRows[i];
+    var key = row.date+'_'+i;
+    selected[key] = el.checked;
+    el.closest('tr').classList.toggle('selected', el.checked);
+    updateSelBar();
+}}
+
+function toggleAll(el) {{
+    allRows.forEach(function(r,i){{ selected[r.date+'_'+i] = el.checked; }});
+    applyFilters();
+    updateSelBar();
+}}
+
+function updateSelBar() {{
+    var count = Object.values(selected).filter(Boolean).length;
+    var bar = document.getElementById('sel-bar');
+    document.getElementById('sel-count').textContent = count + ' selecionado' + (count !== 1 ? 's' : '');
+    bar.classList.toggle('show', count > 0);
+}}
+
+function clearSel() {{
+    selected = {{}};
+    document.getElementById('check-all').checked = false;
+    applyFilters();
+    updateSelBar();
+}}
+
 function openImg(url) {{
-    document.getElementById(\'modal2-title\').textContent = \'Imagem do Post\';
-    var img = document.getElementById(\'modal2-img\');
-    img.src = url; img.style.display = \'block\';
-    document.getElementById(\'modal2-text\').textContent = \'\';
-    document.getElementById(\'modal2\').classList.add(\'open\');
+    document.getElementById('modal2-title').textContent = 'Imagem do Post';
+    var img = document.getElementById('modal2-img');
+    img.src = url; img.style.display = 'block';
+    document.getElementById('modal2-text').textContent = '';
+    document.getElementById('modal2').classList.add('open');
 }}
+
 function openCopy2(txt) {{
-    document.getElementById(\'modal2-title\').textContent = \'Copy Completa\';
-    document.getElementById(\'modal2-img\').style.display = \'none\';
-    document.getElementById(\'modal2-text\').textContent = txt;
-    document.getElementById(\'modal2\').classList.add(\'open\');
+    document.getElementById('modal2-title').textContent = 'Copy Completa';
+    document.getElementById('modal2-img').style.display = 'none';
+    document.getElementById('modal2-text').textContent = txt;
+    document.getElementById('modal2').classList.add('open');
 }}
+
+renderTable(allRows);
 </script>
-""", height=370, scrolling=False)
+""", height=430, scrolling=False)
  
                         # ══════════════════════════════════════════════════════════════
             # ANÁLISE DE IA  (botões visíveis — sem CSS display:none)
