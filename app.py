@@ -237,7 +237,9 @@ if "relatorio_sites" not in st.session_state:
     st.session_state.relatorio_sites = {}   # cache: {url: conteudo_extraido}
 if "relatorio_gemini" not in st.session_state:
     st.session_state.relatorio_gemini = ""
-
+if "analises_salvas" not in st.session_state:
+    st.session_state.analises_salvas = []
+    
 empresa = st.session_state.dados["minha_empresa"]
 campos_padrao = {
     "estado": "", "cidade": "", "instagram": "@",
@@ -1122,6 +1124,22 @@ def cabecalho_analise(titulo, subtitulo=""):
     else:
         data_inicio = None
     return periodo, data_inicio
+
+    def cabecalho_simples(titulo, subtitulo=""):
+    st.markdown(
+        f"<h1 style='font-size:28px;font-weight:600;color:#111827;"
+        f"letter-spacing:-0.5px;margin:0;font-family:DM Sans,sans-serif'>{titulo}</h1>",
+        unsafe_allow_html=True,
+    )
+    if subtitulo:
+        st.markdown(
+            f"<div style='font-size:16px;color:#6b7280;margin-top:3px'>{subtitulo}</div>",
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>",
+        unsafe_allow_html=True,
+    )
 
 # ===================================================
 # PÁGINAS
