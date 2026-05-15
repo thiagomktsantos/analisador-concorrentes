@@ -2767,15 +2767,20 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     "cap_t": cap_t,
                 })
  
-            # Serializa de forma segura — caracteres especiais ficam dentro
-            # de <script type="application/json"> que o browser NÃO executa
-            tbl_rows_json = _json.dumps(rows_data, ensure_ascii=False)
+            # Serializa com ensure_ascii=True (só ASCII — zero risco de encoding)
+            # e escapa sequências que fecham tags HTML prematuramente
+            tbl_rows_json = _json.dumps(rows_data, ensure_ascii=True)
+            tbl_rows_json = tbl_rows_json.replace("</script>", "<\\/script>").replace("<!--", "<\\!--")
+            # Também escapa para uso seguro em data-attribute HTML
+            tbl_rows_b64 = __import__('base64').b64encode(
+                _json.dumps(rows_data, ensure_ascii=True).encode('ascii')
+            ).decode('ascii')
  
             tabela_html = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
  
-<!-- Dados passados de forma segura, sem interpolação dentro de <script> executável -->
-<script id="rows-data" type="application/json">ROWS_JSON_PLACEHOLDER</script>
+<!-- Dados em base64 — método 100% seguro, zero risco de quebrar HTML/JS -->
+<div id="rows-data" data-b64="ROWS_B64_PLACEHOLDER" style="display:none"></div>
  
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -2868,8 +2873,16 @@ tr.selected td { background:#eff6ff !important; }
 </div>
  
 <script>
-// Leitura segura dos dados — sem interpolação de strings no JS executável
-var allRows = JSON.parse(document.getElementById('rows-data').textContent);
+// Leitura via base64 — método mais seguro, zero interferência com HTML
+var allRows = [];
+try {
+    var b64 = document.getElementById('rows-data').getAttribute('data-b64');
+    var json = atob(b64);
+    allRows = JSON.parse(json);
+} catch(e) {
+    console.error('Erro ao carregar postagens:', e);
+    allRows = [];
+}
 var selected = {};
  
 function fmt(n) {
@@ -2988,9 +3001,8 @@ renderTable(allRows);
 </script>
 """
  
-            # Substitui o placeholder pelo JSON real — seguro pois fica
-            # dentro de <script type="application/json">, não executável
-            tabela_html = tabela_html.replace("ROWS_JSON_PLACEHOLDER", tbl_rows_json)
+            # Injeta o base64 no placeholder — sem risco de quebrar HTML
+            tabela_html = tabela_html.replace("ROWS_B64_PLACEHOLDER", tbl_rows_b64)
             components.html(tabela_html, height=500, scrolling=False)
  
             # ══════════════════════════════════════════════════════════════
@@ -3159,3 +3171,4 @@ function showTab(name, el) {
             )
  
             components.html(ia_script, height=ia_height, scrolling=False)
+ 
