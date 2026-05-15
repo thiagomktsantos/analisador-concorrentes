@@ -2025,14 +2025,14 @@ elif st.session_state.pagina == "sites":
         chave = f"sites_analise_{idx_s}"
         if chave not in st.session_state:
             st.session_state[chave] = ""
- 
+
     # ── CSS estático para esconder botões fantasma pelo key do Streamlit
     ghost_css = "\n".join([
         f".st-key-btn_site_ia_{i} {{ display: none !important; }}"
         for i in range(len(sites_disponiveis))
     ])
     st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
- 
+
     # ── Botões fantasma — criados ANTES dos cards
     site_ia_triggers = {}
     for idx_s in range(len(sites_disponiveis)):
@@ -2042,7 +2042,7 @@ elif st.session_state.pagina == "sites":
             use_container_width=False,
         )
         site_ia_triggers[idx_s] = triggered
- 
+
     # ── Cards
     for idx_s, s in enumerate(sites_disponiveis):
         with cols_sites[idx_s % 4]:
@@ -2053,7 +2053,7 @@ elif st.session_state.pagina == "sites":
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
             avatar_letras = gerar_avatar(s["nome"])
- 
+
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -2090,13 +2090,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
 }}
 .url-row {{
     padding:10px 16px;
-    font-size:15px; color:#0f1117;
+    font-size:12px; color:#374151;
     word-break:break-all;
     border-bottom:1px solid #f3f4f6;
     display:flex; align-items:center; gap:6px;
 }}
 .url-label {{
-    font-size:15px; font-weight:700; color:#0f1117;
+    font-size:10px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:0.8px;
     flex-shrink:0;
 }}
 .preview-wrap {{
@@ -2130,7 +2131,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
         </div>
     </div>
     <div class="url-row">
-        <span class="url-label">site:</span>
+        <span class="url-label">site</span>
         <span>{s['url']}</span>
     </div>
     <div class="preview-wrap">
@@ -2143,7 +2144,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     </div>
     <div class="btn-wrap">
         <button class="btn-analisar" onclick="triggerAnalise({idx_s})">
-            🤖 Analisar este site
+            Analisar este site 🤖
         </button>
     </div>
 </div>
@@ -2159,10 +2160,12 @@ function triggerAnalise(idx) {{
     }}
 }}
 function ajustarAltura() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var card = document.querySelector('.card');
+    if (!card) return;
+    var h = card.getBoundingClientRect().height;
     var iframes = window.parent.document.querySelectorAll('iframe');
     iframes.forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 4) + 'px'; }} catch(e) {{}}
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
     }});
 }}
 document.addEventListener('DOMContentLoaded', ajustarAltura);
@@ -2170,8 +2173,8 @@ window.addEventListener('load', ajustarAltura);
 setTimeout(ajustarAltura, 300);
 setTimeout(ajustarAltura, 800);
 </script>
-""", height=480, scrolling=False)
- 
+""", height=380, scrolling=False)
+
             # ── Processa clique do botão fantasma
             if site_ia_triggers[idx_s]:
                 if gemini_model is None:
@@ -2223,7 +2226,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                             st.rerun()
                         except Exception as e:
                             st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
- 
+
             # ── Exibe análise individual
             analise_ind = st.session_state.get(f"sites_analise_{idx_s}", "")
             if analise_ind:
