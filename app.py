@@ -2236,11 +2236,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     {analise_ind.replace(chr(10), "<br>")}
                 </div>
                 """, unsafe_allow_html=True)
- 
-    st.markdown(
-        "<div style='margin:24px 0 20px 0;border-top:1px solid #e5e7eb'/>",
-        unsafe_allow_html=True,
-    )
 
     # ── Gerar relatório geral
     if gerar_btn:
