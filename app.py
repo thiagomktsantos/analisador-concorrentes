@@ -2132,19 +2132,21 @@ elif st.session_state.pagina == "insights":
     else:
         st.info("Adicione concorrentes para gerar insights estratégicos.")
 
+
+Copiar
+
 # ---------------------------------------------------
 # REDES SOCIAIS
 # ---------------------------------------------------
-
+ 
 elif st.session_state.pagina == "redes":
-
+ 
     import datetime
     import plotly.graph_objects as go
-    import json
-
+    import json as _json
+ 
     # ── Helpers locais
     def _esc(texto: str) -> str:
-        """Escapa caracteres especiais para uso seguro em HTML/JS."""
         if not texto:
             return ""
         return (
@@ -2157,23 +2159,22 @@ elif st.session_state.pagina == "redes":
             .replace("\n", " ")
             .replace("\r", "")
         )
-
+ 
     def _fmt(n) -> str:
-        """Formata número abreviado: 1.2K, 3.4M etc."""
         n = int(n or 0)
         if n >= 1_000_000:
             return f"{n / 1_000_000:.1f}M"
         if n >= 1_000:
             return f"{n / 1_000:.1f}K"
         return str(n)
-
+ 
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
-
+ 
     st.markdown("""
     <style>
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
-
+ 
     section.main div.stButton > button[kind="primary"] {
         background: #3a9fd6 !important;
         color: #ffffff !important;
@@ -2219,7 +2220,7 @@ elif st.session_state.pagina == "redes":
     }
     </style>
     """, unsafe_allow_html=True)
-
+ 
     # ── Cabeçalho
     h1, h2 = st.columns([7, 3])
     with h1:
@@ -2253,13 +2254,12 @@ elif st.session_state.pagina == "redes":
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
         unsafe_allow_html=True,
     )
-
-    # ── Helpers
+ 
     def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(int(n))
-
+ 
     # ── Supabase cache helpers
     def salvar_cache_redes(dados: list):
         try:
@@ -2275,7 +2275,7 @@ elif st.session_state.pagina == "redes":
             supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache: {e}", icon="⚠️")
-
+ 
     def carregar_cache_redes() -> dict:
         try:
             res = (
@@ -2289,7 +2289,7 @@ elif st.session_state.pagina == "redes":
         except Exception:
             pass
         return {}
-
+ 
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_rapidapi(handle: str) -> dict:
         handle_limpo = handle.lstrip("@").strip()
@@ -2299,12 +2299,12 @@ elif st.session_state.pagina == "redes":
             rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
             if not rapidapi_key:
                 return {"erro": "RAPIDAPI_KEY não configurada"}
-
+ 
             headers = {
                 "x-rapidapi-key": rapidapi_key,
                 "x-rapidapi-host": "instagram-looter2.p.rapidapi.com",
             }
-
+ 
             r = requests.get(
                 f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}",
                 headers=headers,
@@ -2315,14 +2315,14 @@ elif st.session_state.pagina == "redes":
             if isinstance(data, dict):
                 if "data" in data:   user_data = data["data"]
                 elif "user" in data: user_data = data["user"]
-
+ 
             if not user_data or "message" in user_data:
                 return {"erro": user_data.get("message", "Perfil não encontrado")}
-
+ 
             seg         = int(user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count") or 0)
             total_posts = int(user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count") or 0)
             pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
-
+ 
             posts_data = []
             if pk:
                 for endpoint in [
@@ -2368,14 +2368,14 @@ elif st.session_state.pagina == "redes":
                             break
                     except Exception:
                         continue
-
+ 
             if posts_data:
                 eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 eng_pct   = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
             else:
                 eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
-
+ 
             return {
                 "handle":       "@" + handle_limpo,
                 "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
@@ -2392,7 +2392,7 @@ elif st.session_state.pagina == "redes":
             }
         except Exception as e:
             return {"erro": str(e)}
-
+ 
     # ── Monta lista de perfis
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
@@ -2400,16 +2400,16 @@ elif st.session_state.pagina == "redes":
     for i, c in enumerate(concorrentes):
         if c.get("instagram") and c["instagram"] not in ("@", ""):
             todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c["instagram"], "tipo": "concorrente"})
-
+ 
     if not todas:
         st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
         st.stop()
-
+ 
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
-
+ 
     cache = carregar_cache_redes()
-
+ 
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
@@ -2423,29 +2423,29 @@ elif st.session_state.pagina == "redes":
             "dados": resultados_lista,
         }
         st.toast("✅ Dados coletados e salvos!", icon="✅")
-
+ 
     ok = []
     if cache.get("dados"):
         ok    = [r for r in cache["dados"] if not r.get("erro")]
         erros = [r for r in cache["dados"] if r.get("erro")]
         for r in erros:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
-
+ 
     if not ok:
         st.info("Clique em **Coletar dados** para buscar os dados do Instagram.")
         st.stop()
-
+ 
     # ══════════════════════════════════════════════════════════════════════
     # GRÁFICOS COMPARATIVOS
     # ══════════════════════════════════════════════════════════════════════
-
+ 
     CORES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
-
+ 
     nomes_ok   = [x["nome"] for x in ok]
     segs_ok    = [x.get("seguidores", 0) for x in ok]
     eng_pct_ok = [x.get("eng_pct", 0.0) for x in ok]
     cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
-
+ 
     st.markdown(
         "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
         "font-family:\"Source Sans\",sans-serif;"
@@ -2453,9 +2453,9 @@ elif st.session_state.pagina == "redes":
         "Comparativo com todos os perfis</div>",
         unsafe_allow_html=True,
     )
-
+ 
     col_g1, col_g2 = st.columns(2)
-
+ 
     with col_g1:
         fig_seg = go.Figure(
             go.Bar(
@@ -2479,7 +2479,7 @@ elif st.session_state.pagina == "redes":
             xaxis=dict(showgrid=False, tickfont=dict(family="DM Sans", size=13, color="#374151"), showline=False),
             yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, tickfont=dict(family="DM Sans", size=12, color="#6b7280")),
         )
-        fig_seg_json = json.dumps(fig_seg.to_dict(), default=str)
+        fig_seg_json = _json.dumps(fig_seg.to_dict(), default=str)
         components.html(f"""
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -2496,7 +2496,7 @@ elif st.session_state.pagina == "redes":
             Plotly.newPlot('graf_seg', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
         """, height=275)
-
+ 
     with col_g2:
         fig_eng = go.Figure(
             go.Bar(
@@ -2521,7 +2521,7 @@ elif st.session_state.pagina == "redes":
             yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False, ticksuffix="%",
                        tickfont=dict(family="DM Sans", size=12, color="#6b7280")),
         )
-        fig_eng_json = json.dumps(fig_eng.to_dict(), default=str)
+        fig_eng_json = _json.dumps(fig_eng.to_dict(), default=str)
         components.html(f"""
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -2538,12 +2538,12 @@ elif st.session_state.pagina == "redes":
             Plotly.newPlot('graf_eng', fig.data, fig.layout, {{displayModeBar: false, responsive: true}});
         </script>
         """, height=275)
-
+ 
     # ══════════════════════════════════════════════════════════════════════
     # ABAS POR PERFIL
     # ══════════════════════════════════════════════════════════════════════
     abas = st.tabs([r["nome"] for r in ok])
-
+ 
     for idx, (aba, r) in enumerate(zip(abas, ok)):
         with aba:
             is_minha  = r["tipo"] == "minha"
@@ -2555,7 +2555,7 @@ elif st.session_state.pagina == "redes":
             bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
             eng_est   = len(r.get("posts", [])) == 0
             posts_list = r.get("posts", [])
-
+ 
             # ── CABEÇALHO DO PERFIL
             components.html(f"""
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -2588,10 +2588,10 @@ elif st.session_state.pagina == "redes":
                 </div>
             </div>
             """, height=90, scrolling=False)
-
+ 
             # ── MÉTRICAS + BIO
             col_metricas, col_bio = st.columns([1, 1])
-
+ 
             with col_metricas:
                 st.markdown(f"""
 <div style='background:#fff;border-radius:12px'>
@@ -2640,12 +2640,12 @@ elif st.session_state.pagina == "redes":
     {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
 </div>
 """, unsafe_allow_html=True)
-
+ 
             with col_bio:
                 chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
-
+ 
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
@@ -2683,7 +2683,7 @@ elif st.session_state.pagina == "redes":
                     </div>
                 </div>
                 """, height=200, scrolling=False)
-
+ 
                 st.markdown(f"""
                 <style>
                 div[data-testid="stButton"][data-key="btn_bio_ia_{idx}"],
@@ -2700,7 +2700,7 @@ elif st.session_state.pagina == "redes":
                 }}
                 </style>
                 """, unsafe_allow_html=True)
-
+ 
                 analisar_bio = st.button(
                     f"__bio_{idx}__",
                     key=f"btn_bio_ia_{idx}",
@@ -2714,21 +2714,21 @@ elif st.session_state.pagina == "redes":
                             try:
                                 prompt_bio = f"""
 Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
-
+ 
 Bio: "{bio_txt}"
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
-
+ 
 Responda com:
 ### Posicionamento
 Qual é o posicionamento transmitido pela bio?
-
+ 
 ### Pontos Fortes
 (2 pontos positivos da bio)
-
+ 
 ### O que melhorar
 (2 sugestões concretas de melhoria)
-
+ 
 ### Bio sugerida
 Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
@@ -2736,7 +2736,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                                 st.session_state[chave_bio_ia] = resp.text
                             except Exception as e:
                                 st.session_state[chave_bio_ia] = f"Erro: {e}"
-
+ 
                 if st.session_state.get(chave_bio_ia):
                     st.markdown(f"""
                     <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
@@ -2745,81 +2745,86 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         {st.session_state[chave_bio_ia].replace(chr(10), "<br>")}
                     </div>
                     """, unsafe_allow_html=True)
-
+ 
             st.markdown(
                 "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
                 unsafe_allow_html=True,
             )
-
+ 
             # ══════════════════════════════════════════════════════════════
-            # POSTAGENS — tabela 100% largura
+            # POSTAGENS — JSON seguro via <script type="application/json">
             # ══════════════════════════════════════════════════════════════
-
-            if not posts_list:
-                tbl_rows_json = "[]"
-            else:
-                rows_data = []
-                for p in posts_list:
-                    cap_raw = (p.get("caption", "") or "").replace("\n", " ").replace("\r", "").strip()
-                    cap_t   = cap_raw[:40] + ("\u2026" if len(cap_raw) > 40 else "")
-                    rows_data.append({
-                        "thumb": p.get("thumb", "") or "",
-                        "date":  p.get("date", "\u2014") or "\u2014",
-                        "tipo":  "V\u00eddeo" if p.get("is_video") else "Foto",
-                        "likes": int(p.get("likes", 0) or 0),
-                        "coms":  int(p.get("comments", 0) or 0),
-                        "eng":   int(p.get("likes", 0) or 0) + int(p.get("comments", 0) or 0),
-                        "cap":   cap_raw,
-                        "cap_t": cap_t,
-                    })
-                tbl_rows_json = json.dumps(rows_data, ensure_ascii=True)
-
-            components.html(f"""
+ 
+            rows_data = []
+            for p in posts_list:
+                cap_raw = (p.get("caption", "") or "").replace("\n", " ").replace("\r", "").strip()
+                cap_t   = cap_raw[:40] + ("…" if len(cap_raw) > 40 else "")
+                rows_data.append({
+                    "thumb": p.get("thumb", "") or "",
+                    "date":  p.get("date", "—") or "—",
+                    "tipo":  "Vídeo" if p.get("is_video") else "Foto",
+                    "likes": int(p.get("likes", 0) or 0),
+                    "coms":  int(p.get("comments", 0) or 0),
+                    "eng":   int(p.get("likes", 0) or 0) + int(p.get("comments", 0) or 0),
+                    "cap":   cap_raw,
+                    "cap_t": cap_t,
+                })
+ 
+            # Serializa de forma segura — caracteres especiais ficam dentro
+            # de <script type="application/json"> que o browser NÃO executa
+            tbl_rows_json = _json.dumps(rows_data, ensure_ascii=False)
+ 
+            tabela_html = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+ 
+<!-- Dados passados de forma segura, sem interpolação dentro de <script> executável -->
+<script id="rows-data" type="application/json">ROWS_JSON_PLACEHOLDER</script>
+ 
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-.filters {{ display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; align-items:center; }}
-.filter-select {{
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+.filters { display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; align-items:center; }
+.filter-select {
     font-size:12px; font-weight:600; color:#374151;
     border:1px solid #e5e7eb; border-radius:6px;
     padding:4px 8px; background:#f9fafb;
     font-family:'DM Sans',sans-serif; cursor:pointer;
-}}
-.filter-label {{ font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }}
-table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }}
-th.check-col {{ width:32px; }}
-td {{ padding:7px 8px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
-tr:last-child td {{ border-bottom:none; }}
-tr:hover td {{ background:#f9fafb; }}
-tr.selected td {{ background:#eff6ff !important; }}
-.cb {{ width:15px; height:15px; cursor:pointer; accent-color:#3a9fd6; }}
-.badge {{ display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }}
-.badge-foto {{ background:#f0fdf4; color:#16a34a; }}
-.badge-video {{ background:#eff6ff; color:#1d4ed8; }}
-.sel-bar {{ display:none; background:#0e2a47; color:#fff; padding:6px 12px; font-size:12px; font-weight:600; border-radius:0 0 8px 8px; }}
-.sel-bar.show {{ display:flex; align-items:center; justify-content:space-between; }}
-.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
-.modal-bg.open {{ display:flex; }}
-.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
-.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
-.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
-.modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }}
-.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
-.modal-close:hover {{ color:#111827; }}
+}
+.filter-label { font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }
+th.check-col { width:32px; }
+td { padding:7px 8px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#f9fafb; }
+tr.selected td { background:#eff6ff !important; }
+.cb { width:15px; height:15px; cursor:pointer; accent-color:#3a9fd6; }
+.badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
+.badge-foto { background:#f0fdf4; color:#16a34a; }
+.badge-video { background:#eff6ff; color:#1d4ed8; }
+.sel-bar { display:none; background:#0e2a47; color:#fff; padding:6px 12px; font-size:12px; font-weight:600; border-radius:0 0 8px 8px; }
+.sel-bar.show { display:flex; align-items:center; justify-content:space-between; }
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }
+.modal-bg.open { display:flex; }
+.modal { background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }
+.modal-title { font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }
+.modal-text { font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+.modal-img { width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }
+.modal-close { position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }
+.modal-close:hover { color:#111827; }
+.empty-state { padding:32px 16px; text-align:center; color:#9ca3af; font-size:13px; }
 </style>
-
+ 
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
     <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">
         Postagens
     </div>
-
+ 
     <div class="sel-bar" id="sel-bar">
         <span id="sel-count">0 selecionados</span>
         <span style="cursor:pointer;opacity:0.7" onclick="clearSel()">✕ limpar</span>
     </div>
-
+ 
     <div class="filters">
         <span class="filter-label">Filtrar:</span>
         <select class="filter-select" id="f-tipo" onchange="applyFilters()">
@@ -2841,7 +2846,7 @@ tr.selected td {{ background:#eff6ff !important; }}
             <option value="nsel">Não selecionados</option>
         </select>
     </div>
-
+ 
     <div style="max-height:400px;overflow-y:auto" id="tbl-wrap">
         <table id="main-table">
             <thead>
@@ -2855,7 +2860,7 @@ tr.selected td {{ background:#eff6ff !important; }}
         </table>
     </div>
 </div>
-
+ 
 <div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal">
         <button class="modal-close" onclick="document.getElementById('modal2').classList.remove('open')">✕</button>
@@ -2864,132 +2869,151 @@ tr.selected td {{ background:#eff6ff !important; }}
         <div class="modal-text" id="modal2-text"></div>
     </div>
 </div>
-
+ 
 <script>
-var allRows = {tbl_rows_json};
-var selected = {{}};
-
-function fmt(n) {{
+// Leitura segura dos dados — sem interpolação de strings no JS executável
+var allRows = JSON.parse(document.getElementById('rows-data').textContent);
+var selected = {};
+ 
+function fmt(n) {
     n = parseInt(n) || 0;
     if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
     if (n >= 1000) return (n/1000).toFixed(1)+'K';
     return String(n);
-}}
-
-function renderTable(rows) {{
+}
+ 
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+ 
+function renderTable(rows) {
     var tb = document.getElementById('tbl-body');
     tb.innerHTML = '';
-    if (!rows || rows.length === 0) {{
-        tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px">Sem postagens disponíveis.</td></tr>';
+    if (!rows || rows.length === 0) {
+        tb.innerHTML = '<tr><td colspan="8"><div class="empty-state">Sem postagens disponíveis para este perfil.</div></td></tr>';
         return;
-    }}
-    rows.forEach(function(p, i) {{
+    }
+    rows.forEach(function(p, i) {
         var isVid = p.tipo === 'Vídeo';
         var imgCell = p.thumb
-            ? '<img src="'+p.thumb+'" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(\''+p.thumb+'\')" onerror="this.style.display=\'none\'" />'
+            ? '<img src="'+escHtml(p.thumb)+'" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(this.src)" onerror="this.parentNode.innerHTML=\'<div style=\\'width:40px;height:40px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px\\'>'+(isVid?'🎬':'📷')+'</div>\'" />'
             : '<div style="width:40px;height:40px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px">'+(isVid?'🎬':'📷')+'</div>';
+ 
+        var capT = p.cap_t ? escHtml(p.cap_t) : '';
         var copyCell = p.cap
-            ? '<span onclick="openCopy2(\''+p.cap+'\')" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'+p.cap_t+'</span>'
+            ? '<span onclick="openCopy2('+i+')" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'+capT+'</span>'
             : '<span style="color:#d1d5db">—</span>';
+ 
         var badge = isVid
             ? '<span class="badge badge-video">Vídeo</span>'
             : '<span class="badge badge-foto">Foto</span>';
-        var chk = selected[p.date+'_'+i] ? 'checked' : '';
-        var selClass = selected[p.date+'_'+i] ? 'selected' : '';
+ 
+        var rowKey = 'r_' + i;
+        var chk = selected[rowKey] ? 'checked' : '';
+        var selClass = selected[rowKey] ? 'selected' : '';
+ 
         tb.innerHTML += '<tr class="'+selClass+'" id="row_'+i+'">'
-            +'<td><input type="checkbox" class="cb" '+chk+' onchange="toggleRow(this,'+i+')"></td>'
+            +'<td><input type="checkbox" class="cb" '+chk+' onchange="toggleRow(this,'+i+')" data-key="'+rowKey+'"></td>'
             +'<td>'+imgCell+'</td>'
-            +'<td style="white-space:nowrap">'+p.date+'</td>'
+            +'<td style="white-space:nowrap">'+escHtml(p.date)+'</td>'
             +'<td>'+badge+'</td>'
             +'<td>'+fmt(p.likes)+'</td>'
             +'<td>'+fmt(p.coms)+'</td>'
             +'<td style="font-weight:700;color:#1a2e4a">'+fmt(p.eng)+'</td>'
             +'<td>'+copyCell+'</td>'
             +'</tr>';
-    }});
-}}
-
-function applyFilters() {{
+    });
+}
+ 
+function applyFilters() {
     var tipo = document.getElementById('f-tipo').value;
     var sort = document.getElementById('f-sort').value;
     var selF = document.getElementById('f-sel').value;
     var rows = allRows.slice();
-    if (tipo) rows = rows.filter(function(r){{ return r.tipo === tipo; }});
-    if (selF === 'sel') rows = rows.filter(function(r,i){{ return selected[r.date+'_'+i]; }});
-    if (selF === 'nsel') rows = rows.filter(function(r,i){{ return !selected[r.date+'_'+i]; }});
-    if (sort === 'eng_desc') rows.sort(function(a,b){{ return b.eng-a.eng; }});
-    if (sort === 'eng_asc')  rows.sort(function(a,b){{ return a.eng-b.eng; }});
-    if (sort === 'likes_desc') rows.sort(function(a,b){{ return b.likes-a.likes; }});
-    if (sort === 'date_desc') rows.sort(function(a,b){{ return b.date.localeCompare(a.date); }});
-    if (sort === 'date_asc')  rows.sort(function(a,b){{ return a.date.localeCompare(b.date); }});
+    if (tipo) rows = rows.filter(function(r){ return r.tipo === tipo; });
+    if (selF === 'sel')  rows = rows.filter(function(r,i){ return selected['r_'+i]; });
+    if (selF === 'nsel') rows = rows.filter(function(r,i){ return !selected['r_'+i]; });
+    if (sort === 'eng_desc')   rows.sort(function(a,b){ return b.eng-a.eng; });
+    if (sort === 'eng_asc')    rows.sort(function(a,b){ return a.eng-b.eng; });
+    if (sort === 'likes_desc') rows.sort(function(a,b){ return b.likes-a.likes; });
+    if (sort === 'date_desc')  rows.sort(function(a,b){ return b.date.localeCompare(a.date); });
+    if (sort === 'date_asc')   rows.sort(function(a,b){ return a.date.localeCompare(b.date); });
     renderTable(rows);
-}}
-
-function toggleRow(el, i) {{
-    var row = allRows[i];
-    var key = row.date+'_'+i;
+}
+ 
+function toggleRow(el, i) {
+    var key = 'r_' + i;
     selected[key] = el.checked;
     el.closest('tr').classList.toggle('selected', el.checked);
     updateSelBar();
-}}
-
-function toggleAll(el) {{
-    allRows.forEach(function(r,i){{ selected[r.date+'_'+i] = el.checked; }});
+}
+ 
+function toggleAll(el) {
+    allRows.forEach(function(r,i){ selected['r_'+i] = el.checked; });
     applyFilters();
     updateSelBar();
-}}
-
-function updateSelBar() {{
+}
+ 
+function updateSelBar() {
     var count = Object.values(selected).filter(Boolean).length;
     var bar = document.getElementById('sel-bar');
     document.getElementById('sel-count').textContent = count + ' selecionado' + (count !== 1 ? 's' : '');
     bar.classList.toggle('show', count > 0);
-}}
-
-function clearSel() {{
-    selected = {{}};
+}
+ 
+function clearSel() {
+    selected = {};
     document.getElementById('check-all').checked = false;
     applyFilters();
     updateSelBar();
-}}
-
-function openImg(url) {{
+}
+ 
+function openImg(url) {
     document.getElementById('modal2-title').textContent = 'Imagem do Post';
     var img = document.getElementById('modal2-img');
-    img.src = url; img.style.display = 'block';
+    img.src = url;
+    img.style.display = 'block';
     document.getElementById('modal2-text').textContent = '';
     document.getElementById('modal2').classList.add('open');
-}}
-
-function openCopy2(txt) {{
+}
+ 
+function openCopy2(i) {
+    var txt = allRows[i] ? allRows[i].cap : '';
     document.getElementById('modal2-title').textContent = 'Copy Completa';
     document.getElementById('modal2-img').style.display = 'none';
     document.getElementById('modal2-text').textContent = txt;
     document.getElementById('modal2').classList.add('open');
-}}
-
+}
+ 
+// Inicializa a tabela
 renderTable(allRows);
 </script>
-""", height=500, scrolling=False)
-
+"""
+ 
+            # Substitui o placeholder pelo JSON real — seguro pois fica
+            # dentro de <script type="application/json">, não executável
+            tabela_html = tabela_html.replace("ROWS_JSON_PLACEHOLDER", tbl_rows_json)
+            components.html(tabela_html, height=500, scrolling=False)
+ 
             # ══════════════════════════════════════════════════════════════
             # ANÁLISE DE IA
             # ══════════════════════════════════════════════════════════════
             st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
-
+ 
             chave_criativo = f"ia_criativo_{r['handle']}"
             chave_copy     = f"ia_copy_{r['handle']}"
             chave_geral    = f"ia_geral_{r['handle']}"
             for ch in [chave_criativo, chave_copy, chave_geral]:
                 if ch not in st.session_state:
                     st.session_state[ch] = ""
-
+ 
             resumo_posts = "\n".join([
                 f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
                 f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
                 for p in posts_list[:12]
             ]) if posts_list else "Sem posts disponíveis."
-
+ 
             perfil_ctx = f"""
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
@@ -3004,7 +3028,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                             text-transform:uppercase;letter-spacing:0.3px'>Análise de IA</div>
             </div>
             """, unsafe_allow_html=True)
-
+ 
             st.markdown(f"""
             <style>
             .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
@@ -3014,7 +3038,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
             }}
             </style>
             """, unsafe_allow_html=True)
-
+ 
             col_b1, col_b2, col_b3 = st.columns(3)
             with col_b1:
                 if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
@@ -3039,7 +3063,7 @@ Seja direto e objetivo.
                                 st.rerun()
                             except Exception as e:
                                 st.session_state[chave_criativo] = f"Erro: {e}"
-
+ 
             with col_b2:
                 if st.button("✍️ Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
                     if gemini_model is None:
@@ -3063,7 +3087,7 @@ Seja direto e objetivo.
                                 st.rerun()
                             except Exception as e:
                                 st.session_state[chave_copy] = f"Erro: {e}"
-
+ 
             with col_b3:
                 if st.button("📊 Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
                     if gemini_model is None:
@@ -3087,14 +3111,19 @@ Seja direto e objetivo.
                                 st.rerun()
                             except Exception as e:
                                 st.session_state[chave_geral] = f"Erro: {e}"
-
+ 
             # ── Resultado da IA em abas HTML
             criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
             geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
-
+ 
             ia_height = 320 if (criativo_html or copy_html or geral_html) else 120
-
+ 
+            def _panel(html_content, btn_label):
+                if html_content:
+                    return '<div class="result">' + html_content + '</div>'
+                return '<div class="empty">Clique em <b>' + btn_label + '</b> acima para gerar.</div>'
+ 
             ia_script = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3124,19 +3153,12 @@ function showTab(name, el) {
     el.classList.add('active');
 }
 </script>
-"""
-
-            def _panel(html_content, btn_label):
-                if html_content:
-                    return '<div class="result">' + html_content + '</div>'
-                return '<div class="empty">Clique em <b>' + btn_label + '</b> acima para gerar.</div>'
-
-            ia_script = ia_script.replace(
+""".replace(
                 "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
             ).replace(
                 "COPY_PLACEHOLDER", _panel(copy_html, "Analisar Copys")
             ).replace(
                 "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
             )
-
+ 
             components.html(ia_script, height=ia_height, scrolling=False)
