@@ -3074,18 +3074,18 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 <div class="ia-wrap">
     <div class="ia-header">Análise de Conteúdos</div>
     <div class="tabs">
-        <button class="tab active" onclick="showTab('criativo',this)">Analisar Criativo</button>
-        <button class="tab"        onclick="showTab('copy',this)">Analisar Copy</button>
-        <button class="tab"        onclick="showTab('geral',this)">Analisar Postagens</button>
+        <button class="tab"        onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
+        <button class="tab active" onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
+        <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
+    </div>
+    <div id="panel-geral" class="panel">
+        {_panel_ia(geral_html, "Análisar Postagens 🤖", f"__geral_{idx}__")}
     </div>
     <div id="panel-criativo" class="panel active">
         {_panel_ia(criativo_html, "Analisar Criativos 🤖", f"__criativo_{idx}__")}
     </div>
     <div id="panel-copy" class="panel">
         {_panel_ia(copy_html, "Analisar Copys 🤖", f"__copy_{idx}__")}
-    </div>
-    <div id="panel-geral" class="panel">
-        {_panel_ia(geral_html, "Análise Geral 🤖", f"__geral_{idx}__")}
     </div>
 </div>
 
