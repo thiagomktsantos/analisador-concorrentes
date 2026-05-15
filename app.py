@@ -2732,10 +2732,9 @@ html, body { background: transparent; overflow: hidden; }
 </style>
 <div class="titulo">Redes Sociais</div>
 <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
-""", height=58)
+""", height=65)
 
     with h2:
-        st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
         coletar = st.button(
             "Coletar dados",
             type="primary",
