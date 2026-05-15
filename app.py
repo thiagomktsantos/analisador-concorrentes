@@ -2135,12 +2135,37 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 # REDES SOCIAIS
 # ---------------------------------------------------
-
+ 
 elif st.session_state.pagina == "redes":
  
     import datetime
     import plotly.graph_objects as go
     import json
+ 
+    # ── Helpers locais
+    def _esc(texto: str) -> str:
+        """Escapa caracteres especiais para uso seguro em HTML/JS."""
+        if not texto:
+            return ""
+        return (
+            texto
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace('"', "&quot;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\n", " ")
+            .replace("\r", "")
+        )
+ 
+    def _fmt(n) -> str:
+        """Formata número abreviado: 1.2K, 3.4M etc."""
+        n = int(n or 0)
+        if n >= 1_000_000:
+            return f"{n / 1_000_000:.1f}M"
+        if n >= 1_000:
+            return f"{n / 1_000:.1f}K"
+        return str(n)
  
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
@@ -2324,7 +2349,7 @@ elif st.session_state.pagina == "redes":
                                         p["caption"].get("text", "")
                                         if isinstance(p["caption"], dict)
                                         else str(p["caption"])
-                                    )[:500]          # ← guarda até 500 chars para o modal
+                                    )[:500]
                                 taken_at = p.get("taken_at", 0)
                                 date_str = ""
                                 if taken_at:
@@ -2568,7 +2593,6 @@ elif st.session_state.pagina == "redes":
             col_metricas, col_bio = st.columns([1, 1])
  
             with col_metricas:
-                # ── MÉTRICAS — layout original via st.markdown
                 st.markdown(f"""
 <div style='background:#fff;border-radius:12px'>
     <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
@@ -2580,8 +2604,7 @@ elif st.session_state.pagina == "redes":
                     {fmt_num(r.get("seguidores",0))}
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Seguidores</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Seguidores</span>
         </div>
         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                     display:flex;flex-direction:column;align-items:center;text-align:center'>
@@ -2591,8 +2614,7 @@ elif st.session_state.pagina == "redes":
                     {fmt_num(r.get("total_posts",0))}
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Posts</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Posts</span>
         </div>
         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                     display:flex;flex-direction:column;align-items:center;text-align:center'>
@@ -2602,8 +2624,7 @@ elif st.session_state.pagina == "redes":
                     {fmt_num(int(r.get("eng_medio",0)))}
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Engajamento Médio</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Engajamento Médio</span>
         </div>
         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                     display:flex;flex-direction:column;align-items:center;text-align:center'>
@@ -2613,8 +2634,7 @@ elif st.session_state.pagina == "redes":
                     {r.get("eng_pct",0):.2f}%
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Engajamento %{"*" if eng_est else ""}</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Engajamento %{"*" if eng_est else ""}</span>
         </div>
     </div>
     {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
@@ -2626,7 +2646,6 @@ elif st.session_state.pagina == "redes":
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
  
-                # ── CAIXA BIO  
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
@@ -2665,7 +2684,6 @@ elif st.session_state.pagina == "redes":
                 </div>
                 """, height=200, scrolling=False)
  
-                # CSS para esconder o botão fantasma da bio (mantém funcional mas invisível)
                 st.markdown(f"""
                 <style>
                 div[data-testid="stButton"][data-key="btn_bio_ia_{idx}"],
@@ -2733,12 +2751,12 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 unsafe_allow_html=True,
             )
  
-# ══════════════════════════════════════════════════════════════
-# POSTAGENS
-# ══════════════════════════════════════════════════════════════
+            # ══════════════════════════════════════════════════════════════
+            # POSTAGENS
+            # ══════════════════════════════════════════════════════════════
  
             col_posts, col_table = st.columns(2)
-
+ 
             with col_posts:
                 if not posts_list:
                     cards_inner = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
@@ -2749,7 +2767,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         cap     = p.get("caption", "")
                         cap_esc = _esc(cap)
                         cap_3ln = cap[:160] + ("…" if len(cap) > 160 else "") if cap else ""
-
+ 
                         img_html = (
                             f'<img src="{thumb}" style="width:100%;aspect-ratio:1;border-radius:8px;'
                             f'object-fit:cover;border:1px solid #e5e7eb;display:block;" '
@@ -2759,7 +2777,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             f'display:flex;align-items:center;justify-content:center;'
                             f'font-size:13px;color:#9ca3af">{"Vídeo" if p.get("is_video") else "Foto"}</div>'
                         )
-
+ 
                         cap_html = (
                             f'<div style="font-size:11px;color:#6b7280;line-height:1.5;font-style:italic;'
                             f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;min-height:52px;">'
@@ -2774,7 +2792,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;'
                             'background:#fafafa;min-height:52px;">Sem legenda</div>'
                         )
-
+ 
                         cards_inner += (
                             f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">'
                             f'<div style="font-size:11px;color:#9ca3af;font-weight:500;text-align:center">📅 {p.get("date","")}</div>'
@@ -2784,7 +2802,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                             f'{cap_html}'
                             f'</div>'
                         )
-
+ 
                 components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -2815,7 +2833,7 @@ function openCopy(txt) {{
 }}
 </script>
 """, height=340, scrolling=False)
-
+ 
             with col_table:
                 if not posts_list:
                     tbl_rows_json = "[]"
@@ -2824,17 +2842,17 @@ function openCopy(txt) {{
                     rows_data = []
                     for p in posts_list:
                         rows_data.append({
-                            "thumb":   p.get("thumb", ""),
-                            "date":    p.get("date", "—"),
-                            "tipo":    "Vídeo" if p.get("is_video") else "Foto",
-                            "likes":   p.get("likes", 0),
-                            "coms":    p.get("comments", 0),
-                            "eng":     p.get("likes", 0) + p.get("comments", 0),
-                            "cap":     _esc(p.get("caption", "")),
-                            "cap_t":   (_esc(p.get("caption", ""))[:32] + "…") if len(p.get("caption","")) > 32 else _esc(p.get("caption","")),
+                            "thumb":  p.get("thumb", ""),
+                            "date":   p.get("date", "—"),
+                            "tipo":   "Vídeo" if p.get("is_video") else "Foto",
+                            "likes":  p.get("likes", 0),
+                            "coms":   p.get("comments", 0),
+                            "eng":    p.get("likes", 0) + p.get("comments", 0),
+                            "cap":    _esc(p.get("caption", "")),
+                            "cap_t":  (_esc(p.get("caption", ""))[:32] + "…") if len(p.get("caption","")) > 32 else _esc(p.get("caption","")),
                         })
                     tbl_rows_json = _json.dumps(rows_data)
-
+ 
                 components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -2870,17 +2888,17 @@ tr.selected td {{ background:#eff6ff !important; }}
 .modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
 .modal-close:hover {{ color:#111827; }}
 </style>
-
+ 
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
     <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">
         Postagens
     </div>
-
+ 
     <div class="sel-bar" id="sel-bar">
         <span id="sel-count">0 selecionados</span>
         <span style="cursor:pointer;opacity:0.7" onclick="clearSel()">✕ limpar</span>
     </div>
-
+ 
     <div class="filters">
         <span class="filter-label">Filtrar:</span>
         <select class="filter-select" id="f-tipo" onchange="applyFilters()">
@@ -2902,7 +2920,7 @@ tr.selected td {{ background:#eff6ff !important; }}
             <option value="nsel">Não selecionados</option>
         </select>
     </div>
-
+ 
     <div style="max-height:290px;overflow-y:auto" id="tbl-wrap">
         <table id="main-table">
             <thead>
@@ -2916,7 +2934,7 @@ tr.selected td {{ background:#eff6ff !important; }}
         </table>
     </div>
 </div>
-
+ 
 <div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal">
         <button class="modal-close" onclick="document.getElementById('modal2').classList.remove('open')">✕</button>
@@ -2925,18 +2943,18 @@ tr.selected td {{ background:#eff6ff !important; }}
         <div class="modal-text" id="modal2-text"></div>
     </div>
 </div>
-
+ 
 <script>
 var allRows = {tbl_rows_json};
 var selected = {{}};
-
+ 
 function fmt(n) {{
     n = parseInt(n) || 0;
     if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
     if (n >= 1000) return (n/1000).toFixed(1)+'K';
     return String(n);
 }}
-
+ 
 function renderTable(rows) {{
     var tb = document.getElementById('tbl-body');
     tb.innerHTML = '';
@@ -2965,7 +2983,7 @@ function renderTable(rows) {{
             +'</tr>';
     }});
 }}
-
+ 
 function applyFilters() {{
     var tipo = document.getElementById('f-tipo').value;
     var sort = document.getElementById('f-sort').value;
@@ -2981,7 +2999,7 @@ function applyFilters() {{
     if (sort === 'date_asc')  rows.sort(function(a,b){{ return a.date.localeCompare(b.date); }});
     renderTable(rows);
 }}
-
+ 
 function toggleRow(el, i) {{
     var row = allRows[i];
     var key = row.date+'_'+i;
@@ -2989,27 +3007,27 @@ function toggleRow(el, i) {{
     el.closest('tr').classList.toggle('selected', el.checked);
     updateSelBar();
 }}
-
+ 
 function toggleAll(el) {{
     allRows.forEach(function(r,i){{ selected[r.date+'_'+i] = el.checked; }});
     applyFilters();
     updateSelBar();
 }}
-
+ 
 function updateSelBar() {{
     var count = Object.values(selected).filter(Boolean).length;
     var bar = document.getElementById('sel-bar');
     document.getElementById('sel-count').textContent = count + ' selecionado' + (count !== 1 ? 's' : '');
     bar.classList.toggle('show', count > 0);
 }}
-
+ 
 function clearSel() {{
     selected = {{}};
     document.getElementById('check-all').checked = false;
     applyFilters();
     updateSelBar();
 }}
-
+ 
 function openImg(url) {{
     document.getElementById('modal2-title').textContent = 'Imagem do Post';
     var img = document.getElementById('modal2-img');
@@ -3017,20 +3035,20 @@ function openImg(url) {{
     document.getElementById('modal2-text').textContent = '';
     document.getElementById('modal2').classList.add('open');
 }}
-
+ 
 function openCopy2(txt) {{
     document.getElementById('modal2-title').textContent = 'Copy Completa';
     document.getElementById('modal2-img').style.display = 'none';
     document.getElementById('modal2-text').textContent = txt;
     document.getElementById('modal2').classList.add('open');
 }}
-
+ 
 renderTable(allRows);
 </script>
 """, height=430, scrolling=False)
  
-                        # ══════════════════════════════════════════════════════════════
-            # ANÁLISE DE IA  (botões visíveis — sem CSS display:none)
+            # ══════════════════════════════════════════════════════════════
+            # ANÁLISE DE IA
             # ══════════════════════════════════════════════════════════════
             st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
  
@@ -3054,7 +3072,6 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
-            # ── Título da seção de IA no mesmo estilo
             st.markdown("""
             <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
                         padding:12px 16px;margin-bottom:4px'>
@@ -3063,7 +3080,6 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
             </div>
             """, unsafe_allow_html=True)
  
-            # ── Botões visíveis (sem CSS de esconder)
             st.markdown(f"""
             <style>
             .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
@@ -3073,7 +3089,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
             }}
             </style>
             """, unsafe_allow_html=True)
-
+ 
             col_b1, col_b2, col_b3 = st.columns(3)
             with col_b1:
                 if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
@@ -3147,13 +3163,13 @@ Seja direto e objetivo.
                             except Exception as e:
                                 st.session_state[chave_geral] = f"Erro: {e}"
  
-            # ── Resultado da IA em abas HTML (sem depender de botões escondidos)
+            # ── Resultado da IA em abas HTML
             criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
             geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
  
             ia_height = 320 if (criativo_html or copy_html or geral_html) else 120
-
+ 
             ia_script = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3184,12 +3200,12 @@ function showTab(name, el) {
 }
 </script>
 """
-
+ 
             def _panel(html_content, btn_label):
                 if html_content:
                     return '<div class="result">' + html_content + '</div>'
                 return '<div class="empty">Clique em <b>' + btn_label + '</b> acima para gerar.</div>'
-
+ 
             ia_script = ia_script.replace(
                 "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
             ).replace(
@@ -3197,5 +3213,5 @@ function showTab(name, el) {
             ).replace(
                 "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
             )
-
+ 
             components.html(ia_script, height=ia_height, scrolling=False)
