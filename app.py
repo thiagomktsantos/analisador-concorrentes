@@ -2755,7 +2755,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     thumb   = p.get("thumb", "")
                     cap     = p.get("caption", "")
                     cap_esc = _esc(cap)
-                    cap_t   = cap[:40] + "…" if len(cap) > 40 else cap
+                    cap_t   = cap[:120] + "…" if len(cap) > 120 else cap
                     isVid   = p.get("is_video", False)
                     likes   = p.get("likes", 0)
                     coms    = p.get("comments", 0)
@@ -2772,7 +2772,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
  
                     copy_cell = (
                         f'<span onclick="openCopy2(\'{cap_esc}\')" '
-                        f'style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+                        f'style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
                         f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">{cap_t}</span>'
                     ) if cap else '<span style="color:#d1d5db">—</span>'
  
@@ -2807,6 +2807,7 @@ td {{
 }}
 tr:last-child td {{ border-bottom:none; }}
 tr:hover td {{ background:#f9fafb; }}
+th:last-child, td:last-child {{ min-width:320px; }}
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
 .modal-bg.open {{ display:flex; }}
 .modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
@@ -2825,11 +2826,11 @@ tr:hover td {{ background:#f9fafb; }}
             <thead>
                 <tr>
                     <th>Data</th>
-                    <th>Criativo</th>
+                    <th>Img</th>
                     <th>Tipo</th>
-                    <th>Curtidas</th>
-                    <th>Comentários</th>
-                    <th>Engajamento</th>
+                    <th>❤️ Curtidas</th>
+                    <th>💬 Comentários</th>
+                    <th>📈 Eng.</th>
                     <th>Copy</th>
                 </tr>
             </thead>
