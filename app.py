@@ -2144,7 +2144,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     </div>
     <div class="btn-wrap">
         <button class="btn-analisar" onclick="triggerAnalise({idx_s})">
-            Analisar este site 🤖
+            🤖 Analisar este site
         </button>
     </div>
 </div>
@@ -2350,89 +2350,252 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         "<div style='margin:32px 0 0 0;border-top:2px solid #e5e7eb'/>",
         unsafe_allow_html=True,
     )
-    st.markdown(
-        "<div style='font-size:20px;font-weight:700;color:#111827;"
-        "font-family:DM Sans,sans-serif;margin:20px 0 16px 0'>"
-        "🗂️ Análises Salvas</div>",
-        unsafe_allow_html=True,
-    )
- 
+
     analises = st.session_state.get("analises_salvas", [])
- 
-    if not analises:
-        st.markdown("""
-        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
-                    padding:36px 32px;text-align:center;color:#9ca3af;font-size:14px'>
-            Nenhuma análise salva ainda. Gere um relatório e clique em
-            <b>💾 Salvar Análise</b>.
+    analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
+    analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
+
+    # ── Botões fantasma para remover e baixar análises salvas
+    # Gerados antes do components.html para garantir existência no DOM
+    acoes_salvas = {}
+    for i, a in enumerate(analises):
+        acoes_salvas[f"rm_{i}"]  = st.button(f"_rm_analise_{i}_",  key=f"btn_rm_analise_{i}")
+        acoes_salvas[f"dl_{i}"]  = False  # download tratado pelo st.download_button abaixo
+
+    # CSS para esconder botões fantasma de remoção
+    rm_css = "\n".join([
+        f".st-key-btn_rm_analise_{i} {{ display: none !important; }}"
+        for i in range(len(analises))
+    ])
+    st.markdown(f"<style>{rm_css}</style>", unsafe_allow_html=True)
+
+    # Processa remoções
+    for i in range(len(analises) - 1, -1, -1):
+        if acoes_salvas.get(f"rm_{i}"):
+            st.session_state.analises_salvas.pop(i)
+            st.rerun()
+
+    # ── Monta HTML dos itens para cada aba
+    def _card_analise(idx_real, analise, tipo):
+        titulo   = analise.get("titulo", "—")
+        data     = analise.get("data", "—")
+        sites_str = ", ".join(analise.get("sites", []))
+        relatorio = (analise.get("relatorio") or "").replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
+        icone    = "📄" if tipo == "geral" else "🌐"
+        preview  = (analise.get("relatorio") or "")[:180].replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+
+        return f"""
+        <div class="item" id="item_{idx_real}">
+            <div class="item-header" onclick="toggleItem({idx_real})">
+                <div class="item-left">
+                    <span class="item-icon">{icone}</span>
+                    <div>
+                        <div class="item-titulo">{titulo}</div>
+                        <div class="item-meta">{data}{" · " + sites_str if sites_str else ""}</div>
+                    </div>
+                </div>
+                <span class="item-chevron" id="chev_{idx_real}">▼</span>
+            </div>
+            <div class="item-body" id="body_{idx_real}" style="display:none">
+                <div class="item-relatorio">{(analise.get("relatorio") or "").replace(chr(10), "<br>")}</div>
+                <div class="item-acoes">
+                    <button class="btn-dl" onclick="baixar({idx_real}, `{relatorio}`, `{titulo.replace(' ','_')}`)">⬇️ Baixar .txt</button>
+                    <button class="btn-rm" onclick="remover({idx_real})">🗑️ Remover</button>
+                </div>
+            </div>
         </div>
-        """, unsafe_allow_html=True)
-    else:
-        analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
-        analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
- 
-        tab_geral, tab_individual = st.tabs(["📊 Análise Geral", "🔍 Análise por Site"])
- 
-        with tab_geral:
-            if not analises_gerais:
-                st.markdown("""
-                <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
-                            padding:28px 24px;text-align:center;color:#9ca3af;font-size:14px;margin-top:8px'>
-                    Nenhuma análise geral salva ainda.
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                for idx_real, analise in reversed(analises_gerais):
-                    with st.expander(
-                        f"📄 {analise['titulo']} — {analise['data']} · {', '.join(analise.get('sites', []))}"
-                    ):
-                        st.markdown(analise["relatorio"])
-                        col_dl, col_rm = st.columns([3, 1])
-                        with col_dl:
-                            st.download_button(
-                                label="⬇️ Baixar como .txt",
-                                data=analise["relatorio"],
-                                file_name=f"{analise['titulo'].replace(' ', '_')}.txt",
-                                mime="text/plain",
-                                key=f"dl_g_{idx_real}",
-                                use_container_width=True,
-                            )
-                        with col_rm:
-                            if st.button("🗑️ Remover", key=f"rm_g_{idx_real}", use_container_width=True):
-                                st.session_state.analises_salvas.pop(idx_real)
-                                st.rerun()
- 
-        with tab_individual:
-            if not analises_individuais:
-                st.markdown("""
-                <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
-                            padding:28px 24px;text-align:center;color:#9ca3af;font-size:14px;margin-top:8px'>
-                    Nenhuma análise por site salva ainda.
-                    Use o botão <b>Analisar este site 🤖</b> abaixo de cada card
-                    e salve a análise.
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                for idx_real, analise in reversed(analises_individuais):
-                    site_nome = analise.get("site_nome", analise.get("titulo", "Site"))
-                    with st.expander(
-                        f"🌐 {analise['titulo']} — {analise['data']} · {site_nome}"
-                    ):
-                        st.markdown(analise["relatorio"])
-                        col_dl2, col_rm2 = st.columns([3, 1])
-                        with col_dl2:
-                            st.download_button(
-                                label="⬇️ Baixar como .txt",
-                                data=analise["relatorio"],
-                                file_name=f"{analise['titulo'].replace(' ', '_')}.txt",
-                                mime="text/plain",
-                                key=f"dl_i_{idx_real}",
-                                use_container_width=True,
-                            )
-                        with col_rm2:
-                            if st.button("🗑️ Remover", key=f"rm_i_{idx_real}", use_container_width=True):
-                                st.session_state.analises_salvas.pop(idx_real)
-                                st.rerun()
+        """
+
+    itens_geral = "".join(
+        _card_analise(i, a, "geral")
+        for i, a in reversed(analises_gerais)
+    ) if analises_gerais else """
+        <div style='padding:36px 24px;text-align:center;color:#9ca3af;font-size:14px;
+                    border:1px dashed #d1d5db;border-radius:10px;margin:16px 0'>
+            Nenhuma análise geral salva ainda.<br>Gere um relatório e clique em <b>💾 Salvar Análise</b>.
+        </div>"""
+
+    itens_individual = "".join(
+        _card_analise(i, a, "individual")
+        for i, a in reversed(analises_individuais)
+    ) if analises_individuais else """
+        <div style='padding:36px 24px;text-align:center;color:#9ca3af;font-size:14px;
+                    border:1px dashed #d1d5db;border-radius:10px;margin:16px 0'>
+            Nenhuma análise por site salva ainda.<br>
+            Use o botão <b>🤖 Analisar este site</b> em cada card.
+        </div>"""
+
+    analises_html = f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
+
+.wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    overflow:hidden;
+}}
+.wrap-header {{
+    padding:14px 18px;
+    font-size:14px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.3px;
+    border-bottom:1px solid #e5e7eb;
+    background:#fff;
+}}
+.tabs {{
+    display:flex;
+    border-bottom:1px solid #e5e7eb;
+    background:#f9fafb;
+}}
+.tab {{
+    flex:1; padding:11px 0; text-align:center;
+    font-size:14px; font-weight:600; color:#9ca3af;
+    cursor:pointer; border:none; background:transparent;
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    font-family:'DM Sans',sans-serif; transition:color 0.15s;
+}}
+.tab:hover {{ color:#374151; background:#f3f4f6; }}
+.tab.active {{
+    color:#1a2e4a;
+    border-bottom:2px solid #3a9fd6;
+    background:#fff;
+}}
+.panel {{ display:none; padding:12px 14px; }}
+.panel.active {{ display:block; }}
+
+/* Itens */
+.item {{
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    margin-bottom:10px;
+    overflow:hidden;
+    background:#fff;
+}}
+.item-header {{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; cursor:pointer;
+    background:#f9fafb;
+    transition:background 0.12s;
+}}
+.item-header:hover {{ background:#f3f4f6; }}
+.item-left {{
+    display:flex; align-items:center; gap:12px; flex:1; min-width:0;
+}}
+.item-icon {{ font-size:18px; flex-shrink:0; }}
+.item-titulo {{
+    font-size:14px; font-weight:700; color:#111827;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.item-meta {{
+    font-size:12px; color:#9ca3af; margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.item-chevron {{
+    font-size:11px; color:#9ca3af; flex-shrink:0; margin-left:10px;
+    transition:transform 0.2s;
+}}
+.item-chevron.open {{ transform:rotate(180deg); }}
+.item-body {{
+    padding:16px;
+    border-top:1px solid #f3f4f6;
+}}
+.item-relatorio {{
+    font-size:13px; color:#374151; line-height:1.75;
+    max-height:320px; overflow-y:auto;
+    padding-right:4px; margin-bottom:14px;
+}}
+.item-acoes {{
+    display:flex; gap:10px; padding-top:12px;
+    border-top:1px solid #f3f4f6;
+}}
+.btn-dl {{
+    flex:1; padding:9px; border-radius:8px;
+    border:1px solid #3a9fd6; background:#eff6ff;
+    font-size:13px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;
+}}
+.btn-dl:hover {{ background:#dbeafe; }}
+.btn-rm {{
+    padding:9px 16px; border-radius:8px;
+    border:1px solid #fca5a5; background:#fef2f2;
+    font-size:13px; font-weight:700; color:#dc2626;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;
+    white-space:nowrap;
+}}
+.btn-rm:hover {{ background:#fee2e2; }}
+</style>
+
+<div class="wrap">
+    <div class="wrap-header">🗂️ Análises Salvas</div>
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('geral', this)">📊 Análise Geral</button>
+        <button class="tab"        onclick="showTab('individual', this)">🔍 Análise por Site</button>
+    </div>
+    <div id="panel-geral" class="panel active">
+        {itens_geral}
+    </div>
+    <div id="panel-individual" class="panel">
+        {itens_individual}
+    </div>
+</div>
+
+<script>
+function showTab(name, el) {{
+    document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
+    document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+    ajustarAltura();
+}}
+
+function toggleItem(idx) {{
+    var body = document.getElementById('body_' + idx);
+    var chev = document.getElementById('chev_' + idx);
+    var aberto = body.style.display !== 'none';
+    body.style.display = aberto ? 'none' : 'block';
+    chev.classList.toggle('open', !aberto);
+    setTimeout(ajustarAltura, 50);
+}}
+
+function remover(idx) {{
+    var targetText = '_rm_analise_' + idx + '_';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+        if (btns[i].innerText.trim() === targetText) {{ btns[i].click(); return; }}
+    }}
+}}
+
+function baixar(idx, conteudo, nome) {{
+    var blob = new Blob([conteudo], {{type: 'text/plain;charset=utf-8'}});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome + '.txt';
+    a.click();
+}}
+
+function ajustarAltura() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    iframes.forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
+    }});
+}}
+
+var ro = new ResizeObserver(ajustarAltura);
+ro.observe(document.body);
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 200);
+setTimeout(ajustarAltura, 600);
+</script>
+"""
+
+    components.html(analises_html, height=300, scrolling=False)
 
 # ---------------------------------------------------
 # PAGINA - ADS
