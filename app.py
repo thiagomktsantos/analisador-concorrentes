@@ -1964,15 +1964,15 @@ elif st.session_state.pagina == "sites":
                     </div>
                     <div style='font-size:12px;color:#9ca3af;word-break:break-all;margin-bottom:8px'>{s['url']}</div>
                     <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                </div>
-                <div style='margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;background:#f9fafb;'>
-                    <img
-                        src="https://api.screenshotone.com/take?url=https://{s['url']}&viewport_width=1280&viewport_height=720&format=jpg&image_quality=70&block_ads=true&block_cookie_banners=true"
-                        onerror="this.parentElement.innerHTML='<div style=\\'padding:24px;text-align:center;font-size:12px;color:#9ca3af\\'>Prévia indisponível</div>'"
-                        style='width:100%;display:block;border-radius:8px;'
-                        loading='lazy'
-                        alt='Preview {s["nome"]}'
-                    />
+                    <div style='margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;background:#f9fafb;min-height:120px;'>
+                        <img
+                            src="https://api.microlink.io/?url=https://{s['url']}&screenshot=true&meta=false&embed=screenshot.url"
+                            onerror="this.parentElement.innerHTML='<div style=\\'padding:32px 16px;text-align:center;font-size:12px;color:#9ca3af\\'>📷 Prévia indisponível</div>'"
+                            style='width:100%;display:block;border-radius:8px;'
+                            loading='lazy'
+                            alt='Preview {s["nome"]}'
+                        />
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
