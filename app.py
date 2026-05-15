@@ -2593,9 +2593,41 @@ setTimeout(ajustarAltura, 600);
 
 elif st.session_state.pagina == "ads":
 
-    periodo, data_inicio = cabecalho_analise("📣 Biblioteca de Ads", "Anúncios ativos da sua empresa e concorrentes no Facebook")
-    concs = st.session_state.dados["concorrentes"]
     emp   = st.session_state.dados["minha_empresa"]
+    concs = st.session_state.dados["concorrentes"]
+
+    components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a2e4a;
+    text-transform: uppercase;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.5px;
+}
+.sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+}
+</style>
+<div class="titulo">Biblioteca de Ads</div>
+<div class="sub">Anúncios ativos da sua empresa e concorrentes no Facebook.</div>
+""", height=65)
+
+    st.markdown(
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
+        unsafe_allow_html=True,
+    )
 
     todas_empresas = []
     if emp.get("nome"):
@@ -2630,10 +2662,6 @@ elif st.session_state.pagina == "ads":
                     <div style='display:flex;align-items:center;gap:8px;margin-bottom:10px'>
                         <span style='font-size:13px;color:#6b7280'>Busca:</span>
                         <span style='font-size:13px;font-weight:600;color:#111827'>{term}</span>
-                    </div>
-                    <div style='display:flex;align-items:center;gap:8px'>
-                        <span style='font-size:13px;color:#6b7280'>Período:</span>
-                        <span style='font-size:13px;font-weight:500;color:#374151'>{periodo}</span>
                     </div>
                 </div>
                 """
