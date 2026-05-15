@@ -78,6 +78,24 @@ ESTADOS_CIDADES = {
 }
 
 # ---------------------------------------------------
+# PALETA DE CORES GLOBAL PARA AVATARES
+# ---------------------------------------------------
+
+AVATAR_COLORS = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
+
+def get_avatar_color(index: int) -> str:
+    """Retorna a cor do avatar de acordo com o índice, sempre respeitando a paleta global."""
+    return AVATAR_COLORS[index % len(AVATAR_COLORS)]
+
+def get_minha_empresa_color() -> str:
+    """Cor fixa para 'Minha Empresa' (sempre a primeira da paleta)."""
+    return AVATAR_COLORS[0]
+
+def get_concorrente_color(concorrente_index: int) -> str:
+    """Cor para concorrente, começando do índice 1 da paleta (após 'Minha Empresa')."""
+    return AVATAR_COLORS[(concorrente_index + 1) % len(AVATAR_COLORS)]
+
+# ---------------------------------------------------
 # FUNÇÕES AUXILIARES
 # ---------------------------------------------------
 
@@ -95,7 +113,7 @@ def limpar_site(url):
     url = re.sub(r"^www\.", "", url, flags=re.IGNORECASE)
     url = remover_acentos(url)
     url = re.sub(r"[^a-z0-9\.\-\/]", "", url)
-    url = url.rstrip("/")  # ← ADICIONAR ESTA LINHA
+    url = url.rstrip("/")
     return url
 
 def gerar_avatar(nome):
@@ -605,6 +623,11 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
 /* ── Garante branco em todas as camadas internas do container ── */
 [data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect) {
     background-color: #ffffff !important;
+}
+
+/* ── Botões fantasma da página Sites — esconde via atributo data-testid + key ── */
+button[data-testid="baseButton-secondary"][kind="secondary"]:has(~ *) {
+    display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -1343,7 +1366,6 @@ if st.session_state.pagina == "home":
                 st.rerun()
 
             # Botão HTML visível COM ícone, sobreposto via CSS negativo
-            # Renderizado DENTRO do with h2 para ficar na mesma coluna
             components.html("""
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1380,6 +1402,8 @@ if st.session_state.pagina == "home":
         )
 
         # ── Dados
+        # Usa a cor fixa de "Minha Empresa" (índice 0 da paleta)
+        cor_empresa = get_minha_empresa_color()
         avatar = gerar_avatar(emp["nome"])
         loc = emp["cidade"] or ""
         if emp["estado"]:
@@ -1389,7 +1413,6 @@ if st.session_state.pagina == "home":
             if emp["servicos"] else "<span style='color:#9ca3af;font-size:14px'>—</span>"
         )
 
-        # Card com altura auto-ajustável via JS — sem scrollbar, sem corte
         components.html(f"""
 <!DOCTYPE html>
 <html>
@@ -1427,7 +1450,7 @@ body {{
 }}
 .empresa-avatar {{
     width: 52px; height: 52px; min-width: 52px;
-    border-radius: 50%; background: #111827;
+    border-radius: 50%; background: {cor_empresa};
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
 }}
@@ -1592,7 +1615,6 @@ body {{
 </div>
 
 <script>
-    // Ajusta altura do iframe pai para exatamente o tamanho do card
     function ajustarAltura() {{
         const card = document.getElementById('card');
         const h = card.getBoundingClientRect().height;
@@ -1602,10 +1624,8 @@ body {{
             }}
         }});
     }}
-    // Roda após render e após fontes carregarem
     document.addEventListener('DOMContentLoaded', ajustarAltura);
     window.addEventListener('load', ajustarAltura);
-    // Garante ajuste se layout mudar (resize de janela)
     window.addEventListener('resize', ajustarAltura);
 </script>
 </body>
@@ -1643,7 +1663,6 @@ body {{
 
 elif st.session_state.pagina == "cad":
 
-    # ── CSS local
     st.markdown("""
     <style>
     div[data-testid="stForm"] {
@@ -1657,7 +1676,6 @@ elif st.session_state.pagina == "cad":
     </style>
     """, unsafe_allow_html=True)
 
-    # ── Cabeçalho
     top1, top2 = st.columns([8, 2])
     with top1:
         st.markdown("""
@@ -1675,7 +1693,6 @@ elif st.session_state.pagina == "cad":
 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
 
-    # ── Formulário cadastro/edição
     if st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None:
         concorrente_edit = None
         if st.session_state.editando_concorrente is not None:
@@ -1725,7 +1742,6 @@ elif st.session_state.pagina == "cad":
                 salvar_dados_usuario(st.session_state.user.id)
                 st.rerun()
 
-    # ── Lista de concorrentes
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
@@ -1733,6 +1749,8 @@ elif st.session_state.pagina == "cad":
         for i, c in enumerate(concorrentes):
             with cols[i % 2]:
                 avatar = gerar_avatar(c["nome"])
+                # ← USANDO a função global de cor para concorrentes
+                cor_avatar = get_concorrente_color(i)
 
                 card_html = f"""<!DOCTYPE html>
 <html>
@@ -1764,7 +1782,7 @@ body {{ padding-bottom: 4px; }}
 .avatar {{
     width: 52px; height: 52px;
     border-radius: 50%;
-    background: #111827;
+    background: {cor_avatar};
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; font-weight: 700; color: #fff;
     flex-shrink: 0;
@@ -1903,9 +1921,10 @@ elif st.session_state.pagina == "geral":
         st.warning("Nenhum concorrente cadastrado ainda.")
     else:
         st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Minha Empresa</div>", unsafe_allow_html=True)
+        cor_emp = get_minha_empresa_color()
         st.markdown(f"""
         <div style='background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:24px'>
-            <div style='width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{gerar_avatar(emp['nome'])}</div>
+            <div style='width:40px;height:40px;border-radius:50%;background:{cor_emp};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{gerar_avatar(emp['nome'])}</div>
             <div>
                 <div style='font-size:16px;font-weight:600;color:#111827'>{emp['nome'] or '—'}</div>
                 <div style='font-size:13px;color:#6b7280'>{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''} · {emp['cidade'] or ''}{', ' + emp['estado'] if emp['estado'] else ''}</div>
@@ -1950,10 +1969,14 @@ elif st.session_state.pagina == "sites":
         opacity: 0.88 !important;
         background: #3a9fd6 !important;
     }
+
+    /* ── Esconde APENAS os botões fantasma da página Sites pelo texto que contém __ ── */
+    section.main div.stButton > button:not([kind="primary"]) {
+        /* os botões fantasma têm texto com __ no início */
+    }
     </style>
     """, unsafe_allow_html=True)
  
-    # ── Cabeçalho igual ao de Redes Sociais
     h1, h2 = st.columns([7, 3])
     with h1:
         st.markdown(
@@ -1988,7 +2011,7 @@ elif st.session_state.pagina == "sites":
         unsafe_allow_html=True,
     )
  
-    # ── Monta lista de sites
+    # ── Monta lista de sites — "Minha Empresa" no índice 0, concorrentes a partir do 1
     sites_disponiveis = []
     if emp.get("site"):
         sites_disponiveis.append({"nome": emp["nome"], "url": emp["site"], "tipo": "minha", "instagram": emp.get("instagram", "")})
@@ -1999,9 +2022,6 @@ elif st.session_state.pagina == "sites":
     if not sites_disponiveis:
         st.info("Cadastre o site da sua empresa e de pelo menos um concorrente para usar esta funcionalidade.")
         st.stop()
- 
-    # ── CORES por índice (mesmo padrão de Redes Sociais)
-    CORES_SITES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
  
     st.markdown(
         "<div style='font-size:14px;font-weight:800;color:#1a2e4a;"
@@ -2018,31 +2038,60 @@ elif st.session_state.pagina == "sites":
         if chave not in st.session_state:
             st.session_state[chave] = ""
  
+    # ── Inicializa os botões fantasma ANTES dos cards (necessário para o Streamlit)
+    # A chave do botão usa um prefixo único para facilitar o hide via JS
+    site_ia_triggers = {}
+    for idx_s in range(len(sites_disponiveis)):
+        triggered = st.button(
+            f"_site_ia_trigger_{idx_s}_",
+            key=f"btn_site_ia_{idx_s}",
+            use_container_width=False,
+        )
+        site_ia_triggers[idx_s] = triggered
+
+    # CSS para esconder todos os botões fantasma de sites (identificados pelo texto _site_ia_trigger_)
+    st.markdown("""
+    <style>
+    /* Esconde botões fantasma da página sites — identificados pelo padrão de texto */
+    section.main div.stButton > button[data-testid="baseButton-secondary"] {
+        /* reset — não esconder todos */
+    }
+    </style>
+    <script>
+    (function hideSiteGhostButtons() {
+        function doHide() {
+            const btns = document.querySelectorAll('section.main div.stButton > button');
+            btns.forEach(function(btn) {
+                if (btn.innerText && btn.innerText.trim().startsWith('_site_ia_trigger_')) {
+                    btn.style.cssText = 'position:fixed!important;top:-9999px!important;left:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important;';
+                    if (btn.parentElement) btn.parentElement.style.cssText = 'height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;';
+                }
+            });
+        }
+        doHide();
+        setTimeout(doHide, 200);
+        setTimeout(doHide, 600);
+        var obs = new MutationObserver(doHide);
+        obs.observe(document.body, { childList: true, subtree: true });
+    })();
+    </script>
+    """, unsafe_allow_html=True)
+
     for idx_s, s in enumerate(sites_disponiveis):
         with cols_sites[idx_s % 4]:
             is_minha  = s["tipo"] == "minha"
-            cor_avatar = CORES_SITES[idx_s % len(CORES_SITES)]
+            # ← USANDO a função global de cor
+            cor_avatar = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_s - 1)
             badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
             badge_txt = "#1d4ed8" if is_minha else "#6b7280"
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
             avatar_letras = gerar_avatar(s["nome"])
-            # Remove @ do handle para exibição
             handle_raw = s["instagram"] if s["instagram"] and s["instagram"] != "@" else ""
             handle_txt = handle_raw.lstrip("@")
- 
-            # ── Botão fantasma invisível (acionado pelo JS dentro do card)
-            st.markdown(f"""
-            <style>
-            .st-key-btn_site_ia_{idx_s} {{
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
- 
-            # Card completo com botão DENTRO do card
+
+            # Card com botão "Analisar este site" visível dentro do iframe
+            # O onclick dispara o botão fantasma pelo texto único _site_ia_trigger_{idx_s}_
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -2133,17 +2182,28 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
         />
     </div>
     <div class="btn-wrap">
-        <button class="btn-analisar" onclick="
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {{
-                if (b.innerText.trim() === '__site_ia_{idx_s}__') {{ b.click(); break; }}
-            }}
-        ">🤖 Analisar este site</button>
+        <button class="btn-analisar" onclick="triggerAnalise({idx_s})">
+            🤖 Analisar este site
+        </button>
     </div>
 </div>
+<script>
+function triggerAnalise(idx) {{
+    // Busca o botão fantasma pelo texto exato no documento pai
+    var targetText = '_site_ia_trigger_' + idx + '_';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+        if (btns[i].innerText.trim() === targetText) {{
+            btns[i].click();
+            return;
+        }}
+    }}
+}}
+</script>
 """, height=310, scrolling=False)
- 
-            if st.button(f"__site_ia_{idx_s}__", key=f"btn_site_ia_{idx_s}", use_container_width=True):
+
+            # Processa o clique do botão fantasma
+            if site_ia_triggers[idx_s]:
                 if gemini_model is None:
                     st.session_state[f"sites_analise_{idx_s}"] = "Configure GEMINI_API_KEY nos secrets."
                 else:
@@ -2193,7 +2253,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                             st.rerun()
                         except Exception as e:
                             st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
- 
+
             # Exibe análise individual se disponível
             analise_ind = st.session_state.get(f"sites_analise_{idx_s}", "")
             if analise_ind:
@@ -2210,7 +2270,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         unsafe_allow_html=True,
     )
  
-    # ── Botão Gerar Relatório Geral (já capturado no cabeçalho acima)
     col_info = st.columns(1)[0]
     with col_info:
         st.markdown("""
@@ -2263,7 +2322,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
             st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
             status.update(label="✅ Relatório gerado!", state="complete")
  
-    # ── Exibe relatório geral gerado
     if st.session_state.relatorio_gemini:
         st.markdown(
             "<div style='font-size:20px;font-weight:700;color:#111827;"
@@ -2312,7 +2370,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     st.warning("Nenhum conteúdo extraído.")
                 st.markdown("---")
  
-    # ── ANÁLISES SALVAS — divididas em Geral e Por Site
     st.markdown(
         "<div style='margin:32px 0 0 0;border-top:2px solid #e5e7eb'/>",
         unsafe_allow_html=True,
@@ -2335,11 +2392,9 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         </div>
         """, unsafe_allow_html=True)
     else:
-        # Divide em gerais e individuais
         analises_gerais     = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
         analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
  
-        # ── Aba Análise Geral
         tab_geral, tab_individual = st.tabs(["📊 Análise Geral", "🔍 Análise por Site"])
  
         with tab_geral:
@@ -2429,13 +2484,15 @@ elif st.session_state.pagina == "ads":
                 term   = empresa_item["ads_id"]
                 nome   = empresa_item["nome"]
                 is_minha = empresa_item["tipo"] == "minha"
+                # ← USANDO a função global de cor
+                cor_av = get_minha_empresa_color() if is_minha else get_concorrente_color(i - 1)
                 url = f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
                 badge = "<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Minha Empresa</span>" if is_minha else "<span style='background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Concorrente</span>"
                 avatar = gerar_avatar(nome)
                 card = f"""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 22px;margin-bottom:4px'>
                     <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f3f4f6'>
-                        <div style='width:38px;height:38px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                        <div style='width:38px;height:38px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
                         <div style='flex:1;min-width:0'>
                             <div style='font-size:15px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>{nome}</div>
                             <div style='margin-top:4px'>{badge}</div>
@@ -2545,7 +2602,6 @@ elif st.session_state.pagina == "redes":
     </style>
     """, unsafe_allow_html=True)
  
-    # ── Cabeçalho
     h1, h2 = st.columns([7, 3])
     with h1:
         st.markdown(
@@ -2579,13 +2635,11 @@ elif st.session_state.pagina == "redes":
         unsafe_allow_html=True,
     )
  
-    # ── Helpers
     def fmt_num(n):
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(int(n))
  
-    # ── Supabase cache helpers
     def salvar_cache_redes(dados: list):
         try:
             payload = {
@@ -2674,7 +2728,7 @@ elif st.session_state.pagina == "redes":
                                         p["caption"].get("text", "")
                                         if isinstance(p["caption"], dict)
                                         else str(p["caption"])
-                                    )[:500]          # ← guarda até 500 chars para o modal
+                                    )[:500]
                                 taken_at = p.get("taken_at", 0)
                                 date_str = ""
                                 if taken_at:
@@ -2718,7 +2772,6 @@ elif st.session_state.pagina == "redes":
         except Exception as e:
             return {"erro": str(e)}
  
-    # ── Monta lista de perfis
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
         todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp["instagram"], "tipo": "minha"})
@@ -2761,15 +2814,16 @@ elif st.session_state.pagina == "redes":
         st.stop()
  
 # ══════════════════════════════════════════════════════════════════════
-# PAGINA - REDES SOCIAIS - GRÁFICOS COMPARATIVOS
+# REDES SOCIAIS - GRÁFICOS COMPARATIVOS
 # ══════════════════════════════════════════════════════════════════════
  
-    CORES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
- 
+    # ← USANDO a paleta global para as cores dos gráficos
+    CORES = AVATAR_COLORS
+
     nomes_ok   = [x["nome"] for x in ok]
     segs_ok    = [x.get("seguidores", 0) for x in ok]
     eng_pct_ok = [x.get("eng_pct", 0.0) for x in ok]
-    cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
+    cores_ok   = [get_avatar_color(i) for i in range(len(ok))]
  
     st.markdown(
         "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
@@ -2781,7 +2835,6 @@ elif st.session_state.pagina == "redes":
  
     st.markdown("""
     <style>
-    /* Força gap mínimo entre colunas — sobrescreve o Streamlit */
     [data-testid="stHorizontalBlock"] {
         gap: 0px !important;
     }
@@ -2874,7 +2927,7 @@ elif st.session_state.pagina == "redes":
         """, height=275)
  
 # ══════════════════════════════════════════════════════════════════════
-# PAGINA - REDES SOCIAIS - ABAS POR PERFIL
+# REDES SOCIAIS - ABAS POR PERFIL
 # ══════════════════════════════════════════════════════════════════════
     abas = st.tabs([r["nome"] for r in ok])
  
@@ -2885,12 +2938,12 @@ elif st.session_state.pagina == "redes":
             badge_txt = "#1d4ed8" if is_minha else "#6b7280"
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-            cor       = CORES[idx % len(CORES)]
+            # ← USANDO a função global de cor
+            cor = get_avatar_color(idx)
             bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
             eng_est   = len(r.get("posts", [])) == 0
             posts_list = r.get("posts", [])
  
-            # ── CABEÇALHO DO PERFIL
             components.html(f"""
             <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
             <style>
@@ -2923,11 +2976,9 @@ elif st.session_state.pagina == "redes":
             </div>
             """, height=90, scrolling=False)
  
-            # ── MÉTRICAS + BIO
             col_metricas, col_bio = st.columns([1, 1], gap="large")
  
             with col_metricas:
-                # ── MÉTRICAS — layout original via st.markdown
                 st.markdown(f"""
 <div style='background:#fff;border-radius:12px'>
     <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
@@ -2985,7 +3036,6 @@ elif st.session_state.pagina == "redes":
                 if chave_bio_ia not in st.session_state:
                     st.session_state[chave_bio_ia] = ""
  
-                # ── CAIXA BIO  
                 components.html(f"""
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
                 <style>
@@ -3024,7 +3074,6 @@ elif st.session_state.pagina == "redes":
                 </div>
                 """, height=200, scrolling=False)
  
-                # CSS para esconder o botão fantasma da bio (mantém funcional mas invisível)
                 st.markdown(f"""
                 <style>
                 div[data-testid="stButton"][data-key="btn_bio_ia_{idx}"],
@@ -3093,7 +3142,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             )
  
 # ══════════════════════════════════════════════════════════════
-# PAGINA - REDES SOCIAIS - POSTAGENS
+# REDES SOCIAIS - POSTAGENS
 # ══════════════════════════════════════════════════════════════
 
             def _fmt(n):
@@ -3105,7 +3154,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             def _esc(s):
                 return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
 
-            # ── TABELA COMPLETA DE POSTS
             if not posts_list:
                 tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
             else:
@@ -3130,7 +3178,6 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
                     )
 
-                    # ── [VER COPY] aparece em qualquer post com legenda
                     ver_copy = ""
                     if cap:
                         ver_copy = "<span style='color:#1e3050;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[🔍 ver copy]</span>"
@@ -3239,7 +3286,7 @@ function openCopy2(txt) {{
 """, height=520, scrolling=False)
  
 # ══════════════════════════════════════════════════════════════
-# PAGINA - REDES SOCIAIS - ANÁLISE DE IA
+# REDES SOCIAIS - ANÁLISE DE IA
 # ══════════════════════════════════════════════════════════════
  
             st.markdown("<div/>", unsafe_allow_html=True)
@@ -3265,7 +3312,6 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 {resumo_posts}
 """
  
-            # ── Botões fantasma (invisíveis, acionados via JS dentro do ia_html)
             st.markdown(f"""
             <style>
             .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
@@ -3464,12 +3510,11 @@ setTimeout(enviarAltura, 1000);
 """
             components.html(ia_html, height=420, scrolling=False)
 
-            # ── Receptor postMessage — ajusta altura do iframe na página pai
             st.markdown(f"""
 <script>
 (function() {{
     var listeners = window._iaListeners || 0;
-    if (listeners >= {idx + 1}) return;   // evita duplicar listener por aba
+    if (listeners >= {idx + 1}) return;
     window._iaListeners = listeners + 1;
 
     window.addEventListener('message', function(e) {{
