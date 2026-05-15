@@ -2771,10 +2771,10 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
                     )
 
-                    # ── CORREÇÃO: [ver copy] aparece em qualquer post com legenda
+                    # ── [VER COPY] aparece em qualquer post com legenda
                     ver_copy = ""
                     if cap:
-                        ver_copy = "<span style='color:#3a9fd6;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[ver copy]</span>"
+                        ver_copy = "<span style='color:#1e3050;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[🔍 ver copy]</span>"
 
                     copy_cell = (
                         f'<div onclick="openCopy2(\'{cap_esc}\')" '
