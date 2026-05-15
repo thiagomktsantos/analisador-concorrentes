@@ -2782,20 +2782,15 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     "cap_t": cap_t,
                 })
 
-            # Serializa com ensure_ascii=True (só ASCII — zero risco de encoding)
-            # e escapa sequências que fecham tags HTML prematuramente
-            tbl_rows_json = _json.dumps(rows_data, ensure_ascii=True)
-            tbl_rows_json = tbl_rows_json.replace("</script>", "<\\/script>").replace("<!--", "<\\!--")
-            # Também escapa para uso seguro em data-attribute HTML
-            tbl_rows_b64 = __import__('base64').b64encode(
-                _json.dumps(rows_data, ensure_ascii=True).encode('ascii')
-            ).decode('ascii')
+            # Serializa: substitui < por \u003c — válido em JSON,
+            # mas invisível ao parser HTML (elimina risco de </script>)
+            tbl_rows_json = _json.dumps(rows_data, ensure_ascii=True).replace("<", "\u003c")
 
             tabela_html = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <!-- Dados em base64 — método 100% seguro, zero risco de quebrar HTML/JS -->
-<div id="rows-data" data-b64="ROWS_B64_PLACEHOLDER" style="display:none"></div>
+<script id="rows-data" type="application/json">ROWS_JSON_PLACEHOLDER</script>
 
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -2891,8 +2886,8 @@ tr.selected td { background:#eff6ff !important; }
 // Leitura via base64 — método mais seguro, zero interferência com HTML
 var allRows = [];
 try {
-    var b64 = document.getElementById('rows-data').getAttribute('data-b64');
-    var json = atob(b64);
+    var rawJson = document.getElementById('rows-data').textContent;
+    allRows = JSON.parse(rawJson);
     allRows = JSON.parse(json);
 } catch(e) {
     console.error('Erro ao carregar postagens:', e);
@@ -3017,7 +3012,7 @@ renderTable(allRows);
 """
 
             # Injeta o base64 no placeholder — sem risco de quebrar HTML
-            tabela_html = tabela_html.replace("ROWS_B64_PLACEHOLDER", tbl_rows_b64)
+            tabela_html = tabela_html.replace("ROWS_JSON_PLACEHOLDER", tbl_rows_json)
             components.html(tabela_html, height=500, scrolling=False)
 
             # ══════════════════════════════════════════════════════════════
