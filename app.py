@@ -2668,7 +2668,7 @@ elif st.session_state.pagina == "redes":
                                 for (const b of btns) {{
                                     if (b.innerText.trim() === '__bio_{idx}__') {{ b.click(); break; }}
                                 }}
-                            ">Analisar Bio com IA</button>
+                            ">Analisar Bio 🤖</button>
                         </div>
                     </div>
                 </div>
@@ -3072,20 +3072,20 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 </style>
 
 <div class="ia-wrap">
-    <div class="ia-header">Análise de IA</div>
+    <div class="ia-header">Análise de Conteúdos</div>
     <div class="tabs">
-        <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
-        <button class="tab"        onclick="showTab('copy',this)">✍️ Copy</button>
-        <button class="tab"        onclick="showTab('geral',this)">📊 Geral</button>
+        <button class="tab active" onclick="showTab('criativo',this)">Analisar Criativo</button>
+        <button class="tab"        onclick="showTab('copy',this)">Analisar Copy</button>
+        <button class="tab"        onclick="showTab('geral',this)">Analisar Postagens</button>
     </div>
     <div id="panel-criativo" class="panel active">
-        {_panel_ia(criativo_html, "🎨 Analisar Criativos", f"__criativo_{idx}__")}
+        {_panel_ia(criativo_html, "Analisar Criativos 🤖", f"__criativo_{idx}__")}
     </div>
     <div id="panel-copy" class="panel">
-        {_panel_ia(copy_html, "✍️ Analisar Copys", f"__copy_{idx}__")}
+        {_panel_ia(copy_html, "Analisar Copys 🤖", f"__copy_{idx}__")}
     </div>
     <div id="panel-geral" class="panel">
-        {_panel_ia(geral_html, "📊 Análise Geral", f"__geral_{idx}__")}
+        {_panel_ia(geral_html, "Análise Geral 🤖", f"__geral_{idx}__")}
     </div>
 </div>
 
