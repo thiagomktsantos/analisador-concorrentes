@@ -2192,9 +2192,6 @@ elif st.session_state.pagina == "redes":
     div[data-baseweb="tab-highlight"] {
         display: none !important;
     }
-    [data-testid="stHorizontalBlock"] {
-    gap: 24px !important;   /* ajuste o valor conforme preferir */
-}
     </style>
     """, unsafe_allow_html=True)
  
