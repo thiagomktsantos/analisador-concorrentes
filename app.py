@@ -1916,7 +1916,6 @@ elif st.session_state.pagina == "sites":
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
 
-    # Monta lista de sites disponíveis
     sites_disponiveis = []
     if emp.get("site"):
         sites_disponiveis.append({"nome": emp["nome"], "url": emp["site"], "tipo": "minha"})
@@ -1927,7 +1926,6 @@ elif st.session_state.pagina == "sites":
     if not sites_disponiveis:
         st.info("Cadastre o site da sua empresa e de pelo menos um concorrente para usar esta funcionalidade.")
     else:
-        # ── Painel de sites detectados
         st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Sites cadastrados</div>", unsafe_allow_html=True)
 
         cols_sites = st.columns(min(len(sites_disponiveis), 4))
@@ -1953,7 +1951,6 @@ elif st.session_state.pagina == "sites":
 
         st.markdown("<div style='margin:8px 0 20px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
 
-        # ── Botão gerar
         col_btn, col_info = st.columns([2, 5])
         with col_btn:
             gerar = st.button("🔍 Gerar Relatório de Posicionamento", type="primary", use_container_width=True)
@@ -1968,7 +1965,6 @@ elif st.session_state.pagina == "sites":
             st.session_state.relatorio_gemini = ""
             st.session_state.relatorio_sites = {}
 
-            # ── Extração dos sites
             with st.status("📡 Lendo os sites...", expanded=True) as status:
                 for s in sites_disponiveis:
                     st.write(f"Acessando **{s['nome']}** ({s['url']})…")
@@ -1981,7 +1977,6 @@ elif st.session_state.pagina == "sites":
                         st.write(f"⚠️ Não foi possível extrair conteúdo")
                 status.update(label="✅ Sites lidos! Gerando análise com Gemini…", state="running")
 
-                # ── Geração do relatório
                 empresa_principal = None
                 concorrentes_data = []
                 for s in sites_disponiveis:
@@ -2006,27 +2001,38 @@ elif st.session_state.pagina == "sites":
                 st.session_state.relatorio_gemini = relatorio
                 status.update(label="✅ Relatório gerado!", state="complete")
 
-        # ── Exibe relatório
+        # ── Exibe relatório gerado
         if st.session_state.relatorio_gemini:
             st.markdown("<div style='margin:24px 0 16px 0;border-top:1px solid #e5e7eb'/>", unsafe_allow_html=True)
-            st.markdown("""
-            <div style='display:flex;align-items:center;gap:10px;margin-bottom:20px'>
-                <div style='font-size:20px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif'>📋 Relatório de Posicionamento Competitivo</div>
-            </div>
-            """, unsafe_allow_html=True)
 
-            # Caixa com background
+            col_titulo, col_salvar = st.columns([6, 2])
+            with col_titulo:
+                st.markdown("""
+                <div style='font-size:20px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif;margin-bottom:4px'>
+                    📋 Relatório de Posicionamento Competitivo
+                </div>
+                """, unsafe_allow_html=True)
+            with col_salvar:
+                nome_analise = st.text_input(
+                    "Nome para salvar",
+                    placeholder="Ex: Análise maio/2025",
+                    label_visibility="collapsed",
+                    key="nome_analise_input",
+                )
+                if st.button("💾 Salvar Análise", use_container_width=True):
+                    import datetime as _dt
+                    titulo_salvo = nome_analise.strip() or _dt.datetime.now().strftime("Análise %d/%m/%Y %H:%M")
+                    st.session_state.analises_salvas.append({
+                        "titulo": titulo_salvo,
+                        "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "relatorio": st.session_state.relatorio_gemini,
+                        "sites": [s["nome"] for s in sites_disponiveis],
+                    })
+                    st.toast(f"✅ Análise «{titulo_salvo}» salva!", icon="✅")
+
             st.markdown("""
             <style>
-            .relatorio-box {
-                background: #f9fafb;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                padding: 28px 32px;
-                font-family: 'DM Sans', sans-serif;
-                line-height: 1.75;
-                color: #1f2937;
-            }
+            .relatorio-box { background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:28px 32px; font-family:'DM Sans',sans-serif; line-height:1.75; color:#1f2937; }
             .relatorio-box h3 { font-size:17px;font-weight:700;color:#111827;margin:24px 0 10px; }
             .relatorio-box p  { font-size:15px;color:#374151;margin-bottom:10px; }
             .relatorio-box ul { padding-left:20px;margin-bottom:10px; }
@@ -2036,7 +2042,6 @@ elif st.session_state.pagina == "sites":
 
             st.markdown(st.session_state.relatorio_gemini)
 
-            # Detalhes de extração
             with st.expander("🔎 Ver conteúdo extraído dos sites"):
                 for s in sites_disponiveis:
                     conteudo = st.session_state.relatorio_sites.get(s["url"], "")
@@ -2052,6 +2057,43 @@ elif st.session_state.pagina == "sites":
                     else:
                         st.warning("Nenhum conteúdo extraído.")
                     st.markdown("---")
+
+        # ── Seção: Análises Salvas
+        st.markdown("<div style='margin:32px 0 0 0;border-top:2px solid #e5e7eb'/>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='display:flex;align-items:center;gap:10px;margin:20px 0 16px 0'>
+            <div style='font-size:20px;font-weight:700;color:#111827;font-family:DM Sans,sans-serif'>🗂️ Análises Salvas</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        analises = st.session_state.get("analises_salvas", [])
+
+        if not analises:
+            st.markdown("""
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:12px;
+                        padding:36px 32px;text-align:center;color:#9ca3af;font-size:14px'>
+                Nenhuma análise salva ainda. Gere um relatório e clique em <b>💾 Salvar Análise</b>.
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            for i, analise in enumerate(reversed(analises)):
+                idx_real = len(analises) - 1 - i
+                with st.expander(f"📄 {analise['titulo']} — {analise['data']} · {', '.join(analise['sites'])}"):
+                    st.markdown(analise["relatorio"])
+                    col_dl, col_rm = st.columns([3, 1])
+                    with col_dl:
+                        st.download_button(
+                            label="⬇️ Baixar como .txt",
+                            data=analise["relatorio"],
+                            file_name=f"{analise['titulo'].replace(' ', '_')}.txt",
+                            mime="text/plain",
+                            key=f"dl_{idx_real}",
+                            use_container_width=True,
+                        )
+                    with col_rm:
+                        if st.button("🗑️ Remover", key=f"rm_{idx_real}", use_container_width=True):
+                            st.session_state.analises_salvas.pop(idx_real)
+                            st.rerun()
 
 # ---------------------------------------------------
 # PAGINA - ADS
