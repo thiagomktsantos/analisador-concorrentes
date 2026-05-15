@@ -2733,12 +2733,9 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                 unsafe_allow_html=True,
             )
  
-            # ══════════════════════════════════════════════════════════════
-            # ÚLTIMAS 3 POSTAGENS + VER TODOS OS POSTS
-            # (HTML gerado server-side em Python — sem JS de renderização)
-            # ══════════════════════════════════════════════════════════════
- 
-            col_posts, col_table = st.columns(2)
+# ══════════════════════════════════════════════════════════════
+# POSTAGENS 
+# ══════════════════════════════════════════════════════════════
  
             def _fmt(n):
                 n = int(n or 0)
@@ -2749,134 +2746,65 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             def _esc(s):
                 return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
  
-            with col_posts:
-                if not posts_list:
-                    cards_inner = "<div style=\'padding:20px;text-align:center;color:#9ca3af;font-size:14px\'>Posts não disponíveis.</div>"
-                else:
-                    cards_inner = ""
-                    for p in posts_list[:3]:
-                        thumb   = p.get("thumb", "")
-                        cap     = p.get("caption", "")
-                        cap_esc = _esc(cap)
-                        cap_3ln = cap[:160] + ("…" if len(cap) > 160 else "") if cap else ""
+            # ── TABELA COMPLETA DE POSTS (ocupa largura total)
+            if not posts_list:
+                tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
+            else:
+                tbl_rows = ""
+                for p in posts_list:
+                    thumb   = p.get("thumb", "")
+                    cap     = p.get("caption", "")
+                    cap_esc = _esc(cap)
+                    cap_t   = cap[:40] + "…" if len(cap) > 40 else cap
+                    isVid   = p.get("is_video", False)
+                    likes   = p.get("likes", 0)
+                    coms    = p.get("comments", 0)
  
-                        img_html = (
-                            f'<img src="{thumb}" style="width:100%;aspect-ratio:1;border-radius:8px;'
-                            f'object-fit:cover;border:1px solid #e5e7eb;display:block;" '
-                            f'onerror="this.style.display=\'none\'" />'
-                        ) if thumb else (
-                            f'<div style="width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;'
-                            f'display:flex;align-items:center;justify-content:center;'
-                            f'font-size:13px;color:#9ca3af">{"Vídeo" if p.get("is_video") else "Foto"}</div>'
-                        )
+                    img_cell = (
+                        f'<img src="{thumb}" style="width:48px;height:48px;border-radius:8px;'
+                        f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
+                        f'onclick="openImg(\'{_esc(thumb)}\')" '
+                        f'onerror="this.outerHTML=\'&lt;div style=&quot;width:48px;height:48px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af&quot;&gt;📷&lt;/div&gt;\'" />'
+                    ) if thumb else (
+                        f'<div style="width:48px;height:48px;border-radius:8px;background:#f3f4f6;'
+                        f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
+                    )
  
-                        cap_html = (
-                            f'<div style="font-size:11px;color:#6b7280;line-height:1.5;font-style:italic;'
-                            f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;min-height:52px;">'
-                            f'<div style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{cap_3ln}</div>'
-                            f'<div onclick="openCopy(\'{cap_esc}\')" '
-                            f'style="margin-top:5px;font-size:11px;font-weight:600;color:#000;'
-                            f'cursor:pointer;font-style:normal;text-align:center;'
-                            f'border-top:1px solid #f3f4f6;padding-top:4px;">🔍 ver legenda</div>'
-                            f'</div>'
-                        ) if cap else (
-                            '<div style="font-size:11px;color:#d1d5db;font-style:italic;'
-                            'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;'
-                            'background:#fafafa;min-height:52px;">Sem legenda</div>'
-                        )
+                    copy_cell = (
+                        f'<span onclick="openCopy2(\'{cap_esc}\')" '
+                        f'style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+                        f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">{cap_t}</span>'
+                    ) if cap else '<span style="color:#d1d5db">—</span>'
  
-                        cards_inner += (
-                            f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">'
-                            f'<div style="font-size:11px;color:#9ca3af;font-weight:500;text-align:center">📅 {p.get("date","")}</div>'
-                            f'{img_html}'
-                            f'<div style="font-size:12px;color:#374151;font-weight:600;white-space:nowrap;text-align:center">'
-                            f'❤️ {_fmt(p.get("likes",0))} &nbsp; 💬 {_fmt(p.get("comments",0))}</div>'
-                            f'{cap_html}'
-                            f'</div>'
-                        )
+                    tbl_rows += (
+                        f"<tr>"
+                        f"<td>{p.get('date','—')}</td>"   # ← Data como 1ª coluna
+                        f"<td>{img_cell}</td>"
+                        f"<td>{'Vídeo' if isVid else 'Foto'}</td>"
+                        f"<td>{_fmt(likes)}</td>"
+                        f"<td>{_fmt(coms)}</td>"
+                        f"<td>{_fmt(likes+coms)}</td>"
+                        f"<td>{copy_cell}</td>"
+                        f"</tr>"
+                    )
  
-                components.html(f"""
+            components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
-.modal-bg.open {{ display:flex; }}
-.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:360px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
-.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
-.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
-.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
-.modal-close:hover {{ color:#111827; }}
-</style>
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;position:relative;">
-    <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Últimas 3 Postagens</div>
-    <div style="padding:14px 16px;display:flex;gap:10px;align-items:stretch;position:relative;z-index:1">{cards_inner}</div>
-</div>
-<div class="modal-bg" id="modal-cp" onclick="if(event.target===this)this.classList.remove(\'open\')">
-    <div class="modal">
-        <button class="modal-close" onclick="document.getElementById(\'modal-cp\').classList.remove(\'open\')">✕</button>
-        <div class="modal-title">Copy completa</div>
-        <div class="modal-text" id="modal-cp-txt"></div>
-    </div>
-</div>
-<script>
-function openCopy(txt) {{
-    document.getElementById(\'modal-cp-txt\').textContent = txt;
-    document.getElementById(\'modal-cp\').classList.add(\'open\');
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+table {{ width:100%; border-collapse:collapse; font-size:14px; }}
+th {{
+    background:#f9fafb; color:#6b7280; font-weight:700;
+    padding:12px 14px; text-align:left; border-bottom:2px solid #e5e7eb;
+    font-size:11px; text-transform:uppercase; letter-spacing:0.6px;
+    position:sticky; top:0; z-index:1;
 }}
-</script>
-""", height=360, scrolling=False)
- 
-            with col_table:
-                if not posts_list:
-                    tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Sem posts</td></tr>'
-                else:
-                    tbl_rows = ""
-                    for p in posts_list:
-                        thumb   = p.get("thumb", "")
-                        cap     = p.get("caption", "")
-                        cap_esc = _esc(cap)
-                        cap_t   = cap[:32] + "…" if len(cap) > 32 else cap
-                        isVid   = p.get("is_video", False)
-                        likes   = p.get("likes", 0)
-                        coms    = p.get("comments", 0)
- 
-                        img_cell = (
-                            f'<img src="{thumb}" style="width:36px;height:36px;border-radius:6px;'
-                            f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
-                            f'onclick="openImg(\'{_esc(thumb)}\')" '
-                            f'onerror="this.outerHTML=\'&lt;div style=&quot;width:36px;height:36px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af&quot;&gt;📷&lt;/div&gt;\'" />'
-                        ) if thumb else (
-                            f'<div style="width:36px;height:36px;border-radius:6px;background:#f3f4f6;'
-                            f'display:flex;align-items:center;justify-content:center;font-size:16px">{"🎬" if isVid else "📷"}</div>'
-                        )
- 
-                        copy_cell = (
-                            f'<span onclick="openCopy2(\'{cap_esc}\')" '
-                            f'style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
-                            f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">{cap_t}</span>'
-                        ) if cap else '<span style="color:#d1d5db">—</span>'
- 
-                        tbl_rows += (
-                            f"<tr>"
-                            f"<td>{img_cell}</td>"
-                            f"<td>{p.get('date','—')}</td>"
-                            f"<td>{'Vídeo' if isVid else 'Foto'}</td>"
-                            f"<td>{_fmt(likes)}</td>"
-                            f"<td>{_fmt(coms)}</td>"
-                            f"<td>{_fmt(likes+coms)}</td>"
-                            f"<td>{copy_cell}</td>"
-                            f"</tr>"
-                        )
- 
-                components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:\'DM Sans\',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 10px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }}
-td {{ padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
+td {{
+    padding:12px 14px; border-bottom:1px solid #f3f4f6;
+    color:#374151; background:#fff; vertical-align:middle;
+    line-height:1.4;
+}}
 tr:last-child td {{ border-bottom:none; }}
 tr:hover td {{ background:#f9fafb; }}
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
@@ -2889,17 +2817,29 @@ tr:hover td {{ background:#f9fafb; }}
 .modal-close:hover {{ color:#111827; }}
 </style>
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
-    <div style="padding:12px 16px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Ver Todos os Posts</div>
-    <div style="max-height:310px;overflow-y:auto">
+    <div style="padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
+                text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;
+                background:#fff;">Postagens</div>
+    <div style="max-height:460px;overflow-y:auto">
         <table>
-            <thead><tr><th>Img</th><th>Data</th><th>Tipo</th><th>❤️</th><th>💬</th><th>Eng.</th><th>Copy</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Img</th>
+                    <th>Tipo</th>
+                    <th>❤️ Curtidas</th>
+                    <th>💬 Comentários</th>
+                    <th>📈 Eng.</th>
+                    <th>Copy</th>
+                </tr>
+            </thead>
             <tbody>{tbl_rows}</tbody>
         </table>
     </div>
 </div>
-<div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove(\'open\')">
+<div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal">
-        <button class="modal-close" onclick="document.getElementById(\'modal2\').classList.remove(\'open\')">✕</button>
+        <button class="modal-close" onclick="document.getElementById('modal2').classList.remove('open')">✕</button>
         <div class="modal-title" id="modal2-title"></div>
         <img id="modal2-img" class="modal-img" src="" style="display:none" />
         <div class="modal-text" id="modal2-text"></div>
@@ -2907,188 +2847,18 @@ tr:hover td {{ background:#f9fafb; }}
 </div>
 <script>
 function openImg(url) {{
-    document.getElementById(\'modal2-title\').textContent = \'Imagem do Post\';
-    var img = document.getElementById(\'modal2-img\');
-    img.src = url; img.style.display = \'block\';
-    document.getElementById(\'modal2-text\').textContent = \'\';
-    document.getElementById(\'modal2\').classList.add(\'open\');
+    document.getElementById('modal2-title').textContent = 'Imagem do Post';
+    var img = document.getElementById('modal2-img');
+    img.src = url; img.style.display = 'block';
+    document.getElementById('modal2-text').textContent = '';
+    document.getElementById('modal2').classList.add('open');
 }}
 function openCopy2(txt) {{
-    document.getElementById(\'modal2-title\').textContent = \'Copy Completa\';
-    document.getElementById(\'modal2-img\').style.display = \'none\';
-    document.getElementById(\'modal2-text\').textContent = txt;
-    document.getElementById(\'modal2\').classList.add(\'open\');
+    document.getElementById('modal2-title').textContent = 'Copy Completa';
+    document.getElementById('modal2-img').style.display = 'none';
+    document.getElementById('modal2-text').textContent = txt;
+    document.getElementById('modal2').classList.add('open');
 }}
 </script>
-""", height=370, scrolling=False)
+""", height=520, scrolling=False)
  
-                        # ══════════════════════════════════════════════════════════════
-            # ANÁLISE DE IA  (botões visíveis — sem CSS display:none)
-            # ══════════════════════════════════════════════════════════════
-            st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
- 
-            chave_criativo = f"ia_criativo_{r['handle']}"
-            chave_copy     = f"ia_copy_{r['handle']}"
-            chave_geral    = f"ia_geral_{r['handle']}"
-            for ch in [chave_criativo, chave_copy, chave_geral]:
-                if ch not in st.session_state:
-                    st.session_state[ch] = ""
- 
-            resumo_posts = "\n".join([
-                f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
-                f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
-                for p in posts_list[:12]
-            ]) if posts_list else "Sem posts disponíveis."
- 
-            perfil_ctx = f"""
-Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
-Bio: {r.get('bio','')}
-Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
-Últimos posts:
-{resumo_posts}
-"""
-            # ── Título da seção de IA no mesmo estilo
-            st.markdown("""
-            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                        padding:12px 16px;margin-bottom:4px'>
-                <div style='font-size:14px;font-weight:800;color:#1a2e4a;
-                            text-transform:uppercase;letter-spacing:0.3px'>Análise de IA</div>
-            </div>
-            """, unsafe_allow_html=True)
- 
-            # ── Botões visíveis (sem CSS de esconder)
-            st.markdown(f"""
-            <style>
-            .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-
-            col_b1, col_b2, col_b3 = st.columns(3)
-            with col_b1:
-                if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
-                    if gemini_model is None:
-                        st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner("Analisando criativos…"):
-                            try:
-                                resp = gemini_model.generate_content(f"""
-{perfil_ctx}
-Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
-Responda em português com:
-### Análise de Criativo
-**Estilo visual predominante:** ...
-**Formatos mais usados:** ...
-**Posts com melhor desempenho:** ...
-**Pontos fortes visuais:** (3 pontos)
-**O que melhorar:** (2 pontos)
-Seja direto e objetivo.
-""")
-                                st.session_state[chave_criativo] = resp.text
-                                st.rerun()
-                            except Exception as e:
-                                st.session_state[chave_criativo] = f"Erro: {e}"
- 
-            with col_b2:
-                if st.button("✍️ Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
-                    if gemini_model is None:
-                        st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner("Analisando copies…"):
-                            try:
-                                resp = gemini_model.generate_content(f"""
-{perfil_ctx}
-Analise as LEGENDAS (copy) deste perfil Instagram.
-Responda em português com:
-### Análise de Copy
-**Tom de voz predominante:** ...
-**Uso de CTAs:** ...
-**Uso de hashtags:** ...
-**Pontos fortes nas legendas:** (3 pontos)
-**O que melhorar:** (2 pontos)
-Seja direto e objetivo.
-""")
-                                st.session_state[chave_copy] = resp.text
-                                st.rerun()
-                            except Exception as e:
-                                st.session_state[chave_copy] = f"Erro: {e}"
- 
-            with col_b3:
-                if st.button("📊 Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
-                    if gemini_model is None:
-                        st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner("Gerando análise geral…"):
-                            try:
-                                resp = gemini_model.generate_content(f"""
-{perfil_ctx}
-Faça uma análise geral estratégica deste perfil Instagram.
-Responda em português com:
-### Análise Geral
-**Posicionamento:** ...
-**Frequência de posts:** ...
-### Pontos Fortes (3 pontos)
-### Pontos de Atenção (2 pontos)
-### Recomendações Estratégicas (3 ações concretas)
-Seja direto e objetivo.
-""")
-                                st.session_state[chave_geral] = resp.text
-                                st.rerun()
-                            except Exception as e:
-                                st.session_state[chave_geral] = f"Erro: {e}"
- 
-            # ── Resultado da IA em abas HTML (sem depender de botões escondidos)
-            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
-            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
-            geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
- 
-            ia_height = 320 if (criativo_html or copy_html or geral_html) else 120
-
-            ia_script = """
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
-.tabs { display:flex; border-bottom:2px solid #e5e7eb; background:#fff; margin-top:-8px; }
-.tab { flex:1; padding:10px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; background:#fff; border-top:none; border-left:none; border-right:none; font-family:'DM Sans',sans-serif; transition:color 0.15s; }
-.tab.active { color:#3a9fd6; border-bottom:2px solid #3a9fd6; }
-.panel { display:none; padding:14px 0 4px 0; }
-.panel.active { display:block; }
-.result { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; color:#374151; line-height:1.7; max-height:240px; overflow-y:auto; }
-.empty { padding:16px 0; text-align:center; font-size:13px; color:#9ca3af; }
-</style>
-<div class="tabs">
-    <button class="tab active" onclick="showTab('criativo',this)">🎨 Criativo</button>
-    <button class="tab" onclick="showTab('copy',this)">✍️ Copy</button>
-    <button class="tab" onclick="showTab('geral',this)">📊 Geral</button>
-</div>
-<div id="panel-criativo" class="panel active">CRIATIVO_PLACEHOLDER</div>
-<div id="panel-copy" class="panel">COPY_PLACEHOLDER</div>
-<div id="panel-geral" class="panel">GERAL_PLACEHOLDER</div>
-<script>
-function showTab(name, el) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + name).classList.add('active');
-    el.classList.add('active');
-}
-</script>
-"""
-
-            def _panel(html_content, btn_label):
-                if html_content:
-                    return '<div class="result">' + html_content + '</div>'
-                return '<div class="empty">Clique em <b>' + btn_label + '</b> acima para gerar.</div>'
-
-            ia_script = ia_script.replace(
-                "CRIATIVO_PLACEHOLDER", _panel(criativo_html, "Analisar Criativos")
-            ).replace(
-                "COPY_PLACEHOLDER", _panel(copy_html, "Analisar Copys")
-            ).replace(
-                "GERAL_PLACEHOLDER", _panel(geral_html, "Análise Geral")
-            )
-
-            components.html(ia_script, height=ia_height, scrolling=False)
