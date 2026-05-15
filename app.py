@@ -2755,7 +2755,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     thumb    = p.get("thumb", "")
                     cap      = p.get("caption", "")
                     cap_esc  = _esc(cap)
-                    cap_preview = _esc(cap[:110]) if len(cap) > 110 else _esc(cap)
+                    cap_preview = _esc(cap[:100]) if len(cap) > 100 else _esc(cap)
                     has_more = len(cap) > 110
                     isVid    = p.get("is_video", False)
                     likes    = p.get("likes", 0)
