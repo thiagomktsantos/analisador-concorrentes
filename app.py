@@ -2906,7 +2906,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 {resumo_posts}
 """
  
-            # ── Botões fantasma (invisíveis, acionados via JS)
+            # ── Botões fantasma (invisíveis, acionados via JS dentro do ia_html)
             st.markdown(f"""
             <style>
             .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
@@ -2916,16 +2916,14 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
             }}
             </style>
             """, unsafe_allow_html=True)
- 
-            col_b1, col_b2, col_b3 = st.columns(3)
-            with col_b1:
-                if st.button("🎨 Analisar Criativos", key=f"btn_criativo_{idx}", use_container_width=True):
-                    if gemini_model is None:
-                        st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner("Analisando criativos…"):
-                            try:
-                                resp = gemini_model.generate_content(f"""
+
+            if st.button(f"__criativo_{idx}__", key=f"btn_criativo_{idx}", use_container_width=True):
+                if gemini_model is None:
+                    st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando criativos…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
 Responda em português com:
@@ -2937,19 +2935,18 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                st.session_state[chave_criativo] = resp.text
-                                st.rerun()
-                            except Exception as e:
-                                st.session_state[chave_criativo] = f"Erro: {e}"
- 
-            with col_b2:
-                if st.button("✍️ Analisar Copys", key=f"btn_copy_{idx}", use_container_width=True):
-                    if gemini_model is None:
-                        st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner("Analisando copies…"):
-                            try:
-                                resp = gemini_model.generate_content(f"""
+                            st.session_state[chave_criativo] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_criativo] = f"Erro: {e}"
+
+            if st.button(f"__copy_{idx}__", key=f"btn_copy_{idx}", use_container_width=True):
+                if gemini_model is None:
+                    st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando copies…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise as LEGENDAS (copy) deste perfil Instagram.
 Responda em português com:
@@ -2961,19 +2958,18 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                                st.session_state[chave_copy] = resp.text
-                                st.rerun()
-                            except Exception as e:
-                                st.session_state[chave_copy] = f"Erro: {e}"
- 
-            with col_b3:
-                if st.button("📊 Análise Geral", key=f"btn_geral_{idx}", use_container_width=True):
-                    if gemini_model is None:
-                        st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner("Gerando análise geral…"):
-                            try:
-                                resp = gemini_model.generate_content(f"""
+                            st.session_state[chave_copy] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_copy] = f"Erro: {e}"
+
+            if st.button(f"__geral_{idx}__", key=f"btn_geral_{idx}", use_container_width=True):
+                if gemini_model is None:
+                    st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Gerando análise geral…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Faça uma análise geral estratégica deste perfil Instagram.
 Responda em português com:
@@ -2985,30 +2981,46 @@ Responda em português com:
 ### Recomendações Estratégicas (3 ações concretas)
 Seja direto e objetivo.
 """)
-                                st.session_state[chave_geral] = resp.text
-                                st.rerun()
-                            except Exception as e:
-                                st.session_state[chave_geral] = f"Erro: {e}"
- 
-            # ── Resultados da IA — mesmo design das outras caixas
+                            st.session_state[chave_geral] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_geral] = f"Erro: {e}"
+
             criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
             geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
- 
-            ia_height = 340 if (criativo_html or copy_html or geral_html) else 130
- 
-            def _panel_ia(html_content, btn_label):
+
+            def _panel_ia(html_content, btn_label, btn_trigger):
+                btn_html = f"""
+                    <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
+                        <button onclick="
+                            const btns = window.parent.document.querySelectorAll('button');
+                            for (const b of btns) {{
+                                if (b.innerText.trim() === '{btn_trigger}') {{ b.click(); break; }}
+                            }}
+                        " style="
+                            width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
+                            background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
+                            cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;
+                        "
+                        onmouseover="this.style.background='#dbeafe'"
+                        onmouseout="this.style.background='#eff6ff'">
+                            {btn_label}
+                        </button>
+                    </div>
+                """
                 if html_content:
                     return (
-                        f'<div style="padding:16px 18px;font-size:14px;color:#374151;'
-                        f'line-height:1.75;max-height:260px;overflow-y:auto">'
+                        f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">'
                         f'{html_content}</div>'
+                        f'{btn_html}'
                     )
                 return (
                     f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">'
-                    f'Clique em <b>{btn_label}</b> acima para gerar.</div>'
+                    f'Clique no botão abaixo para gerar a análise.</div>'
+                    f'{btn_html}'
                 )
- 
+
             ia_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3058,13 +3070,13 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
         <button class="tab"        onclick="showTab('geral',this)">📊 Geral</button>
     </div>
     <div id="panel-criativo" class="panel active">
-        {_panel_ia(criativo_html, "Analisar Criativos")}
+        {_panel_ia(criativo_html, "🎨 Analisar Criativos", f"__criativo_{idx}__")}
     </div>
     <div id="panel-copy" class="panel">
-        {_panel_ia(copy_html, "Analisar Copys")}
+        {_panel_ia(copy_html, "✍️ Analisar Copys", f"__copy_{idx}__")}
     </div>
     <div id="panel-geral" class="panel">
-        {_panel_ia(geral_html, "Análise Geral")}
+        {_panel_ia(geral_html, "📊 Análise Geral", f"__geral_{idx}__")}
     </div>
 </div>
 
