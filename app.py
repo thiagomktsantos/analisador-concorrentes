@@ -2228,14 +2228,23 @@ elif st.session_state.pagina == "redes":
  
     # ── Supabase helpers
     def salvar_cache_redes(dados: list):
+        """Salva os dados de redes no Supabase, truncando posts para evitar limite de tamanho."""
         try:
+            # Trunca posts para máx 6 por perfil antes de salvar (evita limite JSON do Supabase)
+            dados_truncados = []
+            for item in dados:
+                item_copia = dict(item)
+                if "posts" in item_copia and isinstance(item_copia["posts"], list):
+                    item_copia["posts"] = item_copia["posts"][:6]
+                dados_truncados.append(item_copia)
+ 
             payload = {
                 "user_id": st.session_state.user.id,
                 "minha_empresa": st.session_state.dados["minha_empresa"],
                 "concorrentes": st.session_state.dados["concorrentes"],
                 "metricas_redes": {
                     "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                    "dados": dados,
+                    "dados": dados_truncados,
                 },
             }
             supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
@@ -2373,21 +2382,28 @@ elif st.session_state.pagina == "redes":
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
  
-    cache = carregar_cache_redes()
+    # ── Carrega cache do Supabase OU do session_state (mais fresco)
+    cache = st.session_state.metricas_redes if st.session_state.metricas_redes.get("dados") else carregar_cache_redes()
  
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
         with st.spinner("Coletando perfis…"):
             for e in todas:
-                r = coletar_rapidapi(e["instagram"])
-                resultados_lista.append({**e, **(r or {"erro": "Sem resposta"})})
-        salvar_cache_redes(resultados_lista)
-        cache = {
+                resultado = coletar_rapidapi(e["instagram"])
+                merged = {**e, **(resultado or {"erro": "Sem resposta"})}
+                resultados_lista.append(merged)
+ 
+        # Salva no session_state COM posts completos (para exibição imediata)
+        st.session_state.metricas_redes = {
             "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
             "dados": resultados_lista,
         }
+        # Salva no Supabase (truncado para caber no banco)
+        salvar_cache_redes(resultados_lista)
+        cache = st.session_state.metricas_redes
         st.toast("✅ Dados coletados e salvos!", icon="✅")
+        st.rerun()
  
     ok = []
     if cache.get("dados"):
@@ -2492,15 +2508,15 @@ elif st.session_state.pagina == "redes":
  
     for idx, (aba, r) in enumerate(zip(abas, ok)):
         with aba:
-            is_minha  = r["tipo"] == "minha"
-            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-            cor       = CORES[idx % len(CORES)]
-            bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
-            eng_est   = len(r.get("posts", [])) == 0
-            posts_list = r.get("posts", [])
+            is_minha   = r.get("tipo") == "minha"
+            badge_bg   = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt  = "#1d4ed8" if is_minha else "#6b7280"
+            badge_brd  = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_lbl  = "Minha Empresa" if is_minha else "Concorrente"
+            cor        = CORES[idx % len(CORES)]
+            bio_txt    = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+            posts_list = r.get("posts") or []
+            eng_est    = len(posts_list) == 0
  
             # ── CABEÇALHO DO PERFIL
             components.html(f"""
@@ -2635,24 +2651,27 @@ Responda com:
             st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0'/>", unsafe_allow_html=True)
  
             # ══════════════════════════════════════════════════════════════
-            # POSTAGENS — dados injetados diretamente como variável JS
+            # POSTAGENS
             # ══════════════════════════════════════════════════════════════
+ 
+            # Monta rows_data com sanitização completa
             rows_data = []
             for p in posts_list:
-                cap_raw = (p.get("caption", "") or "").replace("\n", " ").replace("\r", "").strip()
+                cap_raw = (p.get("caption") or "")
+                cap_raw = cap_raw.replace("\n", " ").replace("\r", "").replace("\t", " ").strip()
                 cap_t   = cap_raw[:40] + ("…" if len(cap_raw) > 40 else "")
                 rows_data.append({
-                    "thumb": p.get("thumb", "") or "",
-                    "date":  p.get("date", "—") or "—",
+                    "thumb": str(p.get("thumb") or ""),
+                    "date":  str(p.get("date") or "—"),
                     "tipo":  "Vídeo" if p.get("is_video") else "Foto",
-                    "likes": int(p.get("likes", 0) or 0),
-                    "coms":  int(p.get("comments", 0) or 0),
-                    "eng":   int(p.get("likes", 0) or 0) + int(p.get("comments", 0) or 0),
+                    "likes": int(p.get("likes") or 0),
+                    "coms":  int(p.get("comments") or 0),
+                    "eng":   int(p.get("likes") or 0) + int(p.get("comments") or 0),
                     "cap":   cap_raw,
                     "cap_t": cap_t,
                 })
  
-            # Serializa como JSON seguro — injetado direto na variável JS
+            # Serializa como JSON e injeta direto na variável JS
             tbl_rows_json = _json.dumps(rows_data, ensure_ascii=True)
  
             tabela_html = f"""
@@ -2699,7 +2718,7 @@ tr.selected td {{ background:#eff6ff !important; }}
         <select class="filter-select" id="f-tipo" onchange="applyFilters()">
             <option value="">Tipo</option>
             <option value="Foto">Foto</option>
-            <option value="Vídeo">Vídeo</option>
+            <option value="V\u00eddeo">V\u00eddeo</option>
         </select>
         <select class="filter-select" id="f-sort" onchange="applyFilters()">
             <option value="">Ordenar por</option>
@@ -2739,100 +2758,117 @@ tr.selected td {{ background:#eff6ff !important; }}
 </div>
  
 <script>
-var allRows = {tbl_rows_json};
-var selected = {{}};
+(function() {{
+    var allRows = {tbl_rows_json};
+    var selected = {{}};
  
-function fmt(n) {{
-    n = parseInt(n) || 0;
-    if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
-    if (n >= 1000)    return (n/1000).toFixed(1)+'K';
-    return String(n);
-}}
-function esc(s) {{
-    if (!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}}
-function renderTable(rows) {{
-    var tb = document.getElementById('tbl-body');
-    tb.innerHTML = '';
-    if (!rows || rows.length === 0) {{
-        tb.innerHTML = '<tr><td colspan="8"><div class="empty-state">Sem postagens disponíveis.</div></td></tr>';
-        return;
+    function fmt(n) {{
+        n = parseInt(n) || 0;
+        if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+        if (n >= 1000)    return (n/1000).toFixed(1)+'K';
+        return String(n);
     }}
-    rows.forEach(function(p, i) {{
-        var isVid = p.tipo === 'Vídeo';
-        var imgCell = p.thumb
-            ? '<img src="'+esc(p.thumb)+'" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(this.src)" onerror="this.style.display=\'none\'" />'
-            : '<div style="width:40px;height:40px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px">'+(isVid?'🎬':'📷')+'</div>';
-        var copyCell = p.cap
-            ? '<span onclick="openCopy('+i+')" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'+esc(p.cap_t)+'</span>'
-            : '<span style="color:#d1d5db">—</span>';
-        var badge = isVid
-            ? '<span class="badge badge-video">Vídeo</span>'
-            : '<span class="badge badge-foto">Foto</span>';
-        var key = 'r_'+i;
-        var chk = selected[key] ? 'checked' : '';
-        var cls = selected[key] ? 'selected' : '';
-        tb.innerHTML += '<tr class="'+cls+'">'
-            +'<td><input type="checkbox" class="cb" '+chk+' onchange="toggleRow(this,'+i+')"></td>'
-            +'<td>'+imgCell+'</td>'
-            +'<td style="white-space:nowrap">'+esc(p.date)+'</td>'
-            +'<td>'+badge+'</td>'
-            +'<td>'+fmt(p.likes)+'</td>'
-            +'<td>'+fmt(p.coms)+'</td>'
-            +'<td style="font-weight:700;color:#1a2e4a">'+fmt(p.eng)+'</td>'
-            +'<td>'+copyCell+'</td>'
-            +'</tr>';
-    }});
-}}
-function applyFilters() {{
-    var tipo = document.getElementById('f-tipo').value;
-    var sort = document.getElementById('f-sort').value;
-    var selF = document.getElementById('f-sel').value;
-    var rows = allRows.slice();
-    if (tipo) rows = rows.filter(function(r){{ return r.tipo === tipo; }});
-    if (selF === 'sel')  rows = rows.filter(function(r,i){{ return selected['r_'+i]; }});
-    if (selF === 'nsel') rows = rows.filter(function(r,i){{ return !selected['r_'+i]; }});
-    if (sort === 'eng_desc')   rows.sort(function(a,b){{ return b.eng-a.eng; }});
-    if (sort === 'eng_asc')    rows.sort(function(a,b){{ return a.eng-b.eng; }});
-    if (sort === 'likes_desc') rows.sort(function(a,b){{ return b.likes-a.likes; }});
-    if (sort === 'date_desc')  rows.sort(function(a,b){{ return b.date.localeCompare(a.date); }});
-    if (sort === 'date_asc')   rows.sort(function(a,b){{ return a.date.localeCompare(b.date); }});
-    renderTable(rows);
-}}
-function toggleRow(el, i) {{
-    selected['r_'+i] = el.checked;
-    el.closest('tr').classList.toggle('selected', el.checked);
-    updateSelBar();
-}}
-function toggleAll(el) {{
-    allRows.forEach(function(r,i){{ selected['r_'+i] = el.checked; }});
-    applyFilters(); updateSelBar();
-}}
-function updateSelBar() {{
-    var count = Object.values(selected).filter(Boolean).length;
-    document.getElementById('sel-count').textContent = count + ' selecionado'+(count!==1?'s':'');
-    document.getElementById('sel-bar').classList.toggle('show', count > 0);
-}}
-function clearSel() {{
-    selected = {{}};
-    document.getElementById('check-all').checked = false;
-    applyFilters(); updateSelBar();
-}}
-function openImg(url) {{
-    document.getElementById('modal2-title').textContent = 'Imagem do Post';
-    var img = document.getElementById('modal2-img');
-    img.src = url; img.style.display = 'block';
-    document.getElementById('modal2-text').textContent = '';
-    document.getElementById('modal2').classList.add('open');
-}}
-function openCopy(i) {{
-    document.getElementById('modal2-title').textContent = 'Copy Completa';
-    document.getElementById('modal2-img').style.display = 'none';
-    document.getElementById('modal2-text').textContent = allRows[i] ? allRows[i].cap : '';
-    document.getElementById('modal2').classList.add('open');
-}}
-renderTable(allRows);
+    function esc(s) {{
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }}
+    function renderTable(rows) {{
+        var tb = document.getElementById('tbl-body');
+        if (!tb) return;
+        tb.innerHTML = '';
+        if (!rows || rows.length === 0) {{
+            tb.innerHTML = '<tr><td colspan="8"><div class="empty-state">Sem postagens disponíveis para este perfil.</div></td></tr>';
+            return;
+        }}
+        rows.forEach(function(p, i) {{
+            var isVid = p.tipo === 'V\u00eddeo';
+            var imgCell = p.thumb
+                ? '<img src="'+esc(p.thumb)+'" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(this.src)" onerror="this.style.display=\'none\'" />'
+                : '<div style="width:40px;height:40px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px">'+(isVid?'🎬':'📷')+'</div>';
+            var copyCell = p.cap
+                ? '<span onclick="openCopy('+i+')" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'+esc(p.cap_t)+'</span>'
+                : '<span style="color:#d1d5db">—</span>';
+            var badge = isVid
+                ? '<span class="badge badge-video">V\u00eddeo</span>'
+                : '<span class="badge badge-foto">Foto</span>';
+            var key = 'r_'+i;
+            var chk = selected[key] ? 'checked' : '';
+            var cls = selected[key] ? 'selected' : '';
+            tb.innerHTML += '<tr class="'+cls+'">'
+                +'<td><input type="checkbox" class="cb" '+chk+' onchange="toggleRow(this,'+i+')"></td>'
+                +'<td>'+imgCell+'</td>'
+                +'<td style="white-space:nowrap">'+esc(p.date)+'</td>'
+                +'<td>'+badge+'</td>'
+                +'<td>'+fmt(p.likes)+'</td>'
+                +'<td>'+fmt(p.coms)+'</td>'
+                +'<td style="font-weight:700;color:#1a2e4a">'+fmt(p.eng)+'</td>'
+                +'<td>'+copyCell+'</td>'
+                +'</tr>';
+        }});
+    }}
+    function applyFilters() {{
+        var tipo = document.getElementById('f-tipo').value;
+        var sort = document.getElementById('f-sort').value;
+        var selF = document.getElementById('f-sel').value;
+        var rows = allRows.slice();
+        if (tipo) rows = rows.filter(function(r){{ return r.tipo === tipo; }});
+        if (selF === 'sel')  rows = rows.filter(function(r,i){{ return selected['r_'+i]; }});
+        if (selF === 'nsel') rows = rows.filter(function(r,i){{ return !selected['r_'+i]; }});
+        if (sort === 'eng_desc')   rows.sort(function(a,b){{ return b.eng-a.eng; }});
+        if (sort === 'eng_asc')    rows.sort(function(a,b){{ return a.eng-b.eng; }});
+        if (sort === 'likes_desc') rows.sort(function(a,b){{ return b.likes-a.likes; }});
+        if (sort === 'date_desc')  rows.sort(function(a,b){{ return b.date.localeCompare(a.date); }});
+        if (sort === 'date_asc')   rows.sort(function(a,b){{ return a.date.localeCompare(b.date); }});
+        renderTable(rows);
+    }}
+    function toggleRow(el, i) {{
+        selected['r_'+i] = el.checked;
+        el.closest('tr').classList.toggle('selected', el.checked);
+        updateSelBar();
+    }}
+    function toggleAll(el) {{
+        allRows.forEach(function(r,i){{ selected['r_'+i] = el.checked; }});
+        applyFilters(); updateSelBar();
+    }}
+    function updateSelBar() {{
+        var count = Object.values(selected).filter(Boolean).length;
+        document.getElementById('sel-count').textContent = count + ' selecionado'+(count!==1?'s':'');
+        document.getElementById('sel-bar').classList.toggle('show', count > 0);
+    }}
+    function clearSel() {{
+        selected = {{}};
+        document.getElementById('check-all').checked = false;
+        applyFilters(); updateSelBar();
+    }}
+    function openImg(url) {{
+        document.getElementById('modal2-title').textContent = 'Imagem do Post';
+        var img = document.getElementById('modal2-img');
+        img.src = url; img.style.display = 'block';
+        document.getElementById('modal2-text').textContent = '';
+        document.getElementById('modal2').classList.add('open');
+    }}
+    function openCopy(i) {{
+        document.getElementById('modal2-title').textContent = 'Copy Completa';
+        document.getElementById('modal2-img').style.display = 'none';
+        document.getElementById('modal2-text').textContent = allRows[i] ? allRows[i].cap : '';
+        document.getElementById('modal2').classList.add('open');
+    }}
+ 
+    // Expõe funções globalmente para os onclick inline
+    window.applyFilters = applyFilters;
+    window.toggleAll    = toggleAll;
+    window.toggleRow    = toggleRow;
+    window.clearSel     = clearSel;
+    window.openImg      = openImg;
+    window.openCopy     = openCopy;
+ 
+    // Renderiza assim que o DOM estiver pronto
+    if (document.readyState === 'loading') {{
+        document.addEventListener('DOMContentLoaded', function() {{ renderTable(allRows); }});
+    }} else {{
+        renderTable(allRows);
+    }}
+}})();
 </script>
 """
  
