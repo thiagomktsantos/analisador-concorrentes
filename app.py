@@ -1662,14 +1662,36 @@ elif st.session_state.pagina == "cad":
     </style>
     """, unsafe_allow_html=True)
 
-    top1, top2 = st.columns([8, 2])
+    top1, top2 = st.columns([7, 3])
     with top1:
-        st.markdown("""
-        <div>
-            <h1 style='font-size:28px;font-weight:700;color:#111827;letter-spacing:-0.5px;margin:0 0 4px 0;font-family:DM Sans,sans-serif'>Concorrentes</h1>
-            <p style='font-size:16px;color:#6b7280;margin:0'>Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a2e4a;
+    text-transform: uppercase;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.5px;
+}
+.sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+}
+</style>
+<div class="titulo">Concorrentes</div>
+<div class="sub">Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</div>
+""", height=70)
+
     with top2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
         if st.button("＋ Adicionar", use_container_width=True, type="primary"):
@@ -1677,7 +1699,7 @@ elif st.session_state.pagina == "cad":
             st.session_state.editando_concorrente = None
             st.rerun()
 
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 24px 0'/>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 24px 0'/>", unsafe_allow_html=True)
 
     if st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None:
         concorrente_edit = None
