@@ -1934,7 +1934,6 @@ elif st.session_state.pagina == "sites":
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
  
-    # ── Mesmos estilos de Redes Sociais
     st.markdown("""
     <style>
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
@@ -1972,7 +1971,7 @@ elif st.session_state.pagina == "sites":
     with h2:
         st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
         gerar_btn = st.button(
-            "🔍 Gerar Relatório",
+            "Gerar Relatório",
             type="primary",
             use_container_width=True,
         )
@@ -2004,7 +2003,6 @@ elif st.session_state.pagina == "sites":
     # ── CORES por índice (mesmo padrão de Redes Sociais)
     CORES_SITES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
  
-    # ── Cards dos sites com avatar igual à imagem enviada
     st.markdown(
         "<div style='font-size:14px;font-weight:800;color:#1a2e4a;"
         "text-transform:uppercase;letter-spacing:0.3px;margin-bottom:14px'>"
