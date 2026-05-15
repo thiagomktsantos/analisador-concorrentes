@@ -2635,9 +2635,7 @@ Responda com:
             st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0'/>", unsafe_allow_html=True)
  
             # ══════════════════════════════════════════════════════════════
-            # POSTAGENS
-            # ── Serializa com escape unicode: substitui < por \u003c
-            # ── Isso elimina </script> do JSON sem quebrar o parse no JS
+            # POSTAGENS — dados injetados diretamente como variável JS
             # ══════════════════════════════════════════════════════════════
             rows_data = []
             for p in posts_list:
@@ -2654,40 +2652,38 @@ Responda com:
                     "cap_t": cap_t,
                 })
  
-            # \u003c é o escape unicode de < — válido em JSON,
-            # mas o parser HTML nunca vê </script>, então não fecha o bloco
-            tbl_rows_json = _json.dumps(rows_data, ensure_ascii=True).replace("<", "\\u003c")
+            # Serializa como JSON seguro — injetado direto na variável JS
+            tbl_rows_json = _json.dumps(rows_data, ensure_ascii=True)
  
-            tabela_html = ("""
+            tabela_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script id="rows-data" type="application/json">""" + tbl_rows_json + """</script>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
-.filters { display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; align-items:center; }
-.filter-select { font-size:12px; font-weight:600; color:#374151; border:1px solid #e5e7eb; border-radius:6px; padding:4px 8px; background:#f9fafb; font-family:'DM Sans',sans-serif; cursor:pointer; }
-.filter-label { font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
-table { width:100%; border-collapse:collapse; font-size:13px; }
-th { background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }
-td { padding:7px 8px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }
-tr:last-child td { border-bottom:none; }
-tr:hover td { background:#f9fafb; }
-tr.selected td { background:#eff6ff !important; }
-.cb { width:15px; height:15px; cursor:pointer; accent-color:#3a9fd6; }
-.badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
-.badge-foto { background:#f0fdf4; color:#16a34a; }
-.badge-video { background:#eff6ff; color:#1d4ed8; }
-.sel-bar { display:none; background:#0e2a47; color:#fff; padding:6px 12px; font-size:12px; font-weight:600; }
-.sel-bar.show { display:flex; align-items:center; justify-content:space-between; }
-.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }
-.modal-bg.open { display:flex; }
-.modal { background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }
-.modal-title { font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }
-.modal-text { font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
-.modal-img { width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }
-.modal-close { position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }
-.modal-close:hover { color:#111827; }
-.empty-state { padding:32px 16px; text-align:center; color:#9ca3af; font-size:13px; }
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+.filters {{ display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; align-items:center; }}
+.filter-select {{ font-size:12px; font-weight:600; color:#374151; border:1px solid #e5e7eb; border-radius:6px; padding:4px 8px; background:#f9fafb; font-family:'DM Sans',sans-serif; cursor:pointer; }}
+.filter-label {{ font-size:11px; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }}
+table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+th {{ background:#f9fafb; color:#6b7280; font-weight:600; padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; z-index:1; }}
+td {{ padding:7px 8px; border-bottom:1px solid #f3f4f6; color:#374151; background:#fff; vertical-align:middle; }}
+tr:last-child td {{ border-bottom:none; }}
+tr:hover td {{ background:#f9fafb; }}
+tr.selected td {{ background:#eff6ff !important; }}
+.cb {{ width:15px; height:15px; cursor:pointer; accent-color:#3a9fd6; }}
+.badge {{ display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }}
+.badge-foto {{ background:#f0fdf4; color:#16a34a; }}
+.badge-video {{ background:#eff6ff; color:#1d4ed8; }}
+.sel-bar {{ display:none; background:#0e2a47; color:#fff; padding:6px 12px; font-size:12px; font-weight:600; }}
+.sel-bar.show {{ display:flex; align-items:center; justify-content:space-between; }}
+.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
+.modal-bg.open {{ display:flex; }}
+.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
+.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
+.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; word-break:break-word; }}
+.modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }}
+.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
+.modal-close:hover {{ color:#111827; }}
+.empty-state {{ padding:32px 16px; text-align:center; color:#9ca3af; font-size:13px; }}
 </style>
  
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
@@ -2703,7 +2699,7 @@ tr.selected td { background:#eff6ff !important; }
         <select class="filter-select" id="f-tipo" onchange="applyFilters()">
             <option value="">Tipo</option>
             <option value="Foto">Foto</option>
-            <option value="V\\u00eddeo">V\\u00eddeo</option>
+            <option value="Vídeo">Vídeo</option>
         </select>
         <select class="filter-select" id="f-sort" onchange="applyFilters()">
             <option value="">Ordenar por</option>
@@ -2743,31 +2739,28 @@ tr.selected td { background:#eff6ff !important; }
 </div>
  
 <script>
-var allRows = [];
-try {
-    allRows = JSON.parse(document.getElementById('rows-data').textContent);
-} catch(e) { allRows = []; }
-var selected = {};
+var allRows = {tbl_rows_json};
+var selected = {{}};
  
-function fmt(n) {
+function fmt(n) {{
     n = parseInt(n) || 0;
     if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
     if (n >= 1000)    return (n/1000).toFixed(1)+'K';
     return String(n);
-}
-function esc(s) {
+}}
+function esc(s) {{
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function renderTable(rows) {
+}}
+function renderTable(rows) {{
     var tb = document.getElementById('tbl-body');
     tb.innerHTML = '';
-    if (!rows || rows.length === 0) {
+    if (!rows || rows.length === 0) {{
         tb.innerHTML = '<tr><td colspan="8"><div class="empty-state">Sem postagens disponíveis.</div></td></tr>';
         return;
-    }
-    rows.forEach(function(p, i) {
-        var isVid = p.tipo === 'V\\u00eddeo';
+    }}
+    rows.forEach(function(p, i) {{
+        var isVid = p.tipo === 'Vídeo';
         var imgCell = p.thumb
             ? '<img src="'+esc(p.thumb)+'" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(this.src)" onerror="this.style.display=\'none\'" />'
             : '<div style="width:40px;height:40px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px">'+(isVid?'🎬':'📷')+'</div>';
@@ -2790,58 +2783,58 @@ function renderTable(rows) {
             +'<td style="font-weight:700;color:#1a2e4a">'+fmt(p.eng)+'</td>'
             +'<td>'+copyCell+'</td>'
             +'</tr>';
-    });
-}
-function applyFilters() {
+    }});
+}}
+function applyFilters() {{
     var tipo = document.getElementById('f-tipo').value;
     var sort = document.getElementById('f-sort').value;
     var selF = document.getElementById('f-sel').value;
     var rows = allRows.slice();
-    if (tipo) rows = rows.filter(function(r){ return r.tipo === tipo; });
-    if (selF === 'sel')  rows = rows.filter(function(r,i){ return selected['r_'+i]; });
-    if (selF === 'nsel') rows = rows.filter(function(r,i){ return !selected['r_'+i]; });
-    if (sort === 'eng_desc')   rows.sort(function(a,b){ return b.eng-a.eng; });
-    if (sort === 'eng_asc')    rows.sort(function(a,b){ return a.eng-b.eng; });
-    if (sort === 'likes_desc') rows.sort(function(a,b){ return b.likes-a.likes; });
-    if (sort === 'date_desc')  rows.sort(function(a,b){ return b.date.localeCompare(a.date); });
-    if (sort === 'date_asc')   rows.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    if (tipo) rows = rows.filter(function(r){{ return r.tipo === tipo; }});
+    if (selF === 'sel')  rows = rows.filter(function(r,i){{ return selected['r_'+i]; }});
+    if (selF === 'nsel') rows = rows.filter(function(r,i){{ return !selected['r_'+i]; }});
+    if (sort === 'eng_desc')   rows.sort(function(a,b){{ return b.eng-a.eng; }});
+    if (sort === 'eng_asc')    rows.sort(function(a,b){{ return a.eng-b.eng; }});
+    if (sort === 'likes_desc') rows.sort(function(a,b){{ return b.likes-a.likes; }});
+    if (sort === 'date_desc')  rows.sort(function(a,b){{ return b.date.localeCompare(a.date); }});
+    if (sort === 'date_asc')   rows.sort(function(a,b){{ return a.date.localeCompare(b.date); }});
     renderTable(rows);
-}
-function toggleRow(el, i) {
+}}
+function toggleRow(el, i) {{
     selected['r_'+i] = el.checked;
     el.closest('tr').classList.toggle('selected', el.checked);
     updateSelBar();
-}
-function toggleAll(el) {
-    allRows.forEach(function(r,i){ selected['r_'+i] = el.checked; });
+}}
+function toggleAll(el) {{
+    allRows.forEach(function(r,i){{ selected['r_'+i] = el.checked; }});
     applyFilters(); updateSelBar();
-}
-function updateSelBar() {
+}}
+function updateSelBar() {{
     var count = Object.values(selected).filter(Boolean).length;
     document.getElementById('sel-count').textContent = count + ' selecionado'+(count!==1?'s':'');
     document.getElementById('sel-bar').classList.toggle('show', count > 0);
-}
-function clearSel() {
-    selected = {};
+}}
+function clearSel() {{
+    selected = {{}};
     document.getElementById('check-all').checked = false;
     applyFilters(); updateSelBar();
-}
-function openImg(url) {
+}}
+function openImg(url) {{
     document.getElementById('modal2-title').textContent = 'Imagem do Post';
     var img = document.getElementById('modal2-img');
     img.src = url; img.style.display = 'block';
     document.getElementById('modal2-text').textContent = '';
     document.getElementById('modal2').classList.add('open');
-}
-function openCopy(i) {
+}}
+function openCopy(i) {{
     document.getElementById('modal2-title').textContent = 'Copy Completa';
     document.getElementById('modal2-img').style.display = 'none';
     document.getElementById('modal2-text').textContent = allRows[i] ? allRows[i].cap : '';
     document.getElementById('modal2').classList.add('open');
-}
+}}
 renderTable(allRows);
 </script>
-""")
+"""
  
             components.html(tabela_html, height=500, scrolling=False)
  
