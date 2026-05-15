@@ -1969,11 +1969,6 @@ elif st.session_state.pagina == "sites":
         opacity: 0.88 !important;
         background: #3a9fd6 !important;
     }
-
-    /* ── Esconde APENAS os botões fantasma da página Sites pelo texto que contém __ ── */
-    section.main div.stButton > button:not([kind="primary"]) {
-        /* os botões fantasma têm texto com __ no início */
-    }
     </style>
     """, unsafe_allow_html=True)
  
@@ -2011,7 +2006,7 @@ elif st.session_state.pagina == "sites":
         unsafe_allow_html=True,
     )
  
-    # ── Monta lista de sites — "Minha Empresa" no índice 0, concorrentes a partir do 1
+    # ── Monta lista de sites
     sites_disponiveis = []
     if emp.get("site"):
         sites_disponiveis.append({"nome": emp["nome"], "url": emp["site"], "tipo": "minha", "instagram": emp.get("instagram", "")})
@@ -2031,8 +2026,14 @@ elif st.session_state.pagina == "sites":
         if chave not in st.session_state:
             st.session_state[chave] = ""
  
-    # ── Inicializa os botões fantasma ANTES dos cards (necessário para o Streamlit)
-    # A chave do botão usa um prefixo único para facilitar o hide via JS
+    # ── CSS estático para esconder botões fantasma pelo key do Streamlit
+    ghost_css = "\n".join([
+        f".st-key-btn_site_ia_{i} {{ display: none !important; }}"
+        for i in range(len(sites_disponiveis))
+    ])
+    st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
+ 
+    # ── Botões fantasma — criados ANTES dos cards
     site_ia_triggers = {}
     for idx_s in range(len(sites_disponiveis)):
         triggered = st.button(
@@ -2041,50 +2042,18 @@ elif st.session_state.pagina == "sites":
             use_container_width=False,
         )
         site_ia_triggers[idx_s] = triggered
-
-    # CSS para esconder todos os botões fantasma de sites (identificados pelo texto _site_ia_trigger_)
-    st.markdown("""
-    <style>
-    /* Esconde botões fantasma da página sites — identificados pelo padrão de texto */
-    section.main div.stButton > button[data-testid="baseButton-secondary"] {
-        /* reset — não esconder todos */
-    }
-    </style>
-    <script>
-    (function hideSiteGhostButtons() {
-        function doHide() {
-            const btns = document.querySelectorAll('section.main div.stButton > button');
-            btns.forEach(function(btn) {
-                if (btn.innerText && btn.innerText.trim().startsWith('_site_ia_trigger_')) {
-                    btn.style.cssText = 'position:fixed!important;top:-9999px!important;left:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important;';
-                    if (btn.parentElement) btn.parentElement.style.cssText = 'height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;';
-                }
-            });
-        }
-        doHide();
-        setTimeout(doHide, 200);
-        setTimeout(doHide, 600);
-        var obs = new MutationObserver(doHide);
-        obs.observe(document.body, { childList: true, subtree: true });
-    })();
-    </script>
-    """, unsafe_allow_html=True)
-
+ 
+    # ── Cards
     for idx_s, s in enumerate(sites_disponiveis):
         with cols_sites[idx_s % 4]:
             is_minha  = s["tipo"] == "minha"
-            # ← USANDO a função global de cor
             cor_avatar = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_s - 1)
             badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
             badge_txt = "#1d4ed8" if is_minha else "#6b7280"
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
             avatar_letras = gerar_avatar(s["nome"])
-            handle_raw = s["instagram"] if s["instagram"] and s["instagram"] != "@" else ""
-            handle_txt = handle_raw.lstrip("@")
-
-            # Card com botão "Analisar este site" visível dentro do iframe
-            # O onclick dispara o botão fantasma pelo texto único _site_ia_trigger_{idx_s}_
+ 
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -2107,17 +2076,10 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     letter-spacing:0.5px;
 }}
 .nome-wrap {{ flex:1; min-width:0; }}
-.nome-linha {{
-    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
-}}
 .nome {{
     font-size:16px; font-weight:700; color:#111827;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     letter-spacing:-0.2px;
-}}
-.handle {{
-    font-size:13px; font-weight:400; color:#9ca3af;
-    white-space:nowrap;
 }}
 .badge {{
     display:inline-block;
@@ -2127,10 +2089,16 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     font-size:11px; font-weight:600; margin-top:4px;
 }}
 .url-row {{
-    padding:10px 16px 10px 16px;
-    font-size:12px; color:#9ca3af;
+    padding:10px 16px;
+    font-size:12px; color:#374151;
     word-break:break-all;
     border-bottom:1px solid #f3f4f6;
+    display:flex; align-items:center; gap:6px;
+}}
+.url-label {{
+    font-size:10px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:0.8px;
+    flex-shrink:0;
 }}
 .preview-wrap {{
     margin:12px 12px 0 12px;
@@ -2158,13 +2126,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     <div class="card-header">
         <div class="avatar">{avatar_letras}</div>
         <div class="nome-wrap">
-            <div class="nome-linha">
-                <span class="nome">{s['nome']}</span>
-            </div>
+            <div class="nome">{s['nome']}</div>
             <div class="badge">{badge_lbl}</div>
         </div>
     </div>
-    <div class="url-row">{s['url']}</div>
+    <div class="url-row">
+        <span class="url-label">site</span>
+        <span>{s['url']}</span>
+    </div>
     <div class="preview-wrap">
         <img
             src="https://api.microlink.io/?url=https://{s['url']}&screenshot=true&meta=false&embed=screenshot.url"
@@ -2181,7 +2150,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
 </div>
 <script>
 function triggerAnalise(idx) {{
-    // Busca o botão fantasma pelo texto exato no documento pai
     var targetText = '_site_ia_trigger_' + idx + '_';
     var btns = window.parent.document.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {{
@@ -2192,9 +2160,9 @@ function triggerAnalise(idx) {{
     }}
 }}
 </script>
-""", height=310, scrolling=False)
-
-            # Processa o clique do botão fantasma
+""", height=330, scrolling=False)
+ 
+            # ── Processa clique do botão fantasma
             if site_ia_triggers[idx_s]:
                 if gemini_model is None:
                     st.session_state[f"sites_analise_{idx_s}"] = "Configure GEMINI_API_KEY nos secrets."
@@ -2245,8 +2213,8 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                             st.rerun()
                         except Exception as e:
                             st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
-
-            # Exibe análise individual se disponível
+ 
+            # ── Exibe análise individual
             analise_ind = st.session_state.get(f"sites_analise_{idx_s}", "")
             if analise_ind:
                 st.markdown(f"""
@@ -2273,6 +2241,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         </div>
         """, unsafe_allow_html=True)
  
+    # ── Gerar relatório geral
     if gerar_btn:
         st.session_state.relatorio_gemini = ""
         st.session_state.relatorio_sites = {}
@@ -2314,6 +2283,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
             st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
             status.update(label="✅ Relatório gerado!", state="complete")
  
+    # ── Exibe relatório geral
     if st.session_state.relatorio_gemini:
         st.markdown(
             "<div style='font-size:20px;font-weight:700;color:#111827;"
@@ -2362,6 +2332,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     st.warning("Nenhum conteúdo extraído.")
                 st.markdown("---")
  
+    # ── Análises Salvas
     st.markdown(
         "<div style='margin:32px 0 0 0;border-top:2px solid #e5e7eb'/>",
         unsafe_allow_html=True,
@@ -2384,7 +2355,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
         </div>
         """, unsafe_allow_html=True)
     else:
-        analises_gerais     = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
+        analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
         analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
  
         tab_geral, tab_individual = st.tabs(["📊 Análise Geral", "🔍 Análise por Site"])
