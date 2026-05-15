@@ -2737,7 +2737,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 # PAGINA - REDES SOCIAIS - POSTAGENS
 # ══════════════════════════════════════════════════════════════
  
-def _fmt(n):
+            def _fmt(n):
                 n = int(n or 0)
                 if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
                 if n >= 1_000:     return f"{n/1_000:.1f}K"
