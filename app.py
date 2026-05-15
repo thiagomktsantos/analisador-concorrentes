@@ -2421,11 +2421,19 @@ elif st.session_state.pagina == "redes":
     eng_pct_ok = [x.get("eng_pct", 0.0) for x in ok]
     cores_ok   = [CORES[i % len(CORES)] for i in range(len(ok))]
  
+    st.markdown(
+        "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+        "font-family:\"Source Sans\",sans-serif;"
+        "letter-spacing:0px;text-transform:uppercase'>"
+        "Comparativo com todos os perfis</div>",
+        unsafe_allow_html=True,
+    )
+ 
     st.markdown("""
     <style>
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] > div {
-        padding-left: 4px !important;
-        padding-right: 4px !important;
+    /* Força gap mínimo entre colunas — sobrescreve o Streamlit */
+    [data-testid="stHorizontalBlock"] {
+        gap: 8px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -2460,7 +2468,7 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 8px 24px 8px;overflow:visible">
+                    padding:20px 16px 24px 16px;overflow:visible">
             <div style="font-size:14px;font-weight:800;color:#1a2e4a;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
                         padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
@@ -2502,7 +2510,7 @@ elif st.session_state.pagina == "redes":
         <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
-                    padding:20px 8px 24px 8px;overflow:visible">
+                    padding:20px 16px 24px 16px;overflow:visible">
             <div style="font-size:14px;font-weight:800;color:#1a2e4a;
                         font-family:'DM Sans',sans-serif;letter-spacing:0.3px;text-transform:uppercase;
                         padding:0 4px 12px 4px;border-bottom:1px solid #e5e7eb;
