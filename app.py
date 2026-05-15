@@ -2846,7 +2846,7 @@ td:nth-child(7) {{ overflow:hidden; }}
                     <th>Tipo</th>
                     <th>Curtidas</th>
                     <th>Comentários</th>
-                    <th>Engajamento</th>
+                    <th>Engaj.</th>
                     <th>Copy</th>
                 </tr>
             </thead>
