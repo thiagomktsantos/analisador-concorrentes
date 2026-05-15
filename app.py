@@ -2735,6 +2735,7 @@ html, body { background: transparent; overflow: hidden; }
 """, height=65)
 
     with h2:
+        st.markdown("<div style='padding-top:0px;margin-top:-10px;'/>", unsafe_allow_html=True)
         coletar = st.button(
             "Coletar dados",
             type="primary",
