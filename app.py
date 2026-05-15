@@ -2424,7 +2424,8 @@ elif st.session_state.pagina == "redes":
     st.markdown(
         "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
         "font-family:\"Source Sans\",sans-serif;"
-        "letter-spacing:0px;text-transform:uppercase;>"
+        "letter-spacing:0px;text-transform:uppercase;"
+        "margin-bottom:8px'>"
         "Comparativo com todos os perfis</div>",
         unsafe_allow_html=True,
     )
