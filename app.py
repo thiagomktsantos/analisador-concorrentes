@@ -2752,108 +2752,30 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             )
  
             # ══════════════════════════════════════════════════════════════
-            # POSTAGENS
+            # POSTAGENS — tabela 100% largura
             # ══════════════════════════════════════════════════════════════
  
-            col_posts, col_table = st.columns(2)
+            if not posts_list:
+                tbl_rows_json = "[]"
+            else:
+                rows_data = []
+                for p in posts_list:
+                    cap_raw = p.get("caption", "") or ""
+                    cap_esc = _esc(cap_raw)
+                    cap_t   = (cap_esc[:32] + "…") if len(cap_raw) > 32 else cap_esc
+                    rows_data.append({
+                        "thumb": p.get("thumb", ""),
+                        "date":  p.get("date", "—"),
+                        "tipo":  "Vídeo" if p.get("is_video") else "Foto",
+                        "likes": p.get("likes", 0),
+                        "coms":  p.get("comments", 0),
+                        "eng":   p.get("likes", 0) + p.get("comments", 0),
+                        "cap":   cap_esc,
+                        "cap_t": cap_t,
+                    })
+                tbl_rows_json = json.dumps(rows_data)
  
-            with col_posts:
-                if not posts_list:
-                    cards_inner = "<div style='padding:20px;text-align:center;color:#9ca3af;font-size:14px'>Posts não disponíveis.</div>"
-                else:
-                    cards_inner = ""
-                    for p in posts_list[:3]:
-                        thumb   = p.get("thumb", "")
-                        cap     = p.get("caption", "")
-                        cap_esc = _esc(cap)
-                        cap_3ln = cap[:160] + ("…" if len(cap) > 160 else "") if cap else ""
- 
-                        img_html = (
-                            f'<img src="{thumb}" style="width:100%;aspect-ratio:1;border-radius:8px;'
-                            f'object-fit:cover;border:1px solid #e5e7eb;display:block;" '
-                            f'onerror="this.style.display=\'none\'" />'
-                        ) if thumb else (
-                            f'<div style="width:100%;aspect-ratio:1;border-radius:8px;background:#f3f4f6;'
-                            f'display:flex;align-items:center;justify-content:center;'
-                            f'font-size:13px;color:#9ca3af">{"Vídeo" if p.get("is_video") else "Foto"}</div>'
-                        )
- 
-                        cap_html = (
-                            f'<div style="font-size:11px;color:#6b7280;line-height:1.5;font-style:italic;'
-                            f'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;background:#fafafa;min-height:52px;">'
-                            f'<div style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{cap_3ln}</div>'
-                            f'<div onclick="openCopy(\'{cap_esc}\')" '
-                            f'style="margin-top:5px;font-size:11px;font-weight:600;color:#000;'
-                            f'cursor:pointer;font-style:normal;text-align:center;'
-                            f'border-top:1px solid #f3f4f6;padding-top:4px;">🔍 ver legenda</div>'
-                            f'</div>'
-                        ) if cap else (
-                            '<div style="font-size:11px;color:#d1d5db;font-style:italic;'
-                            'border:1px solid #f3f4f6;border-radius:6px;padding:5px 7px;'
-                            'background:#fafafa;min-height:52px;">Sem legenda</div>'
-                        )
- 
-                        cards_inner += (
-                            f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">'
-                            f'<div style="font-size:11px;color:#9ca3af;font-weight:500;text-align:center">📅 {p.get("date","")}</div>'
-                            f'{img_html}'
-                            f'<div style="font-size:12px;color:#374151;font-weight:600;white-space:nowrap;text-align:center">'
-                            f'❤️ {_fmt(p.get("likes",0))} &nbsp; 💬 {_fmt(p.get("comments",0))}</div>'
-                            f'{cap_html}'
-                            f'</div>'
-                        )
- 
-                components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
-.modal-bg.open {{ display:flex; }}
-.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:360px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
-.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
-.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
-.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
-.modal-close:hover {{ color:#111827; }}
-</style>
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;position:relative;">
-    <div style="padding:14px 16px;display:flex;gap:10px;align-items:stretch;position:relative;z-index:1">{cards_inner}</div>
-</div>
-<div class="modal-bg" id="modal-cp" onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="modal">
-        <button class="modal-close" onclick="document.getElementById('modal-cp').classList.remove('open')">✕</button>
-        <div class="modal-title">Copy completa</div>
-        <div class="modal-text" id="modal-cp-txt"></div>
-    </div>
-</div>
-<script>
-function openCopy(txt) {{
-    document.getElementById('modal-cp-txt').textContent = txt;
-    document.getElementById('modal-cp').classList.add('open');
-}}
-</script>
-""", height=340, scrolling=False)
- 
-            with col_table:
-                if not posts_list:
-                    tbl_rows_json = "[]"
-                else:
-                    import json as _json
-                    rows_data = []
-                    for p in posts_list:
-                        rows_data.append({
-                            "thumb":  p.get("thumb", ""),
-                            "date":   p.get("date", "—"),
-                            "tipo":   "Vídeo" if p.get("is_video") else "Foto",
-                            "likes":  p.get("likes", 0),
-                            "coms":   p.get("comments", 0),
-                            "eng":    p.get("likes", 0) + p.get("comments", 0),
-                            "cap":    _esc(p.get("caption", "")),
-                            "cap_t":  (_esc(p.get("caption", ""))[:32] + "…") if len(p.get("caption","")) > 32 else _esc(p.get("caption","")),
-                        })
-                    tbl_rows_json = _json.dumps(rows_data)
- 
-                components.html(f"""
+            components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -2921,7 +2843,7 @@ tr.selected td {{ background:#eff6ff !important; }}
         </select>
     </div>
  
-    <div style="max-height:290px;overflow-y:auto" id="tbl-wrap">
+    <div style="max-height:400px;overflow-y:auto" id="tbl-wrap">
         <table id="main-table">
             <thead>
                 <tr>
@@ -2958,13 +2880,17 @@ function fmt(n) {{
 function renderTable(rows) {{
     var tb = document.getElementById('tbl-body');
     tb.innerHTML = '';
+    if (!rows || rows.length === 0) {{
+        tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px">Sem postagens disponíveis.</td></tr>';
+        return;
+    }}
     rows.forEach(function(p, i) {{
         var isVid = p.tipo === 'Vídeo';
         var imgCell = p.thumb
-            ? '<img src="'+p.thumb+'" style="width:34px;height:34px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(\''+p.thumb+'\')" onerror="this.style.display=\'none\'" />'
-            : '<div style="width:34px;height:34px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:14px">'+(isVid?'🎬':'📷')+'</div>';
+            ? '<img src="'+p.thumb+'" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;cursor:pointer" onclick="openImg(\''+p.thumb+'\')" onerror="this.style.display=\'none\'" />'
+            : '<div style="width:40px;height:40px;border-radius:6px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px">'+(isVid?'🎬':'📷')+'</div>';
         var copyCell = p.cap
-            ? '<span onclick="openCopy2(\''+p.cap+'\')" style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'+p.cap_t+'</span>'
+            ? '<span onclick="openCopy2(\''+p.cap+'\')" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'+p.cap_t+'</span>'
             : '<span style="color:#d1d5db">—</span>';
         var badge = isVid
             ? '<span class="badge badge-video">Vídeo</span>'
@@ -3045,7 +2971,7 @@ function openCopy2(txt) {{
  
 renderTable(allRows);
 </script>
-""", height=430, scrolling=False)
+""", height=500, scrolling=False)
  
             # ══════════════════════════════════════════════════════════════
             # ANÁLISE DE IA
