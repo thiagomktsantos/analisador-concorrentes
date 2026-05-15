@@ -2133,7 +2133,7 @@ elif st.session_state.pagina == "insights":
         st.info("Adicione concorrentes para gerar insights estratégicos.")
 
 # ---------------------------------------------------
-# REDES SOCIAIS
+# PAGINA - REDES SOCIAIS
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
@@ -2410,9 +2410,9 @@ elif st.session_state.pagina == "redes":
         st.info("Clique em **Coletar dados** para buscar os dados do Instagram.")
         st.stop()
  
-    # ══════════════════════════════════════════════════════════════════════
-    # GRÁFICOS COMPARATIVOS
-    # ══════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════
+# PAGINA - REDES SOCIAIS - GRÁFICOS COMPARATIVOS
+# ══════════════════════════════════════════════════════════════════════
  
     CORES = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
  
@@ -2514,9 +2514,9 @@ elif st.session_state.pagina == "redes":
         </script>
         """, height=275)
  
-    # ══════════════════════════════════════════════════════════════════════
-    # ABAS POR PERFIL
-    # ══════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════
+# PAGINA - REDES SOCIAIS - ABAS POR PERFIL
+# ══════════════════════════════════════════════════════════════════════
     abas = st.tabs([r["nome"] for r in ok])
  
     for idx, (aba, r) in enumerate(zip(abas, ok)):
@@ -2734,7 +2734,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
             )
  
 # ══════════════════════════════════════════════════════════════
-# POSTAGENS
+# PAGINA - REDES SOCIAIS - POSTAGENS
 # ══════════════════════════════════════════════════════════════
  
             def _fmt(n):
@@ -2755,7 +2755,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     thumb   = p.get("thumb", "")
                     cap     = p.get("caption", "")
                     cap_esc = _esc(cap)
-                    cap_t   = cap[:120] + "…" if len(cap) > 120 else cap
+                    cap_t   = (cap[:120] + "… <b>[ver copy]</b>") if len(cap) > 120 else cap
                     isVid   = p.get("is_video", False)
                     likes   = p.get("likes", 0)
                     coms    = p.get("comments", 0)
@@ -2773,7 +2773,8 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     copy_cell = (
                         f'<span onclick="openCopy2(\'{cap_esc}\')" '
                         f'style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
-                        f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">{cap_t}</span>'
+                        f'cursor:pointer;color:#374151;font-style:italic;display:inline-block;vertical-align:middle">'
+                        f'{cap_t}</span>'
                     ) if cap else '<span style="color:#d1d5db">—</span>'
  
                     tbl_rows += (
@@ -2801,13 +2802,18 @@ th {{
     position:sticky; top:0; z-index:1;
 }}
 td {{
-    padding:12px 14px; border-bottom:1px solid #f3f4f6;
+    padding:8px 14px; border-bottom:1px solid #f3f4f6;
     color:#374151; background:#fff; vertical-align:middle;
     line-height:1.4;
 }}
 tr:last-child td {{ border-bottom:none; }}
 tr:hover td {{ background:#f9fafb; }}
 th:last-child, td:last-child {{ min-width:320px; }}
+th:nth-child(2), td:nth-child(2),
+th:nth-child(3), td:nth-child(3),
+th:nth-child(4), td:nth-child(4),
+th:nth-child(5), td:nth-child(5),
+th:nth-child(6), td:nth-child(6) {{ text-align:center; }}
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
 .modal-bg.open {{ display:flex; }}
 .modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
@@ -2826,11 +2832,11 @@ th:last-child, td:last-child {{ min-width:320px; }}
             <thead>
                 <tr>
                     <th>Data</th>
-                    <th>Img</th>
+                    <th>Criativo</th>
                     <th>Tipo</th>
-                    <th>❤️ Curtidas</th>
-                    <th>💬 Comentários</th>
-                    <th>📈 Eng.</th>
+                    <th>Curtidas</th>
+                    <th>Comentários</th>
+                    <th>Engajamento</th>
                     <th>Copy</th>
                 </tr>
             </thead>
@@ -2865,7 +2871,7 @@ function openCopy2(txt) {{
  
  
 # ══════════════════════════════════════════════════════════════
-# ANÁLISE DE IA
+# PAGINA - REDES SOCIAIS - ANÁLISE DE IA
 # ══════════════════════════════════════════════════════════════
             st.markdown("<div style='margin-top:20px'/>", unsafe_allow_html=True)
  
