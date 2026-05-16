@@ -1273,21 +1273,34 @@ if st.session_state.pagina == "home":
 
             form_divider()
 
-            # ── SETOR
+            # ── SETOR — fora do form para atualizar em tempo real
+            def sec_label(label):
+                st.markdown(
+                    f"<div style='font-size:11px;font-weight:700;color:#9ca3af;"
+                    f"text-transform:uppercase;letter-spacing:1px;"
+                    f"margin-bottom:12px'>{label}</div>",
+                    unsafe_allow_html=True,
+                )
+
+            def form_divider():
+                st.markdown(
+                    "<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>",
+                    unsafe_allow_html=True,
+                )
+
             sec_label("Setor")
             c3, c4 = st.columns(2)
             setor_opcoes = list(SUBNICHOS.keys())
             setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
-            novo_setor = c3.selectbox("Setor", setor_opcoes, index=setor_idx)
+            novo_setor = c3.selectbox("Setor", setor_opcoes, index=setor_idx, key="sel_setor")
 
-            # Se o setor mudou, reseta o subnicho para não herdar valor inválido
             if novo_setor != emp["setor"]:
                 emp["tipo"] = ""
             emp["setor"] = novo_setor
 
             subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
             tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
-            emp["tipo"] = c4.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
+            emp["tipo"] = c4.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx, key="sel_tipo")
 
             form_divider()
 
