@@ -621,12 +621,16 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     background: #ffffff !important;
     border-color: #e5e7eb !important;
     border-radius: 12px !important;
-}
 [data-testid="stVerticalBlockBorderWrapper"] > div,
-[data-testid="stVerticalBlockBorderWrapper"] > div > div,
-[data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
+[data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
+[data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div {
     background: #ffffff !important;
+    background-color: #ffffff !important;
 }
 [data-testid="stVerticalBlockBorderWrapper"] iframe,
 [data-testid="stVerticalBlockBorderWrapper"] canvas,
