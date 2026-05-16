@@ -2920,20 +2920,6 @@ body {{ padding-bottom:12px; }}
     text-transform:uppercase; letter-spacing:1.2px; margin-bottom:10px;
 }}
  
-.cta-row {{
-    display:flex; align-items:center; gap:16px;
-}}
-.btn-cta {{
-    display:inline-flex; align-items:center; gap:10px;
-    padding:12px 28px; border-radius:10px;
-    background:#0e2a47; color:#fff;
-    font-size:15px; font-weight:800;
-    border:none; cursor:pointer; font-family:'DM Sans',sans-serif;
-    box-shadow:0 4px 16px rgba(14,42,71,0.25);
-    transition:all 0.2s; white-space:nowrap;
-}}
-.btn-cta:hover {{ background:#1a4070; transform:translateY(-1px); }}
-.cta-sub {{ font-size:13px; color:#9ca3af; }}
 </style>
  
 <div class="steps">
@@ -2960,15 +2946,7 @@ body {{ padding-bottom:12px; }}
     </div>
 </div>
  
-<div class="cta-row">
-    <button class="btn-cta" onclick="triggerBtn()">
-        <span>Identificar páginas</span>
-        <span style="font-size:18px">→</span>
-    </button>
-    <span class="cta-sub">Leva alguns segundos · IDs salvos automaticamente</span>
-</div>
- 
-<div style="margin:20px 0 8px 0">
+<div style="margin:8px 0 0 0">
     <div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
     <div class="empresas-box">
         {nomes_lista_html}
@@ -2977,21 +2955,6 @@ body {{ padding-bottom:12px; }}
 </div>
  
 <script>
-function triggerBtn() {{
-    var attempts = 0;
-    function tryClick() {{
-        var btns = window.parent.document.querySelectorAll('button');
-        for (var i = 0; i < btns.length; i++) {{
-            if (btns[i].innerText.trim() === '__iniciar_ads__') {{
-                btns[i].click();
-                return;
-            }}
-        }}
-        if (attempts++ < 15) setTimeout(tryClick, 200);
-    }}
-    tryClick();
-}}
- 
 function ajustar() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
@@ -3004,9 +2967,9 @@ window.addEventListener('load', ajustar);
 setTimeout(ajustar, 200);
 setTimeout(ajustar, 600);
 </script>
-""", height=500, scrolling=False)
+""", height=400, scrolling=False)
  
-        # ── Botão nativo Streamlit (visível, funcional)
+        # ── Botão nativo Streamlit — único, logo abaixo das etapas
         col_cta, col_sub = st.columns([2, 3])
         with col_cta:
             iniciar_nativo = st.button(
@@ -3022,7 +2985,7 @@ setTimeout(ajustar, 600);
                 unsafe_allow_html=True,
             )
  
-        # ── Processa clique (fantasma via JS ou nativo)
+        # ── Processa clique
         if iniciar_ghost or iniciar_nativo:
             with st.spinner("Buscando páginas do Facebook…"):
                 for e in todas_empresas:
@@ -3168,319 +3131,203 @@ setTimeout(ajustar, 600);
             }}""")
         empresas_js = "[\n" + ",\n".join(empresas_js_items) + "\n]"
  
-        pct_inicial = int(n_confirmados / max(len(todas_empresas), 1) * 100)
+        # ── Barra de progresso + botão "Ver Anúncios" (nativo Streamlit)
+        col_info, col_prog, col_btn = st.columns([4, 3, 2])
+        with col_info:
+            st.markdown(
+                "<div style='padding:8px 0'>"
+                "<div style='font-size:16px;font-weight:800;color:#1a2e4a'>Confirmar páginas do Facebook</div>"
+                "<div style='font-size:13px;color:#6b7280;margin-top:2px'>Verifique se as páginas encontradas correspondem a cada empresa</div>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+        with col_prog:
+            pct = int(n_confirmados / max(len(todas_empresas), 1) * 100)
+            st.markdown(
+                f"<div style='display:flex;align-items:center;gap:10px;padding-top:14px'>"
+                f"<div style='flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden'>"
+                f"<div style='width:{pct}%;height:100%;background:linear-gradient(90deg,#27ae60,#2ecc71);border-radius:3px'></div>"
+                f"</div>"
+                f"<span style='font-size:13px;font-weight:700;color:#111827;white-space:nowrap'>{n_confirmados}/{len(todas_empresas)}</span>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+        with col_btn:
+            ver_btn = st.button(
+                "Ver Anúncios →",
+                type="primary" if todos_resolvidos else "secondary",
+                use_container_width=True,
+                key="btn_ver_anuncios",
+                disabled=not todos_resolvidos,
+            )
+        if ver_btn and todos_resolvidos:
+            with st.spinner("Buscando anúncios…"):
+                for e in todas_empresas:
+                    ck = e["ads_id"]
+                    if st.session_state.ads_confirmacao.get(ck, {}).get("status") == "not_found":
+                        continue
+                    pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
+                    ads, erro, modo_real = buscar_ads_meta(
+                        search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
+                    )
+                    if erro:
+                        st.session_state.ads_erro[ck] = erro
+                    else:
+                        st.session_state.ads_cache[ck] = {
+                            "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "nome": e["nome"], "modo": modo_real,
+                            "page_id": pid_final or st.session_state.ads_page_ids.get(ck),
+                        }
+            st.session_state.ads_etapa = "resultados"
+            st.rerun()
  
-        # Estima altura necessária: top-bar + cards (120px cada + alts se rejected)
-        altura_estimada = 120 + len(todas_empresas) * 130
-        for e in todas_empresas:
-            conf = st.session_state.ads_confirmacao.get(e["ads_id"], {})
-            if conf.get("status") in ("rejected",) and conf.get("alternatives"):
-                altura_estimada += len(conf["alternatives"]) * 70 + 80
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background:transparent; font-family:'DM Sans',sans-serif;
-    -webkit-font-smoothing:antialiased; overflow:visible;
-}}
-body {{ padding-bottom:12px; }}
+        # ── Cards das empresas — renderizados diretamente em Python
+        for idx_e, e in enumerate(todas_empresas):
+            ck   = e["ads_id"]
+            sk   = safe_key(ck)
+            conf = st.session_state.ads_confirmacao.get(ck, {})
+            status = conf.get("status", "pending")
+            pid_encontrado = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
+            alts = conf.get("alternatives", [])
+            cor  = get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])
+            avatar = gerar_avatar(e["nome"])
  
-.top-bar {{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:16px 20px; background:#fff;
-    border:1px solid #e5e7eb; border-radius:12px; margin-bottom:16px; gap:16px;
-    flex-wrap:wrap;
-}}
-.top-info {{ flex:1; min-width:200px; }}
-.top-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
-.top-sub {{ font-size:13px; color:#6b7280; margin-top:2px; }}
-.progress-wrap {{ display:flex; align-items:center; gap:10px; flex-shrink:0; }}
-.progress-bar {{ width:140px; height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; }}
-.progress-fill {{ height:100%; background:linear-gradient(90deg,#27ae60,#2ecc71); border-radius:3px; transition:width 0.4s; }}
-.progress-label {{ font-size:13px; font-weight:700; color:#111827; white-space:nowrap; }}
+            # Chip de status
+            if status == "confirmed":
+                chip = "<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✓ Confirmado</span>"
+                card_border = "#27ae60"
+            elif status == "not_found":
+                chip = "<span style='background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>— Não encontrada</span>"
+                card_border = "#9ca3af"
+            elif status == "rejected":
+                chip = "<span style='background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✗ Incorreto</span>"
+                card_border = "#e24b4a"
+            elif pid_encontrado:
+                chip = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⏳ Aguardando confirmação</span>"
+                card_border = "#e5e7eb"
+            else:
+                chip = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⚠ Não encontrado</span>"
+                card_border = "#e5e7eb"
  
-.btn-ver {{
-    padding:11px 22px; border-radius:10px; font-size:14px; font-weight:800;
-    font-family:'DM Sans',sans-serif; cursor:pointer; transition:all 0.2s;
-    display:flex; align-items:center; gap:8px; white-space:nowrap;
-    flex-shrink:0;
-}}
-.btn-ver.ready {{
-    background:#0e2a47; color:#fff; border:none;
-    box-shadow:0 4px 16px rgba(14,42,71,0.3);
-}}
-.btn-ver.ready:hover {{ background:#1a4070; transform:translateY(-1px); }}
-.btn-ver.disabled {{
-    background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb; cursor:not-allowed;
-}}
+            # Meta da página
+            if pid_encontrado:
+                meta_html = (
+                    f"<span style='font-family:monospace;background:#f3f4f6;padding:2px 8px;"
+                    f"border-radius:5px;font-size:12px;color:#374151'># {pid_encontrado}</span>"
+                    f"<span style='font-size:13px;color:#6b7280'>{e['nome']}</span>"
+                )
+            else:
+                meta_html = "<span style='color:#b45309;font-size:12px'>⚠ Página não encontrada automaticamente</span>"
  
-.cards-list {{ display:flex; flex-direction:column; gap:10px; }}
+            st.markdown(
+                f"<div style='background:#fff;border:1.5px solid {card_border};border-radius:12px;overflow:hidden;margin-bottom:4px'>"
+                f"<div style='display:flex;align-items:center;gap:14px;padding:14px 18px;background:#fafafa;border-bottom:1px solid #f3f4f6;flex-wrap:wrap'>"
+                f"<div style='width:42px;height:42px;border-radius:50%;background:{cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>"
+                f"<div style='flex:1;min-width:0'>"
+                f"<div style='font-size:15px;font-weight:700;color:#111827'>{e['nome']}</div>"
+                f"<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px'>{meta_html}</div>"
+                f"</div>"
+                f"<div>{chip}</div>"
+                f"</div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
  
-.card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    overflow:hidden; transition:border-color 0.2s;
-}}
-.card.confirmed {{ border-color:#27ae60; }}
-.card.rejected  {{ border-color:#e24b4a; }}
-.card.not_found {{ border-left:4px solid #9ca3af; opacity:0.75; }}
+            # Botões de ação nativos Streamlit
+            if status == "pending" and pid_encontrado:
+                bc1, bc2, bc3, _ = st.columns([2, 2, 2, 3])
+                with bc1:
+                    if st.button("✓ Página correta", key=f"cf_nat_{sk}", use_container_width=True):
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "confirmed"}
+                        if pid_encontrado:
+                            st.session_state.ads_page_ids[ck] = pid_encontrado
+                        st.rerun()
+                with bc2:
+                    if st.button("Incorreto", key=f"rj_nat_{sk}", use_container_width=True):
+                        with st.spinner(f"Buscando alternativas para {e['nome']}…"):
+                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts_new or []}
+                        st.rerun()
+                with bc3:
+                    if st.button("Não apareceu", key=f"na_nat_{sk}", use_container_width=True):
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found"}
+                        st.rerun()
  
-.card-top {{
-    display:flex; align-items:center; gap:14px; padding:14px 18px;
-    background:#fafafa; border-bottom:1px solid #f3f4f6; flex-wrap:wrap;
-}}
-.avatar {{
-    width:42px; height:42px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:15px; font-weight:700; color:#111827; }}
-.found-meta {{ font-size:13px; color:#6b7280; margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }}
-.pid {{ font-family:monospace; background:#f3f4f6; padding:2px 8px; border-radius:5px; font-size:12px; color:#374151; }}
+            elif status == "pending" and not pid_encontrado:
+                bc1, bc2, _ = st.columns([2, 2, 5])
+                with bc1:
+                    if st.button("Buscar alternativas", key=f"rj_nat_{sk}", use_container_width=True):
+                        with st.spinner(f"Buscando alternativas para {e['nome']}…"):
+                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts_new or []}
+                        st.rerun()
+                with bc2:
+                    if st.button("Não apareceu", key=f"na_nat_{sk}", use_container_width=True):
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found"}
+                        st.rerun()
  
-.chip {{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }}
-.chip-ok      {{ background:#f0fdf4; color:#15803d; border:1px solid #86efac; }}
-.chip-err     {{ background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }}
-.chip-pending {{ background:#fffbeb; color:#92400e; border:1px solid #fcd34d; }}
-.chip-skip    {{ background:#f9fafb; color:#6b7280; border:1px solid #e5e7eb; }}
+            elif status == "confirmed":
+                bc1, _ = st.columns([2, 7])
+                with bc1:
+                    if st.button("Corrigir", key=f"rj_nat_{sk}", use_container_width=True):
+                        with st.spinner(f"Buscando alternativas para {e['nome']}…"):
+                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts_new or []}
+                        st.rerun()
  
-.actions {{ display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap; justify-content:flex-end; }}
-.btn-ok   {{ padding:7px 14px; border:1px solid #86efac; border-radius:8px; background:#f0fdf4; font-size:13px; font-weight:700; color:#15803d; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
-.btn-ok:hover {{ background:#dcfce7; }}
-.btn-no   {{ padding:7px 14px; border:1px solid #fca5a5; border-radius:8px; background:#fef2f2; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
-.btn-no:hover {{ background:#fee2e2; }}
-.btn-skip {{ padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
-.btn-skip:hover {{ background:#f3f4f6; }}
+            elif status == "not_found":
+                bc1, _ = st.columns([2, 7])
+                with bc1:
+                    if st.button("Desfazer", key=f"cf_nat_{sk}", use_container_width=True):
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "pending"}
+                        st.rerun()
  
-.alts-wrap {{ padding:14px 18px; border-top:1px solid #f3f4f6; }}
-.alts-label {{ font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px; }}
-.alt-row {{
-    display:flex; align-items:center; gap:12px; padding:10px 14px;
-    border:1px solid #e5e7eb; border-radius:8px; margin-bottom:8px;
-    cursor:pointer; transition:all 0.15s; background:#fafafa;
-}}
-.alt-row:hover {{ border-color:#3a9fd6; background:#f0f9ff; }}
-.alt-row.sel   {{ border-color:#27ae60; background:#f0fdf4; }}
-.alt-name {{ font-size:14px; font-weight:600; color:#111827; flex:1; }}
-.alt-pid  {{ font-size:11px; font-family:monospace; color:#6b7280; }}
-.save-row {{ display:flex; justify-content:flex-end; margin-top:6px; }}
-.btn-save {{
-    padding:9px 20px; border:1px solid #bfdbfe; border-radius:8px;
-    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-}}
-.btn-save:hover {{ background:#dbeafe; }}
-.not-found-msg {{
-    padding:12px 18px; font-size:13px; color:#6b7280;
-    background:#f9fafb; border-top:1px solid #f3f4f6;
-}}
-</style>
+            elif status == "rejected":
+                if alts:
+                    st.markdown(
+                        "<div style='font-size:12px;font-weight:700;color:#6b7280;"
+                        "text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 8px 0'>"
+                        "Selecione a página correta:</div>",
+                        unsafe_allow_html=True,
+                    )
+                    for alt in alts:
+                        sel = conf.get("selected_pid") == alt["pid"]
+                        border = "#27ae60" if sel else "#e5e7eb"
+                        bg = "#f0fdf4" if sel else "#fafafa"
+                        radio = "●" if sel else "○"
+                        radio_color = "#27ae60" if sel else "#d1d5db"
+                        fans_txt = f"  ·  {alt['fans']} seguidores" if alt.get("fans") else ""
+                        verified_txt = " ✓" if alt.get("verified") else ""
+                        col_alt, col_radio = st.columns([9, 1])
+                        with col_alt:
+                            st.markdown(
+                                f"<div style='border:1px solid {border};border-radius:8px;padding:10px 14px;"
+                                f"background:{bg};margin-bottom:6px;cursor:pointer'>"
+                                f"<div style='font-size:14px;font-weight:600;color:#111827'>{alt['name']}{verified_txt}</div>"
+                                f"<div style='font-size:11px;font-family:monospace;color:#6b7280'>{alt['pid']}{fans_txt}</div>"
+                                f"</div>",
+                                unsafe_allow_html=True,
+                            )
+                        with col_radio:
+                            st.markdown(
+                                f"<div style='padding-top:14px;text-align:center;font-size:20px;color:{radio_color}'>{radio}</div>",
+                                unsafe_allow_html=True,
+                            )
+                        if st.button(f"Usar · {alt['name'][:30]}", key=f"sv_nat_{safe_key(ck + '_' + alt['pid'])}", use_container_width=True):
+                            st.session_state.ads_page_ids[ck] = alt["pid"]
+                            st.session_state.ads_confirmacao[ck] = {**conf, "status": "confirmed", "selected_pid": alt["pid"]}
+                            st.rerun()
+                else:
+                    st.info("Nenhuma alternativa encontrada. Cole o Page ID numérico no campo **ID Manual Ads** no cadastro do concorrente.")
+                bc1, _ = st.columns([2, 7])
+                with bc1:
+                    if st.button("Não apareceu", key=f"na_nat_{sk}", use_container_width=True):
+                        st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found"}
+                        st.rerun()
  
-<div class="top-bar">
-    <div class="top-info">
-        <div class="top-title">Confirmar páginas do Facebook</div>
-        <div class="top-sub">Verifique se as páginas encontradas correspondem a cada empresa</div>
-    </div>
-    <div class="progress-wrap">
-        <div class="progress-bar">
-            <div class="progress-fill" id="prog_fill" style="width:{pct_inicial}%"></div>
-        </div>
-        <span class="progress-label" id="prog_label">{n_confirmados}/{len(todas_empresas)}</span>
-    </div>
-    <button class="btn-ver {'ready' if todos_resolvidos else 'disabled'}" id="btn_res"
-        onclick="if(!this.classList.contains('disabled')) triggerParentBtn('__ir_resultados__')">
-        Ver Anúncios →
-    </button>
-</div>
- 
-<div class="cards-list" id="cards_list"></div>
- 
-<script>
-const empresas = {empresas_js};
- 
-// Estado local (espelha o que Python já computou)
-const state = {{}};
-empresas.forEach(function(e) {{
-    state[e.id] = {{ status: e.status, selected: e.selected || "" }};
-}});
- 
-function getInitials(nome) {{
-    const p = nome.trim().toUpperCase().split(" ");
-    return p.length > 1 ? p[0][0] + p[1][0] : p[0][0];
-}}
- 
-function triggerParentBtn(label) {{
-    var attempts = 0;
-    function tryClick() {{
-        var btns = window.parent.document.querySelectorAll("button");
-        for (var i = 0; i < btns.length; i++) {{
-            if (btns[i].innerText.trim() === label) {{
-                btns[i].click();
-                return;
-            }}
-        }}
-        if (attempts++ < 15) setTimeout(tryClick, 200);
-    }}
-    tryClick();
-}}
- 
-function safe_key_js(s) {{
-    return s.replace(/[^a-zA-Z0-9_]/g, "_");
-}}
- 
-function confirmar(id, sk) {{
-    state[id].status = "confirmed";
-    triggerParentBtn("__cf_" + sk + "__");
-    render();
-}}
- 
-function rejeitar(id, sk) {{
-    state[id].status = "rejected";
-    state[id].selected = "";
-    triggerParentBtn("__rj_" + sk + "__");
-    render();
-}}
- 
-function naoApareceu(id, sk) {{
-    state[id].status = "not_found";
-    triggerParentBtn("__na_" + sk + "__");
-    render();
-}}
- 
-function selecionarAlt(id, pid) {{
-    state[id].selected = pid;
-    render();
-}}
- 
-function salvarAlt(id, sk, pid) {{
-    if (!state[id].selected) return;
-    state[id].status = "confirmed";
-    const stk = safe_key_js(sk + "_" + pid);
-    triggerParentBtn("__sv_" + stk + "__");
-    render();
-}}
- 
-function render() {{
-    const el = document.getElementById("cards_list");
-    let confirmados = 0;
- 
-    el.innerHTML = empresas.map(function(e) {{
-        const s     = state[e.id];
-        const found = e.found;
-        const alts  = e.alts || [];
-        if (s.status === "confirmed" || s.status === "not_found") confirmados++;
- 
-        // Chip de status
-        let chipHtml = "";
-        if (s.status === "confirmed")
-            chipHtml = '<span class="chip chip-ok">✓ Confirmado</span>';
-        else if (s.status === "rejected" && s.selected)
-            chipHtml = '<span class="chip chip-ok">✓ ID corrigido</span>';
-        else if (s.status === "rejected")
-            chipHtml = '<span class="chip chip-err">✗ Incorreto</span>';
-        else if (s.status === "not_found")
-            chipHtml = '<span class="chip chip-skip">— Não encontrada</span>';
-        else if (!found)
-            chipHtml = '<span class="chip chip-pending">⚠ Não encontrado</span>';
-        else
-            chipHtml = '<span class="chip chip-pending">⏳ Aguardando</span>';
- 
-        // Meta da página encontrada
-        let metaHtml = "";
-        if (found) {{
-            metaHtml = '<span class="pid"># ' + found.pid + '</span>'
-                     + '<span>' + found.name + '</span>';
-        }} else {{
-            metaHtml = '<span style="color:#b45309;font-size:12px">⚠ Página não encontrada automaticamente</span>';
-        }}
- 
-        // Botões de ação
-        let btnHtml = "";
-        if (found && s.status === "pending") {{
-            btnHtml =
-                '<button class="btn-ok"  onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">✓ Página correta</button>'
-              + '<button class="btn-no"  onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Incorreto</button>'
-              + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">Não apareceu</button>';
-        }} else if (s.status === "confirmed") {{
-            btnHtml = '<button class="btn-skip" onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Corrigir</button>';
-        }} else if (s.status === "not_found") {{
-            btnHtml = '<button class="btn-skip" onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">Desfazer</button>';
-        }} else if (s.status === "rejected") {{
-            btnHtml = '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">Não apareceu</button>';
-        }} else if (!found && s.status === "pending") {{
-            btnHtml =
-                '<button class="btn-no"  onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Buscar alternativas</button>'
-              + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">Não apareceu</button>';
-        }}
- 
-        // Alternativas
-        let altsHtml = "";
-        if ((s.status === "rejected" || (!found && s.status !== "not_found")) && alts.length > 0) {{
-            const altRows = alts.map(function(a) {{
-                const sel   = s.selected === a.pid ? " sel" : "";
-                const radio = s.selected === a.pid
-                    ? '<span style="color:#27ae60;font-size:18px">●</span>'
-                    : '<span style="color:#d1d5db;font-size:18px">○</span>';
-                return '<div class="alt-row' + sel + '" onclick="selecionarAlt(\'' + e.id + '\',\'' + a.pid + '\')">'
-                    + '<div style="flex:1"><div class="alt-name">' + a.name + (a.verified ? ' ✓' : '') + '</div>'
-                    + '<div class="alt-pid">' + a.pid + (a.fans ? '  ·  ' + a.fans + ' seguidores' : '') + '</div></div>'
-                    + radio + '</div>';
-            }}).join("");
-            const saveBtn = s.selected
-                ? '<div class="save-row"><button class="btn-save" onclick="salvarAlt(\'' + e.id + '\',\'' + e.sk + '\',\'' + s.selected + '\')">💾 Usar este ID</button></div>'
-                : '';
-            altsHtml = '<div class="alts-wrap"><div class="alts-label">Selecione a página correta:</div>' + altRows + saveBtn + '</div>';
-        }} else if (s.status === "rejected" && alts.length === 0) {{
-            altsHtml = '<div class="not-found-msg">Nenhuma alternativa encontrada. Cole o Page ID numérico no campo <b>"ID Manual Ads"</b> no cadastro do concorrente.</div>';
-        }}
- 
-        let cardClass = "card";
-        if (s.status === "confirmed" || (s.status === "rejected" && s.selected)) cardClass += " confirmed";
-        else if (s.status === "rejected") cardClass += " rejected";
-        else if (s.status === "not_found") cardClass += " not_found";
- 
-        return '<div class="' + cardClass + '">'
-            + '<div class="card-top">'
-            + '<div class="avatar" style="background:' + e.cor + '">' + getInitials(e.nome) + '</div>'
-            + '<div class="info"><div class="nome">' + e.nome + '</div>'
-            + '<div class="found-meta">' + metaHtml + '</div></div>'
-            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
-            + chipHtml
-            + '<div class="actions">' + btnHtml + '</div>'
-            + '</div></div>'
-            + altsHtml
-            + '</div>';
-    }}).join("");
- 
-    // Atualiza progresso e botão
-    const pct    = Math.round(confirmados / empresas.length * 100);
-    const fill   = document.getElementById('prog_fill');
-    const label  = document.getElementById('prog_label');
-    const btnRes = document.getElementById('btn_res');
- 
-    if (fill)  fill.style.width = pct + '%';
-    if (label) label.textContent = confirmados + '/' + empresas.length;
-    if (btnRes) {{
-        const allDone = confirmados === empresas.length;
-        btnRes.className = 'btn-ver ' + (allDone ? 'ready' : 'disabled');
-    }}
- 
-    ajustar();
-}}
- 
-function ajustar() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(err) {{}}
-    }});
-}}
- 
-new ResizeObserver(ajustar).observe(document.body);
-render();
-</script>
-""", height=max(400, altura_estimada), scrolling=False)
+            st.markdown("<div style='height:6px'/>", unsafe_allow_html=True)
  
     # ════════════════════════════════════════════
     # ETAPA 3 — RESULTADOS
