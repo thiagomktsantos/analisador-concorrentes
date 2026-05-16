@@ -1194,35 +1194,43 @@ if st.session_state.pagina == "home":
     if not tem_dados or st.session_state.editar_empresa:
 
         st.markdown("""
-        <style>
-        div[data-testid="stForm"] {
-            background: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 14px !important;
-            padding: 28px 32px !important;
-            margin-bottom: 0px !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-        }
-        div[data-testid="stForm"] > div,
-        div[data-testid="stForm"] > div > div {
-            background: #ffffff !important;
-        }
-        [data-testid="stVerticalBlockBorderWrapper"] {
-            background: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 14px !important;
-            padding: 20px 32px !important;
-            margin-bottom: 0px !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-        }
-        [data-testid="stVerticalBlockBorderWrapper"] > div,
-        [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-        [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
-        [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
-            background: #ffffff !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+<style>
+div[data-testid="stForm"] {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 14px !important;
+    padding: 28px 32px !important;
+    margin-bottom: 0px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+div[data-testid="stForm"] > div,
+div[data-testid="stForm"] > div > div {
+    background: #ffffff !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 14px !important;
+    padding: 20px 32px !important;
+    margin-bottom: 0px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"] > div,
+[data-testid="stVerticalBlockBorderWrapper"] > div > div,
+[data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="input"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div,
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"],
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stSelectbox"],
+[data-testid="stVerticalBlockBorderWrapper"] .stElementContainer {
+    background: #ffffff !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
         st.markdown("""
         <style>
