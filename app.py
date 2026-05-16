@@ -3075,7 +3075,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                         st.write(f"❌ **{e['nome']}**: {resultado.get('erro','não encontrado')}")
  
                     st.session_state.ads_confirmacao[ck] = {
-                        "status":   "pending" if resultado.get("pid") else "not_found",
+                        "status":   "pending",
                         "resultado": resultado,
                         "slug":     slug,
                         "nome_empresa": e["nome"],
@@ -3241,82 +3241,95 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                         st.session_state.ads_confirmacao[ck]["status"] = "not_found"
                         st.rerun()
  
-            # ── PENDING sem pid: não encontrou — oferece entrada manual
+            # ── PENDING sem pid: não encontrou — slug editável + ID manual
             elif status_conf == "pending" and not pid:
                 st.markdown(f"""
-                <div style='background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;
-                            padding:12px 16px;margin:8px 0;font-size:13px;color:#dc2626'>
-                    ⚠️ Não foi possível extrair o page_id de <b>facebook.com/{slug}</b>.<br>
-                    <span style='color:#6b7280;font-size:12px'>{erro_r}</span>
+                <div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;
+                            padding:12px 16px;margin:8px 0;font-size:13px;color:#92400e'>
+                    🔍 page_id não encontrado automaticamente para <b>facebook.com/{slug}</b>
+                    {"<br><span style=\'font-size:11px;color:#6b7280\'>" + erro_r + "</span>" if erro_r else ""}
                 </div>
                 """, unsafe_allow_html=True)
  
+                # ── Linha 1: slug editável + buscar
                 st.markdown(
-                    "<div style='font-size:13px;color:#374151;margin:10px 0 6px'>Informe manualmente o page_id ou a URL do Facebook:</div>",
-                    unsafe_allow_html=True
+                    "<div style='font-size:12px;font-weight:700;color:#6b7280;"
+                    "text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 6px'>"
+                    "Tentar com outro slug do Facebook</div>",
+                    unsafe_allow_html=True,
+                )
+                col_slug, col_btn_slug = st.columns([4, 2])
+                with col_slug:
+                    slug_novo = st.text_input(
+                        "slug",
+                        value=slug,
+                        placeholder="Ex: keduoficial",
+                        key=f"slug_novo_{sk}",
+                        label_visibility="collapsed",
+                    )
+                with col_btn_slug:
+                    if st.button("🔍 Buscar", key=f"retry_{sk}", use_container_width=True, type="primary"):
+                        slug_try = normalizar_slug_facebook(slug_novo.strip()) or slug_novo.strip()
+                        with st.spinner(f"Consultando API para '{slug_try}'…"):
+                            r2 = buscar_page_id_via_slug(slug_try, META_TOKEN)
+                        st.session_state.ads_confirmacao[ck] = {
+                            **conf,
+                            "status":   "pending",
+                            "resultado": r2,
+                            "slug":     slug_try,
+                        }
+                        if r2.get("pid"):
+                            st.session_state.ads_page_ids[ck] = r2["pid"]
+                        st.rerun()
+ 
+                # ── Linha 2: page_id numérico direto
+                st.markdown(
+                    "<div style='font-size:12px;font-weight:700;color:#6b7280;"
+                    "text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 6px'>"
+                    "Ou informe o page_id numérico diretamente</div>",
+                    unsafe_allow_html=True,
                 )
                 col_input, col_btn_manual = st.columns([4, 2])
                 with col_input:
                     pid_manual = st.text_input(
-                        "URL ou page_id",
-                        placeholder="Ex: https://facebook.com/empresa ou 123456789",
+                        "page_id",
+                        placeholder="Ex: 123456789012345",
                         key=f"pid_manual_{sk}",
                         label_visibility="collapsed",
                     )
                 with col_btn_manual:
-                    if st.button("Usar este ID", key=f"use_manual_{sk}", use_container_width=True, type="primary"):
-                        # Tenta extrair número se for URL
+                    if st.button("Confirmar ID", key=f"use_manual_{sk}", use_container_width=True):
                         val = pid_manual.strip()
-                        # Verifica se é URL do facebook
-                        slug_manual = normalizar_slug_facebook(val)
-                        pid_extracted = ""
-                        if val.isdigit():
-                            pid_extracted = val
-                        elif slug_manual and not slug_manual.isdigit():
-                            with st.spinner(f"Visitando facebook.com/{slug_manual}…"):
-                                r2 = buscar_page_id_via_slug(slug_manual, META_TOKEN)
-                                pid_extracted = r2.get("pid", "")
-                                if not pid_extracted:
-                                    # Tenta diretamente como pid
-                                    pid_extracted = slug_manual if slug_manual.isdigit() else ""
-                        if pid_extracted:
+                        if val.isdigit() and len(val) >= 8:
                             st.session_state.ads_confirmacao[ck] = {
                                 **conf,
                                 "status":   "manual",
                                 "resultado": {
-                                    "pid":    pid_extracted,
-                                    "nome":   slug_manual,
+                                    "pid":    val,
+                                    "nome":   e["nome"],
                                     "fans":   "",
-                                    "slug":   slug_manual,
+                                    "slug":   slug,
                                     "metodo": "manual",
                                     "erro":   None,
                                 },
-                                "slug": slug_manual,
+                                "slug": slug,
                             }
-                            st.session_state.ads_page_ids[ck] = pid_extracted
+                            st.session_state.ads_page_ids[ck] = val
                             st.rerun()
                         else:
-                            st.error("Não foi possível encontrar o page_id. Tente informar o número diretamente.")
+                            st.error("Informe apenas o número do page_id (mínimo 8 dígitos).")
  
-                bc1, bc2, _ = st.columns([2, 2, 5])
-                with bc1:
-                    if st.button("🔄 Tentar novamente", key=f"retry_{sk}", use_container_width=True):
-                        with st.spinner(f"Tentando novamente para {e['nome']}…"):
-                            slug2 = normalizar_slug_facebook(e["fb_raw"])
-                            if not slug2:
-                                slug2 = re.sub(r'[^a-z0-9]', '', e["nome"].lower())
-                            r2 = buscar_page_id_via_slug(slug2, META_TOKEN)
+                st.markdown(
+                    "<div style='font-size:12px;color:#9ca3af;margin:6px 0 4px'>"
+                    "💡 Encontre o page_id em: "
+                    "<a href='https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR' "
+                    "target='_blank' style='color:#3a9fd6'>Ad Library</a> → busque a empresa → clique no nome "
+                    "→ o ID aparece na URL</div>",
+                    unsafe_allow_html=True,
+                )
  
-                            st.session_state.ads_confirmacao[ck] = {
-                                **conf,
-                                "status":   "pending" if r2.get("pid") else "not_found",
-                                "resultado": r2,
-                                "slug":     slug2,
-                            }
-                            if r2.get("pid"):
-                                st.session_state.ads_page_ids[ck] = r2["pid"]
-                        st.rerun()
-                with bc2:
+                _, col_pular = st.columns([7, 2])
+                with col_pular:
                     if st.button("Pular empresa", key=f"skip_{sk}", use_container_width=True):
                         st.session_state.ads_confirmacao[ck]["status"] = "not_found"
                         st.rerun()
