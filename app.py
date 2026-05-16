@@ -2855,7 +2855,8 @@ html, body { background: transparent; overflow: hidden; }
     # ════════════════════════════════════════════
     # ETAPA 1 — PÁGINA INFORMATIVA
     # ════════════════════════════════════════════
-if st.session_state.ads_etapa == "informativa":
+    
+    if st.session_state.ads_etapa == "informativa":
 
         if not META_TOKEN:
             st.warning("⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets para usar esta funcionalidade.")
