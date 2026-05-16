@@ -2924,7 +2924,7 @@ html, body { background:transparent; overflow:hidden; }
 """, height=65)
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px 0'/>", unsafe_allow_html=True)
  
-# ════════════════════════════════════════════════════════════════════
+    # ════════════════════════════════════════════════════════════════════
     # ETAPA 1 — INFORMATIVA
     # ════════════════════════════════════════════════════════════════════
 
@@ -2937,9 +2937,9 @@ html, body { background:transparent; overflow:hidden; }
             st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
             st.stop()
 
-        n_empresas = len(todas_empresas)
-        altura_lista = 16 + (n_empresas * 54)
-        altura_total = 220 + altura_lista
+        n_empresas    = len(todas_empresas)
+        altura_lista  = 16 + (n_empresas * 54)
+        altura_total  = 220 + altura_lista
 
         nomes_lista_html = "".join([
             f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;'
@@ -3020,42 +3020,22 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             key="btn_iniciar_ads_nativo",
         )
         st.markdown(
-            "<div style='font-size:12px;color:#9ca3af;text-align:center;margin-top:6px;margin-bottom:4px'>"
+            "<div style='font-size:12px;color:#9ca3af;text-align:center;"
+            "margin-top:6px;margin-bottom:4px'>"
             "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
             unsafe_allow_html=True,
         )
 
         if iniciar:
-            with st.spinner("Buscando anúncios por keyword…"):
+            with st.spinner("Buscando páginas que estão anunciando…"):
                 for e in todas_empresas:
-                    ck = e["ads_id"]
-                    # Busca por keyword — retorna páginas que estão anunciando
-                    ads, erro, modo_real, slug = buscar_ads_meta(
-                        search_term=e["search_term"], token=META_TOKEN, page_id=None, limit=20
-                    )
-                    # Agrupa páginas únicas encontradas nos anúncios
-                    paginas_encontradas = {}
-                    for ad in ads:
-                        pid  = str(ad.get("page_id", ""))
-                        nome = ad.get("page_name", "")
-                        snap = ad.get("snapshot_url", "")
-                        if pid and pid not in paginas_encontradas:
-                            m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
-                            slug_ad = m.group(1) if m else ""
-                            paginas_encontradas[pid] = {
-                                "pid":  pid,
-                                "name": nome,
-                                "slug": slug_ad,
-                                "fans": "",
-                                "verified": False,
-                            }
-                    alts = list(paginas_encontradas.values())
+                    ck   = e["ads_id"]
+                    alts = buscar_paginas_por_nome(e["search_term"], META_TOKEN)
                     st.session_state.ads_confirmacao[ck] = {
-                        "status": "pending",
+                        "status":       "pending",
                         "alternatives": alts,
                         "selected_pid": "",
                     }
-
             st.session_state.ads_etapa = "identificacao"
             st.rerun()
 
@@ -3064,74 +3044,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     # ════════════════════════════════════════════════════════════════════
     elif st.session_state.ads_etapa == "identificacao":
 
-        # Botões fantasma de seleção e ações
-        selecionar_triggers = {}
-        nao_apareceu_triggers = {}
-        buscar_mais_triggers = {}
-
-        for e in todas_empresas:
-            ck = e["ads_id"]; sk = safe_key(ck)
-            nao_apareceu_triggers[ck] = st.button(f"__na_{sk}__", key=f"btn_na_{sk}")
-            buscar_mais_triggers[ck]  = st.button(f"__bm_{sk}__", key=f"btn_bm_{sk}")
-            conf = st.session_state.ads_confirmacao.get(ck, {})
-            for alt in conf.get("alternatives", []):
-                tk  = f"{ck}_{alt['pid']}"; stk = safe_key(tk)
-                selecionar_triggers[tk] = st.button(f"__sel_{stk}__", key=f"btn_sel_{stk}")
-
         ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
-
-        # Esconde todos os botões fantasma
-        ghost_sels = []
-        for e in todas_empresas:
-            sk = safe_key(e["ads_id"])
-            ghost_sels += [f".st-key-btn_na_{sk}", f".st-key-btn_bm_{sk}"]
-            for alt in st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("alternatives", []):
-                ghost_sels.append(f".st-key-btn_sel_{safe_key(e['ads_id']+'_'+alt['pid'])}")
-        ghost_sels.append(".st-key-btn_ir_resultados")
-        st.markdown(f"<style>{','.join(ghost_sels)}{{display:none!important}}</style>", unsafe_allow_html=True)
-
-        # Processa cliques dos botões fantasma
-        for e in todas_empresas:
-            ck   = e["ads_id"]
-            conf = st.session_state.ads_confirmacao.get(ck, {})
-
-            if nao_apareceu_triggers.get(ck):
-                st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found"}
-                st.rerun()
-
-            if buscar_mais_triggers.get(ck):
-                with st.spinner(f"Buscando mais resultados para {e['nome']}…"):
-                    ads, erro, _, _ = buscar_ads_meta(
-                        search_term=e["search_term"], token=META_TOKEN, page_id=None, limit=50
-                    )
-                    paginas_encontradas = {}
-                    for ad in ads:
-                        pid  = str(ad.get("page_id", ""))
-                        nome = ad.get("page_name", "")
-                        snap = ad.get("snapshot_url", "")
-                        if pid and pid not in paginas_encontradas:
-                            m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
-                            slug_ad = m.group(1) if m else ""
-                            paginas_encontradas[pid] = {
-                                "pid": pid, "name": nome,
-                                "slug": slug_ad, "fans": "", "verified": False,
-                            }
-                    st.session_state.ads_confirmacao[ck] = {
-                        **conf,
-                        "alternatives": list(paginas_encontradas.values()),
-                        "status": "pending",
-                    }
-                st.rerun()
-
-            for alt in conf.get("alternatives", []):
-                tk = f"{ck}_{alt['pid']}"
-                if selecionar_triggers.get(tk):
-                    st.session_state.ads_page_ids[ck] = alt["pid"]
-                    st.session_state.ads_confirmacao[ck] = {
-                        **conf, "status": "confirmed", "selected_pid": alt["pid"]
-                    }
-                    st.toast(f"✅ {e['nome']}: página selecionada!", icon="✅")
-                    st.rerun()
+        st.markdown(".st-key-btn_ir_resultados{display:none!important}", unsafe_allow_html=True)
 
         if ir_resultados:
             with st.spinner("Buscando anúncios…"):
@@ -3152,7 +3066,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             st.rerun()
 
         # ── Cabeçalho + barra de progresso
-        n_confirmados    = sum(
+        n_confirmados = sum(
             1 for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
         )
@@ -3181,6 +3095,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                 key="btn_ver_anuncios",
                 disabled=not todos_resolvidos,
             )
+
         if ver_btn and todos_resolvidos:
             with st.spinner("Buscando anúncios…"):
                 for e in todas_empresas:
@@ -3212,12 +3127,17 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             avatar = gerar_avatar(e["nome"])
 
             # Status chip
-            if   status == "confirmed":  chip = "<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✓ Confirmado</span>"
-            elif status == "not_found":  chip = "<span style='background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>— Não encontrada</span>"
-            else:                        chip = f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>{'⏳ Aguardando seleção' if alts else '⚠ Nenhuma página encontrada'}</span>"
+            if status == "confirmed":
+                chip        = "<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✓ Confirmado</span>"
+                card_border = "#27ae60"
+            elif status == "not_found":
+                chip        = "<span style='background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>— Não encontrada</span>"
+                card_border = "#9ca3af"
+            else:
+                chip        = f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>{'⏳ Aguardando seleção' if alts else '⚠ Nenhuma página encontrada'}</span>"
+                card_border = "#e5e7eb"
 
-            card_border = "#27ae60" if status == "confirmed" else ("#9ca3af" if status == "not_found" else "#e5e7eb")
-
+            # Card header da empresa
             st.markdown(
                 f"<div style='background:#fff;border:1.5px solid {card_border};border-radius:12px;"
                 f"overflow:hidden;margin-bottom:4px'>"
@@ -3233,13 +3153,13 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                 unsafe_allow_html=True,
             )
 
-            # Lista de páginas encontradas para selecionar
+            # ── PENDING: mostra páginas para selecionar
             if status == "pending":
                 if alts:
                     st.markdown(
-                        f"<div style='font-size:12px;font-weight:700;color:#6b7280;"
-                        f"text-transform:uppercase;letter-spacing:0.8px;"
-                        f"margin:8px 0 6px 0'>Páginas encontradas nos anúncios — clique para selecionar:</div>",
+                        "<div style='font-size:12px;font-weight:700;color:#6b7280;"
+                        "text-transform:uppercase;letter-spacing:0.8px;"
+                        "margin:10px 0 8px 0'>Páginas encontradas — clique para selecionar:</div>",
                         unsafe_allow_html=True)
 
                     cols_alts = st.columns(min(len(alts), 3))
@@ -3248,102 +3168,126 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                             pid      = alt["pid"]
                             nome_alt = alt.get("name", pid)
                             slug_alt = alt.get("slug", "")
+                            fans_alt = alt.get("fans", "")
+                            ver_alt  = alt.get("verified", False)
                             fb_link  = f"https://www.facebook.com/{slug_alt}" if slug_alt else f"https://www.facebook.com/{pid}"
-                            tk       = f"{ck}_{pid}"
 
                             st.markdown(f"""
                             <div style='border:1px solid #e5e7eb;border-radius:10px;
-                                        padding:12px 14px;background:#fafafa;margin-bottom:4px'>
+                                        padding:12px 14px;background:#fafafa;margin-bottom:6px'>
                                 <div style='font-size:14px;font-weight:700;color:#111827;
-                                            margin-bottom:4px'>{nome_alt}</div>
-                                <div style='font-size:11px;font-family:monospace;color:#6b7280;
-                                            margin-bottom:2px'>ID: {pid}</div>
-                                {'<div style="font-size:11px;color:#3a9fd6">facebook.com/' + slug_alt + '</div>' if slug_alt else ''}
+                                            margin-bottom:4px'>
+                                    {nome_alt}{"  ✓" if ver_alt else ""}
+                                </div>
+                                <div style='font-size:11px;font-family:monospace;
+                                            color:#6b7280;margin-bottom:2px'>ID: {pid}</div>
+                                {f'<div style="font-size:11px;color:#3a9fd6">facebook.com/{slug_alt}</div>' if slug_alt else ''}
+                                {f'<div style="font-size:11px;color:#6b7280">{fans_alt} seguidores</div>' if fans_alt else ''}
                             </div>
                             """, unsafe_allow_html=True)
 
                             col_sel, col_fb = st.columns(2)
                             with col_sel:
-                                if st.button(f"✓ Esta é a página", key=f"sel_nat_{safe_key(tk)}", use_container_width=True, type="primary"):
+                                if st.button(
+                                    "✓ Selecionar",
+                                    key=f"sel_{sk}_{safe_key(pid)}",
+                                    use_container_width=True,
+                                    type="primary",
+                                ):
                                     st.session_state.ads_page_ids[ck] = pid
                                     st.session_state.ads_confirmacao[ck] = {
                                         **conf, "status": "confirmed", "selected_pid": pid
                                     }
                                     st.rerun()
                             with col_fb:
-                                st.link_button("Ver no Facebook", fb_link, use_container_width=True)
+                                st.link_button(
+                                    "Ver no FB",
+                                    fb_link,
+                                    use_container_width=True,
+                                )
 
-                    st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+                    st.markdown("<div style='height:6px'/>", unsafe_allow_html=True)
                     bc1, bc2, _ = st.columns([2, 2, 5])
                     with bc1:
-                        if st.button("🔍 Buscar mais", key=f"bm_nat_{sk}", use_container_width=True):
-                            with st.spinner(f"Buscando mais…"):
-                                ads2, _, _, _ = buscar_ads_meta(
-                                    search_term=e["search_term"], token=META_TOKEN, page_id=None, limit=50
-                                )
-                                pags2 = {}
-                                for ad in ads2:
-                                    p2 = str(ad.get("page_id", ""))
-                                    n2 = ad.get("page_name", "")
-                                    s2 = ad.get("snapshot_url", "")
-                                    if p2 and p2 not in pags2:
-                                        m2 = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', s2)
-                                        pags2[p2] = {"pid": p2, "name": n2,
-                                                     "slug": m2.group(1) if m2 else "",
-                                                     "fans": "", "verified": False}
-                                st.session_state.ads_confirmacao[ck] = {
-                                    **conf, "alternatives": list(pags2.values()), "status": "pending"
-                                }
+                        if st.button("🔍 Buscar mais", key=f"bm_{sk}", use_container_width=True):
+                            with st.spinner(f"Buscando mais páginas para {e['nome']}…"):
+                                alts_new = buscar_paginas_por_nome(e["search_term"], META_TOKEN)
+                            st.session_state.ads_confirmacao[ck] = {
+                                **conf, "alternatives": alts_new, "status": "pending"
+                            }
                             st.rerun()
                     with bc2:
-                        if st.button("Não apareceu", key=f"na_nat_{sk}", use_container_width=True):
+                        if st.button("Não apareceu", key=f"na_{sk}", use_container_width=True):
                             st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found"}
                             st.rerun()
 
                 else:
                     # Nenhuma página encontrada
-                    st.info(f"Nenhuma página encontrada para **{e['nome']}**. Tente buscar mais ou marque como não encontrada.")
+                    st.markdown(
+                        "<div style='background:#fef9ec;border:1px solid #fcd34d;border-radius:8px;"
+                        "padding:12px 16px;font-size:14px;color:#92400e;margin:8px 0'>⚠️ "
+                        f"Nenhuma página encontrada para <b>{e['nome']}</b>. "
+                        "Tente buscar mais ou marque como não encontrada.</div>",
+                        unsafe_allow_html=True)
                     bc1, bc2, _ = st.columns([2, 2, 5])
                     with bc1:
-                        if st.button("🔍 Buscar mais", key=f"bm_nat_{sk}", use_container_width=True):
-                            with st.spinner("Buscando…"):
-                                ads2, _, _, _ = buscar_ads_meta(
-                                    search_term=e["search_term"], token=META_TOKEN, page_id=None, limit=50
-                                )
-                                pags2 = {}
-                                for ad in ads2:
-                                    p2 = str(ad.get("page_id", ""))
-                                    if p2 and p2 not in pags2:
-                                        s2 = ad.get("snapshot_url", "")
-                                        m2 = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', s2)
-                                        pags2[p2] = {"pid": p2, "name": ad.get("page_name", ""),
-                                                     "slug": m2.group(1) if m2 else "",
-                                                     "fans": "", "verified": False}
-                                st.session_state.ads_confirmacao[ck] = {
-                                    **conf, "alternatives": list(pags2.values()), "status": "pending"
-                                }
+                        if st.button("🔍 Buscar mais", key=f"bm_{sk}", use_container_width=True):
+                            with st.spinner(f"Buscando…"):
+                                alts_new = buscar_paginas_por_nome(e["search_term"], META_TOKEN)
+                            st.session_state.ads_confirmacao[ck] = {
+                                **conf, "alternatives": alts_new, "status": "pending"
+                            }
                             st.rerun()
                     with bc2:
-                        if st.button("Não apareceu", key=f"na_nat_{sk}", use_container_width=True):
+                        if st.button("Não apareceu", key=f"na_{sk}", use_container_width=True):
                             st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found"}
                             st.rerun()
 
+            # ── CONFIRMED: mostra página selecionada + botão corrigir
             elif status == "confirmed":
-                pid_conf = conf.get("selected_pid", "")
-                bc1, _ = st.columns([2, 7])
+                pid_conf  = conf.get("selected_pid", "")
+                nome_conf = next((a["name"] for a in alts if a["pid"] == pid_conf), pid_conf)
+                slug_conf = next((a.get("slug","") for a in alts if a["pid"] == pid_conf), "")
+                fb_link   = f"https://www.facebook.com/{slug_conf}" if slug_conf else f"https://www.facebook.com/{pid_conf}"
+
+                st.markdown(f"""
+                <div style='background:#f0fdf4;border:1px solid #86efac;border-radius:8px;
+                            padding:12px 16px;margin:8px 0;display:flex;
+                            align-items:center;gap:12px'>
+                    <div style='font-size:20px'>✅</div>
+                    <div style='flex:1'>
+                        <div style='font-size:14px;font-weight:700;color:#15803d'>{nome_conf}</div>
+                        <div style='font-size:11px;font-family:monospace;color:#6b7280'>
+                            ID: {pid_conf}
+                            {" · facebook.com/" + slug_conf if slug_conf else ""}
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                bc1, bc2, _ = st.columns([2, 2, 5])
                 with bc1:
-                    if st.button("Corrigir", key=f"rj_nat_{sk}", use_container_width=True):
+                    if st.button("✏️ Corrigir", key=f"rj_{sk}", use_container_width=True):
                         st.session_state.ads_confirmacao[ck] = {**conf, "status": "pending"}
                         st.rerun()
+                with bc2:
+                    if slug_conf or pid_conf:
+                        st.link_button("Ver no FB", fb_link, use_container_width=True)
 
+            # ── NOT FOUND: botão desfazer
             elif status == "not_found":
+                st.markdown(
+                    "<div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;"
+                    "padding:12px 16px;font-size:14px;color:#6b7280;margin:8px 0'>"
+                    "Esta empresa foi marcada como não encontrada.</div>",
+                    unsafe_allow_html=True)
                 bc1, _ = st.columns([2, 7])
                 with bc1:
-                    if st.button("Desfazer", key=f"cf_nat_{sk}", use_container_width=True):
+                    if st.button("↩ Desfazer", key=f"cf_{sk}", use_container_width=True):
                         st.session_state.ads_confirmacao[ck] = {**conf, "status": "pending"}
                         st.rerun()
 
-            st.markdown("<div style='height:6px'/>", unsafe_allow_html=True)
+            st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
     # ════════════════════════════════════════════════════════════════════
     # ETAPA 3 — RESULTADOS
