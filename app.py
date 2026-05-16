@@ -1207,8 +1207,11 @@ if st.session_state.pagina == "home":
         div[data-testid="stForm"] > div > div {
             background: #ffffff !important;
         }
-        .st-key-cad_empresa button {
+        div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
             display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
         [data-testid="stVerticalBlockBorderWrapper"] {
             background: #ffffff !important;
@@ -1279,18 +1282,17 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
 
-        # ── FORM 1 — Identificação
+        # ── FORM 1 — Identificação (sem submit button)
         with st.form("cad_empresa", clear_on_submit=False):
             sec_label("Identificação")
             c1, c2 = st.columns(2)
             emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"])
             site_digitado = c2.text_input("Site", value=emp["site"])
             emp["site"] = limpar_site(site_digitado)
-            st.form_submit_button("dummy_id", disabled=True)
 
         st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
-        # ── SETOR — container branco, fora do form para reatividade
+        # ── SETOR — fora do form para reatividade em tempo real
         with st.container(border=True):
             sec_label("Setor")
             c3, c4 = st.columns(2)
