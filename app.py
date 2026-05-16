@@ -2806,8 +2806,8 @@ elif st.session_state.pagina == "ads":
 
     def buscar_paginas_por_nome(nome: str, token: str) -> list:
         resultados = {}
+        nome_lower = nome.lower().strip()
 
-        # Tentativa 1: ads_archive ACTIVE — mais confiável sem permissões extras
         for status in ["ACTIVE", "ALL"]:
             try:
                 r = requests.get(
@@ -2815,55 +2815,31 @@ elif st.session_state.pagina == "ads":
                     params={
                         "search_terms":         nome,
                         "ad_active_status":     status,
-                        "ad_reached_countries": '["BR"]',
-                        "fields": "page_id,page_name,ad_snapshot_url",
-                        "limit":  50,
-                        "access_token": token,
-                    },
-                    timeout=15,
-                )
-                data = r.json()
-                for ad in data.get("data", []):
-                    pid  = str(ad.get("page_id", ""))
-                    pnm  = ad.get("page_name", "")
-                    snap = ad.get("ad_snapshot_url", "")
-                    if pid and pid not in resultados:
-                        m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
-                        slug = m.group(1) if m else ""
-                        if slug.lower() in SLUGS_IGNORADOS or slug.isdigit():
-                            slug = ""
-                        resultados[pid] = {
-                            "pid":      pid,
-                            "name":     pnm,
-                            "slug":     slug,
-                            "fans":     "",
-                            "verified": False,
-                        }
-            except Exception:
-                pass
-            if len(resultados) >= 5:
-                break
-
-        # Tentativa 2: busca sem filtro de país
-        if len(resultados) < 3:
-            try:
-                r = requests.get(
-                    "https://graph.facebook.com/v21.0/ads_archive",
-                    params={
-                        "search_terms":         nome,
-                        "ad_active_status":     "ALL",
                         "ad_reached_countries": '["BR","US","PT"]',
                         "fields": "page_id,page_name,ad_snapshot_url",
-                        "limit":  50,
+                        "limit":  100,
                         "access_token": token,
                     },
                     timeout=15,
                 )
                 for ad in r.json().get("data", []):
                     pid  = str(ad.get("page_id", ""))
-                    pnm  = ad.get("page_name", "")
+                    pnm  = ad.get("page_name", "") or ""
                     snap = ad.get("ad_snapshot_url", "")
-                    if pid and pid not in resultados:
+                    if not pid:
+                        continue
+                    # Calcula score de similaridade com o nome buscado
+                    pnm_lower = pnm.lower().strip()
+                    if nome_lower == pnm_lower:
+                        score = 100
+                    elif nome_lower in pnm_lower or pnm_lower in nome_lower:
+                        score = 80
+                    elif any(p in pnm_lower for p in nome_lower.split()):
+                        score = 50
+                    else:
+                        score = 10
+
+                    if pid not in resultados or resultados[pid]["score"] < score:
                         m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
                         slug = m.group(1) if m else ""
                         if slug.lower() in SLUGS_IGNORADOS or slug.isdigit():
@@ -2874,47 +2850,28 @@ elif st.session_state.pagina == "ads":
                             "slug":     slug,
                             "fans":     "",
                             "verified": False,
+                            "score":    score,
                         }
             except Exception:
                 pass
+            if any(v["score"] >= 80 for v in resultados.values()):
+                break
 
-        # Tentativa 3: slug direto pelo nome
-        slug_guess = re.sub(r'[^a-z0-9]', '', nome.lower())
+        # Tenta slug direto pelo nome sem espaços
+        slug_guess = re.sub(r'[^a-z0-9]', '', nome_lower)
         if slug_guess:
             try:
                 resolved = resolver_slug(slug_guess, token)
-                if resolved.get("pid") and resolved["pid"] not in resultados:
-                    resultados[resolved["pid"]] = resolved
+                if resolved.get("pid"):
+                    pid = resolved["pid"]
+                    if pid not in resultados or resultados[pid]["score"] < 90:
+                        resultados[pid] = {**resolved, "score": 90}
             except Exception:
                 pass
 
-        # Tentativa 4: pages/search (requer permissão, mas tenta mesmo assim)
-        try:
-            r = requests.get(
-                "https://graph.facebook.com/v21.0/pages/search",
-                params={
-                    "q":      nome,
-                    "fields": "id,name,fan_count,verification_status,username",
-                    "limit":  10,
-                    "access_token": token,
-                },
-                timeout=15,
-            )
-            for p in r.json().get("data", []):
-                pid  = str(p["id"])
-                fans = p.get("fan_count", 0)
-                if pid not in resultados:
-                    resultados[pid] = {
-                        "pid":      pid,
-                        "name":     p.get("name", ""),
-                        "slug":     p.get("username", ""),
-                        "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
-                        "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
-                    }
-        except Exception:
-            pass
-
-        return list(resultados.values())
+        # Ordena por score e retorna top 6
+        ordenados = sorted(resultados.values(), key=lambda x: x["score"], reverse=True)
+        return ordenados[:6]
  
     def buscar_ads_meta(search_term, token, limit=20, page_id=None):
         url    = "https://graph.facebook.com/v21.0/ads_archive"
