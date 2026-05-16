@@ -2730,12 +2730,12 @@ elif st.session_state.pagina == "ads":
     def resolver_slug(slug: str, token: str) -> dict:
         if not slug:
             return {}
-        
-        # Tentativa 1: endpoint direto pelo slug
+
+        # Tentativa 1: endpoint direto
         try:
             r = requests.get(
                 f"https://graph.facebook.com/v21.0/{slug}",
-                params={"fields": "id,name,fan_count,verification_status", "access_token": token},
+                params={"fields": "id,name,fan_count,verification_status,username", "access_token": token},
                 timeout=10,
             )
             d = r.json()
@@ -2746,74 +2746,70 @@ elif st.session_state.pagina == "ads":
                     "name":     d.get("name", slug),
                     "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
                     "verified": d.get("verification_status") in ("blue_verified", "gray_verified"),
-                    "slug":     slug,
+                    "slug":     d.get("username", slug),
                     "score":    100,
                 }
         except Exception:
             pass
 
-        # Tentativa 2: search_page_ids com slug numérico via busca
+        # Tentativa 2: pages/search com token de usuário
+        try:
+            r = requests.get(
+                "https://graph.facebook.com/v21.0/pages/search",
+                params={
+                    "q":      slug,
+                    "fields": "id,name,fan_count,verification_status,username",
+                    "limit":  5,
+                    "access_token": token,
+                },
+                timeout=10,
+            )
+            for p in r.json().get("data", []):
+                pnm = (p.get("name") or "").lower()
+                if slug.lower() in pnm or pnm in slug.lower():
+                    fans = p.get("fan_count", 0)
+                    return {
+                        "pid":      str(p["id"]),
+                        "name":     p.get("name", ""),
+                        "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                        "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
+                        "slug":     p.get("username", ""),
+                        "score":    95,
+                    }
+        except Exception:
+            pass
+
+        # Tentativa 3: ads_archive filtrando por nome da página
         try:
             r = requests.get(
                 "https://graph.facebook.com/v21.0/ads_archive",
                 params={
                     "search_terms":         slug,
-                    "ad_active_status":     "ACTIVE",
-                    "ad_reached_countries": '["BR","US","PT"]',
+                    "ad_active_status":     "ALL",
+                    "ad_reached_countries": '["BR","US","PT","GB"]',
                     "fields": "page_id,page_name,ad_snapshot_url",
-                    "limit":  10,
+                    "limit":  50,
                     "access_token": token,
                 },
-                timeout=10,
+                timeout=15,
             )
             for ad in r.json().get("data", []):
                 pnm = (ad.get("page_name") or "").lower().strip()
                 pid = str(ad.get("page_id", ""))
-                if pid and (slug.lower() in pnm or pnm in slug.lower()):
+                if pid and (slug.lower() == pnm or slug.lower() in pnm or pnm in slug.lower()):
                     snap = ad.get("ad_snapshot_url", "")
                     m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
                     sl = m.group(1) if m else ""
+                    if sl.lower() in SLUGS_IGNORADOS or sl.isdigit():
+                        sl = ""
                     return {
                         "pid":      pid,
                         "name":     ad.get("page_name", ""),
                         "fans":     "",
                         "verified": False,
                         "slug":     sl,
-                        "score":    90,
+                        "score":    85,
                     }
-        except Exception:
-            pass
-
-        # Tentativa 3: URL scraping do og:url da página do Facebook
-        try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)",
-            }
-            r = requests.get(
-                f"https://www.facebook.com/{slug}",
-                headers=headers,
-                timeout=10,
-                allow_redirects=True,
-            )
-            # Extrai page_id do HTML
-            m_id = re.search(r'"pageID"\s*:\s*"(\d+)"', r.text)
-            if not m_id:
-                m_id = re.search(r'"page_id"\s*:\s*"(\d+)"', r.text)
-            if not m_id:
-                m_id = re.search(r'content="https://www\.facebook\.com/(\d+)"', r.text)
-            if m_id:
-                pid = m_id.group(1)
-                # Extrai nome
-                m_name = re.search(r'<title>([^<]+)</title>', r.text)
-                name = m_name.group(1).replace(" | Facebook", "").strip() if m_name else slug
-                return {
-                    "pid":      pid,
-                    "name":     name,
-                    "fans":     "",
-                    "verified": False,
-                    "slug":     slug,
-                    "score":    85,
-                }
         except Exception:
             pass
 
@@ -3172,6 +3168,18 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
             unsafe_allow_html=True,
         )
+
+        # DEBUG TOKEN
+        try:
+            r_debug = requests.get(
+                "https://graph.facebook.com/v21.0/me/permissions",
+                params={"access_token": META_TOKEN},
+                timeout=10,
+            )
+            perms = [p["permission"] for p in r_debug.json().get("data", []) if p.get("status") == "granted"]
+            st.info(f"✅ Token ativo | Permissões granted: {', '.join(perms)}")
+        except Exception as ex:
+            st.error(f"❌ Erro no token: {ex}")
 
         if iniciar:
             with st.spinner("Buscando páginas que estão anunciando…"):
