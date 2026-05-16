@@ -2678,7 +2678,7 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
- 
+
 elif st.session_state.pagina == "ads":
 
     import datetime as _dt
@@ -2855,7 +2855,7 @@ html, body { background: transparent; overflow: hidden; }
     # ════════════════════════════════════════════
     # ETAPA 1 — PÁGINA INFORMATIVA
     # ════════════════════════════════════════════
-    
+
     if st.session_state.ads_etapa == "informativa":
 
         if not META_TOKEN:
@@ -2866,9 +2866,14 @@ html, body { background: transparent; overflow: hidden; }
             st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
             st.stop()
 
+        # ── Botão fantasma (escondido via CSS) para disparar via JS
+        st.markdown("<style>.st-key-btn_iniciar_ads_ghost{display:none!important}</style>", unsafe_allow_html=True)
+        iniciar_ghost = st.button("__iniciar_ads__", key="btn_iniciar_ads_ghost")
+
+        n_empresas = len(todas_empresas)
         nomes_lista_html = "".join([
-            f'<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6">'
-            f'<div style="width:36px;height:36px;border-radius:50%;'
+            f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6">'
+            f'<div style="width:34px;height:34px;border-radius:50%;'
             f'background:{get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])};'
             f'display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">'
             f'{gerar_avatar(e["nome"])}</div>'
@@ -2879,222 +2884,56 @@ html, body { background: transparent; overflow: hidden; }
             for e in todas_empresas
         ])
 
-        n_empresas = len(todas_empresas)
-
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:8px; }}
+body {{ padding-bottom:12px; }}
+
 .steps {{
-    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px;
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;
 }}
 .step {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px;
 }}
-.step.active {{
-    background:#0e2a47; border-color:#0e2a47;
-}}
-.step-header {{
-    display:flex; align-items:center; gap:10px; margin-bottom:8px;
-}}
+.step.active {{ background:#0e2a47; border-color:#0e2a47; }}
+.step-header {{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }}
 .step-num {{
-    width:26px; height:26px; border-radius:7px;
+    width:24px; height:24px; border-radius:6px;
     background:#f3f4f6; color:#6b7280;
     display:flex; align-items:center; justify-content:center;
     font-size:12px; font-weight:800; flex-shrink:0;
 }}
-.step.active .step-num {{
-    background:rgba(255,255,255,0.15); color:#fff;
-}}
-.step-title {{ font-size:15px; font-weight:700; color:#111827; }}
+.step.active .step-num {{ background:rgba(255,255,255,0.15); color:#fff; }}
+.step-title {{ font-size:14px; font-weight:700; color:#111827; }}
 .step.active .step-title {{ color:#fff; }}
 .step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
 .step.active .step-desc {{ color:rgba(255,255,255,0.65); }}
+
 .empresas-box {{
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    padding:20px 24px; margin-bottom:16px;
+    padding:16px 20px; margin-bottom:20px;
 }}
 .empresas-label {{
     font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1.2px; margin-bottom:12px;
+    text-transform:uppercase; letter-spacing:1.2px; margin-bottom:10px;
 }}
-</style>
 
-<div class="steps">
-    <div class="step active">
-        <div class="step-header">
-            <div class="step-num">1</div>
-            <div class="step-title">Identificação</div>
-        </div>
-        <div class="step-desc">Buscamos automaticamente as páginas do Facebook de cada empresa</div>
-    </div>
-    <div class="step">
-        <div class="step-header">
-            <div class="step-num">2</div>
-            <div class="step-title">Confirmação</div>
-        </div>
-        <div class="step-desc">Você valida se as páginas encontradas estão corretas</div>
-    </div>
-    <div class="step">
-        <div class="step-header">
-            <div class="step-num">3</div>
-            <div class="step-title">Resultados</div>
-        </div>
-        <div class="step-desc">Veja todos os anúncios ativos com análise por IA</div>
-    </div>
-</div>
-
-<div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
-<div class="empresas-box">
-    {nomes_lista_html}
-</div>
-
-<script>
-function ajustar() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
-    }});
-}}
-new ResizeObserver(ajustar).observe(document.body);
-document.addEventListener('DOMContentLoaded', ajustar);
-window.addEventListener('load', ajustar);
-setTimeout(ajustar, 200);
-setTimeout(ajustar, 600);
-</script>
-""", height=420, scrolling=False)
-
-        # ✅ BOTÃO NATIVO STREAMLIT — sempre funciona
-        st.markdown("""
-        <style>
-        div[data-testid="stButton"].ads-cta-btn > button {
-            background: #0e2a47 !important;
-            color: #fff !important;
-            border: none !important;
-            font-size: 15px !important;
-            font-weight: 800 !important;
-            padding: 14px 28px !important;
-            border-radius: 10px !important;
-            width: 100% !important;
-            max-width: 320px !important;
-            box-shadow: 0 4px 16px rgba(14,42,71,0.25) !important;
-        }
-        div[data-testid="stButton"].ads-cta-btn > button:hover {
-            background: #1a4070 !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        col_cta, col_sub = st.columns([2, 3])
-        with col_cta:
-            iniciar = st.button(
-                "Identificar páginas →",
-                type="primary",
-                use_container_width=True,
-                key="btn_iniciar_ads"
-            )
-        with col_sub:
-            st.markdown(
-                "<div style='font-size:13px;color:#9ca3af;padding-top:10px'>"
-                "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
-                unsafe_allow_html=True
-            )
-
-        if iniciar:
-            with st.spinner("Buscando páginas do Facebook…"):
-                for e in todas_empresas:
-                    ck = e["ads_id"]
-                    pid_final = e["page_id"] or st.session_state.ads_page_ids.get(ck)
-                    ads, erro, modo_real = buscar_ads_meta(
-                        search_term=e["search_term"], token=META_TOKEN, page_id=pid_final, limit=5
-                    )
-                    if not pid_final and ads:
-                        primeiro_pid = ads[0].get("page_id", "")
-                        if primeiro_pid and str(primeiro_pid).isdigit():
-                            st.session_state.ads_page_ids[ck] = str(primeiro_pid)
-                    if ck not in st.session_state.ads_confirmacao:
-                        st.session_state.ads_confirmacao[ck] = {
-                            "status": "pending", "alternatives": [], "selected_pid": ""
-                        }
-            st.session_state.ads_etapa = "identificacao"
-            st.rerun()
-
-        st.markdown(
-            "<style>.st-key-btn_ir_identificacao{display:none!important}</style>",
-            unsafe_allow_html=True
-        )
-
-        nomes_lista_html = "".join([
-            f'<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6">'
-            f'<div style="width:36px;height:36px;border-radius:50%;'
-            f'background:{get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])};'
-            f'display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">'
-            f'{gerar_avatar(e["nome"])}</div>'
-            f'<span style="font-size:15px;font-weight:600;color:#111827;flex:1">{e["nome"]}</span>'
-            f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;border-radius:20px;font-weight:500">'
-            f'{"Minha Empresa" if e["tipo"] == "minha" else "Concorrente"}</span>'
-            f'</div>'
-            for e in todas_empresas
-        ])
-
-        n_empresas = len(todas_empresas)
-
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:8px; }}
-.steps {{
-    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px;
-}}
-.step {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;
-}}
-.step.active {{
-    background:#0e2a47; border-color:#0e2a47;
-}}
-.step-header {{
-    display:flex; align-items:center; gap:10px; margin-bottom:8px;
-}}
-.step-num {{
-    width:26px; height:26px; border-radius:7px;
-    background:#f3f4f6; color:#6b7280;
-    display:flex; align-items:center; justify-content:center;
-    font-size:12px; font-weight:800; flex-shrink:0;
-}}
-.step.active .step-num {{
-    background:rgba(255,255,255,0.15); color:#fff;
-}}
-.step-title {{
-    font-size:15px; font-weight:700; color:#111827;
-}}
-.step.active .step-title {{ color:#fff; }}
-.step-desc {{
-    font-size:13px; color:#6b7280; line-height:1.5;
-}}
-.step.active .step-desc {{ color:rgba(255,255,255,0.65); }}
-.empresas-box {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    padding:20px 24px; margin-bottom:28px;
-}}
-.empresas-label {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1.2px; margin-bottom:12px;
+.cta-row {{
+    display:flex; align-items:center; gap:16px;
 }}
 .btn-cta {{
     display:inline-flex; align-items:center; gap:10px;
-    padding:14px 28px; border-radius:10px;
+    padding:12px 28px; border-radius:10px;
     background:#0e2a47; color:#fff;
     font-size:15px; font-weight:800;
     border:none; cursor:pointer; font-family:'DM Sans',sans-serif;
     box-shadow:0 4px 16px rgba(14,42,71,0.25);
-    transition:all 0.2s;
+    transition:all 0.2s; white-space:nowrap;
 }}
 .btn-cta:hover {{ background:#1a4070; transform:translateY(-1px); }}
-.cta-sub {{ font-size:13px; color:#9ca3af; margin-top:10px; }}
+.cta-sub {{ font-size:13px; color:#9ca3af; }}
 </style>
 
 <div class="steps">
@@ -3121,36 +2960,34 @@ body {{ padding-bottom:8px; }}
     </div>
 </div>
 
-<div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
-<div class="empresas-box">
-    {nomes_lista_html}
-    <div style="padding-top:4px"></div>
+<div class="cta-row">
+    <button class="btn-cta" onclick="triggerBtn()">
+        <span>Identificar páginas</span>
+        <span style="font-size:18px">→</span>
+    </button>
+    <span class="cta-sub">Leva alguns segundos · IDs salvos automaticamente</span>
 </div>
 
-<button class="btn-cta" onclick="triggerBtn()">
-    <span>Identificar páginas</span>
-    <span style="font-size:18px">→</span>
-</button>
-<div class="cta-sub">Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>
+<div style="margin:20px 0 8px 0">
+    <div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
+    <div class="empresas-box">
+        {nomes_lista_html}
+        <div style="padding-top:2px"></div>
+    </div>
+</div>
 
 <script>
 function triggerBtn() {{
-    var found = false;
     var attempts = 0;
     function tryClick() {{
         var btns = window.parent.document.querySelectorAll('button');
         for (var i = 0; i < btns.length; i++) {{
-            var txt = btns[i].innerText.trim();
-            if (txt === '__ir_identificacao__') {{
+            if (btns[i].innerText.trim() === '__iniciar_ads__') {{
                 btns[i].click();
-                found = true;
-                break;
+                return;
             }}
         }}
-        if (!found && attempts < 10) {{
-            attempts++;
-            setTimeout(tryClick, 200);
-        }}
+        if (attempts++ < 15) setTimeout(tryClick, 200);
     }}
     tryClick();
 }}
@@ -3169,11 +3006,32 @@ setTimeout(ajustar, 600);
 </script>
 """, height=500, scrolling=False)
 
+        # ── Processa clique do botão fantasma
+        if iniciar_ghost:
+            with st.spinner("Buscando páginas do Facebook…"):
+                for e in todas_empresas:
+                    ck = e["ads_id"]
+                    pid_final = e["page_id"] or st.session_state.ads_page_ids.get(ck)
+                    ads, erro, modo_real = buscar_ads_meta(
+                        search_term=e["search_term"], token=META_TOKEN, page_id=pid_final, limit=5
+                    )
+                    if not pid_final and ads:
+                        primeiro_pid = ads[0].get("page_id", "")
+                        if primeiro_pid and str(primeiro_pid).isdigit():
+                            st.session_state.ads_page_ids[ck] = str(primeiro_pid)
+                    if ck not in st.session_state.ads_confirmacao:
+                        st.session_state.ads_confirmacao[ck] = {
+                            "status": "pending", "alternatives": [], "selected_pid": ""
+                        }
+            st.session_state.ads_etapa = "identificacao"
+            st.rerun()
+
     # ════════════════════════════════════════════
-    # ETAPA 2 — IDENTIFICAÇÃO / CONFIRMAÇÃO
+    # ETAPA 2 — CONFIRMAÇÃO DE PÁGINAS
     # ════════════════════════════════════════════
     elif st.session_state.ads_etapa == "identificacao":
 
+        # ── Botões fantasma para cada ação
         confirmar_triggers    = {}
         rejeitar_triggers     = {}
         salvar_triggers       = {}
@@ -3182,9 +3040,9 @@ setTimeout(ajustar, 600);
         for e in todas_empresas:
             ck = e["ads_id"]
             sk = safe_key(ck)
-            confirmar_triggers[ck]    = st.button(f"__cf_{sk}__", key=f"btn_cf_{sk}")
-            rejeitar_triggers[ck]     = st.button(f"__rj_{sk}__", key=f"btn_rj_{sk}")
-            nao_apareceu_triggers[ck] = st.button(f"__na_{sk}__", key=f"btn_na_{sk}")
+            confirmar_triggers[ck]    = st.button(f"__cf_{sk}__",  key=f"btn_cf_{sk}")
+            rejeitar_triggers[ck]     = st.button(f"__rj_{sk}__",  key=f"btn_rj_{sk}")
+            nao_apareceu_triggers[ck] = st.button(f"__na_{sk}__",  key=f"btn_na_{sk}")
             conf = st.session_state.ads_confirmacao.get(ck, {})
             for alt in conf.get("alternatives", []):
                 tk  = f"{ck}_{alt['pid']}"
@@ -3193,6 +3051,7 @@ setTimeout(ajustar, 600);
 
         ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
 
+        # CSS para esconder todos os botões fantasma
         ghost_sels = []
         for e in todas_empresas:
             sk = safe_key(e["ads_id"])
@@ -3206,6 +3065,7 @@ setTimeout(ajustar, 600);
             unsafe_allow_html=True
         )
 
+        # ── Processa ações dos botões fantasma
         for e in todas_empresas:
             ck   = e["ads_id"]
             conf = st.session_state.ads_confirmacao.get(ck, {})
@@ -3259,6 +3119,7 @@ setTimeout(ajustar, 600);
             st.session_state.ads_etapa = "resultados"
             st.rerun()
 
+        # ── Monta dados para o JS
         n_confirmados   = sum(
             1 for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
@@ -3293,28 +3154,42 @@ setTimeout(ajustar, 600);
 
         pct_inicial = int(n_confirmados / max(len(todas_empresas), 1) * 100)
 
+        # Estima altura necessária: top-bar + cards (120px cada + alts se rejected)
+        altura_estimada = 120 + len(todas_empresas) * 130
+        for e in todas_empresas:
+            conf = st.session_state.ads_confirmacao.get(e["ads_id"], {})
+            if conf.get("status") in ("rejected",) and conf.get("alternatives"):
+                altura_estimada += len(conf["alternatives"]) * 70 + 80
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:8px; }}
+html, body {{
+    background:transparent; font-family:'DM Sans',sans-serif;
+    -webkit-font-smoothing:antialiased; overflow:visible;
+}}
+body {{ padding-bottom:12px; }}
+
 .top-bar {{
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 20px; background:#fff;
-    border:1px solid #e5e7eb; border-radius:12px; margin-bottom:20px; gap:16px;
+    border:1px solid #e5e7eb; border-radius:12px; margin-bottom:16px; gap:16px;
+    flex-wrap:wrap;
 }}
-.top-info {{ flex:1; }}
+.top-info {{ flex:1; min-width:200px; }}
 .top-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
 .top-sub {{ font-size:13px; color:#6b7280; margin-top:2px; }}
 .progress-wrap {{ display:flex; align-items:center; gap:10px; flex-shrink:0; }}
 .progress-bar {{ width:140px; height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; }}
 .progress-fill {{ height:100%; background:linear-gradient(90deg,#27ae60,#2ecc71); border-radius:3px; transition:width 0.4s; }}
 .progress-label {{ font-size:13px; font-weight:700; color:#111827; white-space:nowrap; }}
+
 .btn-ver {{
-    padding:12px 24px; border-radius:10px; font-size:15px; font-weight:800;
+    padding:11px 22px; border-radius:10px; font-size:14px; font-weight:800;
     font-family:'DM Sans',sans-serif; cursor:pointer; transition:all 0.2s;
-    display:flex; align-items:center; gap:8px;
+    display:flex; align-items:center; gap:8px; white-space:nowrap;
+    flex-shrink:0;
 }}
 .btn-ver.ready {{
     background:#0e2a47; color:#fff; border:none;
@@ -3324,19 +3199,23 @@ body {{ padding-bottom:8px; }}
 .btn-ver.disabled {{
     background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb; cursor:not-allowed;
 }}
-.cards-list {{ display:flex; flex-direction:column; gap:12px; }}
+
+.cards-list {{ display:flex; flex-direction:column; gap:10px; }}
+
 .card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; transition:border-color 0.2s;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    overflow:hidden; transition:border-color 0.2s;
 }}
 .card.confirmed {{ border-color:#27ae60; }}
 .card.rejected  {{ border-color:#e24b4a; }}
-.card.not_found {{ border-left:4px solid #9ca3af; opacity:0.7; }}
+.card.not_found {{ border-left:4px solid #9ca3af; opacity:0.75; }}
+
 .card-top {{
-    display:flex; align-items:center; gap:14px; padding:16px 20px;
-    background:#fafafa; border-bottom:1px solid #f3f4f6;
+    display:flex; align-items:center; gap:14px; padding:14px 18px;
+    background:#fafafa; border-bottom:1px solid #f3f4f6; flex-wrap:wrap;
 }}
 .avatar {{
-    width:44px; height:44px; border-radius:50%;
+    width:42px; height:42px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
     font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
 }}
@@ -3344,11 +3223,13 @@ body {{ padding-bottom:8px; }}
 .nome {{ font-size:15px; font-weight:700; color:#111827; }}
 .found-meta {{ font-size:13px; color:#6b7280; margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }}
 .pid {{ font-family:monospace; background:#f3f4f6; padding:2px 8px; border-radius:5px; font-size:12px; color:#374151; }}
-.chip {{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }}
+
+.chip {{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }}
 .chip-ok      {{ background:#f0fdf4; color:#15803d; border:1px solid #86efac; }}
 .chip-err     {{ background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }}
 .chip-pending {{ background:#fffbeb; color:#92400e; border:1px solid #fcd34d; }}
 .chip-skip    {{ background:#f9fafb; color:#6b7280; border:1px solid #e5e7eb; }}
+
 .actions {{ display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap; justify-content:flex-end; }}
 .btn-ok   {{ padding:7px 14px; border:1px solid #86efac; border-radius:8px; background:#f0fdf4; font-size:13px; font-weight:700; color:#15803d; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
 .btn-ok:hover {{ background:#dcfce7; }}
@@ -3356,7 +3237,8 @@ body {{ padding-bottom:8px; }}
 .btn-no:hover {{ background:#fee2e2; }}
 .btn-skip {{ padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
 .btn-skip:hover {{ background:#f3f4f6; }}
-.alts-wrap {{ padding:16px 20px; border-top:1px solid #f3f4f6; }}
+
+.alts-wrap {{ padding:14px 18px; border-top:1px solid #f3f4f6; }}
 .alts-label {{ font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px; }}
 .alt-row {{
     display:flex; align-items:center; gap:12px; padding:10px 14px;
@@ -3367,7 +3249,7 @@ body {{ padding-bottom:8px; }}
 .alt-row.sel   {{ border-color:#27ae60; background:#f0fdf4; }}
 .alt-name {{ font-size:14px; font-weight:600; color:#111827; flex:1; }}
 .alt-pid  {{ font-size:11px; font-family:monospace; color:#6b7280; }}
-.save-row {{ display:flex; justify-content:flex-end; margin-top:4px; }}
+.save-row {{ display:flex; justify-content:flex-end; margin-top:6px; }}
 .btn-save {{
     padding:9px 20px; border:1px solid #bfdbfe; border-radius:8px;
     background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
@@ -3375,7 +3257,7 @@ body {{ padding-bottom:8px; }}
 }}
 .btn-save:hover {{ background:#dbeafe; }}
 .not-found-msg {{
-    padding:14px 20px; font-size:13px; color:#6b7280;
+    padding:12px 18px; font-size:13px; color:#6b7280;
     background:#f9fafb; border-top:1px solid #f3f4f6;
 }}
 </style>
@@ -3392,11 +3274,7 @@ body {{ padding-bottom:8px; }}
         <span class="progress-label" id="prog_label">{n_confirmados}/{len(todas_empresas)}</span>
     </div>
     <button class="btn-ver {'ready' if todos_resolvidos else 'disabled'}" id="btn_res"
-        onclick="
-            if (!this.classList.contains('disabled')) {{
-                triggerParentBtn('__ir_resultados__');
-            }}
-        ">
+        onclick="if(!this.classList.contains('disabled')) triggerParentBtn('__ir_resultados__')">
         Ver Anúncios →
     </button>
 </div>
@@ -3405,6 +3283,8 @@ body {{ padding-bottom:8px; }}
 
 <script>
 const empresas = {empresas_js};
+
+// Estado local (espelha o que Python já computou)
 const state = {{}};
 empresas.forEach(function(e) {{
     state[e.id] = {{ status: e.status, selected: e.selected || "" }};
@@ -3416,23 +3296,22 @@ function getInitials(nome) {{
 }}
 
 function triggerParentBtn(label) {{
-    var found = false;
     var attempts = 0;
     function tryClick() {{
         var btns = window.parent.document.querySelectorAll("button");
         for (var i = 0; i < btns.length; i++) {{
             if (btns[i].innerText.trim() === label) {{
                 btns[i].click();
-                found = true;
-                break;
+                return;
             }}
         }}
-        if (!found && attempts < 10) {{
-            attempts++;
-            setTimeout(tryClick, 200);
-        }}
+        if (attempts++ < 15) setTimeout(tryClick, 200);
     }}
     tryClick();
+}}
+
+function safe_key_js(s) {{
+    return s.replace(/[^a-zA-Z0-9_]/g, "_");
 }}
 
 function confirmar(id, sk) {{
@@ -3467,48 +3346,60 @@ function salvarAlt(id, sk, pid) {{
     render();
 }}
 
-function safe_key_js(s) {{
-    return s.replace(/[^a-zA-Z0-9_]/g, "_");
-}}
-
 function render() {{
     const el = document.getElementById("cards_list");
     let confirmados = 0;
 
     el.innerHTML = empresas.map(function(e) {{
-        const s = state[e.id];
+        const s     = state[e.id];
         const found = e.found;
         const alts  = e.alts || [];
         if (s.status === "confirmed" || s.status === "not_found") confirmados++;
 
+        // Chip de status
         let chipHtml = "";
-        if (s.status === "confirmed")                         chipHtml = '<span class="chip chip-ok">✓ Confirmado</span>';
-        else if (s.status === "rejected" && s.selected)      chipHtml = '<span class="chip chip-ok">✓ ID corrigido</span>';
-        else if (s.status === "rejected")                     chipHtml = '<span class="chip chip-err">✗ Incorreto</span>';
-        else if (s.status === "not_found")                    chipHtml = '<span class="chip chip-skip">— Não encontrada</span>';
-        else if (!found)                                      chipHtml = '<span class="chip chip-pending">⚠ Não encontrado</span>';
-        else                                                  chipHtml = '<span class="chip chip-pending">⏳ Aguardando</span>';
+        if (s.status === "confirmed")
+            chipHtml = '<span class="chip chip-ok">✓ Confirmado</span>';
+        else if (s.status === "rejected" && s.selected)
+            chipHtml = '<span class="chip chip-ok">✓ ID corrigido</span>';
+        else if (s.status === "rejected")
+            chipHtml = '<span class="chip chip-err">✗ Incorreto</span>';
+        else if (s.status === "not_found")
+            chipHtml = '<span class="chip chip-skip">— Não encontrada</span>';
+        else if (!found)
+            chipHtml = '<span class="chip chip-pending">⚠ Não encontrado</span>';
+        else
+            chipHtml = '<span class="chip chip-pending">⏳ Aguardando</span>';
 
+        // Meta da página encontrada
         let metaHtml = "";
         if (found) {{
-            metaHtml = '<span class="pid"># ' + found.pid + '</span> <span>' + found.name + '</span>';
+            metaHtml = '<span class="pid"># ' + found.pid + '</span>'
+                     + '<span>' + found.name + '</span>';
         }} else {{
             metaHtml = '<span style="color:#b45309;font-size:12px">⚠ Página não encontrada automaticamente</span>';
         }}
 
+        // Botões de ação
         let btnHtml = "";
         if (found && s.status === "pending") {{
-            btnHtml = '<button class="btn-ok"  onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">✓ Esta é a página correta</button>'
-                    + '<button class="btn-no"  onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Incorreto</button>'
-                    + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">A empresa não apareceu</button>';
+            btnHtml =
+                '<button class="btn-ok"  onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">✓ Página correta</button>'
+              + '<button class="btn-no"  onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Incorreto</button>'
+              + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">Não apareceu</button>';
         }} else if (s.status === "confirmed") {{
             btnHtml = '<button class="btn-skip" onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Corrigir</button>';
         }} else if (s.status === "not_found") {{
             btnHtml = '<button class="btn-skip" onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">Desfazer</button>';
         }} else if (s.status === "rejected") {{
-            btnHtml = '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">A empresa não apareceu</button>';
+            btnHtml = '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">Não apareceu</button>';
+        }} else if (!found && s.status === "pending") {{
+            btnHtml =
+                '<button class="btn-no"  onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Buscar alternativas</button>'
+              + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">Não apareceu</button>';
         }}
 
+        // Alternativas
         let altsHtml = "";
         if ((s.status === "rejected" || (!found && s.status !== "not_found")) && alts.length > 0) {{
             const altRows = alts.map(function(a) {{
@@ -3547,6 +3438,7 @@ function render() {{
             + '</div>';
     }}).join("");
 
+    // Atualiza progresso e botão
     const pct    = Math.round(confirmados / empresas.length * 100);
     const fill   = document.getElementById('prog_fill');
     const label  = document.getElementById('prog_label');
@@ -3572,7 +3464,7 @@ function ajustar() {{
 new ResizeObserver(ajustar).observe(document.body);
 render();
 </script>
-""", height=400, scrolling=False)
+""", height=max(400, altura_estimada), scrolling=False)
 
     # ════════════════════════════════════════════
     # ETAPA 3 — RESULTADOS
@@ -3748,7 +3640,7 @@ render();
                     plat_txt      = _plat_icons(ad["plataformas"])
                     snapshot_url  = ad.get("snapshot_url", "")
                     fmt = ad["formato"]
-                    if "Vídeo"   in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
+                    if "Vídeo"    in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
                     elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7", "#92400e", "#fcd34d"
                     else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff", "#5b21b6", "#c4b5fd"
                     copy_sections = []
