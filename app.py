@@ -2687,10 +2687,15 @@ elif st.session_state.pagina == "ads":
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
 
-    # ────────────────────────────────────────────────────────────
-    # FUNÇÕES INTERNAS
-    # ────────────────────────────────────────────────────────────
+    # ── Session state das etapas
+    if "ads_etapa"          not in st.session_state: st.session_state.ads_etapa          = "informativa"
+    if "ads_cache"          not in st.session_state: st.session_state.ads_cache          = {}
+    if "ads_erro"           not in st.session_state: st.session_state.ads_erro           = {}
+    if "ads_page_ids"       not in st.session_state: st.session_state.ads_page_ids       = {}
+    if "ads_confirmacao"    not in st.session_state: st.session_state.ads_confirmacao    = {}
+    if "ads_id_manual"      not in st.session_state: st.session_state.ads_id_manual      = {}
 
+    # ── Funções auxiliares
     def detectar_modo(identifier: str) -> tuple:
         if not identifier:
             return None, None, "keyword"
@@ -2712,37 +2717,24 @@ elif st.session_state.pagina == "ads":
         try:
             r = requests.get(
                 "https://graph.facebook.com/v21.0/pages/search",
-                params={
-                    "q": nome,
-                    "fields": "id,name,fan_count,verification_status",
-                    "limit": 5,
-                    "access_token": token,
-                },
+                params={"q": nome, "fields": "id,name,fan_count,verification_status", "limit": 5, "access_token": token},
                 timeout=15,
             )
             for p in r.json().get("data", []):
                 fans = p.get("fan_count", 0)
                 resultados.append({
-                    "pid":      str(p["id"]),
-                    "name":     p.get("name", ""),
-                    "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                    "pid": str(p["id"]), "name": p.get("name", ""),
+                    "fans": f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
                     "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
                 })
         except Exception:
             pass
-
         if not resultados:
             try:
                 r = requests.get(
                     "https://graph.facebook.com/v21.0/ads_archive",
-                    params={
-                        "search_terms": nome,
-                        "ad_active_status": "ACTIVE",
-                        "ad_reached_countries": '["BR"]',
-                        "fields": "page_id,page_name",
-                        "limit": 5,
-                        "access_token": token,
-                    },
+                    params={"search_terms": nome, "ad_active_status": "ACTIVE", "ad_reached_countries": '["BR"]',
+                            "fields": "page_id,page_name", "limit": 5, "access_token": token},
                     timeout=15,
                 )
                 seen = set()
@@ -2750,51 +2742,29 @@ elif st.session_state.pagina == "ads":
                     pid = str(ad.get("page_id", ""))
                     if pid and pid not in seen:
                         seen.add(pid)
-                        resultados.append({
-                            "pid":      pid,
-                            "name":     ad.get("page_name", ""),
-                            "fans":     "",
-                            "verified": False,
-                        })
+                        resultados.append({"pid": pid, "name": ad.get("page_name", ""), "fans": "", "verified": False})
             except Exception:
                 pass
-
         return resultados
 
-    def buscar_ads_meta(
-        search_term: str,
-        token: str,
-        limit: int = 20,
-        page_id: str = None,
-    ) -> tuple:
+    def buscar_ads_meta(search_term, token, limit=20, page_id=None):
         url = "https://graph.facebook.com/v21.0/ads_archive"
-        fields = (
-            "id,page_id,page_name,"
-            "ad_creative_bodies,ad_creative_link_captions,"
-            "ad_creative_link_descriptions,ad_creative_link_titles,"
-            "ad_snapshot_url,ad_delivery_start_time,"
-            "impressions,publisher_platforms,media_type"
-        )
-        params = {
-            "ad_active_status": "ACTIVE",
-            "ad_reached_countries": '["BR"]',
-            "fields": fields,
-            "limit": limit,
-            "access_token": token,
-        }
+        fields = ("id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,"
+                  "ad_creative_link_descriptions,ad_creative_link_titles,"
+                  "ad_snapshot_url,ad_delivery_start_time,impressions,publisher_platforms,media_type")
+        params = {"ad_active_status": "ACTIVE", "ad_reached_countries": '["BR"]',
+                  "fields": fields, "limit": limit, "access_token": token}
         modo = "keyword"
         if page_id:
             params["search_page_ids"] = page_id
             modo = "page_id"
         else:
             params["search_terms"] = search_term
-
         try:
             r = requests.get(url, params=params, timeout=15)
             data = r.json()
             if "error" in data:
                 return [], data["error"].get("message", "Erro desconhecido"), modo
-
             ads_raw = data.get("data", [])
             resultado = []
             for ad in ads_raw:
@@ -2804,155 +2774,34 @@ elif st.session_state.pagina == "ads":
                 caps   = ad.get("ad_creative_link_captions") or []
                 plats  = ad.get("publisher_platforms") or []
                 media  = ad.get("media_type", "")
-
-                if media in ("VIDEO", "video"):   fmt = "Vídeo 🎬"
-                elif media in ("IMAGE", "image"): fmt = "Imagem 🖼️"
-                elif len(bodies) > 1:             fmt = "Carrossel 🎠"
-                else:                             fmt = "Imagem 🖼️"
-
+                if media in ("VIDEO", "video"):    fmt = "Vídeo 🎬"
+                elif media in ("IMAGE", "image"):  fmt = "Imagem 🖼️"
+                elif len(bodies) > 1:              fmt = "Carrossel 🎠"
+                else:                              fmt = "Imagem 🖼️"
                 imp = ad.get("impressions", {})
                 imp_str = ""
                 if isinstance(imp, dict):
                     lo, hi = imp.get("lower_bound", ""), imp.get("upper_bound", "")
                     if lo or hi: imp_str = f"{lo}–{hi}"
-
                 resultado.append({
-                    "id":           ad.get("id", ""),
-                    "page_id":      str(ad.get("page_id", "")),
-                    "page_name":    ad.get("page_name", ""),
-                    "body":         bodies[0] if bodies else "",
-                    "bodies":       bodies,
-                    "title":        titles[0] if titles else "",
-                    "description":  descs[0]  if descs  else "",
-                    "caption":      caps[0]   if caps   else "",
+                    "id": ad.get("id", ""), "page_id": str(ad.get("page_id", "")),
+                    "page_name": ad.get("page_name", ""),
+                    "body": bodies[0] if bodies else "", "bodies": bodies,
+                    "title": titles[0] if titles else "", "description": descs[0] if descs else "",
+                    "caption": caps[0] if caps else "",
                     "snapshot_url": ad.get("ad_snapshot_url", ""),
-                    "data_inicio":  (
-                        ad.get("ad_delivery_start_time", "")[:10]
-                        if ad.get("ad_delivery_start_time") else ""
-                    ),
-                    "impressoes":   imp_str,
-                    "plataformas":  plats,
-                    "formato":      fmt,
-                    "media_type":   media,
+                    "data_inicio": (ad.get("ad_delivery_start_time", "")[:10] if ad.get("ad_delivery_start_time") else ""),
+                    "impressoes": imp_str, "plataformas": plats, "formato": fmt, "media_type": media,
                 })
             return resultado, None, modo
         except Exception as e:
             return [], str(e), modo
 
-    def _plat_icons(plats):
-        icons = {
-            "facebook": "🔵 Facebook", "instagram": "📸 Instagram",
-            "messenger": "💬 Messenger", "audience_network": "🌐 Audience Network",
-        }
-        return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
-
-    def _truncar(txt, n=120):
-        if not txt: return "—"
-        return txt[:n] + "…" if len(txt) > n else txt
-
-    def _link_fallback(term, nome):
-        url = (
-            f"https://www.facebook.com/ads/library/?active_status=active"
-            f"&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
-        )
-        st.markdown(
-            f"<div style='text-align:center;font-size:13px;color:#9ca3af;margin-top:8px'>"
-            f"Ou abra diretamente: "
-            f"<a href='{url}' target='_blank' style='color:#3a9fd6;text-decoration:none'>"
-            f"Ad Library → {nome}</a></div>",
-            unsafe_allow_html=True,
-        )
-
-    def _estado_vazio(nome, term, cor_av, avatar, is_minha, modo):
-        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-        modo_txt  = f"Page ID: {term}" if modo == "page_id" else f"Keyword: {term}"
-        st.markdown(f"""
-        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                    padding:32px;text-align:center;margin-bottom:24px'>
-            <div style='width:56px;height:56px;border-radius:50%;background:{cor_av};
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:20px;font-weight:700;color:#fff;margin:0 auto 14px'>
-                {avatar}
-            </div>
-            <div style='font-size:17px;font-weight:700;color:#111827;margin-bottom:6px'>{nome}</div>
-            <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
-                         padding:2px 12px;border-radius:20px;font-size:12px;font-weight:600'>
-                {badge_lbl}
-            </span>
-            <div style='margin-top:16px;font-size:14px;color:#6b7280'>
-                Busca: <b style='color:#111827'>{modo_txt}</b>
-            </div>
-            <div style='margin-top:20px;padding:14px;background:#f9fafb;border-radius:10px;
-                        font-size:13px;color:#9ca3af'>
-                Clique em <b style='color:#111827'>🔍 Buscar Anúncios</b> para carregar os anúncios ativos.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        _link_fallback(term, nome)
-
-    # ────────────────────────────────────────────────────────────
-    # CABEÇALHO
-    # ────────────────────────────────────────────────────────────
-
-    h1, h2 = st.columns([7, 3])
-    with h1:
-        components.html("""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-@font-face {
-    font-family: 'Animo';
-    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { background: transparent; overflow: hidden; }
-.titulo {
-    font-family: 'Animo', 'DM Sans', sans-serif;
-    font-size: 32px; font-weight: 700; color: #1a2e4a;
-    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
-}
-.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
-</style>
-<div class="titulo">Biblioteca de Ads</div>
-<div class="sub">Criativos, copies e formatos dos anúncios ativos dos seus concorrentes.</div>
-""", height=65)
-
-    with h2:
-        st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-        buscar_btn = st.button("🔍 Buscar Anúncios", type="primary", use_container_width=True)
-
-    st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
-        unsafe_allow_html=True,
-    )
-
-    # ────────────────────────────────────────────────────────────
-    # VALIDAÇÃO TOKEN
-    # ────────────────────────────────────────────────────────────
+    def safe_key(s):
+        import re
+        return re.sub(r"[^a-zA-Z0-9_]", "_", s)
 
     META_TOKEN = st.secrets.get("META_ACCESS_TOKEN", "")
-    if not META_TOKEN:
-        st.warning(
-            "⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets.\n\n"
-            "Formato: `APP_ID|APP_SECRET` (ex: `1234567890|abc123def456`)"
-        )
-        st.stop()
-
-    # ────────────────────────────────────────────────────────────
-    # SESSION STATE
-    # ────────────────────────────────────────────────────────────
-
-    if "ads_cache"        not in st.session_state: st.session_state.ads_cache        = {}
-    if "ads_erro"         not in st.session_state: st.session_state.ads_erro         = {}
-    if "ads_page_ids"     not in st.session_state: st.session_state.ads_page_ids     = {}
-    if "ads_confirmacao"  not in st.session_state: st.session_state.ads_confirmacao  = {}
-    if "ads_mostrar_painel" not in st.session_state: st.session_state.ads_mostrar_painel = False
-
-    # ────────────────────────────────────────────────────────────
-    # MONTA LISTA DE EMPRESAS
-    # ────────────────────────────────────────────────────────────
 
     todas_empresas = []
     if emp.get("nome"):
@@ -2961,8 +2810,7 @@ html, body { background: transparent; overflow: hidden; }
         todas_empresas.append({
             "nome": emp["nome"], "ads_id": raw_id,
             "page_id": page_id, "keyword": keyword or raw_id,
-            "search_term": emp["nome"],
-            "modo": modo, "tipo": "minha", "idx": 0,
+            "search_term": emp["nome"], "modo": modo, "tipo": "minha", "idx": 0,
         })
     for i, c in enumerate(concs):
         raw_id = c.get("ads_id", "") or c.get("fb_page", "") or c.get("nome", "")
@@ -2970,880 +2818,840 @@ html, body { background: transparent; overflow: hidden; }
         todas_empresas.append({
             "nome": c["nome"], "ads_id": raw_id,
             "page_id": page_id, "keyword": keyword or raw_id,
-            "search_term": c["nome"],
-            "modo": modo, "tipo": "concorrente", "idx": i,
+            "search_term": c["nome"], "modo": modo, "tipo": "concorrente", "idx": i,
         })
 
-    if not todas_empresas:
-        st.info("Cadastre sua empresa e concorrentes para visualizar anúncios.")
-        st.stop()
+    # ── Verifica se já tem resultados para pular etapas
+    tem_resultados = bool(st.session_state.ads_cache)
+    tem_confirmacoes = bool(st.session_state.ads_page_ids) or bool(st.session_state.ads_confirmacao)
+    
+    if tem_resultados and st.session_state.ads_etapa == "informativa":
+        st.session_state.ads_etapa = "resultados"
+    elif tem_confirmacoes and st.session_state.ads_etapa == "informativa":
+        st.session_state.ads_etapa = "identificacao"
 
-    # ────────────────────────────────────────────────────────────
-    # BOTÕES FANTASMA — CONFIRMAÇÃO DE PAGE IDs
-    # ────────────────────────────────────────────────────────────
-
-    def safe_key(s):
-        import re
-        return re.sub(r"[^a-zA-Z0-9_]", "_", s)
-
-    confirmar_triggers = {}
-    rejeitar_triggers  = {}
-    salvar_triggers    = {}
-
-    for e in todas_empresas:
-        ck  = e["ads_id"]
-        sk  = safe_key(ck)
-        confirmar_triggers[ck] = st.button(f"__cf_{sk}__", key=f"btn_cf_{sk}")
-        rejeitar_triggers[ck]  = st.button(f"__rj_{sk}__", key=f"btn_rj_{sk}")
-        conf = st.session_state.ads_confirmacao.get(ck, {})
-        for alt in conf.get("alternatives", []):
-            tk = f"{ck}_{alt['pid']}"
-            stk = safe_key(tk)
-            salvar_triggers[tk] = st.button(f"__sv_{stk}__", key=f"btn_sv_{stk}")
-
-    # CSS esconde todos os botões fantasma de confirmação
-    ghost_parts = []
-    for e in todas_empresas:
-        sk = safe_key(e["ads_id"])
-        ghost_parts.append(f".st-key-btn_cf_{sk},.st-key-btn_rj_{sk}")
-        for alt in st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("alternatives", []):
-            stk = safe_key(f"{e['ads_id']}_{alt['pid']}")
-            ghost_parts.append(f".st-key-btn_sv_{stk}")
-    if ghost_parts:
-        st.markdown(
-            f"<style>{','.join(ghost_parts)}{{display:none!important}}</style>",
-            unsafe_allow_html=True,
-        )
-
-    # Processa cliques dos botões fantasma
-    for e in todas_empresas:
-        ck   = e["ads_id"]
-        conf = st.session_state.ads_confirmacao.get(ck, {})
-
-        if confirmar_triggers.get(ck):
-            pid_conf = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
-            st.session_state.ads_confirmacao[ck] = {**conf, "status": "confirmed"}
-            if pid_conf:
-                st.session_state.ads_page_ids[ck] = pid_conf
-            st.rerun()
-
-        if rejeitar_triggers.get(ck):
-            alts = conf.get("alternatives")
-            if not alts:
-                with st.spinner(f"Buscando alternativas para {e['nome']}…"):
-                    alts = buscar_alternativas_paginas(e["nome"], META_TOKEN)
-            st.session_state.ads_confirmacao[ck] = {
-                **conf, "status": "rejected", "alternatives": alts or []
-            }
-            st.rerun()
-
-        for alt in conf.get("alternatives", []):
-            tk = f"{ck}_{alt['pid']}"
-            if salvar_triggers.get(tk):
-                st.session_state.ads_page_ids[ck] = alt["pid"]
-                st.session_state.ads_confirmacao[ck] = {
-                    **conf, "status": "confirmed", "selected_pid": alt["pid"]
-                }
-                st.toast(f"✅ {e['nome']}: Page ID {alt['pid']} salvo!", icon="✅")
-                st.rerun()
-
-    # ────────────────────────────────────────────────────────────
-    # DISPARAR BUSCA
-    # ────────────────────────────────────────────────────────────
-
-    if buscar_btn:
-        st.session_state.ads_cache = {}
-        st.session_state.ads_erro  = {}
-
-        with st.spinner("Buscando anúncios na Meta Ad Library…"):
-            for emp_item in todas_empresas:
-                ck = emp_item["ads_id"]
-                pid_final = emp_item["page_id"] or st.session_state.ads_page_ids.get(ck)
-
-                ads, erro, modo_real = buscar_ads_meta(
-                    search_term=emp_item["search_term"],
-                    token=META_TOKEN,
-                    page_id=pid_final,
-                )
-
-                # Auto-aprende page_id dos resultados quando buscou por keyword
-                if not pid_final and ads:
-                    primeiro_pid = ads[0].get("page_id", "")
-                    if primeiro_pid and str(primeiro_pid).isdigit():
-                        st.session_state.ads_page_ids[ck] = str(primeiro_pid)
-                        # Inicializa confirmação como pendente para o usuário validar
-                        if ck not in st.session_state.ads_confirmacao:
-                            st.session_state.ads_confirmacao[ck] = {
-                                "status": "pending", "alternatives": [], "selected_pid": ""
-                            }
-
-                if erro:
-                    st.session_state.ads_erro[ck] = erro
-                else:
-                    st.session_state.ads_cache[ck] = {
-                        "data":    ads,
-                        "ts":      _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "nome":    emp_item["nome"],
-                        "modo":    modo_real,
-                        "page_id": pid_final or st.session_state.ads_page_ids.get(ck),
-                    }
-
-        st.session_state.ads_mostrar_painel = True
-
-    # ────────────────────────────────────────────────────────────
-    # PAINEL DE CONFIRMAÇÃO DE PAGE IDs
-    # ────────────────────────────────────────────────────────────
-
-    # Monta dados das empresas para o painel
-    empresas_painel = []
-    for idx_e, e in enumerate(todas_empresas):
-        ck   = e["ads_id"]
-        sk   = safe_key(ck)
-        conf = st.session_state.ads_confirmacao.get(ck, {})
-        pid_encontrado = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
-
-        # Tenta pegar nome da página dos resultados em cache
-        page_name_found = ""
-        cache_entry = st.session_state.ads_cache.get(ck, {})
-        ads_lista = cache_entry.get("data", [])
-        if ads_lista and pid_encontrado:
-            for ad in ads_lista:
-                if str(ad.get("page_id", "")) == str(pid_encontrado):
-                    page_name_found = ad.get("page_name", "")
-                    break
-        if not page_name_found and ads_lista:
-            page_name_found = ads_lista[0].get("page_name", "")
-
-        found_obj = json.dumps({
-            "pid": pid_encontrado,
-            "name": page_name_found or e["nome"],
-            "fans": "",
-            "verified": False,
-        }) if pid_encontrado else "null"
-
-        status    = conf.get("status", "pending" if pid_encontrado else "not_found")
-        selected  = conf.get("selected_pid", "")
-        alts      = conf.get("alternatives", [])
-
-        empresas_painel.append({
-            "id":       ck,
-            "sk":       sk,
-            "nome":     e["nome"],
-            "idx":      idx_e,
-            "found":    found_obj,
-            "alts":     json.dumps(alts),
-            "status":   status,
-            "selected": selected,
-        })
-
-    # Verifica se há algo para confirmar
-    tem_pendentes = any(
-        st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status", "pending") != "confirmed"
-        for e in todas_empresas
-        if e["page_id"] or st.session_state.ads_page_ids.get(e["ads_id"])
-    )
-
-    col_dica, col_btn_painel = st.columns([5, 2])
-    with col_dica:
-        st.markdown("""
-        <div style='background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
-                    padding:12px 16px;font-size:13px;color:#0c4a6e'>
-            💡 <b>Dica:</b> Page ID numérico = busca exata e mais anúncios encontrados.
-            Confirme os IDs encontrados automaticamente ou corrija se necessário.
-        </div>
-        """, unsafe_allow_html=True)
-    with col_btn_painel:
-        st.markdown("<div style='padding-top:4px'/>", unsafe_allow_html=True)
-        if st.button(
-            "🔖 Confirmar Page IDs",
-            use_container_width=True,
-            type="primary" if tem_pendentes else "secondary",
-        ):
-            st.session_state.ads_mostrar_painel = not st.session_state.ads_mostrar_painel
-
-    st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-
-    if st.session_state.ads_mostrar_painel:
-        empresas_js = "[\n" + ",\n".join([
-            f"""{{
-                id: {json.dumps(e['id'])},
-                sk: {json.dumps(e['sk'])},
-                nome: {json.dumps(e['nome'])},
-                idx: {e['idx']},
-                found: {e['found']},
-                alts: {e['alts']},
-                status: {json.dumps(e['status'])},
-                selected: {json.dumps(e['selected'])}
-            }}"""
-            for e in empresas_painel
-        ]) + "\n]"
-
-        painel_html = f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    # ════════════════════════════════════════════
+    # CABEÇALHO SEMPRE VISÍVEL
+    # ════════════════════════════════════════════
+    components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background: transparent;
-    font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow: visible;
-}}
-body {{ padding-bottom: 8px; }}
-.wrap {{
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 8px;
-}}
-.hdr {{
-    padding: 14px 18px;
-    font-size: 14px; font-weight: 800; color: #1a2e4a;
-    text-transform: uppercase; letter-spacing: 0.3px;
-    border-bottom: 1px solid #e5e7eb;
-    background: #fff;
-    display: flex; align-items: center; justify-content: space-between;
-}}
-.hdr-sub {{ font-size: 12px; color: #6b7280; font-weight: 400; text-transform: none; letter-spacing: 0; }}
-.body {{ padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }}
-.card {{
-    border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;
-    transition: border-color 0.2s;
-}}
-.card.confirmed {{ border-color: #27ae60; }}
-.card.rejected  {{ border-color: #e24b4a; }}
-.card.not_found {{ border-color: #fcd34d; }}
-.card-top {{
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 16px; background: #fafafa;
-}}
-.avatar {{
-    width: 40px; height: 40px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
-}}
-.info {{ flex: 1; min-width: 0; }}
-.nome {{ font-size: 14px; font-weight: 700; color: #111827; }}
-.meta {{
-    font-size: 12px; color: #6b7280; margin-top: 3px;
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-}}
-.pid-badge {{
-    display: inline-flex; align-items: center; gap: 3px;
-    background: #f3f4f6; border: 1px solid #e5e7eb;
-    border-radius: 6px; padding: 2px 8px;
-    font-size: 11px; font-family: monospace; color: #374151;
-}}
-.chip {{
-    display: inline-flex; align-items: center; gap: 4px;
-    border-radius: 6px; padding: 3px 10px;
-    font-size: 11px; font-weight: 700;
-}}
-.chip-ok      {{ background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }}
-.chip-err     {{ background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }}
-.chip-warn    {{ background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }}
-.chip-pending {{ background: #f9fafb; color: #6b7280; border: 1px solid #e5e7eb; }}
-.actions {{ display: flex; gap: 6px; flex-shrink: 0; }}
-.btn-ok {{
-    padding: 6px 14px; border: 1px solid #86efac; border-radius: 7px;
-    background: #f0fdf4; font-size: 12px; font-weight: 700; color: #15803d;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s;
-}}
-.btn-ok:hover {{ background: #dcfce7; }}
-.btn-no {{
-    padding: 6px 14px; border: 1px solid #fca5a5; border-radius: 7px;
-    background: #fef2f2; font-size: 12px; font-weight: 700; color: #dc2626;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s;
-}}
-.btn-no:hover {{ background: #fee2e2; }}
-.btn-save {{
-    padding: 7px 16px; border: 1px solid #bfdbfe; border-radius: 7px;
-    background: #eff6ff; font-size: 13px; font-weight: 700; color: #1d4ed8;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s;
-}}
-.btn-save:hover {{ background: #dbeafe; }}
-.alts {{
-    padding: 12px 16px; border-top: 1px solid #f3f4f6; background: #fff;
-}}
-.alts-label {{ font-size: 12px; color: #6b7280; margin-bottom: 8px; font-weight: 600; }}
-.alt-row {{
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px; border: 1px solid #e5e7eb;
-    border-radius: 8px; background: #fafafa;
-    cursor: pointer; margin-bottom: 6px;
-    transition: border-color 0.15s, background 0.15s;
-}}
-.alt-row:hover {{ border-color: #3a9fd6; background: #f0f9ff; }}
-.alt-row.sel   {{ border-color: #27ae60; background: #f0fdf4; }}
-.alt-name {{ font-size: 13px; font-weight: 600; color: #111827; flex: 1; }}
-.alt-pid  {{ font-size: 11px; font-family: monospace; color: #6b7280; }}
-.alt-fans {{ font-size: 11px; color: #9ca3af; }}
-.save-row {{ display: flex; justify-content: flex-end; margin-top: 8px; }}
-.not-found-msg {{
-    padding: 14px 16px; font-size: 13px; color: #9ca3af;
-    background: #fffbeb; border-top: 1px solid #fef3c7;
-}}
-.radio {{ font-size: 18px; flex-shrink: 0; }}
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo { font-family: 'Animo', 'DM Sans', sans-serif; font-size: 32px; font-weight: 700; color: #1a2e4a; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px; }
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
 </style>
+<div class="titulo">Biblioteca de Ads</div>
+<div class="sub">Criativos, copies e formatos dos anúncios ativos dos seus concorrentes.</div>
+""", height=65)
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px 0'/>", unsafe_allow_html=True)
 
-<div class="wrap">
-    <div class="hdr">
-        <span>🔖 Confirmar Page IDs</span>
-        <span class="hdr-sub">Confirme se a página encontrada é a correta para cada empresa</span>
-    </div>
-    <div class="body" id="painel_body"></div>
-</div>
+    # ════════════════════════════════════════════
+    # ETAPA 1 — PÁGINA INFORMATIVA
+    # ════════════════════════════════════════════
+    if st.session_state.ads_etapa == "informativa":
 
-<script>
-const COLORS = ["#27ae60","#3a9fd6","#2ecc71","#5bc4f5","#1a7abf","#1a2e4a"];
-const empresas = {empresas_js};
-const state = {{}};
+        if not META_TOKEN:
+            st.warning("⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets para usar esta funcionalidade.")
+            st.stop()
 
-empresas.forEach(function(e) {{
-    state[e.id] = {{ status: e.status, selected: e.selected || "" }};
-}});
+        if not todas_empresas:
+            st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
+            st.stop()
 
-function getInitials(nome) {{
-    const parts = nome.trim().toUpperCase().split(" ");
-    return parts.length > 1 ? parts[0][0] + parts[1][0] : parts[0][0];
-}}
-
-function triggerBtn(label) {{
-    const btns = window.parent.document.querySelectorAll("button");
-    for (const b of btns) {{
-        if (b.innerText.trim() === label) {{ b.click(); break; }}
-    }}
-}}
-
-function confirmar(id, sk) {{
-    state[id].status = "confirmed";
-    triggerBtn("__cf_" + sk + "__");
-    render();
-}}
-
-function rejeitar(id, sk) {{
-    state[id].status = "rejected";
-    state[id].selected = "";
-    triggerBtn("__rj_" + sk + "__");
-    render();
-}}
-
-function selecionarAlt(id, pid) {{
-    state[id].selected = pid;
-    render();
-}}
-
-function salvarAlt(id, sk, pid) {{
-    if (!state[id].selected) return;
-    state[id].status = "confirmed";
-    const stk = sk + "_" + pid.replace(/-/g,"_");
-    triggerBtn("__sv_" + stk + "__");
-    render();
-}}
-
-function render() {{
-    const el = document.getElementById("painel_body");
-    el.innerHTML = empresas.map(function(e) {{
-        const s = state[e.id];
-        const found = e.found;
-        const alts  = e.alts || [];
-
-        // Chip de status
-        let chipHtml = "";
-        if (s.status === "confirmed") {{
-            chipHtml = '<span class="chip chip-ok">✓ Confirmado</span>';
-        }} else if (s.status === "rejected" && s.selected) {{
-            chipHtml = '<span class="chip chip-ok">✓ ID corrigido</span>';
-        }} else if (s.status === "rejected") {{
-            chipHtml = '<span class="chip chip-err">✗ Incorreto</span>';
-        }} else if (s.status === "not_found" || !found) {{
-            chipHtml = '<span class="chip chip-warn">⚠ Não encontrado</span>';
-        }} else {{
-            chipHtml = '<span class="chip chip-pending">⏳ Aguardando confirmação</span>';
-        }}
-
-        // Meta info da página encontrada
-        let metaHtml = "";
-        if (found) {{
-            metaHtml = '<span class="pid-badge"># ' + found.pid + '</span>'
-                + ' <span>' + found.name + '</span>'
-                + (found.fans ? ' <span style="color:#9ca3af">' + found.fans + '</span>' : '')
-                + (found.verified ? ' <span style="color:#27ae60;font-size:11px">✓ Verificado</span>' : '');
-        }} else {{
-            metaHtml = '<span style="color:#b45309;font-size:12px">⚠ Nenhum ID encontrado automaticamente</span>';
-        }}
-
-        // Botões confirmar/incorreto
-        let btnHtml = "";
-        if (found && s.status === "pending") {{
-            btnHtml = '<div class="actions">'
-                + '<button class="btn-ok" onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">✓ Correto</button>'
-                + '<button class="btn-no" onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">✗ Incorreto</button>'
-                + '</div>';
-        }} else if (s.status === "confirmed") {{
-            btnHtml = '<button class="btn-no" style="font-size:11px;padding:4px 10px" '
-                + 'onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Corrigir</button>';
-        }}
-
-        // Bloco de alternativas
-        let altsHtml = "";
-        if ((s.status === "rejected" || s.status === "not_found" || !found) && alts.length > 0) {{
-            const altRows = alts.map(function(a) {{
-                const sel = s.selected === a.pid ? " sel" : "";
-                const radio = s.selected === a.pid
-                    ? '<span class="radio" style="color:#27ae60">●</span>'
-                    : '<span class="radio" style="color:#d1d5db">○</span>';
-                return '<div class="alt-row' + sel + '" onclick="selecionarAlt(\'' + e.id + '\',\'' + a.pid + '\')">'
-                    + '<div style="flex:1;min-width:0">'
-                    + '<div class="alt-name">' + a.name + (a.verified ? ' <span style="color:#27ae60;font-size:11px">✓</span>' : '') + '</div>'
-                    + '<div style="display:flex;gap:8px;margin-top:2px">'
-                    + '<span class="alt-pid">' + a.pid + '</span>'
-                    + (a.fans ? '<span class="alt-fans">' + a.fans + ' seguidores</span>' : '')
-                    + '</div></div>'
-                    + radio
-                    + '</div>';
-            }}).join("");
-
-            const saveBtn = s.selected
-                ? '<div class="save-row">'
-                  + '<button class="btn-save" onclick="salvarAlt(\'' + e.id + '\',\'' + e.sk + '\',\'' + s.selected + '\')">'
-                  + '💾 Salvar este ID permanentemente</button></div>'
-                : '';
-
-            altsHtml = '<div class="alts">'
-                + '<div class="alts-label">Selecione a página correta:</div>'
-                + altRows
-                + saveBtn
-                + '</div>';
-
-        }} else if ((s.status === "rejected" || s.status === "not_found") && alts.length === 0) {{
-            altsHtml = '<div class="not-found-msg">'
-                + '⚠ Nenhuma alternativa encontrada. Cole o Page ID numérico diretamente no campo '
-                + '<b>"ID Manual Ads"</b> no cadastro do concorrente para garantir buscas precisas.'
-                + '</div>';
-        }}
-
-        // Classe do card
-        let cardClass = "card";
-        if (s.status === "confirmed" || (s.status === "rejected" && s.selected)) {{
-            cardClass += " confirmed";
-        }} else if (s.status === "rejected") {{
-            cardClass += " rejected";
-        }} else if (s.status === "not_found" || !found) {{
-            cardClass += " not_found";
-        }}
-
-        return '<div class="' + cardClass + '">'
-            + '<div class="card-top">'
-            + '<div class="avatar" style="background:' + COLORS[e.idx % COLORS.length] + '">' + getInitials(e.nome) + '</div>'
-            + '<div class="info">'
-            + '<div class="nome">' + e.nome + '</div>'
-            + '<div class="meta">' + metaHtml + '</div>'
-            + '</div>'
-            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">'
-            + chipHtml + btnHtml
-            + '</div>'
-            + '</div>'
-            + altsHtml
-            + '</div>';
-    }}).join("");
-
-    ajustar();
-}}
-
-function ajustar() {{
-    const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    window.parent.document.querySelectorAll("iframe").forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + "px"; }} catch(err) {{}}
-    }});
-}}
-
-new ResizeObserver(ajustar).observe(document.body);
-document.addEventListener("DOMContentLoaded", render);
-render();
-</script>
-"""
-        components.html(painel_html, height=120, scrolling=False)
-
-    # ────────────────────────────────────────────────────────────
-    # TABS POR EMPRESA
-    # ────────────────────────────────────────────────────────────
-
-    tab_labels = [e["nome"] for e in todas_empresas]
-    abas_ads   = st.tabs(tab_labels)
-
-    # ────────────────────────────────────────────────────────────
-    # RENDER DE CADA ABA
-    # ────────────────────────────────────────────────────────────
-
-    def render_ads_empresa(emp_item):
-        ck       = emp_item["ads_id"]
-        nome     = emp_item["nome"]
-        is_minha = emp_item["tipo"] == "minha"
-        idx_cor  = emp_item["idx"]
-        cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_cor)
-        avatar   = gerar_avatar(nome)
-        modo     = emp_item["modo"]
-        term     = emp_item["search_term"]
-
-        if ck in st.session_state.ads_erro:
-            st.error(f"Erro ao buscar anúncios de **{nome}**: {st.session_state.ads_erro[ck]}")
-            _link_fallback(term, nome)
-            return
-
-        if ck not in st.session_state.ads_cache:
-            _estado_vazio(nome, term, cor_av, avatar, is_minha, modo)
-            return
-
-        cache_entry = st.session_state.ads_cache[ck]
-        ads_list    = cache_entry["data"]
-        ts          = cache_entry["ts"]
-        modo_real   = cache_entry.get("modo", modo)
-        pid         = cache_entry.get("page_id") or st.session_state.ads_page_ids.get(ck, "")
-
-        conf_status = st.session_state.ads_confirmacao.get(ck, {}).get("status", "pending")
-
-        # Badge modo de busca
-        if modo_real == "page_id" and pid:
-            if conf_status == "confirmed":
-                modo_badge = (
-                    f"<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;"
-                    f"padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>"
-                    f"✅ Page ID confirmado: {pid}</span>"
-                )
-            else:
-                modo_badge = (
-                    f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;"
-                    f"padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>"
-                    f"⏳ Page ID aguardando confirmação: {pid}</span>"
-                )
-        else:
-            modo_badge = (
-                f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;"
-                f"padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>"
-                f"🔍 Busca por keyword: {term}</span>"
-            )
-
-        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-
-        st.markdown(f"""
-        <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
-                    padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
-            <div style='width:44px;height:44px;border-radius:50%;background:{cor_av};
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:16px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
-            <div style='flex:1;min-width:0'>
-                <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
-                <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px'>
-                    <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
-                                 padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
-                        {badge_lbl}
-                    </span>
-                    {modo_badge}
-                    <span style='font-size:12px;color:#9ca3af'>· {ts}</span>
-                </div>
-            </div>
-            <div style='text-align:right;flex-shrink:0'>
-                <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
-                <div style='font-size:12px;color:#9ca3af'>anúncios ativos</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if not ads_list:
-            st.info(f"Nenhum anúncio ativo encontrado para **{nome}**.")
-            _link_fallback(term, nome)
-            return
-
-        # Filtros
-        fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
-        with fcol1:
-            busca_texto = st.text_input(
-                "Filtrar", placeholder="Pesquisar no copy…",
-                key=f"ads_busca_{ck}", label_visibility="collapsed",
-            )
-        with fcol2:
-            formatos_disponiveis = sorted(set(a["formato"] for a in ads_list))
-            filtro_fmt = st.selectbox(
-                "Formato", ["Todos os formatos"] + formatos_disponiveis,
-                key=f"ads_fmt_{ck}", label_visibility="collapsed",
-            )
-        with fcol3:
-            plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-            filtro_plat = st.selectbox(
-                "Plataforma", ["Todas as plataformas"] + [p.capitalize() for p in plats_todas],
-                key=f"ads_plat_{ck}", label_visibility="collapsed",
-            )
-
-        ads_filtrados = ads_list
-        if busca_texto:
-            q = busca_texto.lower()
-            ads_filtrados = [
-                a for a in ads_filtrados
-                if q in (a.get("body") or "").lower()
-                or q in (a.get("title") or "").lower()
-                or q in (a.get("description") or "").lower()
-            ]
-        if filtro_fmt and filtro_fmt != "Todos os formatos":
-            ads_filtrados = [a for a in ads_filtrados if a["formato"] == filtro_fmt]
-        if filtro_plat and filtro_plat != "Todas as plataformas":
-            ads_filtrados = [a for a in ads_filtrados if filtro_plat.lower() in (a["plataformas"] or [])]
-
-        if not ads_filtrados:
-            st.warning("Nenhum anúncio encontrado com os filtros aplicados.")
-            return
-
-        # Estatísticas rápidas
-        n_video  = sum(1 for a in ads_filtrados if "Vídeo"  in a["formato"])
-        n_imagem = sum(1 for a in ads_filtrados if "Imagem" in a["formato"])
-        n_outros = len(ads_filtrados) - n_video - n_imagem
-
-        st.markdown(f"""
-        <div style='display:flex;gap:12px;margin-bottom:20px'>
-            <div style='flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
-                        padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#15803d'>{len(ads_filtrados)}</div>
-                <div style='font-size:12px;color:#16a34a;font-weight:600'>Total</div>
-            </div>
-            <div style='flex:1;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;
-                        padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#92400e'>{n_imagem}</div>
-                <div style='font-size:12px;color:#b45309;font-weight:600'>Imagens</div>
-            </div>
-            <div style='flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;
-                        padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#1e40af'>{n_video}</div>
-                <div style='font-size:12px;color:#1d4ed8;font-weight:600'>Vídeos</div>
-            </div>
-            <div style='flex:1;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;
-                        padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#5b21b6'>{n_outros}</div>
-                <div style='font-size:12px;color:#6d28d9;font-weight:600'>Outros</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Grid de cards de anúncios
-        cols_ads = st.columns(3)
-        for j, ad in enumerate(ads_filtrados):
-            with cols_ads[j % 3]:
-                body_preview  = _truncar(ad["body"], 100)
-                title_preview = _truncar(ad["title"], 60)
-                desc_preview  = _truncar(ad["description"], 80)
-                plat_txt      = _plat_icons(ad["plataformas"])
-                snapshot_url  = ad.get("snapshot_url", "")
-
-                fmt = ad["formato"]
-                if "Vídeo"   in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
-                elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7", "#92400e", "#fcd34d"
-                else:                fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff", "#5b21b6", "#c4b5fd"
-
-                copy_sections = []
-                if ad["title"]:
-                    copy_sections.append(
-                        f"<div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>{title_preview}</div>"
+        # Botões fantasma para avançar etapa
+        if st.button("__ir_identificacao__", key="btn_ir_identificacao"):
+            # Busca pages para pré-popular
+            with st.spinner("Buscando páginas do Facebook…"):
+                for e in todas_empresas:
+                    ck = e["ads_id"]
+                    pid_final = e["page_id"] or st.session_state.ads_page_ids.get(ck)
+                    ads, erro, modo_real = buscar_ads_meta(
+                        search_term=e["search_term"], token=META_TOKEN, page_id=pid_final, limit=5
                     )
-                if ad["body"]:
-                    copy_sections.append(
-                        f"<div style='font-size:13px;color:#374151;line-height:1.6;font-style:italic'>{body_preview}</div>"
-                    )
-                if ad["description"]:
-                    copy_sections.append(
-                        f"<div style='font-size:12px;color:#6b7280;margin-top:4px'>{desc_preview}</div>"
-                    )
-                copy_html_inner = (
-                    "\n".join(copy_sections) if copy_sections
-                    else "<div style='font-size:13px;color:#9ca3af;font-style:italic'>Sem copy disponível</div>"
-                )
+                    if not pid_final and ads:
+                        primeiro_pid = ads[0].get("page_id", "")
+                        if primeiro_pid and str(primeiro_pid).isdigit():
+                            st.session_state.ads_page_ids[ck] = str(primeiro_pid)
+                    if ck not in st.session_state.ads_confirmacao:
+                        st.session_state.ads_confirmacao[ck] = {"status": "pending", "alternatives": [], "selected_pid": ""}
+            st.session_state.ads_etapa = "identificacao"
+            st.rerun()
 
-                ad_pid_str = ad.get("page_id", "")
-                page_id_badge = (
-                    f"<div style='font-size:11px;color:#6b7280;margin-top:2px'>🔖 Page ID: {ad_pid_str}</div>"
-                    if ad_pid_str else ""
-                )
+        st.markdown("<style>.st-key-btn_ir_identificacao{display:none!important}</style>", unsafe_allow_html=True)
 
-                st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                            overflow:hidden;margin-bottom:4px'>
-                    <div style='padding:14px 16px 10px 16px;border-bottom:1px solid #f3f4f6'>
-                        <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px'>
-                            <span style='background:{fmt_bg};color:{fmt_txt_c};border:1px solid {fmt_brd};
-                                         padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700'>
-                                {fmt}
-                            </span>
-                            <span style='font-size:11px;color:#9ca3af'>{ad["data_inicio"] or "—"}</span>
-                        </div>
-                        <div style='font-size:12px;color:#6b7280;margin-bottom:2px'>📄 {ad["page_name"] or nome}</div>
-                        {page_id_badge}
-                        {"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ " + ad["impressoes"] + " impressões</div>" if ad["impressoes"] else ""}
-                    </div>
-                    <div style='padding:14px 16px;min-height:90px'>
-                        {copy_html_inner}
-                    </div>
-                    <div style='padding:0 16px 10px 16px'>
-                        <div style='font-size:11px;color:#9ca3af'>{plat_txt or "—"}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                if snapshot_url:
-                    st.link_button("🔗 Ver criativo completo", snapshot_url, use_container_width=True)
-                else:
-                    fallback_url = (
-                        f"https://www.facebook.com/ads/library/?active_status=active"
-                        f"&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
-                    )
-                    st.link_button("🔍 Abrir Ad Library", fallback_url, use_container_width=True)
-
-                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-
-        # Análise IA
-        st.markdown(
-            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
-            unsafe_allow_html=True,
-        )
-
-        chave_ia = f"ia_ads_{ck}"
-        if chave_ia not in st.session_state:
-            st.session_state[chave_ia] = ""
-
-        safe_ck = safe_key(ck)
-
-        st.markdown(f"""
-        <style>
-        .st-key-btn_ia_ads_{safe_ck} {{
-            position:fixed!important;top:-9999px!important;left:-9999px!important;
-            width:1px!important;height:1px!important;overflow:hidden!important;
-            opacity:0!important;pointer-events:none!important;visibility:hidden!important;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        ia_ads_btn = st.button(f"__ia_ads_{safe_ck}__", key=f"btn_ia_ads_{safe_ck}")
-
-        resumo_ads = "\n".join([
-            f"- [{a['formato']}] Título: {a['title'][:60] if a['title'] else '—'} | "
-            f"Copy: {a['body'][:80] if a['body'] else '—'} | "
-            f"Impressões: {a['impressoes'] or '—'} | "
-            f"Plataformas: {', '.join(a['plataformas'] or [])}"
-            for a in ads_filtrados[:15]
+        # HTML informativo
+        nomes_lista = "".join([
+            f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">'
+            f'<div style="width:32px;height:32px;border-radius:50%;background:{get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])};'
+            f'display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">{gerar_avatar(e["nome"])}</div>'
+            f'<span style="font-size:14px;font-weight:600;color:#111827">{e["nome"]}</span>'
+            f'<span style="font-size:12px;color:#9ca3af;margin-left:auto">{"Minha Empresa" if e["tipo"]=="minha" else "Concorrente"}</span>'
+            f'</div>'
+            for e in todas_empresas
         ])
-
-        ia_html = st.session_state.get(chave_ia, "").replace("\n", "<br>")
-        btn_js = (
-            f"const btns=window.parent.document.querySelectorAll('button');"
-            f"for(const b of btns){{if(b.innerText.trim()==='__ia_ads_{safe_ck}__')"
-            f"{{b.click();break;}}}}"
-        )
-
-        if ia_html:
-            ia_content = f"""
-            <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75;max-height:400px;overflow-y:auto'>
-                {ia_html}
-            </div>
-            <div style='padding:0 18px 18px 18px'>
-                <button onclick="{btn_js}"
-                    style='width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
-                           background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
-                           cursor:pointer;font-family:DM Sans,sans-serif'>
-                    🔄 Gerar Nova Análise
-                </button>
-            </div>"""
-        else:
-            ia_content = f"""
-            <div style='padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af'>
-                Clique no botão abaixo para análise estratégica com IA.
-            </div>
-            <div style='padding:0 18px 18px 18px'>
-                <button onclick="{btn_js}"
-                    style='width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
-                           background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
-                           cursor:pointer;font-family:DM Sans,sans-serif'>
-                    🤖 Analisar Anúncios com IA
-                </button>
-            </div>"""
 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{{margin:0;padding:0;box-sizing:border-box;}}
-html{{background:transparent;font-family:'DM Sans',sans-serif;}}
-body{{background:transparent;overflow:visible;padding-bottom:8px;}}
-.wrap{{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;}}
-.hdr{{padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
-      text-transform:uppercase;letter-spacing:0.3px;
-      border-bottom:1px solid #e5e7eb;background:#fff;}}
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+.wrap {{
+    max-width:680px; margin:0 auto;
+    background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;
+    box-shadow:0 4px 24px rgba(0,0,0,0.06);
+}}
+.hero {{
+    background:linear-gradient(135deg,#0e2a47 0%,#1a4a7a 100%);
+    padding:40px 40px 32px;
+    text-align:center; position:relative; overflow:hidden;
+}}
+.hero::before {{
+    content:''; position:absolute; inset:0;
+    background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}}
+.hero-icon {{
+    width:64px; height:64px; border-radius:16px;
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; margin:0 auto 20px; position:relative;
+}}
+.hero-title {{
+    font-size:24px; font-weight:800; color:#fff; margin-bottom:8px;
+    letter-spacing:-0.3px;
+}}
+.hero-sub {{
+    font-size:15px; color:rgba(255,255,255,0.7); line-height:1.6;
+}}
+.steps {{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:0;
+    border-bottom:1px solid #e5e7eb;
+}}
+.step {{
+    padding:20px 16px; text-align:center;
+    border-right:1px solid #e5e7eb; position:relative;
+}}
+.step:last-child {{ border-right:none; }}
+.step-num {{
+    width:32px; height:32px; border-radius:50%;
+    background:#0e2a47; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:800; margin:0 auto 10px;
+}}
+.step-title {{ font-size:13px; font-weight:700; color:#111827; margin-bottom:4px; }}
+.step-desc {{ font-size:12px; color:#6b7280; line-height:1.5; }}
+.arrow {{
+    position:absolute; right:-8px; top:50%;
+    transform:translateY(-50%);
+    font-size:16px; color:#d1d5db; z-index:1;
+}}
+.empresas-wrap {{ padding:24px 32px; border-bottom:1px solid #e5e7eb; }}
+.empresas-title {{ font-size:12px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }}
+.cta-wrap {{ padding:24px 32px; text-align:center; }}
+.btn-cta {{
+    display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    padding:14px 36px; border-radius:10px;
+    background:linear-gradient(135deg,#0e2a47,#1a6abf);
+    color:#fff; font-size:16px; font-weight:800;
+    border:none; cursor:pointer; font-family:'DM Sans',sans-serif;
+    box-shadow:0 4px 16px rgba(14,42,71,0.3);
+    transition:all 0.2s; letter-spacing:0.2px; text-decoration:none;
+}}
+.btn-cta:hover {{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(14,42,71,0.4); }}
+.cta-sub {{ font-size:12px; color:#9ca3af; margin-top:12px; }}
 </style>
 <div class="wrap">
-    <div class="hdr">📊 Análise Estratégica dos Anúncios com IA</div>
-    {ia_content}
+    <div class="hero">
+        <div class="hero-icon">📡</div>
+        <div class="hero-title">Biblioteca de Anúncios</div>
+        <div class="hero-sub">
+            Visualize todos os anúncios ativos dos seus concorrentes no Facebook e Instagram
+            diretamente da Meta Ad Library.
+        </div>
+    </div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-title">Identificação</div>
+            <div class="step-desc">Confirmamos as páginas corretas no Facebook</div>
+            <span class="arrow">›</span>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-title">Confirmar</div>
+            <div class="step-desc">Você valida quais páginas quer monitorar</div>
+            <span class="arrow">›</span>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-title">Resultados</div>
+            <div class="step-desc">Veja todos os anúncios ativos com análise IA</div>
+        </div>
+    </div>
+    <div class="empresas-wrap">
+        <div class="empresas-title">Empresas que serão analisadas</div>
+        {nomes_lista}
+    </div>
+    <div class="cta-wrap">
+        <button class="btn-cta" onclick="
+            const btns = window.parent.document.querySelectorAll('button');
+            for (const b of btns) {{
+                if (b.innerText.trim() === '__ir_identificacao__') {{ b.click(); break; }}
+            }}
+        ">
+            <span>Identificar páginas</span>
+            <span style="font-size:18px">→</span>
+        </button>
+        <div class="cta-sub">Isso leva alguns segundos e é salvo automaticamente</div>
+    </div>
 </div>
 <script>
-function ajustarAltura(){{
-    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
-    window.parent.document.querySelectorAll('iframe').forEach(function(f){{
-        try{{if(f.contentWindow===window)f.style.height=(h+8)+'px';}}catch(e){{}}
+function ajustar() {{
+    var h = document.body.scrollHeight;
+    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
     }});
 }}
-new ResizeObserver(ajustarAltura).observe(document.body);
-document.addEventListener('DOMContentLoaded',ajustarAltura);
-window.addEventListener('load',ajustarAltura);
-setTimeout(ajustarAltura,200);
+window.addEventListener('load', ajustar);
+document.addEventListener('DOMContentLoaded', ajustar);
+setTimeout(ajustar, 300);
 </script>
-""", height=200, scrolling=False)
+""", height=580, scrolling=False)
 
-        if ia_ads_btn:
-            if gemini_model is None:
-                st.session_state[chave_ia] = "Configure GEMINI_API_KEY nos secrets."
-            else:
-                with st.spinner("Analisando anúncios com IA…"):
-                    try:
-                        prompt_ads = f"""
-Você é um especialista em mídia paga e marketing digital.
+    # ════════════════════════════════════════════
+    # ETAPA 2 — IDENTIFICAÇÃO / CONFIRMAÇÃO
+    # ════════════════════════════════════════════
+    elif st.session_state.ads_etapa == "identificacao":
+
+        # Botões fantasma de ação
+        confirmar_triggers = {}
+        rejeitar_triggers  = {}
+        salvar_triggers    = {}
+        nao_apareceu_triggers = {}
+
+        for e in todas_empresas:
+            ck  = e["ads_id"]
+            sk  = safe_key(ck)
+            confirmar_triggers[ck]    = st.button(f"__cf_{sk}__",  key=f"btn_cf_{sk}")
+            rejeitar_triggers[ck]     = st.button(f"__rj_{sk}__",  key=f"btn_rj_{sk}")
+            nao_apareceu_triggers[ck] = st.button(f"__na_{sk}__",  key=f"btn_na_{sk}")
+            conf = st.session_state.ads_confirmacao.get(ck, {})
+            for alt in conf.get("alternatives", []):
+                tk  = f"{ck}_{alt['pid']}"
+                stk = safe_key(tk)
+                salvar_triggers[tk] = st.button(f"__sv_{stk}__", key=f"btn_sv_{stk}")
+
+        ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
+
+        # CSS esconde todos fantasmas
+        ghost_sels = [
+            f".st-key-btn_cf_{safe_key(e['ads_id'])},"
+            f".st-key-btn_rj_{safe_key(e['ads_id'])},"
+            f".st-key-btn_na_{safe_key(e['ads_id'])}"
+            for e in todas_empresas
+        ]
+        for e in todas_empresas:
+            conf = st.session_state.ads_confirmacao.get(e["ads_id"], {})
+            for alt in conf.get("alternatives", []):
+                ghost_sels.append(f".st-key-btn_sv_{safe_key(e['ads_id']+'_'+alt['pid'])}")
+        ghost_sels.append(".st-key-btn_ir_resultados")
+        st.markdown(f"<style>{','.join(ghost_sels)}{{display:none!important}}</style>", unsafe_allow_html=True)
+
+        # Processa cliques
+        for e in todas_empresas:
+            ck   = e["ads_id"]
+            conf = st.session_state.ads_confirmacao.get(ck, {})
+
+            if confirmar_triggers.get(ck):
+                pid_conf = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
+                st.session_state.ads_confirmacao[ck] = {**conf, "status": "confirmed"}
+                if pid_conf:
+                    st.session_state.ads_page_ids[ck] = pid_conf
+                st.rerun()
+
+            if rejeitar_triggers.get(ck):
+                alts = conf.get("alternatives")
+                if not alts:
+                    with st.spinner(f"Buscando alternativas para {e['nome']}…"):
+                        alts = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts or []}
+                st.rerun()
+
+            if nao_apareceu_triggers.get(ck):
+                st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found", "alternatives": []}
+                st.rerun()
+
+            for alt in conf.get("alternatives", []):
+                tk = f"{ck}_{alt['pid']}"
+                if salvar_triggers.get(tk):
+                    st.session_state.ads_page_ids[ck] = alt["pid"]
+                    st.session_state.ads_confirmacao[ck] = {**conf, "status": "confirmed", "selected_pid": alt["pid"]}
+                    st.toast(f"✅ {e['nome']}: Page ID {alt['pid']} salvo!", icon="✅")
+                    st.rerun()
+
+        if ir_resultados:
+            # Busca anúncios para todos confirmados
+            with st.spinner("Buscando anúncios…"):
+                for e in todas_empresas:
+                    ck = e["ads_id"]
+                    conf_status = st.session_state.ads_confirmacao.get(ck, {}).get("status", "pending")
+                    if conf_status == "not_found":
+                        continue
+                    pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
+                    ads, erro, modo_real = buscar_ads_meta(
+                        search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
+                    )
+                    if erro:
+                        st.session_state.ads_erro[ck] = erro
+                    else:
+                        st.session_state.ads_cache[ck] = {
+                            "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "nome": e["nome"], "modo": modo_real,
+                            "page_id": pid_final or st.session_state.ads_page_ids.get(ck),
+                        }
+            st.session_state.ads_etapa = "resultados"
+            st.rerun()
+
+        # Conta confirmados
+        n_confirmados = sum(
+            1 for e in todas_empresas
+            if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
+        )
+        todos_resolvidos = n_confirmados == len(todas_empresas)
+
+        # Monta dados para o HTML
+        empresas_js_items = []
+        for idx_e, e in enumerate(todas_empresas):
+            ck   = e["ads_id"]
+            sk   = safe_key(ck)
+            conf = st.session_state.ads_confirmacao.get(ck, {})
+            pid_encontrado = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
+            page_name_found = ""
+            if pid_encontrado:
+                for ad in st.session_state.ads_cache.get(ck, {}).get("data", []):
+                    if str(ad.get("page_id", "")) == str(pid_encontrado):
+                        page_name_found = ad.get("page_name", "")
+                        break
+            found_obj = json.dumps({"pid": pid_encontrado, "name": page_name_found or e["nome"], "fans": "", "verified": False}) if pid_encontrado else "null"
+            status   = conf.get("status", "pending" if pid_encontrado else "not_found")
+            selected = conf.get("selected_pid", "")
+            alts     = conf.get("alternatives", [])
+            cor      = get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])
+            empresas_js_items.append(f"""{{
+                id: {json.dumps(ck)}, sk: {json.dumps(sk)}, nome: {json.dumps(e["nome"])},
+                idx: {idx_e}, found: {found_obj}, alts: {json.dumps(alts)},
+                status: {json.dumps(status)}, selected: {json.dumps(selected)}, cor: {json.dumps(cor)}
+            }}""")
+        empresas_js = "[\n" + ",\n".join(empresas_js_items) + "\n]"
+
+        btn_resultados_style = (
+            "background:linear-gradient(135deg,#0e2a47,#1a6abf);color:#fff;border:none;box-shadow:0 4px 16px rgba(14,42,71,0.3);"
+            if todos_resolvidos else
+            "background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb;cursor:not-allowed;"
+        )
+
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
+.page-wrap {{ display:flex; flex-direction:column; gap:0; }}
+.top-bar {{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; background:#fff;
+    border:1px solid #e5e7eb; border-radius:12px; margin-bottom:16px;
+    gap:16px;
+}}
+.top-info {{ flex:1; }}
+.top-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
+.top-sub {{ font-size:13px; color:#6b7280; margin-top:2px; }}
+.progress-wrap {{ display:flex; align-items:center; gap:10px; flex-shrink:0; }}
+.progress-bar {{ width:140px; height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; }}
+.progress-fill {{ height:100%; background:linear-gradient(90deg,#27ae60,#2ecc71); border-radius:3px; transition:width 0.4s; }}
+.progress-label {{ font-size:13px; font-weight:700; color:#111827; white-space:nowrap; }}
+.btn-resultados {{
+    padding:12px 28px; border-radius:10px;
+    font-size:15px; font-weight:800; font-family:'DM Sans',sans-serif;
+    cursor:pointer; transition:all 0.2s; letter-spacing:0.2px;
+    display:flex; align-items:center; gap:8px;
+    {btn_resultados_style}
+}}
+.btn-resultados:not([disabled]):hover {{ transform:translateY(-2px); }}
+.cards-list {{ display:flex; flex-direction:column; gap:12px; }}
+.card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    overflow:hidden; transition:border-color 0.2s;
+}}
+.card.confirmed {{ border-color:#27ae60; }}
+.card.rejected  {{ border-color:#e24b4a; }}
+.card.not_found {{ border-left:4px solid #9ca3af; opacity:0.7; }}
+.card-top {{
+    display:flex; align-items:center; gap:14px; padding:16px 20px;
+    background:#fafafa; border-bottom:1px solid #f3f4f6;
+}}
+.avatar {{
+    width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.info {{ flex:1; min-width:0; }}
+.nome {{ font-size:15px; font-weight:700; color:#111827; }}
+.found-meta {{ font-size:13px; color:#6b7280; margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }}
+.pid {{ font-family:monospace; background:#f3f4f6; padding:2px 8px; border-radius:5px; font-size:12px; color:#374151; }}
+.chip {{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }}
+.chip-ok      {{ background:#f0fdf4; color:#15803d; border:1px solid #86efac; }}
+.chip-err     {{ background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }}
+.chip-pending {{ background:#fffbeb; color:#92400e; border:1px solid #fcd34d; }}
+.chip-skip    {{ background:#f9fafb; color:#6b7280; border:1px solid #e5e7eb; }}
+.actions {{ display:flex; gap:8px; flex-shrink:0; align-items:center; }}
+.btn-ok  {{ padding:7px 16px; border:1px solid #86efac; border-radius:8px; background:#f0fdf4; font-size:13px; font-weight:700; color:#15803d; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
+.btn-ok:hover {{ background:#dcfce7; }}
+.btn-no  {{ padding:7px 16px; border:1px solid #fca5a5; border-radius:8px; background:#fef2f2; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
+.btn-no:hover {{ background:#fee2e2; }}
+.btn-skip {{ padding:7px 14px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
+.btn-skip:hover {{ background:#f3f4f6; }}
+.alts-wrap {{ padding:16px 20px; border-top:1px solid #f3f4f6; }}
+.alts-label {{ font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px; }}
+.alt-row {{
+    display:flex; align-items:center; gap:12px; padding:10px 14px;
+    border:1px solid #e5e7eb; border-radius:8px; margin-bottom:8px;
+    cursor:pointer; transition:all 0.15s; background:#fafafa;
+}}
+.alt-row:hover {{ border-color:#3a9fd6; background:#f0f9ff; }}
+.alt-row.sel   {{ border-color:#27ae60; background:#f0fdf4; }}
+.alt-name {{ font-size:14px; font-weight:600; color:#111827; flex:1; }}
+.alt-pid  {{ font-size:11px; font-family:monospace; color:#6b7280; }}
+.save-row {{ display:flex; justify-content:flex-end; margin-top:4px; }}
+.btn-save {{
+    padding:9px 20px; border:1px solid #bfdbfe; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+}}
+.btn-save:hover {{ background:#dbeafe; }}
+.not-found-msg {{
+    padding:14px 20px; font-size:13px; color:#6b7280; background:#f9fafb;
+    border-top:1px solid #f3f4f6;
+}}
+</style>
+<div class="page-wrap">
+    <div class="top-bar">
+        <div class="top-info">
+            <div class="top-title">Confirmar páginas do Facebook</div>
+            <div class="top-sub">Verifique se as páginas encontradas correspondem a cada empresa</div>
+        </div>
+        <div class="progress-wrap">
+            <div class="progress-bar">
+                <div class="progress-fill" id="prog_fill" style="width:{int(n_confirmados/max(len(todas_empresas),1)*100)}%"></div>
+            </div>
+            <span class="progress-label" id="prog_label">{n_confirmados}/{len(todas_empresas)}</span>
+        </div>
+        <button class="btn-resultados" id="btn_res" {"" if todos_resolvidos else 'disabled'} onclick="
+            if (!this.disabled) {{
+                const btns = window.parent.document.querySelectorAll('button');
+                for (const b of btns) {{
+                    if (b.innerText.trim() === '__ir_resultados__') {{ b.click(); break; }}
+                }}
+            }}
+        ">
+            Ver Anúncios →
+        </button>
+    </div>
+    <div class="cards-list" id="cards_list"></div>
+</div>
+<script>
+const COLORS = ["#27ae60","#3a9fd6","#2ecc71","#5bc4f5","#1a7abf","#1a2e4a"];
+const empresas = {empresas_js};
+const state = {{}};
+empresas.forEach(function(e) {{
+    state[e.id] = {{ status: e.status, selected: e.selected || "" }};
+}});
+function getInitials(nome) {{
+    const p = nome.trim().toUpperCase().split(" ");
+    return p.length > 1 ? p[0][0] + p[1][0] : p[0][0];
+}}
+function triggerBtn(label) {{
+    const btns = window.parent.document.querySelectorAll("button");
+    for (const b of btns) {{ if (b.innerText.trim() === label) {{ b.click(); return; }} }}
+}}
+function confirmar(id, sk) {{ state[id].status = "confirmed"; triggerBtn("__cf_" + sk + "__"); render(); }}
+function rejeitar(id, sk) {{
+    state[id].status = "rejected"; state[id].selected = "";
+    triggerBtn("__rj_" + sk + "__"); render();
+}}
+function naoApareceu(id, sk) {{
+    state[id].status = "not_found";
+    triggerBtn("__na_" + sk + "__"); render();
+}}
+function selecionarAlt(id, pid) {{ state[id].selected = pid; render(); }}
+function salvarAlt(id, sk, pid) {{
+    if (!state[id].selected) return;
+    state[id].status = "confirmed";
+    const stk = sk + "_" + pid.replace(/-/g,"_");
+    triggerBtn("__sv_" + stk + "__"); render();
+}}
+function render() {{
+    const el = document.getElementById("cards_list");
+    let confirmados = 0;
+    el.innerHTML = empresas.map(function(e) {{
+        const s = state[e.id];
+        const found = e.found;
+        const alts = e.alts || [];
+        if (s.status === "confirmed" || s.status === "not_found") confirmados++;
+        let chipHtml = "";
+        if (s.status === "confirmed")                                chipHtml = '<span class="chip chip-ok">✓ Confirmado</span>';
+        else if (s.status === "rejected" && s.selected)             chipHtml = '<span class="chip chip-ok">✓ ID corrigido</span>';
+        else if (s.status === "rejected")                            chipHtml = '<span class="chip chip-err">✗ Incorreto</span>';
+        else if (s.status === "not_found")                           chipHtml = '<span class="chip chip-skip">— Não encontrada</span>';
+        else if (!found)                                             chipHtml = '<span class="chip chip-pending">⚠ Não encontrado</span>';
+        else                                                         chipHtml = '<span class="chip chip-pending">⏳ Aguardando</span>';
+        let metaHtml = "";
+        if (found) {{
+            metaHtml = '<span class="pid"># ' + found.pid + '</span> <span>' + found.name + '</span>';
+        }} else {{
+            metaHtml = '<span style="color:#b45309;font-size:12px">⚠ Página não encontrada automaticamente</span>';
+        }}
+        let btnHtml = "";
+        if (found && s.status === "pending") {{
+            btnHtml = '<button class="btn-ok" onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">✓ Esta é a página correta</button>'
+                    + '<button class="btn-no" onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Incorreto</button>'
+                    + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">A empresa não apareceu</button>';
+        }} else if (s.status === "confirmed") {{
+            btnHtml = '<button class="btn-skip" onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Corrigir</button>';
+        }} else if (s.status === "not_found") {{
+            btnHtml = '<button class="btn-skip" onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">Desfazer</button>';
+        }} else if (s.status === "rejected") {{
+            btnHtml = '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">A empresa não apareceu</button>';
+        }}
+        let altsHtml = "";
+        if ((s.status === "rejected" || (!found && s.status !== "not_found")) && alts.length > 0) {{
+            const altRows = alts.map(function(a) {{
+                const sel = s.selected === a.pid ? " sel" : "";
+                const radio = s.selected === a.pid
+                    ? '<span style="color:#27ae60;font-size:18px">●</span>'
+                    : '<span style="color:#d1d5db;font-size:18px">○</span>';
+                return '<div class="alt-row' + sel + '" onclick="selecionarAlt(\'' + e.id + '\',\'' + a.pid + '\')">'
+                    + '<div style="flex:1"><div class="alt-name">' + a.name + (a.verified ? ' ✓' : '') + '</div>'
+                    + '<div class="alt-pid">' + a.pid + (a.fans ? '  ·  ' + a.fans + ' seguidores' : '') + '</div></div>'
+                    + radio + '</div>';
+            }}).join("");
+            const saveBtn = s.selected
+                ? '<div class="save-row"><button class="btn-save" onclick="salvarAlt(\'' + e.id + '\',\'' + e.sk + '\',\'' + s.selected + '\')">💾 Usar este ID</button></div>'
+                : '';
+            altsHtml = '<div class="alts-wrap"><div class="alts-label">Selecione a página correta:</div>' + altRows + saveBtn + '</div>';
+        }} else if (s.status === "rejected" && alts.length === 0) {{
+            altsHtml = '<div class="not-found-msg">Nenhuma alternativa encontrada. Cole o Page ID numérico no campo <b>"ID Manual Ads"</b> no cadastro do concorrente.</div>';
+        }}
+        let cardClass = "card";
+        if (s.status === "confirmed" || (s.status === "rejected" && s.selected)) cardClass += " confirmed";
+        else if (s.status === "rejected") cardClass += " rejected";
+        else if (s.status === "not_found") cardClass += " not_found";
+        return '<div class="' + cardClass + '">'
+            + '<div class="card-top">'
+            + '<div class="avatar" style="background:' + e.cor + '">' + getInitials(e.nome) + '</div>'
+            + '<div class="info"><div class="nome">' + e.nome + '</div>'
+            + '<div class="found-meta">' + metaHtml + '</div></div>'
+            + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
+            + chipHtml + '<div class="actions">' + btnHtml + '</div>'
+            + '</div></div>' + altsHtml + '</div>';
+    }}).join("");
+    const pct = Math.round(confirmados / empresas.length * 100);
+    const fill = document.getElementById('prog_fill');
+    const label = document.getElementById('prog_label');
+    const btnRes = document.getElementById('btn_res');
+    if (fill) fill.style.width = pct + '%';
+    if (label) label.textContent = confirmados + '/' + empresas.length;
+    if (btnRes) {{
+        const allDone = confirmados === empresas.length;
+        btnRes.disabled = !allDone;
+        if (allDone) {{
+            btnRes.style.background = 'linear-gradient(135deg,#0e2a47,#1a6abf)';
+            btnRes.style.color = '#fff'; btnRes.style.border = 'none';
+            btnRes.style.boxShadow = '0 4px 16px rgba(14,42,71,0.3)';
+            btnRes.style.cursor = 'pointer';
+        }} else {{
+            btnRes.style.background = '#f3f4f6'; btnRes.style.color = '#9ca3af';
+            btnRes.style.border = '1px solid #e5e7eb'; btnRes.style.cursor = 'not-allowed';
+            btnRes.style.boxShadow = 'none';
+        }}
+    }}
+    ajustar();
+}}
+function ajustar() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(err) {{}}
+    }});
+}}
+new ResizeObserver(ajustar).observe(document.body);
+render();
+</script>
+""", height=400, scrolling=False)
+
+    # ════════════════════════════════════════════
+    # ETAPA 3 — RESULTADOS
+    # ════════════════════════════════════════════
+    elif st.session_state.ads_etapa == "resultados":
+
+        def _plat_icons(plats):
+            icons = {"facebook": "🔵 Facebook", "instagram": "📸 Instagram",
+                     "messenger": "💬 Messenger", "audience_network": "🌐 Audience Network"}
+            return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
+
+        def _truncar(txt, n=120):
+            if not txt: return "—"
+            return txt[:n] + "…" if len(txt) > n else txt
+
+        # Botão voltar para re-identificar
+        col_btn_voltar, col_btn_atualizar = st.columns([2, 2])
+        with col_btn_voltar:
+            if st.button("← Gerenciar páginas", use_container_width=True):
+                st.session_state.ads_etapa = "identificacao"
+                st.rerun()
+        with col_btn_atualizar:
+            if st.button("🔄 Atualizar anúncios", type="primary", use_container_width=True):
+                st.session_state.ads_cache = {}
+                with st.spinner("Buscando anúncios…"):
+                    for e in todas_empresas:
+                        ck = e["ads_id"]
+                        conf_status = st.session_state.ads_confirmacao.get(ck, {}).get("status", "pending")
+                        if conf_status == "not_found":
+                            continue
+                        pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
+                        ads, erro, modo_real = buscar_ads_meta(
+                            search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
+                        )
+                        if erro:
+                            st.session_state.ads_erro[ck] = erro
+                        else:
+                            st.session_state.ads_cache[ck] = {
+                                "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                                "nome": e["nome"], "modo": modo_real,
+                                "page_id": pid_final,
+                            }
+                st.rerun()
+
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
+        tab_labels = [e["nome"] for e in todas_empresas
+                      if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") != "not_found"]
+        empresas_visiveis = [e for e in todas_empresas
+                             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") != "not_found"]
+
+        if not tab_labels:
+            st.info("Nenhuma empresa confirmada para exibir anúncios.")
+            st.stop()
+
+        abas_ads = st.tabs(tab_labels)
+
+        def render_ads_empresa(emp_item):
+            ck       = emp_item["ads_id"]
+            nome     = emp_item["nome"]
+            is_minha = emp_item["tipo"] == "minha"
+            idx_cor  = emp_item["idx"]
+            cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_cor)
+            avatar   = gerar_avatar(nome)
+            term     = emp_item["search_term"]
+
+            if ck in st.session_state.ads_erro:
+                st.error(f"Erro: {st.session_state.ads_erro[ck]}")
+                return
+            if ck not in st.session_state.ads_cache:
+                st.info("Nenhum dado carregado. Clique em **🔄 Atualizar anúncios**.")
+                return
+
+            cache_entry = st.session_state.ads_cache[ck]
+            ads_list    = cache_entry["data"]
+            ts          = cache_entry["ts"]
+            pid         = cache_entry.get("page_id") or st.session_state.ads_page_ids.get(ck, "")
+            modo_real   = cache_entry.get("modo", "keyword")
+
+            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+            modo_badge = (
+                f"<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>✅ Page ID: {pid}</span>"
+                if modo_real == "page_id" and pid else
+                f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>🔍 Keyword: {term}</span>"
+            )
+
+            st.markdown(f"""
+            <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
+                        padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
+                <div style='width:44px;height:44px;border-radius:50%;background:{cor_av};
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:16px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+                <div style='flex:1;min-width:0'>
+                    <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
+                    <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px'>
+                        <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                                     padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
+                        {modo_badge}
+                        <span style='font-size:12px;color:#9ca3af'>· {ts}</span>
+                    </div>
+                </div>
+                <div style='text-align:right;flex-shrink:0'>
+                    <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
+                    <div style='font-size:12px;color:#9ca3af'>anúncios ativos</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if not ads_list:
+                st.info(f"Nenhum anúncio ativo encontrado para **{nome}**.")
+                return
+
+            fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
+            with fcol1:
+                busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…", key=f"ads_busca_{ck}", label_visibility="collapsed")
+            with fcol2:
+                filtro_fmt = st.selectbox("Formato", ["Todos os formatos"] + sorted(set(a["formato"] for a in ads_list)), key=f"ads_fmt_{ck}", label_visibility="collapsed")
+            with fcol3:
+                plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
+                filtro_plat = st.selectbox("Plataforma", ["Todas as plataformas"] + [p.capitalize() for p in plats_todas], key=f"ads_plat_{ck}", label_visibility="collapsed")
+
+            ads_filtrados = ads_list
+            if busca_texto:
+                q = busca_texto.lower()
+                ads_filtrados = [a for a in ads_filtrados if q in (a.get("body") or "").lower() or q in (a.get("title") or "").lower()]
+            if filtro_fmt != "Todos os formatos":
+                ads_filtrados = [a for a in ads_filtrados if a["formato"] == filtro_fmt]
+            if filtro_plat != "Todas as plataformas":
+                ads_filtrados = [a for a in ads_filtrados if filtro_plat.lower() in (a["plataformas"] or [])]
+
+            if not ads_filtrados:
+                st.warning("Nenhum anúncio com os filtros aplicados.")
+                return
+
+            n_video  = sum(1 for a in ads_filtrados if "Vídeo"  in a["formato"])
+            n_imagem = sum(1 for a in ads_filtrados if "Imagem" in a["formato"])
+            n_outros = len(ads_filtrados) - n_video - n_imagem
+            st.markdown(f"""
+            <div style='display:flex;gap:12px;margin-bottom:20px'>
+                <div style='flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
+                    <div style='font-size:22px;font-weight:800;color:#15803d'>{len(ads_filtrados)}</div>
+                    <div style='font-size:12px;color:#16a34a;font-weight:600'>Total</div>
+                </div>
+                <div style='flex:1;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;text-align:center'>
+                    <div style='font-size:22px;font-weight:800;color:#92400e'>{n_imagem}</div>
+                    <div style='font-size:12px;color:#b45309;font-weight:600'>Imagens</div>
+                </div>
+                <div style='flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;text-align:center'>
+                    <div style='font-size:22px;font-weight:800;color:#1e40af'>{n_video}</div>
+                    <div style='font-size:12px;color:#1d4ed8;font-weight:600'>Vídeos</div>
+                </div>
+                <div style='flex:1;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:12px 16px;text-align:center'>
+                    <div style='font-size:22px;font-weight:800;color:#5b21b6'>{n_outros}</div>
+                    <div style='font-size:12px;color:#6d28d9;font-weight:600'>Outros</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            cols_ads = st.columns(3)
+            for j, ad in enumerate(ads_filtrados):
+                with cols_ads[j % 3]:
+                    body_preview = _truncar(ad["body"], 100)
+                    title_preview = _truncar(ad["title"], 60)
+                    desc_preview  = _truncar(ad["description"], 80)
+                    plat_txt = _plat_icons(ad["plataformas"])
+                    snapshot_url = ad.get("snapshot_url", "")
+                    fmt = ad["formato"]
+                    if "Vídeo" in fmt:    fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
+                    elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7", "#92400e", "#fcd34d"
+                    else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff", "#5b21b6", "#c4b5fd"
+                    copy_sections = []
+                    if ad["title"]:
+                        copy_sections.append(f"<div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>{title_preview}</div>")
+                    if ad["body"]:
+                        copy_sections.append(f"<div style='font-size:13px;color:#374151;line-height:1.6;font-style:italic'>{body_preview}</div>")
+                    if ad["description"]:
+                        copy_sections.append(f"<div style='font-size:12px;color:#6b7280;margin-top:4px'>{desc_preview}</div>")
+                    copy_html_inner = "\n".join(copy_sections) if copy_sections else "<div style='font-size:13px;color:#9ca3af;font-style:italic'>Sem copy disponível</div>"
+                    st.markdown(f"""
+                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:4px'>
+                        <div style='padding:14px 16px 10px;border-bottom:1px solid #f3f4f6'>
+                            <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px'>
+                                <span style='background:{fmt_bg};color:{fmt_txt_c};border:1px solid {fmt_brd};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700'>{fmt}</span>
+                                <span style='font-size:11px;color:#9ca3af'>{ad["data_inicio"] or "—"}</span>
+                            </div>
+                            <div style='font-size:12px;color:#6b7280'>{ad["page_name"] or nome}</div>
+                            {"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ " + ad["impressoes"] + " impressões</div>" if ad["impressoes"] else ""}
+                        </div>
+                        <div style='padding:14px 16px;min-height:90px'>{copy_html_inner}</div>
+                        <div style='padding:0 16px 10px'><div style='font-size:11px;color:#9ca3af'>{plat_txt or "—"}</div></div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if snapshot_url:
+                        st.link_button("🔗 Ver criativo", snapshot_url, use_container_width=True)
+                    else:
+                        fallback_url = f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
+                        st.link_button("🔍 Abrir Ad Library", fallback_url, use_container_width=True)
+                    st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+
+            # IA
+            st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
+            chave_ia = f"ia_ads_{ck}"
+            if chave_ia not in st.session_state: st.session_state[chave_ia] = ""
+            safe_ck = safe_key(ck)
+            st.markdown(f"<style>.st-key-btn_ia_ads_{safe_ck}{{display:none!important}}</style>", unsafe_allow_html=True)
+            ia_ads_btn = st.button(f"__ia_ads_{safe_ck}__", key=f"btn_ia_ads_{safe_ck}")
+            resumo_ads = "\n".join([
+                f"- [{a['formato']}] Título: {a['title'][:60] if a['title'] else '—'} | Copy: {a['body'][:80] if a['body'] else '—'} | Impressões: {a['impressoes'] or '—'} | Plataformas: {', '.join(a['plataformas'] or [])}"
+                for a in ads_filtrados[:15]
+            ])
+            ia_html = st.session_state.get(chave_ia, "").replace("\n", "<br>")
+            btn_js = f"const btns=window.parent.document.querySelectorAll('button');for(const b of btns){{if(b.innerText.trim()==='__ia_ads_{safe_ck}__'){{b.click();break;}}}}"
+            ia_content = (
+                f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">{ia_html}</div>'
+                f'<div style="padding:0 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🔄 Nova Análise</button></div>'
+                if ia_html else
+                f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">Clique para análise estratégica com IA.</div>'
+                f'<div style="padding:0 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analisar com IA</button></div>'
+            )
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>*{{margin:0;padding:0;box-sizing:border-box;}}html{{background:transparent;font-family:'DM Sans',sans-serif;}}body{{background:transparent;overflow:visible;padding-bottom:8px;}}
+.wrap{{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;}}
+.hdr{{padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;}}
+</style>
+<div class="wrap"><div class="hdr">📊 Análise Estratégica com IA</div>{ia_content}</div>
+<script>
+function ajustar(){{var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);window.parent.document.querySelectorAll('iframe').forEach(function(f){{try{{if(f.contentWindow===window)f.style.height=(h+8)+'px';}}catch(e){{}}}});}}
+new ResizeObserver(ajustar).observe(document.body);document.addEventListener('DOMContentLoaded',ajustar);window.addEventListener('load',ajustar);setTimeout(ajustar,200);
+</script>""", height=200, scrolling=False)
+
+            if ia_ads_btn:
+                if gemini_model is None:
+                    st.session_state[chave_ia] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando anúncios com IA…"):
+                        try:
+                            prompt_ads = f"""Você é um especialista em mídia paga e marketing digital.
 Analise os anúncios ativos abaixo de "{nome}" na Meta Ad Library e gere um relatório estratégico em português.
-
-Empresa: {nome}
-Modo de busca: {"Page ID " + str(pid) if modo_real == "page_id" else "Keyword: " + term}
-Total analisado: {len(ads_filtrados)} anúncios
-Formatos: {n_imagem} imagens | {n_video} vídeos | {n_outros} outros
-
-Amostra de anúncios:
-{resumo_ads}
-
+Empresa: {nome} | Total: {len(ads_filtrados)} anúncios | {n_imagem} imagens | {n_video} vídeos
+Amostra:\n{resumo_ads}
 ---
-
 ### 🎯 Estratégia de Mídia
-Qual é a estratégia geral? (conversão, awareness, remarketing…)
-
 ### 📝 Padrões de Copy
-CTAs, linguagem e mensagens mais recorrentes.
-
 ### 🖼️ Formatos Predominantes
-O que os formatos mais usados indicam?
-
-### 📣 Plataformas e Distribuição
-Como está a distribuição entre as plataformas da Meta?
-
 ### ⚠️ Pontos de Atenção
-2 observações críticas sobre a estratégia.
+### 💡 Oportunidades Competitivas (3 ações)"""
+                            resp = gemini_model.generate_content(prompt_ads)
+                            st.session_state[chave_ia] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_ia] = f"Erro: {e}"
+                            st.rerun()
 
-### 💡 Oportunidades Competitivas
-3 ações concretas para superar esta empresa nos anúncios.
-"""
-                        resp = gemini_model.generate_content(prompt_ads)
-                        st.session_state[chave_ia] = resp.text
-                        st.rerun()
-                    except Exception as e:
-                        st.session_state[chave_ia] = f"Erro: {e}"
-                        st.rerun()
-
-    # Renderiza cada aba
-    for aba, emp_item in zip(abas_ads, todas_empresas):
-        with aba:
-            render_ads_empresa(emp_item)
+        for aba, emp_item in zip(abas_ads, empresas_visiveis):
+            with aba:
+                render_ads_empresa(emp_item)
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
