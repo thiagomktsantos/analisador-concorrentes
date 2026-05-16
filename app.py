@@ -2746,128 +2746,81 @@ elif st.session_state.pagina == "ads":
         v = v.strip("/").split("?")[0].split("/")[0]
         return v.strip()
  
-    # ── Estratégia principal: visita a página e extrai o page_id do HTML ─
+    # ── Busca page_id via Graph API usando o slug como identificador ────────
+    #
+    # A Graph API aceita /{slug} diretamente para páginas públicas.
+    # Tentamos variações do slug e fallback via ads_archive keyword.
  
-    HEADERS_SCRAPE = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
-        ),
-        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    }
- 
-    def extrair_page_id_do_html(html: str) -> str:
+    def buscar_page_id_via_slug(slug: str, token: str) -> dict:
         """
-        Tenta extrair o page_id numérico do código-fonte HTML de uma
-        página do Facebook usando múltiplos padrões regex.
-        Retorna string com o ID ou "" se não encontrar.
-        """
-        padroes = [
-            # JSON embutido — pageID, page_id, ownerId
-            r'"pageID"\s*:\s*"?(\d{8,20})"?',
-            r'"page_id"\s*:\s*"?(\d{8,20})"?',
-            r'"ownerID"\s*:\s*"?(\d{8,20})"?',
-            r'"owner"\s*:\s*\{[^}]*"id"\s*:\s*"(\d{8,20})"',
-            r'"entityID"\s*:\s*"(\d{8,20})"',
-            r'"actorID"\s*:\s*"(\d{8,20})"',
-            # Meta tags / og:url
-            r'content="https://www\.facebook\.com/profile\.php\?id=(\d{8,20})"',
-            r'content="https://www\.facebook\.com/(\d{8,20})"',
-            # data-pageid ou data-page-id em atributos HTML
-            r'data-pageid="(\d{8,20})"',
-            r'data-page-id="(\d{8,20})"',
-            r'data-store="[^"]*&quot;pageID&quot;:&quot;(\d{8,20})&quot;',
-            # fb:page_id no head
-            r'<fb:page_id>(\d{8,20})</fb:page_id>',
-            # profile_id em URLs internas
-            r'profile_id=(\d{8,20})',
-            # __bbox__ JSON inline do Facebook
-            r'"page"\s*:\s*\{[^}]*"id"\s*:\s*"(\d{8,20})"',
-            # admins do opengraph
-            r'"og:admin"\s*content="(\d{8,20})"',
-            # variante com aspas simples
-            r"pageID\s*:\s*'(\d{8,20})'",
-            r"page_id\s*:\s*'(\d{8,20})'",
-        ]
-        for padrao in padroes:
-            m = re.search(padrao, html, re.IGNORECASE)
-            if m:
-                return m.group(1)
-        return ""
- 
-    def buscar_page_id_via_scraping(slug: str) -> dict:
-        """
-        Visita https://www.facebook.com/{slug} e tenta extrair o page_id.
-        Retorna dict com:
-          pid      — page_id numérico (str) ou ""
-          nome     — nome da página extraído do og:title ou title
-          slug     — slug usado
-          metodo   — como foi encontrado
-          erro     — mensagem de erro (str) se falhou
+        Consulta graph.facebook.com/{slug} diretamente.
+        Tenta o slug original e variações comuns.
+        Fallback via ads_archive keyword se slug não resolver.
         """
         if not slug:
             return {"pid": "", "nome": "", "slug": slug, "metodo": "", "erro": "slug vazio"}
  
-        urls_para_tentar = [
-            f"https://www.facebook.com/{slug}",
-            f"https://www.facebook.com/{slug}/about",
-        ]
+        candidatos = [slug]
+        slug_lower = slug.lower()
+        sem_sep = re.sub(r"[_\-]", "", slug_lower)
+        if sem_sep != slug_lower:
+            candidatos.append(sem_sep)
+        sem_ponto = slug_lower.replace(".", "")
+        if sem_ponto not in candidatos:
+            candidatos.append(sem_ponto)
  
-        for url in urls_para_tentar:
+        for candidato in candidatos:
             try:
-                resp = requests.get(
-                    url,
-                    headers=HEADERS_SCRAPE,
-                    timeout=15,
-                    allow_redirects=True,
+                r = requests.get(
+                    f"https://graph.facebook.com/v21.0/{candidato}",
+                    params={
+                        "fields": "id,name,fan_count,verification_status,username",
+                        "access_token": token,
+                    },
+                    timeout=10,
                 )
-                html = resp.text
+                d = r.json()
+                if "id" in d:
+                    fans = d.get("fan_count", 0)
+                    return {
+                        "pid":      str(d["id"]),
+                        "nome":     d.get("name", candidato),
+                        "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                        "verified": d.get("verification_status") in ("blue_verified", "gray_verified"),
+                        "slug":     d.get("username", candidato),
+                        "metodo":   f"Graph API /{candidato}",
+                        "erro":     None,
+                    }
+            except Exception:
+                continue
  
-                # Extrai page_id
-                pid = extrair_page_id_do_html(html)
- 
-                # Extrai nome da página (og:title ou <title>)
-                nome = ""
-                m_og = re.search(
-                    r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']',
-                    html, re.IGNORECASE
-                )
-                if m_og:
-                    nome = m_og.group(1).strip()
-                else:
-                    m_title = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
-                    if m_title:
-                        nome = m_title.group(1).strip()
-                        # Remove sufixo padrão " | Facebook"
-                        nome = re.sub(r'\s*[|\-–]\s*Facebook.*$', '', nome, flags=re.IGNORECASE).strip()
- 
-                if pid:
+        # Fallback: 1 anúncio pelo slug para pegar page_id
+        try:
+            r = requests.get(
+                "https://graph.facebook.com/v21.0/ads_archive",
+                params={
+                    "search_terms":         slug,
+                    "ad_active_status":     "ALL",
+                    "ad_reached_countries": '["BR","US","PT"]',
+                    "fields":               "page_id,page_name",
+                    "limit":                25,
+                    "access_token":         token,
+                },
+                timeout=15,
+            )
+            for ad in r.json().get("data", []):
+                pnm = (ad.get("page_name") or "").lower().strip()
+                pid = str(ad.get("page_id", ""))
+                if pid and (slug_lower == pnm or slug_lower in pnm or pnm in slug_lower):
                     return {
                         "pid":    pid,
-                        "nome":   nome or slug,
+                        "nome":   ad.get("page_name", slug),
+                        "fans":   "",
+                        "verified": False,
                         "slug":   slug,
-                        "metodo": f"scraping HTML ({url})",
+                        "metodo": "ads_archive keyword fallback",
                         "erro":   None,
                     }
- 
-            except Exception as ex:
-                continue  # tenta próxima URL
- 
-        # Fallback: tenta /pg/{slug} (páginas antigas)
-        try:
-            url_pg = f"https://www.facebook.com/pg/{slug}/about/"
-            resp = requests.get(url_pg, headers=HEADERS_SCRAPE, timeout=15, allow_redirects=True)
-            pid = extrair_page_id_do_html(resp.text)
-            if pid:
-                return {
-                    "pid":    pid,
-                    "nome":   slug,
-                    "slug":   slug,
-                    "metodo": f"scraping /pg/{slug}/about/",
-                    "erro":   None,
-                }
         except Exception:
             pass
  
@@ -2875,41 +2828,9 @@ elif st.session_state.pagina == "ads":
             "pid":    "",
             "nome":   "",
             "slug":   slug,
-            "metodo": "scraping",
-            "erro":   "page_id não encontrado no HTML",
+            "metodo": "Graph API",
+            "erro":   f"page_id não encontrado para slug '{slug}'",
         }
- 
-    # ── Valida page_id via Graph API (opcional, para enriquecer) ─────────
- 
-    def validar_page_id_api(pid: str, token: str) -> dict:
-        """
-        Consulta o endpoint /{pid} da Graph API para obter nome e fans.
-        Retorna dict enriquecido ou o original se falhar.
-        """
-        if not pid or not token:
-            return {}
-        try:
-            r = requests.get(
-                f"https://graph.facebook.com/v21.0/{pid}",
-                params={
-                    "fields": "id,name,fan_count,verification_status,username",
-                    "access_token": token,
-                },
-                timeout=10,
-            )
-            d = r.json()
-            if "id" in d:
-                fans = d.get("fan_count", 0)
-                return {
-                    "pid":      str(d["id"]),
-                    "nome":     d.get("name", ""),
-                    "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
-                    "verified": d.get("verification_status") in ("blue_verified", "gray_verified"),
-                    "slug":     d.get("username", ""),
-                }
-        except Exception:
-            pass
-        return {}
  
     # ── Busca ads na Meta Ad Library ─────────────────────────────────────
  
@@ -3122,19 +3043,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
 </div>
 """, height=altura_total, scrolling=False)
  
-        st.markdown("""
-        <div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;
-                    padding:12px 16px;font-size:13px;color:#92400e;margin:8px 0 12px 0;
-                    display:flex;align-items:flex-start;gap:10px'>
-            <span style='font-size:16px;flex-shrink:0'>💡</span>
-            <span>
-                <b>Dica:</b> Para melhores resultados, cadastre o link completo da página do Facebook
-                no campo <b>Facebook</b> de cada empresa/concorrente.
-                Ex: <code>https://www.facebook.com/nomeDaPagina</code>
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
- 
         iniciar = st.button(
             "Buscar page IDs →",
             type="primary",
@@ -3159,13 +3067,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                         st.write(f"⚠️ **{e['nome']}**: sem URL do Facebook — tentando slug `{slug}`")
  
                     st.write(f"Acessando facebook.com/**{slug}** para **{e['nome']}**…")
-                    resultado = buscar_page_id_via_scraping(slug)
- 
-                    # Enriquece com a API se encontrou o pid
-                    if resultado.get("pid") and META_TOKEN:
-                        api_data = validar_page_id_api(resultado["pid"], META_TOKEN)
-                        if api_data:
-                            resultado.update({k: v for k, v in api_data.items() if v})
+                    resultado = buscar_page_id_via_slug(slug, META_TOKEN)
  
                     if resultado.get("pid"):
                         st.write(f"✅ **{e['nome']}**: page_id `{resultado['pid']}` ({resultado.get('nome','')})")
@@ -3372,21 +3274,20 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                             pid_extracted = val
                         elif slug_manual and not slug_manual.isdigit():
                             with st.spinner(f"Visitando facebook.com/{slug_manual}…"):
-                                r2 = buscar_page_id_via_scraping(slug_manual)
+                                r2 = buscar_page_id_via_slug(slug_manual, META_TOKEN)
                                 pid_extracted = r2.get("pid", "")
                                 if not pid_extracted:
                                     # Tenta diretamente como pid
                                     pid_extracted = slug_manual if slug_manual.isdigit() else ""
                         if pid_extracted:
-                            api_data = validar_page_id_api(pid_extracted, META_TOKEN)
                             st.session_state.ads_confirmacao[ck] = {
                                 **conf,
                                 "status":   "manual",
                                 "resultado": {
                                     "pid":    pid_extracted,
-                                    "nome":   api_data.get("nome", slug_manual),
-                                    "fans":   api_data.get("fans", ""),
-                                    "slug":   api_data.get("slug", slug_manual),
+                                    "nome":   slug_manual,
+                                    "fans":   "",
+                                    "slug":   slug_manual,
                                     "metodo": "manual",
                                     "erro":   None,
                                 },
@@ -3404,10 +3305,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
                             slug2 = normalizar_slug_facebook(e["fb_raw"])
                             if not slug2:
                                 slug2 = re.sub(r'[^a-z0-9]', '', e["nome"].lower())
-                            r2 = buscar_page_id_via_scraping(slug2)
-                            if r2.get("pid") and META_TOKEN:
-                                api2 = validar_page_id_api(r2["pid"], META_TOKEN)
-                                if api2: r2.update({k: v for k, v in api2.items() if v})
+                            r2 = buscar_page_id_via_slug(slug2, META_TOKEN)
+ 
                             st.session_state.ads_confirmacao[ck] = {
                                 **conf,
                                 "status":   "pending" if r2.get("pid") else "not_found",
