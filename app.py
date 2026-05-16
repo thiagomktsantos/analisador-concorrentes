@@ -2803,6 +2803,112 @@ elif st.session_state.pagina == "ads":
             except Exception:
                 pass
         return resultados
+
+    def buscar_paginas_por_nome(nome: str, token: str) -> list:
+        """Busca páginas do Facebook pelo nome via pages/search e ads_archive."""
+        resultados = {}
+
+        # Tentativa 1: pages/search
+        try:
+            r = requests.get(
+                "https://graph.facebook.com/v21.0/pages/search",
+                params={
+                    "q": nome,
+                    "fields": "id,name,fan_count,verification_status,username",
+                    "limit": 10,
+                    "access_token": token,
+                },
+                timeout=15,
+            )
+            for p in r.json().get("data", []):
+                pid = str(p["id"])
+                fans = p.get("fan_count", 0)
+                resultados[pid] = {
+                    "pid":      pid,
+                    "name":     p.get("name", ""),
+                    "slug":     p.get("username", ""),
+                    "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                    "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
+                }
+        except Exception:
+            pass
+
+        # Tentativa 2: ads_archive ACTIVE
+        if len(resultados) < 5:
+            try:
+                r = requests.get(
+                    "https://graph.facebook.com/v21.0/ads_archive",
+                    params={
+                        "search_terms":         nome,
+                        "ad_active_status":     "ACTIVE",
+                        "ad_reached_countries": '["BR"]',
+                        "fields": "page_id,page_name,ad_snapshot_url",
+                        "limit":  50,
+                        "access_token": token,
+                    },
+                    timeout=15,
+                )
+                for ad in r.json().get("data", []):
+                    pid  = str(ad.get("page_id", ""))
+                    pnm  = ad.get("page_name", "")
+                    snap = ad.get("ad_snapshot_url", "")
+                    if pid and pid not in resultados:
+                        m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
+                        slug = m.group(1) if m else ""
+                        if slug.lower() in SLUGS_IGNORADOS or slug.isdigit():
+                            slug = ""
+                        resultados[pid] = {
+                            "pid":      pid,
+                            "name":     pnm,
+                            "slug":     slug,
+                            "fans":     "",
+                            "verified": False,
+                        }
+            except Exception:
+                pass
+
+        # Tentativa 3: ads_archive ALL
+        if len(resultados) < 3:
+            try:
+                r = requests.get(
+                    "https://graph.facebook.com/v21.0/ads_archive",
+                    params={
+                        "search_terms":         nome,
+                        "ad_active_status":     "ALL",
+                        "ad_reached_countries": '["BR"]',
+                        "fields": "page_id,page_name,ad_snapshot_url",
+                        "limit":  50,
+                        "access_token": token,
+                    },
+                    timeout=15,
+                )
+                for ad in r.json().get("data", []):
+                    pid  = str(ad.get("page_id", ""))
+                    pnm  = ad.get("page_name", "")
+                    snap = ad.get("ad_snapshot_url", "")
+                    if pid and pid not in resultados:
+                        m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
+                        slug = m.group(1) if m else ""
+                        if slug.lower() in SLUGS_IGNORADOS or slug.isdigit():
+                            slug = ""
+                        resultados[pid] = {
+                            "pid":      pid,
+                            "name":     pnm,
+                            "slug":     slug,
+                            "fans":     "",
+                            "verified": False,
+                        }
+            except Exception:
+                pass
+
+        # Tentativa 4: slug direto
+        slug_guess = nome.lower().replace(" ", "").replace(".", "")
+        if slug_guess:
+            resolved = resolver_slug(slug_guess, token)
+            if resolved.get("pid") and resolved["pid"] not in resultados:
+                resultados[resolved["pid"]] = resolved
+
+        return list(resultados.values())
  
     def buscar_ads_meta(search_term, token, limit=20, page_id=None):
         url    = "https://graph.facebook.com/v21.0/ads_archive"
