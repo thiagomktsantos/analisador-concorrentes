@@ -2667,7 +2667,639 @@ html, body { background: transparent; overflow: hidden; }
                 """
                 st.markdown(card, unsafe_allow_html=True)
                 st.link_button("🔍 Abrir Biblioteca de Ads →", url, use_container_width=True)
-                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)# ---------------------------------------------------
+# PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
+# ---------------------------------------------------
+# Substitui o bloco: elif st.session_state.pagina == "ads":
+# Cole este bloco no lugar do bloco "ads" existente no seu app.py
+# ---------------------------------------------------
+ 
+elif st.session_state.pagina == "ads":
+ 
+    import datetime as _dt
+ 
+    emp   = st.session_state.dados["minha_empresa"]
+    concs = st.session_state.dados["concorrentes"]
+ 
+    # ── Cabeçalho
+    h1, h2 = st.columns([7, 3])
+    with h1:
+        components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
+}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
+</style>
+<div class="titulo">Biblioteca de Ads</div>
+<div class="sub">Criativos, copies e formatos dos anúncios ativos dos seus concorrentes.</div>
+""", height=65)
+ 
+    with h2:
+        st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
+        buscar_btn = st.button("🔍 Buscar Anúncios", type="primary", use_container_width=True)
+ 
+    st.markdown(
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
+        unsafe_allow_html=True,
+    )
+ 
+    # ── Verifica token
+    META_TOKEN = st.secrets.get("META_ACCESS_TOKEN", "")
+    if not META_TOKEN:
+        st.warning(
+            "⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets.\n\n"
+            "Formato: `APP_ID|APP_SECRET` (ex: `1234567890|abc123def456`)"
+        )
+        st.stop()
+ 
+    # ── Monta lista de empresas
+    todas_empresas = []
+    if emp.get("nome"):
+        ads_id_emp = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
+        todas_empresas.append({
+            "nome": emp["nome"],
+            "ads_id": ads_id_emp,
+            "tipo": "minha",
+            "idx": 0,
+        })
+    for i, c in enumerate(concs):
+        todas_empresas.append({
+            "nome": c["nome"],
+            "ads_id": c.get("ads_id", "") or c.get("fb_page", "") or c.get("nome", ""),
+            "tipo": "concorrente",
+            "idx": i,
+        })
+ 
+    if not todas_empresas:
+        st.info("Cadastre sua empresa e concorrentes para visualizar anúncios.")
+        st.stop()
+ 
+    # ── Cache de anúncios no session_state
+    if "ads_cache" not in st.session_state:
+        st.session_state.ads_cache = {}        # { ads_id: { "data": [...], "ts": "..." } }
+    if "ads_erro" not in st.session_state:
+        st.session_state.ads_erro = {}         # { ads_id: "mensagem de erro" }
+    if "ads_selecionado" not in st.session_state:
+        st.session_state.ads_selecionado = None  # ads_id do painel aberto
+ 
+    # ── Função busca Meta Ad Library
+    def buscar_ads_meta(search_term: str, token: str, limit: int = 20) -> tuple:
+        """
+        Retorna (lista_de_anuncios, erro_str)
+        Cada anúncio: { id, page_name, status, body, title, link_url,
+                        image_url, video_url, formato, plataformas,
+                        data_inicio, impressoes }
+        """
+        url = "https://graph.facebook.com/v21.0/ads_archive"
+        params = {
+            "search_terms": search_term,
+            "ad_active_status": "ACTIVE",
+            "ad_reached_countries": '["BR"]',
+            "fields": (
+                "id,page_name,ad_creative_bodies,ad_creative_link_captions,"
+                "ad_creative_link_descriptions,ad_creative_link_titles,"
+                "ad_snapshot_url,ad_delivery_start_time,"
+                "impressions,publisher_platforms,media_type"
+            ),
+            "limit": limit,
+            "access_token": token,
+        }
+        try:
+            r = requests.get(url, params=params, timeout=15)
+            data = r.json()
+ 
+            if "error" in data:
+                return [], data["error"].get("message", "Erro desconhecido da API")
+ 
+            ads_raw = data.get("data", [])
+            resultado = []
+            for ad in ads_raw:
+                bodies = ad.get("ad_creative_bodies") or []
+                titles = ad.get("ad_creative_link_titles") or []
+                descs  = ad.get("ad_creative_link_descriptions") or []
+                caps   = ad.get("ad_creative_link_captions") or []
+                plats  = ad.get("publisher_platforms") or []
+                media  = ad.get("media_type", "")
+ 
+                # Normaliza formato
+                if media in ("VIDEO", "video"):
+                    fmt = "Vídeo 🎬"
+                elif media in ("IMAGE", "image"):
+                    fmt = "Imagem 🖼️"
+                elif plats:
+                    fmt = "Carrossel 🎠" if len(bodies) > 1 else "Imagem 🖼️"
+                else:
+                    fmt = "Desconhecido"
+ 
+                # Impressões
+                imp = ad.get("impressions", {})
+                imp_str = ""
+                if isinstance(imp, dict):
+                    lo = imp.get("lower_bound", "")
+                    hi = imp.get("upper_bound", "")
+                    if lo or hi:
+                        imp_str = f"{lo}–{hi}"
+ 
+                resultado.append({
+                    "id":           ad.get("id", ""),
+                    "page_name":    ad.get("page_name", ""),
+                    "body":         bodies[0] if bodies else "",
+                    "bodies":       bodies,
+                    "title":        titles[0] if titles else "",
+                    "description":  descs[0]  if descs  else "",
+                    "caption":      caps[0]   if caps   else "",
+                    "snapshot_url": ad.get("ad_snapshot_url", ""),
+                    "data_inicio":  ad.get("ad_delivery_start_time", "")[:10] if ad.get("ad_delivery_start_time") else "",
+                    "impressoes":   imp_str,
+                    "plataformas":  plats,
+                    "formato":      fmt,
+                    "media_type":   media,
+                })
+ 
+            return resultado, None
+ 
+        except Exception as e:
+            return [], str(e)
+ 
+    # ── Disparar busca
+    if buscar_btn:
+        st.session_state.ads_cache = {}
+        st.session_state.ads_erro  = {}
+        with st.spinner("Buscando anúncios na Meta Ad Library…"):
+            for emp_item in todas_empresas:
+                term = emp_item["ads_id"]
+                if not term:
+                    continue
+                ads, erro = buscar_ads_meta(term, META_TOKEN)
+                if erro:
+                    st.session_state.ads_erro[term] = erro
+                else:
+                    st.session_state.ads_cache[term] = {
+                        "data": ads,
+                        "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "nome": emp_item["nome"],
+                    }
+ 
+    # ── Seletor de empresa (tabs)
+    tab_labels = [e["nome"] for e in todas_empresas]
+    if tab_labels:
+        abas_ads = st.tabs(tab_labels)
+    else:
+        st.info("Nenhuma empresa cadastrada.")
+        st.stop()
+ 
+    # ── Funções de formatação
+    def _plat_icons(plats):
+        icons = {
+            "facebook":  "🔵 Facebook",
+            "instagram": "📸 Instagram",
+            "messenger": "💬 Messenger",
+            "audience_network": "🌐 Audience Network",
+        }
+        return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
+ 
+    def _truncar(txt, n=120):
+        if not txt:
+            return "—"
+        return txt[:n] + "…" if len(txt) > n else txt
+ 
+    # ── Função render anúncios de uma empresa
+    def render_ads_empresa(emp_item):
+        term     = emp_item["ads_id"]
+        nome     = emp_item["nome"]
+        is_minha = emp_item["tipo"] == "minha"
+        idx_cor  = emp_item["idx"]
+        cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_cor)
+        avatar   = gerar_avatar(nome)
+ 
+        # Erro de busca
+        if term in st.session_state.ads_erro:
+            st.error(f"Erro ao buscar anúncios de **{nome}**: {st.session_state.ads_erro[term]}")
+            _link_fallback(term, nome)
+            return
+ 
+        # Ainda sem dados
+        if term not in st.session_state.ads_cache:
+            _estado_vazio(nome, term, cor_av, avatar, is_minha)
+            return
+ 
+        cache_entry = st.session_state.ads_cache[term]
+        ads_list    = cache_entry["data"]
+        ts          = cache_entry["ts"]
+ 
+        # Cabeçalho da empresa
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+ 
+        st.markdown(f"""
+        <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
+                    padding:16px 20px;background:#fff;border:1px solid #e5e7eb;
+                    border-radius:12px'>
+            <div style='width:44px;height:44px;border-radius:50%;background:{cor_av};
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:16px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>
+            <div style='flex:1'>
+                <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
+                <div style='display:flex;align-items:center;gap:8px;margin-top:4px'>
+                    <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                                 padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
+                        {badge_lbl}
+                    </span>
+                    <span style='font-size:12px;color:#9ca3af'>Busca: <b>{term}</b></span>
+                    <span style='font-size:12px;color:#9ca3af'>· Última busca: {ts}</span>
+                </div>
+            </div>
+            <div style='text-align:right;flex-shrink:0'>
+                <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
+                <div style='font-size:12px;color:#9ca3af'>anúncios ativos</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+ 
+        if not ads_list:
+            st.info(f"Nenhum anúncio ativo encontrado para **{nome}** com o termo `{term}`.")
+            _link_fallback(term, nome)
+            return
+ 
+        # Filtros
+        fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
+        with fcol1:
+            busca_texto = st.text_input(
+                "Filtrar por texto",
+                placeholder="Pesquisar no copy…",
+                key=f"ads_busca_{term}",
+                label_visibility="collapsed",
+            )
+        with fcol2:
+            formatos_disponiveis = sorted(set(a["formato"] for a in ads_list))
+            filtro_fmt = st.selectbox(
+                "Formato",
+                ["Todos os formatos"] + formatos_disponiveis,
+                key=f"ads_fmt_{term}",
+                label_visibility="collapsed",
+            )
+        with fcol3:
+            plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
+            filtro_plat = st.selectbox(
+                "Plataforma",
+                ["Todas as plataformas"] + [p.capitalize() for p in plats_todas],
+                key=f"ads_plat_{term}",
+                label_visibility="collapsed",
+            )
+ 
+        # Aplica filtros
+        ads_filtrados = ads_list
+        if busca_texto:
+            q = busca_texto.lower()
+            ads_filtrados = [
+                a for a in ads_filtrados
+                if q in (a.get("body") or "").lower()
+                or q in (a.get("title") or "").lower()
+                or q in (a.get("description") or "").lower()
+            ]
+        if filtro_fmt and filtro_fmt != "Todos os formatos":
+            ads_filtrados = [a for a in ads_filtrados if a["formato"] == filtro_fmt]
+        if filtro_plat and filtro_plat != "Todas as plataformas":
+            filtro_plat_lower = filtro_plat.lower()
+            ads_filtrados = [a for a in ads_filtrados if filtro_plat_lower in (a["plataformas"] or [])]
+ 
+        if not ads_filtrados:
+            st.warning("Nenhum anúncio encontrado com os filtros aplicados.")
+            return
+ 
+        # ── Estatísticas rápidas
+        n_video  = sum(1 for a in ads_filtrados if "Vídeo" in a["formato"])
+        n_imagem = sum(1 for a in ads_filtrados if "Imagem" in a["formato"])
+        n_outros = len(ads_filtrados) - n_video - n_imagem
+ 
+        st.markdown(f"""
+        <div style='display:flex;gap:12px;margin-bottom:20px'>
+            <div style='flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
+                        padding:12px 16px;text-align:center'>
+                <div style='font-size:22px;font-weight:800;color:#15803d'>{len(ads_filtrados)}</div>
+                <div style='font-size:12px;color:#16a34a;font-weight:600'>Total Exibido</div>
+            </div>
+            <div style='flex:1;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;
+                        padding:12px 16px;text-align:center'>
+                <div style='font-size:22px;font-weight:800;color:#92400e'>{n_imagem}</div>
+                <div style='font-size:12px;color:#b45309;font-weight:600'>Imagens</div>
+            </div>
+            <div style='flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;
+                        padding:12px 16px;text-align:center'>
+                <div style='font-size:22px;font-weight:800;color:#1e40af'>{n_video}</div>
+                <div style='font-size:12px;color:#1d4ed8;font-weight:600'>Vídeos</div>
+            </div>
+            <div style='flex:1;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;
+                        padding:12px 16px;text-align:center'>
+                <div style='font-size:22px;font-weight:800;color:#5b21b6'>{n_outros}</div>
+                <div style='font-size:12px;color:#6d28d9;font-weight:600'>Outros</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+ 
+        # ── Grid de cards de anúncios
+        cols_ads = st.columns(3)
+        for j, ad in enumerate(ads_filtrados):
+            with cols_ads[j % 3]:
+                body_preview  = _truncar(ad["body"], 100)
+                title_preview = _truncar(ad["title"], 60)
+                desc_preview  = _truncar(ad["description"], 80)
+                plat_txt      = _plat_icons(ad["plataformas"])
+                snapshot_url  = ad.get("snapshot_url", "")
+ 
+                # Badge formato
+                fmt = ad["formato"]
+                if "Vídeo" in fmt:
+                    fmt_bg, fmt_txt, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
+                elif "Imagem" in fmt:
+                    fmt_bg, fmt_txt, fmt_brd = "#fef3c7", "#92400e", "#fcd34d"
+                else:
+                    fmt_bg, fmt_txt, fmt_brd = "#f5f3ff", "#5b21b6", "#c4b5fd"
+ 
+                # Monta copy HTML
+                copy_sections = []
+                if ad["title"]:
+                    copy_sections.append(
+                        f"<div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>{title_preview}</div>"
+                    )
+                if ad["body"]:
+                    copy_sections.append(
+                        f"<div style='font-size:13px;color:#374151;line-height:1.6;font-style:italic'>{body_preview}</div>"
+                    )
+                if ad["description"]:
+                    copy_sections.append(
+                        f"<div style='font-size:12px;color:#6b7280;margin-top:4px'>{desc_preview}</div>"
+                    )
+                copy_html_inner = (
+                    "\n".join(copy_sections)
+                    if copy_sections
+                    else "<div style='font-size:13px;color:#9ca3af;font-style:italic'>Sem copy disponível</div>"
+                )
+ 
+                st.markdown(f"""
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                            overflow:hidden;margin-bottom:4px;height:100%'>
+                    <!-- Topo do card -->
+                    <div style='padding:14px 16px 10px 16px;border-bottom:1px solid #f3f4f6'>
+                        <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px'>
+                            <span style='background:{fmt_bg};color:{fmt_txt};border:1px solid {fmt_brd};
+                                         padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700'>
+                                {fmt}
+                            </span>
+                            <span style='font-size:11px;color:#9ca3af'>{ad["data_inicio"] or "—"}</span>
+                        </div>
+                        <!-- Page name -->
+                        <div style='font-size:12px;color:#6b7280;margin-bottom:2px'>
+                            📄 {ad["page_name"] or nome}
+                        </div>
+                        <!-- Impressões -->
+                        {"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ " + ad["impressoes"] + " impressões</div>" if ad["impressoes"] else ""}
+                    </div>
+                    <!-- Copy -->
+                    <div style='padding:14px 16px;min-height:90px'>
+                        {copy_html_inner}
+                    </div>
+                    <!-- Plataformas -->
+                    <div style='padding:0 16px 10px 16px'>
+                        <div style='font-size:11px;color:#9ca3af'>{plat_txt or "—"}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+ 
+                # Botão para abrir criativo no Facebook
+                if snapshot_url:
+                    st.link_button(
+                        "🔗 Ver criativo completo",
+                        snapshot_url,
+                        use_container_width=True,
+                    )
+                else:
+                    fallback_url = f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
+                    st.link_button(
+                        "🔍 Abrir Ad Library",
+                        fallback_url,
+                        use_container_width=True,
+                    )
+ 
+                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+ 
+        # ── Análise IA dos anúncios
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
+            unsafe_allow_html=True,
+        )
+ 
+        chave_ia_ads = f"ia_ads_{term}"
+        if chave_ia_ads not in st.session_state:
+            st.session_state[chave_ia_ads] = ""
+ 
+        # Botão fantasma para análise IA
+        st.markdown(f"""
+        <style>
+        .st-key-btn_ia_ads_{term.replace('-','_').replace('.','_').replace('|','_')} {{
+            position: fixed !important; top: -9999px !important; left: -9999px !important;
+            width: 1px !important; height: 1px !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+ 
+        safe_term = term.replace("-","_").replace(".","_").replace("|","_").replace("@","")
+ 
+        ia_ads_btn = st.button(
+            f"__ia_ads_{safe_term}__",
+            key=f"btn_ia_ads_{safe_term}",
+            use_container_width=True,
+        )
+ 
+        # Resumo dos anúncios para o prompt
+        resumo_ads = "\n".join([
+            f"- [{a['formato']}] Título: {a['title'][:60] if a['title'] else '—'} | "
+            f"Copy: {a['body'][:80] if a['body'] else '—'} | "
+            f"Impressões: {a['impressoes'] or '—'} | Plataformas: {', '.join(a['plataformas'] or [])}"
+            for a in ads_filtrados[:15]
+        ])
+ 
+        ia_result_html = st.session_state.get(chave_ia_ads, "").replace("\n", "<br>")
+ 
+        def _btn_ia_trigger(safe_term_val):
+            return f"__ia_ads_{safe_term_val}__"
+ 
+        ia_panel_content = ""
+        if ia_result_html:
+            ia_panel_content = f"""
+            <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75;
+                        max-height:400px;overflow-y:auto'>
+                {ia_result_html}
+            </div>
+            <div style='padding:0 18px 18px 18px'>
+                <button onclick="
+                    const btns = window.parent.document.querySelectorAll('button');
+                    for (const b of btns) {{
+                        if (b.innerText.trim() === '__ia_ads_{safe_term}__') {{ b.click(); break; }}
+                    }}
+                " style='width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
+                          background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
+                          cursor:pointer;font-family:DM Sans,sans-serif'>
+                    🔄 Gerar Nova Análise
+                </button>
+            </div>
+            """
+        else:
+            ia_panel_content = f"""
+            <div style='padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af'>
+                Clique no botão abaixo para uma análise estratégica dos anúncios com IA.
+            </div>
+            <div style='padding:0 18px 18px 18px'>
+                <button onclick="
+                    const btns = window.parent.document.querySelectorAll('button');
+                    for (const b of btns) {{
+                        if (b.innerText.trim() === '__ia_ads_{safe_term}__') {{ b.click(); break; }}
+                    }}
+                " style='width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
+                          background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
+                          cursor:pointer;font-family:DM Sans,sans-serif'>
+                    🤖 Analisar Anúncios com IA
+                </button>
+            </div>
+            """
+ 
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; }}
+body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+.hdr {{ padding:14px 18px; font-size:14px; font-weight:800; color:#1a2e4a;
+        text-transform:uppercase; letter-spacing:0.3px;
+        border-bottom:1px solid #e5e7eb; background:#fff; }}
+</style>
+<div class="wrap">
+    <div class="hdr">📊 Análise Estratégica dos Anúncios com IA</div>
+    {ia_panel_content}
+</div>
+<script>
+function ajustarAltura() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    iframes.forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
+    }});
+}}
+var ro = new ResizeObserver(ajustarAltura);
+ro.observe(document.body);
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 200);
+</script>
+""", height=200, scrolling=False)
+ 
+        if ia_ads_btn:
+            if gemini_model is None:
+                st.session_state[chave_ia_ads] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                with st.spinner("Analisando anúncios com IA…"):
+                    try:
+                        prompt_ads = f"""
+Você é um especialista em mídia paga e marketing digital.
+Analise os anúncios ativos abaixo de "{nome}" na Meta Ad Library e gere um relatório estratégico em português.
+ 
+Empresa: {nome}
+Total de anúncios analisados: {len(ads_filtrados)}
+Formatos: {n_imagem} imagens | {n_video} vídeos | {n_outros} outros
+ 
+Anúncios (amostra):
+{resumo_ads}
+ 
+---
+ 
+Responda com as seguintes seções:
+ 
+### 🎯 Estratégia de Mídia
+Qual é a estratégia geral identificada nos anúncios? (ex: conversão, awareness, remarketing)
+ 
+### 📝 Padrões de Copy
+Quais são os padrões de linguagem, CTAs e mensagens mais recorrentes?
+ 
+### 🖼️ Formatos Predominantes
+Quais formatos estão sendo mais usados e o que isso indica?
+ 
+### 📣 Plataformas e Distribuição
+Como está sendo feita a distribuição entre as plataformas da Meta?
+ 
+### ⚠️ Pontos de Atenção
+2 observações críticas sobre a estratégia de ads.
+ 
+### 💡 Oportunidades Competitivas
+3 oportunidades concretas para superar esta empresa nos anúncios.
+ 
+Seja direto, objetivo e baseado nos dados reais dos anúncios.
+"""
+                        resp = gemini_model.generate_content(prompt_ads)
+                        st.session_state[chave_ia_ads] = resp.text
+                        st.rerun()
+                    except Exception as e:
+                        st.session_state[chave_ia_ads] = f"Erro: {e}"
+                        st.rerun()
+ 
+    # ── Função estado vazio (sem busca ainda)
+    def _estado_vazio(nome, term, cor_av, avatar, is_minha):
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+ 
+        st.markdown(f"""
+        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                    padding:32px;text-align:center;margin-bottom:24px'>
+            <div style='width:56px;height:56px;border-radius:50%;background:{cor_av};
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:20px;font-weight:700;color:#fff;margin:0 auto 14px'>
+                {avatar}
+            </div>
+            <div style='font-size:17px;font-weight:700;color:#111827;margin-bottom:6px'>{nome}</div>
+            <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                         padding:2px 12px;border-radius:20px;font-size:12px;font-weight:600'>
+                {badge_lbl}
+            </span>
+            <div style='margin-top:16px;font-size:14px;color:#6b7280'>
+                Busca: <b style='color:#111827'>{term}</b>
+            </div>
+            <div style='margin-top:20px;padding:14px;background:#f9fafb;border-radius:10px;
+                        font-size:13px;color:#9ca3af'>
+                Clique em <b style='color:#111827'>🔍 Buscar Anúncios</b> para carregar os anúncios ativos.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        _link_fallback(term, nome)
+ 
+    def _link_fallback(term, nome):
+        url = f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
+        st.markdown(
+            f"<div style='text-align:center;font-size:13px;color:#9ca3af;margin-top:8px'>"
+            f"Ou abra diretamente: "
+            f"<a href='{url}' target='_blank' style='color:#3a9fd6;text-decoration:none'>"
+            f"Ad Library → {nome}</a></div>",
+            unsafe_allow_html=True,
+        )
+ 
+    # ── Renderiza aba de cada empresa
+    for aba, emp_item in zip(abas_ads, todas_empresas):
+        with aba:
+            render_ads_empresa(emp_item)
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
