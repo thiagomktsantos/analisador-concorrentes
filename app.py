@@ -2956,7 +2956,13 @@ html, body { background:transparent; overflow:hidden; }
             for i, e in enumerate(todas_empresas)
         ])
 
-        st.markdown(f"""
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+</style>
+
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
 
     <div style="background:#0e2a47;border:1px solid #0e2a47;border-radius:12px;padding:16px;">
@@ -3003,7 +3009,7 @@ html, body { background:transparent; overflow:hidden; }
             padding:4px 18px;margin-bottom:4px;">
     {nomes_lista_html}
 </div>
-        """, unsafe_allow_html=True)
+""", height=420, scrolling=False)
 
         iniciar = st.button(
             "Identificar páginas →",
