@@ -1207,12 +1207,6 @@ if st.session_state.pagina == "home":
         div[data-testid="stForm"] > div > div {
             background: #ffffff !important;
         }
-        div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
-            display: none !important;
-            height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
         [data-testid="stVerticalBlockBorderWrapper"] {
             background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
@@ -1282,17 +1276,17 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
 
-        # ── FORM 1 — Identificação (sem submit button)
-        with st.form("cad_empresa", clear_on_submit=False):
+        # ── IDENTIFICAÇÃO — container simples, sem form
+        with st.container(border=True):
             sec_label("Identificação")
             c1, c2 = st.columns(2)
-            emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"])
-            site_digitado = c2.text_input("Site", value=emp["site"])
+            emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"], key="edit_nome")
+            site_digitado = c2.text_input("Site", value=emp["site"], key="edit_site")
             emp["site"] = limpar_site(site_digitado)
 
         st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
-        # ── SETOR — fora do form para reatividade em tempo real
+        # ── SETOR — container simples, reativo
         with st.container(border=True):
             sec_label("Setor")
             c3, c4 = st.columns(2)
@@ -1326,8 +1320,8 @@ if st.session_state.pagina == "home":
 
         st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
-        # ── FORM 2 — Redes, Serviços, Localização e botões
-        with st.form("cad_empresa_2", clear_on_submit=False):
+        # ── FORM ÚNICO — Redes, Serviços, Localização e botões
+        with st.form("cad_empresa", clear_on_submit=False):
 
             sec_label("Redes Sociais")
             c5, c6 = st.columns(2)
@@ -1362,6 +1356,9 @@ if st.session_state.pagina == "home":
                 st.rerun()
 
             if salvar:
+                # Captura nome e site dos widgets fora do form via session_state
+                emp["nome"] = st.session_state.get("edit_nome", emp["nome"])
+                emp["site"] = limpar_site(st.session_state.get("edit_site", emp["site"]))
                 if emp["nome"].strip():
                     st.session_state.editar_empresa = False
                     salvar_dados_usuario(st.session_state.user.id)
