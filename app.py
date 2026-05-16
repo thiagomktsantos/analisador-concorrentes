@@ -2691,6 +2691,7 @@ elif st.session_state.pagina == "ads":
     if "ads_cache"          not in st.session_state: st.session_state.ads_cache          = {}
     if "ads_erro"           not in st.session_state: st.session_state.ads_erro           = {}
     if "ads_page_ids"       not in st.session_state: st.session_state.ads_page_ids       = {}
+    if "ads_page_slugs"     not in st.session_state: st.session_state.ads_page_slugs     = {}
     if "ads_confirmacao"    not in st.session_state: st.session_state.ads_confirmacao    = {}
  
     def detectar_modo(identifier: str) -> tuple:
@@ -2709,29 +2710,94 @@ elif st.session_state.pagina == "ads":
             return clean, None, "page_id"
         return None, clean, "keyword"
  
-    def buscar_alternativas_paginas(nome: str, token: str) -> list:
+    def extrair_slug_dos_ads(ads: list) -> str:
+        """Extrai o slug da página Facebook a partir dos snapshot_urls dos anúncios."""
+        SLUGS_IGNORADOS = {
+            "ads", "adlibrary", "business", "pages", "photo", "video",
+            "permalink", "watch", "groups", "events", "marketplace",
+        }
+        for ad in ads:
+            url = ad.get("snapshot_url", "")
+            m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', url)
+            if m:
+                slug = m.group(1)
+                if slug.lower() not in SLUGS_IGNORADOS and not slug.isdigit():
+                    return slug
+        return ""
+ 
+    def resolver_slug_para_page_id(slug: str, token: str) -> dict:
+        """Dado um slug (ex: isaac_educacao), resolve o Page ID via Graph API."""
+        if not slug:
+            return {}
+        try:
+            r = requests.get(
+                f"https://graph.facebook.com/v21.0/{slug}",
+                params={
+                    "fields": "id,name,fan_count,verification_status",
+                    "access_token": token,
+                },
+                timeout=10,
+            )
+            data = r.json()
+            if "id" in data:
+                fans = data.get("fan_count", 0)
+                return {
+                    "pid": str(data["id"]),
+                    "name": data.get("name", slug),
+                    "fans": f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                    "verified": data.get("verification_status") in ("blue_verified", "gray_verified"),
+                    "slug": slug,
+                }
+        except Exception:
+            pass
+        return {}
+ 
+    def buscar_alternativas_paginas(nome: str, token: str, slug_hint: str = "") -> list:
         resultados = []
+ 
+        # Prioridade 1: slug extraído dos anúncios (alta confiança)
+        if slug_hint:
+            resolved = resolver_slug_para_page_id(slug_hint, token)
+            if resolved:
+                resultados.append(resolved)
+                return resultados  # slug match é quase certeiro, retorna imediatamente
+ 
+        # Prioridade 2: busca por nome via pages/search
         try:
             r = requests.get(
                 "https://graph.facebook.com/v21.0/pages/search",
-                params={"q": nome, "fields": "id,name,fan_count,verification_status", "limit": 5, "access_token": token},
+                params={
+                    "q": nome,
+                    "fields": "id,name,fan_count,verification_status",
+                    "limit": 5,
+                    "access_token": token,
+                },
                 timeout=15,
             )
             for p in r.json().get("data", []):
                 fans = p.get("fan_count", 0)
                 resultados.append({
-                    "pid": str(p["id"]), "name": p.get("name", ""),
+                    "pid": str(p["id"]),
+                    "name": p.get("name", ""),
                     "fans": f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
                     "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
                 })
         except Exception:
             pass
+ 
+        # Prioridade 3: fallback via ads_archive com keyword
         if not resultados:
             try:
                 r = requests.get(
                     "https://graph.facebook.com/v21.0/ads_archive",
-                    params={"search_terms": nome, "ad_active_status": "ACTIVE", "ad_reached_countries": '["BR"]',
-                            "fields": "page_id,page_name", "limit": 5, "access_token": token},
+                    params={
+                        "search_terms": nome,
+                        "ad_active_status": "ACTIVE",
+                        "ad_reached_countries": '["BR"]',
+                        "fields": "page_id,page_name,ad_snapshot_url",
+                        "limit": 10,
+                        "access_token": token,
+                    },
                     timeout=15,
                 )
                 seen = set()
@@ -2739,18 +2805,36 @@ elif st.session_state.pagina == "ads":
                     pid = str(ad.get("page_id", ""))
                     if pid and pid not in seen:
                         seen.add(pid)
-                        resultados.append({"pid": pid, "name": ad.get("page_name", ""), "fans": "", "verified": False})
+                        # Tenta extrair slug do snapshot_url para enriquecer
+                        snap_url = ad.get("ad_snapshot_url", "")
+                        m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap_url)
+                        slug_extra = m.group(1) if m else ""
+                        resultados.append({
+                            "pid": pid,
+                            "name": ad.get("page_name", ""),
+                            "fans": "",
+                            "verified": False,
+                            "slug": slug_extra,
+                        })
             except Exception:
                 pass
+ 
         return resultados
  
     def buscar_ads_meta(search_term, token, limit=20, page_id=None):
         url = "https://graph.facebook.com/v21.0/ads_archive"
-        fields = ("id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,"
-                  "ad_creative_link_descriptions,ad_creative_link_titles,"
-                  "ad_snapshot_url,ad_delivery_start_time,impressions,publisher_platforms,media_type")
-        params = {"ad_active_status": "ACTIVE", "ad_reached_countries": '["BR"]',
-                  "fields": fields, "limit": limit, "access_token": token}
+        fields = (
+            "id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,"
+            "ad_creative_link_descriptions,ad_creative_link_titles,"
+            "ad_snapshot_url,ad_delivery_start_time,impressions,publisher_platforms,media_type"
+        )
+        params = {
+            "ad_active_status": "ACTIVE",
+            "ad_reached_countries": '["BR"]',
+            "fields": fields,
+            "limit": limit,
+            "access_token": token,
+        }
         modo = "keyword"
         if page_id:
             params["search_page_ids"] = page_id
@@ -2761,8 +2845,12 @@ elif st.session_state.pagina == "ads":
             r = requests.get(url, params=params, timeout=15)
             data = r.json()
             if "error" in data:
-                return [], data["error"].get("message", "Erro desconhecido"), modo
+                return [], data["error"].get("message", "Erro desconhecido"), modo, ""
             ads_raw = data.get("data", [])
+ 
+            # Extrai slug da página a partir dos snapshot_urls
+            slug_encontrado = extrair_slug_dos_ads(ads_raw)
+ 
             resultado = []
             for ad in ads_raw:
                 bodies = ad.get("ad_creative_bodies") or []
@@ -2781,26 +2869,36 @@ elif st.session_state.pagina == "ads":
                     lo, hi = imp.get("lower_bound", ""), imp.get("upper_bound", "")
                     if lo or hi: imp_str = f"{lo}–{hi}"
                 resultado.append({
-                    "id": ad.get("id", ""), "page_id": str(ad.get("page_id", "")),
-                    "page_name": ad.get("page_name", ""),
-                    "body": bodies[0] if bodies else "", "bodies": bodies,
-                    "title": titles[0] if titles else "", "description": descs[0] if descs else "",
-                    "caption": caps[0] if caps else "",
+                    "id":           ad.get("id", ""),
+                    "page_id":      str(ad.get("page_id", "")),
+                    "page_name":    ad.get("page_name", ""),
+                    "body":         bodies[0] if bodies else "",
+                    "bodies":       bodies,
+                    "title":        titles[0] if titles else "",
+                    "description":  descs[0] if descs else "",
+                    "caption":      caps[0] if caps else "",
                     "snapshot_url": ad.get("ad_snapshot_url", ""),
-                    "data_inicio": (ad.get("ad_delivery_start_time", "")[:10] if ad.get("ad_delivery_start_time") else ""),
-                    "impressoes": imp_str, "plataformas": plats, "formato": fmt, "media_type": media,
+                    "data_inicio":  (ad.get("ad_delivery_start_time", "")[:10] if ad.get("ad_delivery_start_time") else ""),
+                    "impressoes":   imp_str,
+                    "plataformas":  plats,
+                    "formato":      fmt,
+                    "media_type":   media,
+                    "page_slug":    slug_encontrado,
                 })
-            return resultado, None, modo
+            return resultado, None, modo, slug_encontrado
         except Exception as e:
-            return [], str(e), modo
+            return [], str(e), modo, ""
  
     def safe_key(s):
-        import re
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
  
     def _plat_icons(plats):
-        icons = {"facebook": "🔵 Facebook", "instagram": "📸 Instagram",
-                 "messenger": "💬 Messenger", "audience_network": "🌐 Audience Network"}
+        icons = {
+            "facebook":         "🔵 Facebook",
+            "instagram":        "📸 Instagram",
+            "messenger":        "💬 Messenger",
+            "audience_network": "🌐 Audience Network",
+        }
         return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
  
     def _truncar(txt, n=120):
@@ -2827,8 +2925,8 @@ elif st.session_state.pagina == "ads":
             "search_term": c["nome"], "modo": modo, "tipo": "concorrente", "idx": i,
         })
  
-    tem_resultados = bool(st.session_state.ads_cache)
-    tem_confirmacoes = bool(st.session_state.ads_page_ids) or bool(st.session_state.ads_confirmacao)
+    tem_resultados    = bool(st.session_state.ads_cache)
+    tem_confirmacoes  = bool(st.session_state.ads_page_ids) or bool(st.session_state.ads_confirmacao)
     if tem_resultados and st.session_state.ads_etapa == "informativa":
         st.session_state.ads_etapa = "resultados"
     elif tem_confirmacoes and st.session_state.ads_etapa == "informativa":
@@ -2866,13 +2964,14 @@ html, body { background: transparent; overflow: hidden; }
             st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
             st.stop()
  
-        # ── Botão fantasma (escondido via CSS) para disparar via JS
+        # Botão fantasma escondido via CSS
         st.markdown("<style>.st-key-btn_iniciar_ads_ghost{display:none!important}</style>", unsafe_allow_html=True)
         iniciar_ghost = st.button("__iniciar_ads__", key="btn_iniciar_ads_ghost")
  
         n_empresas = len(todas_empresas)
         nomes_lista_html = "".join([
-            f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6">'
+            f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;'
+            f'border-bottom:{"1px solid #f3f4f6" if i < n_empresas - 1 else "none"}">'
             f'<div style="width:34px;height:34px;border-radius:50%;'
             f'background:{get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])};'
             f'display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">'
@@ -2881,7 +2980,7 @@ html, body { background: transparent; overflow: hidden; }
             f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;border-radius:20px;font-weight:500">'
             f'{"Minha Empresa" if e["tipo"] == "minha" else "Concorrente"}</span>'
             f'</div>'
-            for e in todas_empresas
+            for i, e in enumerate(todas_empresas)
         ])
  
         components.html(f"""
@@ -2889,13 +2988,12 @@ html, body { background: transparent; overflow: hidden; }
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:12px; }}
- 
+body {{ padding-bottom:4px; }}
 .steps {{
-    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;
 }}
 .step {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px;
 }}
 .step.active {{ background:#0e2a47; border-color:#0e2a47; }}
 .step-header {{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }}
@@ -2910,18 +3008,15 @@ body {{ padding-bottom:12px; }}
 .step.active .step-title {{ color:#fff; }}
 .step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
 .step.active .step-desc {{ color:rgba(255,255,255,0.65); }}
- 
 .empresas-box {{
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    padding:16px 20px; margin-bottom:20px;
+    padding:14px 18px;
 }}
 .empresas-label {{
     font-size:11px; font-weight:700; color:#9ca3af;
     text-transform:uppercase; letter-spacing:1.2px; margin-bottom:10px;
 }}
- 
 </style>
- 
 <div class="steps">
     <div class="step active">
         <div class="step-header">
@@ -2945,15 +3040,10 @@ body {{ padding-bottom:12px; }}
         <div class="step-desc">Veja todos os anúncios ativos com análise por IA</div>
     </div>
 </div>
- 
-<div style="margin:8px 0 0 0">
-    <div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
-    <div class="empresas-box">
-        {nomes_lista_html}
-        <div style="padding-top:2px"></div>
-    </div>
+<div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
+<div class="empresas-box">
+    {nomes_lista_html}
 </div>
- 
 <script>
 function ajustar() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
@@ -2964,12 +3054,12 @@ function ajustar() {{
 new ResizeObserver(ajustar).observe(document.body);
 document.addEventListener('DOMContentLoaded', ajustar);
 window.addEventListener('load', ajustar);
-setTimeout(ajustar, 200);
-setTimeout(ajustar, 600);
+setTimeout(ajustar, 100);
+setTimeout(ajustar, 400);
 </script>
-""", height=400, scrolling=False)
+""", height=60, scrolling=False)
  
-        # ── Botão nativo Streamlit — único, logo abaixo das etapas
+        # Botão nativo abaixo, sem espaço extra
         col_cta, col_sub = st.columns([2, 3])
         with col_cta:
             iniciar_nativo = st.button(
@@ -2985,23 +3075,31 @@ setTimeout(ajustar, 600);
                 unsafe_allow_html=True,
             )
  
-        # ── Processa clique
+        # Processa clique
         if iniciar_ghost or iniciar_nativo:
             with st.spinner("Buscando páginas do Facebook…"):
                 for e in todas_empresas:
                     ck = e["ads_id"]
                     pid_final = e["page_id"] or st.session_state.ads_page_ids.get(ck)
-                    ads, erro, modo_real = buscar_ads_meta(
+                    ads, erro, modo_real, slug = buscar_ads_meta(
                         search_term=e["search_term"], token=META_TOKEN, page_id=pid_final, limit=5
                     )
+ 
+                    # Salva o slug encontrado nos ads
+                    if slug:
+                        st.session_state.ads_page_slugs[ck] = slug
+ 
+                    # Salva page_id se encontrado diretamente
                     if not pid_final and ads:
                         primeiro_pid = ads[0].get("page_id", "")
                         if primeiro_pid and str(primeiro_pid).isdigit():
                             st.session_state.ads_page_ids[ck] = str(primeiro_pid)
+ 
                     if ck not in st.session_state.ads_confirmacao:
                         st.session_state.ads_confirmacao[ck] = {
                             "status": "pending", "alternatives": [], "selected_pid": ""
                         }
+ 
             st.session_state.ads_etapa = "identificacao"
             st.rerun()
  
@@ -3010,7 +3108,7 @@ setTimeout(ajustar, 600);
     # ════════════════════════════════════════════
     elif st.session_state.ads_etapa == "identificacao":
  
-        # ── Botões fantasma para cada ação
+        # Botões fantasma para cada ação
         confirmar_triggers    = {}
         rejeitar_triggers     = {}
         salvar_triggers       = {}
@@ -3044,7 +3142,7 @@ setTimeout(ajustar, 600);
             unsafe_allow_html=True
         )
  
-        # ── Processa ações dos botões fantasma
+        # Processa ações dos botões fantasma
         for e in todas_empresas:
             ck   = e["ads_id"]
             conf = st.session_state.ads_confirmacao.get(ck, {})
@@ -3057,10 +3155,11 @@ setTimeout(ajustar, 600);
                 st.rerun()
  
             if rejeitar_triggers.get(ck):
+                slug_hint = st.session_state.ads_page_slugs.get(ck, "")
                 alts = conf.get("alternatives")
                 if not alts:
                     with st.spinner(f"Buscando alternativas para {e['nome']}…"):
-                        alts = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                        alts = buscar_alternativas_paginas(e["nome"], META_TOKEN, slug_hint=slug_hint)
                 st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts or []}
                 st.rerun()
  
@@ -3084,7 +3183,7 @@ setTimeout(ajustar, 600);
                     if conf_status == "not_found":
                         continue
                     pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
-                    ads, erro, modo_real = buscar_ads_meta(
+                    ads, erro, modo_real, slug = buscar_ads_meta(
                         search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
                     )
                     if erro:
@@ -3098,40 +3197,13 @@ setTimeout(ajustar, 600);
             st.session_state.ads_etapa = "resultados"
             st.rerun()
  
-        # ── Monta dados para o JS
-        n_confirmados   = sum(
+        # Barra de progresso + botão "Ver Anúncios"
+        n_confirmados = sum(
             1 for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
         )
         todos_resolvidos = n_confirmados == len(todas_empresas)
  
-        empresas_js_items = []
-        for idx_e, e in enumerate(todas_empresas):
-            ck   = e["ads_id"]
-            sk   = safe_key(ck)
-            conf = st.session_state.ads_confirmacao.get(ck, {})
-            pid_encontrado = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
-            page_name_found = ""
-            for ad in st.session_state.ads_cache.get(ck, {}).get("data", []):
-                if str(ad.get("page_id", "")) == str(pid_encontrado):
-                    page_name_found = ad.get("page_name", "")
-                    break
-            found_obj = (
-                json.dumps({"pid": pid_encontrado, "name": page_name_found or e["nome"], "fans": "", "verified": False})
-                if pid_encontrado else "null"
-            )
-            status   = conf.get("status", "pending" if pid_encontrado else "not_found")
-            selected = conf.get("selected_pid", "")
-            alts     = conf.get("alternatives", [])
-            cor      = get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])
-            empresas_js_items.append(f"""{{
-                id: {json.dumps(ck)}, sk: {json.dumps(sk)}, nome: {json.dumps(e["nome"])},
-                idx: {idx_e}, found: {found_obj}, alts: {json.dumps(alts)},
-                status: {json.dumps(status)}, selected: {json.dumps(selected)}, cor: {json.dumps(cor)}
-            }}""")
-        empresas_js = "[\n" + ",\n".join(empresas_js_items) + "\n]"
- 
-        # ── Barra de progresso + botão "Ver Anúncios" (nativo Streamlit)
         col_info, col_prog, col_btn = st.columns([4, 3, 2])
         with col_info:
             st.markdown(
@@ -3167,7 +3239,7 @@ setTimeout(ajustar, 600);
                     if st.session_state.ads_confirmacao.get(ck, {}).get("status") == "not_found":
                         continue
                     pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
-                    ads, erro, modo_real = buscar_ads_meta(
+                    ads, erro, modo_real, slug = buscar_ads_meta(
                         search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
                     )
                     if erro:
@@ -3175,48 +3247,57 @@ setTimeout(ajustar, 600);
                     else:
                         st.session_state.ads_cache[ck] = {
                             "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "nome": e["nome"], "modo": modo_real,
-                            "page_id": pid_final or st.session_state.ads_page_ids.get(ck),
+                            "nome": e["nome"], "modo": modo_real, "page_id": pid_final,
                         }
             st.session_state.ads_etapa = "resultados"
             st.rerun()
  
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
-        # ── Cards das empresas — renderizados diretamente em Python
+        # Cards das empresas
         for idx_e, e in enumerate(todas_empresas):
-            ck   = e["ads_id"]
-            sk   = safe_key(ck)
-            conf = st.session_state.ads_confirmacao.get(ck, {})
+            ck     = e["ads_id"]
+            sk     = safe_key(ck)
+            conf   = st.session_state.ads_confirmacao.get(ck, {})
             status = conf.get("status", "pending")
             pid_encontrado = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
-            alts = conf.get("alternatives", [])
-            cor  = get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])
+            slug_hint      = st.session_state.ads_page_slugs.get(ck, "")
+            alts   = conf.get("alternatives", [])
+            cor    = get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])
             avatar = gerar_avatar(e["nome"])
  
             # Chip de status
             if status == "confirmed":
-                chip = "<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✓ Confirmado</span>"
+                chip        = "<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✓ Confirmado</span>"
                 card_border = "#27ae60"
             elif status == "not_found":
-                chip = "<span style='background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>— Não encontrada</span>"
+                chip        = "<span style='background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>— Não encontrada</span>"
                 card_border = "#9ca3af"
             elif status == "rejected":
-                chip = "<span style='background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✗ Incorreto</span>"
+                chip        = "<span style='background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✗ Incorreto</span>"
                 card_border = "#e24b4a"
             elif pid_encontrado:
-                chip = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⏳ Aguardando confirmação</span>"
+                chip        = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⏳ Aguardando confirmação</span>"
                 card_border = "#e5e7eb"
             else:
-                chip = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⚠ Não encontrado</span>"
+                chip        = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⚠ Não encontrado</span>"
                 card_border = "#e5e7eb"
  
-            # Meta da página
+            # Meta da página — agora exibe slug se encontrado
             if pid_encontrado:
                 meta_html = (
                     f"<span style='font-family:monospace;background:#f3f4f6;padding:2px 8px;"
                     f"border-radius:5px;font-size:12px;color:#374151'># {pid_encontrado}</span>"
                     f"<span style='font-size:13px;color:#6b7280'>{e['nome']}</span>"
+                )
+            elif slug_hint:
+                # Slug extraído dos anúncios — dica visual para o usuário
+                meta_html = (
+                    f"<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;"
+                    f"padding:2px 8px;border-radius:5px;font-size:12px;font-family:monospace'>"
+                    f"🔗 facebook.com/{slug_hint}</span>"
+                    f"<span style='font-size:12px;color:#6b7280;margin-left:6px'>"
+                    f"Slug encontrado nos anúncios</span>"
                 )
             else:
                 meta_html = "<span style='color:#b45309;font-size:12px'>⚠ Página não encontrada automaticamente</span>"
@@ -3247,7 +3328,7 @@ setTimeout(ajustar, 600);
                 with bc2:
                     if st.button("Incorreto", key=f"rj_nat_{sk}", use_container_width=True):
                         with st.spinner(f"Buscando alternativas para {e['nome']}…"):
-                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN, slug_hint=slug_hint)
                         st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts_new or []}
                         st.rerun()
                 with bc3:
@@ -3260,7 +3341,7 @@ setTimeout(ajustar, 600);
                 with bc1:
                     if st.button("Buscar alternativas", key=f"rj_nat_{sk}", use_container_width=True):
                         with st.spinner(f"Buscando alternativas para {e['nome']}…"):
-                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN, slug_hint=slug_hint)
                         st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts_new or []}
                         st.rerun()
                 with bc2:
@@ -3273,7 +3354,7 @@ setTimeout(ajustar, 600);
                 with bc1:
                     if st.button("Corrigir", key=f"rj_nat_{sk}", use_container_width=True):
                         with st.spinner(f"Buscando alternativas para {e['nome']}…"):
-                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN)
+                            alts_new = buscar_alternativas_paginas(e["nome"], META_TOKEN, slug_hint=slug_hint)
                         st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts_new or []}
                         st.rerun()
  
@@ -3293,20 +3374,21 @@ setTimeout(ajustar, 600);
                         unsafe_allow_html=True,
                     )
                     for alt in alts:
-                        sel = conf.get("selected_pid") == alt["pid"]
-                        border = "#27ae60" if sel else "#e5e7eb"
-                        bg = "#f0fdf4" if sel else "#fafafa"
-                        radio = "●" if sel else "○"
-                        radio_color = "#27ae60" if sel else "#d1d5db"
-                        fans_txt = f"  ·  {alt['fans']} seguidores" if alt.get("fans") else ""
+                        sel          = conf.get("selected_pid") == alt["pid"]
+                        border       = "#27ae60" if sel else "#e5e7eb"
+                        bg           = "#f0fdf4" if sel else "#fafafa"
+                        radio        = "●" if sel else "○"
+                        radio_color  = "#27ae60" if sel else "#d1d5db"
+                        fans_txt     = f"  ·  {alt['fans']} seguidores" if alt.get("fans") else ""
                         verified_txt = " ✓" if alt.get("verified") else ""
+                        slug_txt     = f"  ·  facebook.com/{alt['slug']}" if alt.get("slug") else ""
                         col_alt, col_radio = st.columns([9, 1])
                         with col_alt:
                             st.markdown(
                                 f"<div style='border:1px solid {border};border-radius:8px;padding:10px 14px;"
                                 f"background:{bg};margin-bottom:6px;cursor:pointer'>"
                                 f"<div style='font-size:14px;font-weight:600;color:#111827'>{alt['name']}{verified_txt}</div>"
-                                f"<div style='font-size:11px;font-family:monospace;color:#6b7280'>{alt['pid']}{fans_txt}</div>"
+                                f"<div style='font-size:11px;font-family:monospace;color:#6b7280'>{alt['pid']}{fans_txt}{slug_txt}</div>"
                                 f"</div>",
                                 unsafe_allow_html=True,
                             )
@@ -3348,7 +3430,7 @@ setTimeout(ajustar, 600);
                         if st.session_state.ads_confirmacao.get(ck, {}).get("status") == "not_found":
                             continue
                         pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
-                        ads, erro, modo_real = buscar_ads_meta(
+                        ads, erro, modo_real, slug = buscar_ads_meta(
                             search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
                         )
                         if erro:
