@@ -2687,14 +2687,12 @@ elif st.session_state.pagina == "ads":
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
 
-    # ── Session state das etapas
     if "ads_etapa"          not in st.session_state: st.session_state.ads_etapa          = "informativa"
     if "ads_cache"          not in st.session_state: st.session_state.ads_cache          = {}
     if "ads_erro"           not in st.session_state: st.session_state.ads_erro           = {}
     if "ads_page_ids"       not in st.session_state: st.session_state.ads_page_ids       = {}
     if "ads_confirmacao"    not in st.session_state: st.session_state.ads_confirmacao    = {}
 
-    # ── Funções auxiliares
     def detectar_modo(identifier: str) -> tuple:
         if not identifier:
             return None, None, "keyword"
@@ -2811,7 +2809,6 @@ elif st.session_state.pagina == "ads":
 
     META_TOKEN = st.secrets.get("META_ACCESS_TOKEN", "")
 
-    # ── Monta lista de empresas
     todas_empresas = []
     if emp.get("nome"):
         raw_id = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
@@ -2830,7 +2827,6 @@ elif st.session_state.pagina == "ads":
             "search_term": c["nome"], "modo": modo, "tipo": "concorrente", "idx": i,
         })
 
-    # ── Auto-avança etapa se já tem dados
     tem_resultados = bool(st.session_state.ads_cache)
     tem_confirmacoes = bool(st.session_state.ads_page_ids) or bool(st.session_state.ads_confirmacao)
     if tem_resultados and st.session_state.ads_etapa == "informativa":
@@ -2838,9 +2834,7 @@ elif st.session_state.pagina == "ads":
     elif tem_confirmacoes and st.session_state.ads_etapa == "informativa":
         st.session_state.ads_etapa = "identificacao"
 
-    # ════════════════════════════════════════════
-    # CABEÇALHO SEMPRE VISÍVEL
-    # ════════════════════════════════════════════
+    # ── CABEÇALHO
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -2891,13 +2885,11 @@ html, body { background: transparent; overflow: hidden; }
             st.session_state.ads_etapa = "identificacao"
             st.rerun()
 
-        # ✅ CSS esconde o botão após criá-lo
         st.markdown(
             "<style>.st-key-btn_ir_identificacao{display:none!important}</style>",
             unsafe_allow_html=True
         )
 
-        # ✅ HTML do conteúdo por último
         nomes_lista_html = "".join([
             f'<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6">'
             f'<div style="width:36px;height:36px;border-radius:50%;'
@@ -2919,37 +2911,42 @@ html, body { background: transparent; overflow: hidden; }
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
-.sec-label {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1.2px; margin-bottom:12px;
-}}
 .steps {{
     display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px;
 }}
 .step {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    padding:20px; position:relative;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;
 }}
 .step.active {{
     background:#0e2a47; border-color:#0e2a47;
 }}
+.step-header {{
+    display:flex; align-items:center; gap:10px; margin-bottom:8px;
+}}
 .step-num {{
-    width:28px; height:28px; border-radius:8px;
+    width:26px; height:26px; border-radius:7px;
     background:#f3f4f6; color:#6b7280;
     display:flex; align-items:center; justify-content:center;
-    font-size:13px; font-weight:800; margin-bottom:10px;
+    font-size:12px; font-weight:800; flex-shrink:0;
 }}
 .step.active .step-num {{
     background:rgba(255,255,255,0.15); color:#fff;
 }}
-.step-icon {{ font-size:22px; margin-bottom:8px; }}
-.step-title {{ font-size:14px; font-weight:700; color:#111827; margin-bottom:4px; }}
+.step-title {{
+    font-size:15px; font-weight:700; color:#111827;
+}}
 .step.active .step-title {{ color:#fff; }}
-.step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
+.step-desc {{
+    font-size:13px; color:#6b7280; line-height:1.5;
+}}
 .step.active .step-desc {{ color:rgba(255,255,255,0.65); }}
 .empresas-box {{
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
     padding:20px 24px; margin-bottom:28px;
+}}
+.empresas-label {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1.2px; margin-bottom:12px;
 }}
 .btn-cta {{
     display:inline-flex; align-items:center; gap:10px;
@@ -2964,46 +2961,64 @@ body {{ padding-bottom:8px; }}
 .cta-sub {{ font-size:13px; color:#9ca3af; margin-top:10px; }}
 </style>
 
-<div class="sec-label">Como funciona</div>
 <div class="steps">
     <div class="step active">
-        <div class="step-num">1</div>
-        <div class="step-icon">🔍</div>
-        <div class="step-title">Identificação</div>
+        <div class="step-header">
+            <div class="step-num">1</div>
+            <div class="step-title">Identificação</div>
+        </div>
         <div class="step-desc">Buscamos automaticamente as páginas do Facebook de cada empresa</div>
     </div>
     <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-icon">✅</div>
-        <div class="step-title">Confirmação</div>
+        <div class="step-header">
+            <div class="step-num">2</div>
+            <div class="step-title">Confirmação</div>
+        </div>
         <div class="step-desc">Você valida se as páginas encontradas estão corretas</div>
     </div>
     <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-icon">📊</div>
-        <div class="step-title">Resultados</div>
+        <div class="step-header">
+            <div class="step-num">3</div>
+            <div class="step-title">Resultados</div>
+        </div>
         <div class="step-desc">Veja todos os anúncios ativos com análise por IA</div>
     </div>
 </div>
 
-<div class="sec-label">Empresas que serão analisadas ({n_empresas})</div>
+<div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
 <div class="empresas-box">
     {nomes_lista_html}
     <div style="padding-top:4px"></div>
 </div>
 
-<button class="btn-cta" onclick="
-    const btns = window.parent.document.querySelectorAll('button');
-    for (const b of btns) {{
-        if (b.innerText.trim() === '__ir_identificacao__') {{ b.click(); break; }}
-    }}
-">
+<button class="btn-cta" onclick="triggerBtn()">
     <span>Identificar páginas</span>
     <span style="font-size:18px">→</span>
 </button>
 <div class="cta-sub">Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>
 
 <script>
+function triggerBtn() {{
+    var found = false;
+    var attempts = 0;
+    function tryClick() {{
+        var btns = window.parent.document.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {{
+            var txt = btns[i].innerText.trim();
+            if (txt === '__ir_identificacao__') {{
+                btns[i].click();
+                found = true;
+                break;
+            }}
+        }}
+        if (!found && attempts < 10) {{
+            attempts++;
+            setTimeout(tryClick, 200);
+        }}
+    }}
+    tryClick();
+}}
+
 function ajustar() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
@@ -3023,7 +3038,6 @@ setTimeout(ajustar, 600);
     # ════════════════════════════════════════════
     elif st.session_state.ads_etapa == "identificacao":
 
-        # ✅ TODOS OS BOTÕES FANTASMA CRIADOS PRIMEIRO
         confirmar_triggers    = {}
         rejeitar_triggers     = {}
         salvar_triggers       = {}
@@ -3043,7 +3057,6 @@ setTimeout(ajustar, 600);
 
         ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
 
-        # ✅ CSS esconde todos os fantasmas
         ghost_sels = []
         for e in todas_empresas:
             sk = safe_key(e["ads_id"])
@@ -3057,7 +3070,6 @@ setTimeout(ajustar, 600);
             unsafe_allow_html=True
         )
 
-        # ✅ Processa cliques
         for e in todas_empresas:
             ck   = e["ads_id"]
             conf = st.session_state.ads_confirmacao.get(ck, {})
@@ -3111,14 +3123,12 @@ setTimeout(ajustar, 600);
             st.session_state.ads_etapa = "resultados"
             st.rerun()
 
-        # ── Conta progresso
         n_confirmados   = sum(
             1 for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
         )
         todos_resolvidos = n_confirmados == len(todas_empresas)
 
-        # ── Monta dados para o JS
         empresas_js_items = []
         for idx_e, e in enumerate(todas_empresas):
             ck   = e["ads_id"]
@@ -3248,10 +3258,7 @@ body {{ padding-bottom:8px; }}
     <button class="btn-ver {'ready' if todos_resolvidos else 'disabled'}" id="btn_res"
         onclick="
             if (!this.classList.contains('disabled')) {{
-                const btns = window.parent.document.querySelectorAll('button');
-                for (const b of btns) {{
-                    if (b.innerText.trim() === '__ir_resultados__') {{ b.click(); break; }}
-                }}
+                triggerParentBtn('__ir_resultados__');
             }}
         ">
         Ver Anúncios →
@@ -3272,27 +3279,42 @@ function getInitials(nome) {{
     return p.length > 1 ? p[0][0] + p[1][0] : p[0][0];
 }}
 
-function triggerBtn(label) {{
-    const btns = window.parent.document.querySelectorAll("button");
-    for (const b of btns) {{ if (b.innerText.trim() === label) {{ b.click(); return; }} }}
+function triggerParentBtn(label) {{
+    var found = false;
+    var attempts = 0;
+    function tryClick() {{
+        var btns = window.parent.document.querySelectorAll("button");
+        for (var i = 0; i < btns.length; i++) {{
+            if (btns[i].innerText.trim() === label) {{
+                btns[i].click();
+                found = true;
+                break;
+            }}
+        }}
+        if (!found && attempts < 10) {{
+            attempts++;
+            setTimeout(tryClick, 200);
+        }}
+    }}
+    tryClick();
 }}
 
 function confirmar(id, sk) {{
     state[id].status = "confirmed";
-    triggerBtn("__cf_" + sk + "__");
+    triggerParentBtn("__cf_" + sk + "__");
     render();
 }}
 
 function rejeitar(id, sk) {{
     state[id].status = "rejected";
     state[id].selected = "";
-    triggerBtn("__rj_" + sk + "__");
+    triggerParentBtn("__rj_" + sk + "__");
     render();
 }}
 
 function naoApareceu(id, sk) {{
     state[id].status = "not_found";
-    triggerBtn("__na_" + sk + "__");
+    triggerParentBtn("__na_" + sk + "__");
     render();
 }}
 
@@ -3304,9 +3326,13 @@ function selecionarAlt(id, pid) {{
 function salvarAlt(id, sk, pid) {{
     if (!state[id].selected) return;
     state[id].status = "confirmed";
-    const stk = sk + "_" + pid.replace(/-/g, "_");
-    triggerBtn("__sv_" + stk + "__");
+    const stk = safe_key_js(sk + "_" + pid);
+    triggerParentBtn("__sv_" + stk + "__");
     render();
+}}
+
+function safe_key_js(s) {{
+    return s.replace(/[^a-zA-Z0-9_]/g, "_");
 }}
 
 function render() {{
@@ -3625,7 +3651,6 @@ render();
                         st.link_button("🔍 Abrir Ad Library", fallback_url, use_container_width=True)
                     st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
-            # ── Análise IA
             st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
             chave_ia = f"ia_ads_{ck}"
             if chave_ia not in st.session_state: st.session_state[chave_ia] = ""
@@ -3643,8 +3668,8 @@ render();
 
             ia_html_content = st.session_state.get(chave_ia, "").replace("\n", "<br>")
             btn_js = (
-                f"const btns=window.parent.document.querySelectorAll('button');"
-                f"for(const b of btns){{if(b.innerText.trim()==='__ia_ads_{safe_ck}__'){{b.click();break;}}}}"
+                f"var btns=window.parent.document.querySelectorAll('button');"
+                f"for(var i=0;i<btns.length;i++){{if(btns[i].innerText.trim()==='__ia_ads_{safe_ck}__'){{btns[i].click();break;}}}}"
             )
             ia_content = (
                 f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">{ia_html_content}</div>'
