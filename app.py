@@ -2675,6 +2675,665 @@ setTimeout(ajustarAltura, 600);
 
     components.html(analises_html, height=60, scrolling=False)
 
+# ---------------------------------------------------
+# PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
+# ---------------------------------------------------
+ 
+elif st.session_state.pagina == "ads":
+ 
+    import datetime as _dt
+    import json
+ 
+    emp   = st.session_state.dados["minha_empresa"]
+    concs = st.session_state.dados["concorrentes"]
+ 
+    if "ads_etapa"       not in st.session_state: st.session_state.ads_etapa       = "informativa"
+    if "ads_cache"       not in st.session_state: st.session_state.ads_cache       = {}
+    if "ads_erro"        not in st.session_state: st.session_state.ads_erro        = {}
+    if "ads_page_ids"    not in st.session_state: st.session_state.ads_page_ids    = {}
+    if "ads_page_slugs"  not in st.session_state: st.session_state.ads_page_slugs  = {}
+    if "ads_confirmacao" not in st.session_state: st.session_state.ads_confirmacao = {}
+ 
+    # ── helpers ──────────────────────────────────────────────────────────
+ 
+    def detectar_modo(identifier: str) -> tuple:
+        if not identifier:
+            return None, None, "keyword"
+        clean = identifier.strip().lstrip("@")
+        for prefix in [
+            "https://www.facebook.com/", "https://facebook.com/",
+            "http://www.facebook.com/",  "http://facebook.com/",
+            "www.facebook.com/",         "facebook.com/",
+        ]:
+            if clean.lower().startswith(prefix):
+                clean = clean[len(prefix):]
+        clean = clean.strip("/").split("?")[0].split("/")[0]
+        if clean.isdigit():
+            return clean, None, "page_id"
+        return None, clean, "keyword"
+ 
+    SLUGS_IGNORADOS = {
+        "ads", "adlibrary", "business", "pages", "photo", "video",
+        "permalink", "watch", "groups", "events", "marketplace",
+    }
+ 
+    def extrair_slug_dos_ads(ads_raw: list) -> str:
+        for ad in ads_raw:
+            url = ad.get("ad_snapshot_url", "")
+            m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', url)
+            if m:
+                slug = m.group(1)
+                if slug.lower() not in SLUGS_IGNORADOS and not slug.isdigit():
+                    return slug
+        return ""
+ 
+    def resolver_slug(slug: str, token: str) -> dict:
+        if not slug:
+            return {}
+        try:
+            r = requests.get(
+                f"https://graph.facebook.com/v21.0/{slug}",
+                params={"fields": "id,name,fan_count,verification_status", "access_token": token},
+                timeout=10,
+            )
+            d = r.json()
+            if "id" in d:
+                fans = d.get("fan_count", 0)
+                return {
+                    "pid":      str(d["id"]),
+                    "name":     d.get("name", slug),
+                    "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                    "verified": d.get("verification_status") in ("blue_verified", "gray_verified"),
+                    "slug":     slug,
+                }
+        except Exception:
+            pass
+        return {}
+ 
+    def buscar_alternativas_paginas(nome: str, token: str, slug_hint: str = "") -> list:
+        if slug_hint:
+            resolved = resolver_slug(slug_hint, token)
+            if resolved:
+                return [resolved]
+        resultados = []
+        try:
+            r = requests.get(
+                "https://graph.facebook.com/v21.0/pages/search",
+                params={"q": nome, "fields": "id,name,fan_count,verification_status", "limit": 5, "access_token": token},
+                timeout=15,
+            )
+            for p in r.json().get("data", []):
+                fans = p.get("fan_count", 0)
+                resultados.append({
+                    "pid":      str(p["id"]),
+                    "name":     p.get("name", ""),
+                    "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                    "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
+                })
+        except Exception:
+            pass
+        if not resultados:
+            try:
+                r = requests.get(
+                    "https://graph.facebook.com/v21.0/ads_archive",
+                    params={
+                        "search_terms": nome,
+                        "ad_active_status": "ACTIVE",
+                        "ad_reached_countries": '["BR"]',
+                        "fields": "page_id,page_name,ad_snapshot_url",
+                        "limit": 10,
+                        "access_token": token,
+                    },
+                    timeout=15,
+                )
+                seen = set()
+                for ad in r.json().get("data", []):
+                    pid = str(ad.get("page_id", ""))
+                    if pid and pid not in seen:
+                        seen.add(pid)
+                        snap = ad.get("ad_snapshot_url", "")
+                        m    = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
+                        resultados.append({
+                            "pid":      pid,
+                            "name":     ad.get("page_name", ""),
+                            "fans":     "",
+                            "verified": False,
+                            "slug":     m.group(1) if m else "",
+                        })
+            except Exception:
+                pass
+        return resultados
+
+    def buscar_paginas_por_nome(nome: str, token: str) -> list:
+        resultados = {}
+
+        # Tentativa 1: ads_archive ACTIVE — mais confiável sem permissões extras
+        for status in ["ACTIVE", "ALL"]:
+            try:
+                r = requests.get(
+                    "https://graph.facebook.com/v21.0/ads_archive",
+                    params={
+                        "search_terms":         nome,
+                        "ad_active_status":     status,
+                        "ad_reached_countries": '["BR"]',
+                        "fields": "page_id,page_name,ad_snapshot_url",
+                        "limit":  50,
+                        "access_token": token,
+                    },
+                    timeout=15,
+                )
+                data = r.json()
+                for ad in data.get("data", []):
+                    pid  = str(ad.get("page_id", ""))
+                    pnm  = ad.get("page_name", "")
+                    snap = ad.get("ad_snapshot_url", "")
+                    if pid and pid not in resultados:
+                        m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
+                        slug = m.group(1) if m else ""
+                        if slug.lower() in SLUGS_IGNORADOS or slug.isdigit():
+                            slug = ""
+                        resultados[pid] = {
+                            "pid":      pid,
+                            "name":     pnm,
+                            "slug":     slug,
+                            "fans":     "",
+                            "verified": False,
+                        }
+            except Exception:
+                pass
+            if len(resultados) >= 5:
+                break
+
+        # Tentativa 2: busca sem filtro de país
+        if len(resultados) < 3:
+            try:
+                r = requests.get(
+                    "https://graph.facebook.com/v21.0/ads_archive",
+                    params={
+                        "search_terms":         nome,
+                        "ad_active_status":     "ALL",
+                        "ad_reached_countries": '["BR","US","PT"]',
+                        "fields": "page_id,page_name,ad_snapshot_url",
+                        "limit":  50,
+                        "access_token": token,
+                    },
+                    timeout=15,
+                )
+                for ad in r.json().get("data", []):
+                    pid  = str(ad.get("page_id", ""))
+                    pnm  = ad.get("page_name", "")
+                    snap = ad.get("ad_snapshot_url", "")
+                    if pid and pid not in resultados:
+                        m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
+                        slug = m.group(1) if m else ""
+                        if slug.lower() in SLUGS_IGNORADOS or slug.isdigit():
+                            slug = ""
+                        resultados[pid] = {
+                            "pid":      pid,
+                            "name":     pnm,
+                            "slug":     slug,
+                            "fans":     "",
+                            "verified": False,
+                        }
+            except Exception:
+                pass
+
+        # Tentativa 3: slug direto pelo nome
+        slug_guess = re.sub(r'[^a-z0-9]', '', nome.lower())
+        if slug_guess:
+            try:
+                resolved = resolver_slug(slug_guess, token)
+                if resolved.get("pid") and resolved["pid"] not in resultados:
+                    resultados[resolved["pid"]] = resolved
+            except Exception:
+                pass
+
+        # Tentativa 4: pages/search (requer permissão, mas tenta mesmo assim)
+        try:
+            r = requests.get(
+                "https://graph.facebook.com/v21.0/pages/search",
+                params={
+                    "q":      nome,
+                    "fields": "id,name,fan_count,verification_status,username",
+                    "limit":  10,
+                    "access_token": token,
+                },
+                timeout=15,
+            )
+            for p in r.json().get("data", []):
+                pid  = str(p["id"])
+                fans = p.get("fan_count", 0)
+                if pid not in resultados:
+                    resultados[pid] = {
+                        "pid":      pid,
+                        "name":     p.get("name", ""),
+                        "slug":     p.get("username", ""),
+                        "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                        "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
+                    }
+        except Exception:
+            pass
+
+        return list(resultados.values())
+ 
+    def buscar_ads_meta(search_term, token, limit=20, page_id=None):
+        url    = "https://graph.facebook.com/v21.0/ads_archive"
+        fields = (
+            "id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,"
+            "ad_creative_link_descriptions,ad_creative_link_titles,"
+            "ad_snapshot_url,ad_delivery_start_time,impressions,publisher_platforms,media_type"
+        )
+        params = {
+            "ad_active_status":    "ACTIVE",
+            "ad_reached_countries": '["BR"]',
+            "fields":  fields,
+            "limit":   limit,
+            "access_token": token,
+        }
+        modo = "keyword"
+        if page_id:
+            params["search_page_ids"] = page_id
+            modo = "page_id"
+        else:
+            params["search_terms"] = search_term
+        try:
+            r    = requests.get(url, params=params, timeout=15)
+            data = r.json()
+            if "error" in data:
+                return [], data["error"].get("message", "Erro desconhecido"), modo, ""
+            ads_raw = data.get("data", [])
+            slug    = extrair_slug_dos_ads(ads_raw)
+            resultado = []
+            for ad in ads_raw:
+                bodies = ad.get("ad_creative_bodies") or []
+                titles = ad.get("ad_creative_link_titles") or []
+                descs  = ad.get("ad_creative_link_descriptions") or []
+                caps   = ad.get("ad_creative_link_captions") or []
+                plats  = ad.get("publisher_platforms") or []
+                media  = ad.get("media_type", "")
+                if   media in ("VIDEO", "video"): fmt = "Vídeo 🎬"
+                elif media in ("IMAGE", "image"): fmt = "Imagem 🖼️"
+                elif len(bodies) > 1:             fmt = "Carrossel 🎠"
+                else:                             fmt = "Imagem 🖼️"
+                imp = ad.get("impressions", {})
+                imp_str = ""
+                if isinstance(imp, dict):
+                    lo, hi = imp.get("lower_bound",""), imp.get("upper_bound","")
+                    if lo or hi: imp_str = f"{lo}–{hi}"
+                resultado.append({
+                    "id":           ad.get("id",""),
+                    "page_id":      str(ad.get("page_id","")),
+                    "page_name":    ad.get("page_name",""),
+                    "body":         bodies[0] if bodies else "",
+                    "bodies":       bodies,
+                    "title":        titles[0] if titles else "",
+                    "description":  descs[0]  if descs  else "",
+                    "caption":      caps[0]   if caps   else "",
+                    "snapshot_url": ad.get("ad_snapshot_url",""),
+                    "data_inicio":  (ad.get("ad_delivery_start_time","")[:10] if ad.get("ad_delivery_start_time") else ""),
+                    "impressoes":   imp_str,
+                    "plataformas":  plats,
+                    "formato":      fmt,
+                    "media_type":   media,
+                    "page_slug":    slug,
+                })
+            return resultado, None, modo, slug
+        except Exception as e:
+            return [], str(e), modo, ""
+ 
+    def safe_key(s):
+        return re.sub(r"[^a-zA-Z0-9_]", "_", s)
+ 
+    def _plat_icons(plats):
+        icons = {"facebook":"🔵 Facebook","instagram":"📸 Instagram",
+                 "messenger":"💬 Messenger","audience_network":"🌐 Audience Network"}
+        return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
+ 
+    def _truncar(txt, n=120):
+        if not txt: return "—"
+        return txt[:n] + "…" if len(txt) > n else txt
+ 
+    META_TOKEN = st.secrets.get("META_ACCESS_TOKEN", "")
+ 
+    todas_empresas = []
+    if emp.get("nome"):
+        raw_id = emp.get("fb_page") or emp.get("instagram","").lstrip("@") or emp.get("nome","")
+        page_id, keyword, modo = detectar_modo(raw_id)
+        todas_empresas.append({
+            "nome": emp["nome"], "ads_id": raw_id,
+            "page_id": page_id, "keyword": keyword or raw_id,
+            "search_term": emp["nome"], "modo": modo, "tipo": "minha", "idx": 0,
+        })
+    for i, c in enumerate(concs):
+        raw_id = c.get("ads_id","") or c.get("fb_page","") or c.get("nome","")
+        page_id, keyword, modo = detectar_modo(raw_id)
+        todas_empresas.append({
+            "nome": c["nome"], "ads_id": raw_id,
+            "page_id": page_id, "keyword": keyword or raw_id,
+            "search_term": c["nome"], "modo": modo, "tipo": "concorrente", "idx": i,
+        })
+ 
+    tem_resultados   = bool(st.session_state.ads_cache)
+    tem_confirmacoes = bool(st.session_state.ads_page_ids) or bool(st.session_state.ads_confirmacao)
+    if   tem_resultados   and st.session_state.ads_etapa == "informativa": st.session_state.ads_etapa = "resultados"
+    elif tem_confirmacoes and st.session_state.ads_etapa == "informativa": st.session_state.ads_etapa = "identificacao"
+ 
+    # ── CABEÇALHO ────────────────────────────────────────────────────────
+    components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; overflow:hidden; }
+.titulo { font-family:'Animo','DM Sans',sans-serif; font-size:32px; font-weight:700; color:#1a2e4a; text-transform:uppercase; margin:0 0 6px 0; letter-spacing:0.5px; }
+.sub    { font-family:'DM Sans',sans-serif; font-size:14px; color:#6b7280; }
+</style>
+<div class="titulo">Biblioteca de Ads</div>
+<div class="sub">Criativos, copies e formatos dos anúncios ativos dos seus concorrentes.</div>
+""", height=65)
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px 0'/>", unsafe_allow_html=True)
+ 
+    # ════════════════════════════════════════════════════════════════════
+    # ETAPA 1 — INFORMATIVA
+    # ════════════════════════════════════════════════════════════════════
+
+    if st.session_state.ads_etapa == "informativa":
+
+        if not META_TOKEN:
+            st.warning("⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets para usar esta funcionalidade.")
+            st.stop()
+        if not todas_empresas:
+            st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
+            st.stop()
+
+        n_empresas    = len(todas_empresas)
+        altura_lista  = 16 + (n_empresas * 54)
+        altura_total  = 220 + altura_lista
+
+        nomes_lista_html = "".join([
+            f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;'
+            f'border-bottom:{"none" if i == len(todas_empresas)-1 else "1px solid #f3f4f6"};'
+            f'font-family:DM Sans,sans-serif;">'
+            f'<div style="width:34px;height:34px;border-radius:50%;background:'
+            f'{get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])};'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">'
+            f'{gerar_avatar(e["nome"])}</div>'
+            f'<span style="font-size:15px;font-weight:600;color:#111827;flex:1;">{e["nome"]}</span>'
+            f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;'
+            f'border-radius:20px;font-weight:500;white-space:nowrap;">'
+            f'{"Minha Empresa" if e["tipo"]=="minha" else "Concorrente"}</span>'
+            f'</div>'
+            for i, e in enumerate(todas_empresas)
+        ])
+
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+</style>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+
+    <div style="background:#0e2a47;border:1px solid #0e2a47;border-radius:12px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,.15);
+                        color:#fff;display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:800;flex-shrink:0;">1</div>
+            <span style="font-size:14px;font-weight:700;color:#fff;">Identificação</span>
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.5;">
+            Buscamos automaticamente as páginas do Facebook de cada empresa</div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:#f3f4f6;
+                        color:#6b7280;display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:800;flex-shrink:0;">2</div>
+            <span style="font-size:14px;font-weight:700;color:#111827;">Confirmação</span>
+        </div>
+        <div style="font-size:13px;color:#6b7280;line-height:1.5;">
+            Você escolhe a página correta entre as encontradas</div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:#f3f4f6;
+                        color:#6b7280;display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:800;flex-shrink:0;">3</div>
+            <span style="font-size:14px;font-weight:700;color:#111827;">Resultados</span>
+        </div>
+        <div style="font-size:13px;color:#6b7280;line-height:1.5;">
+            Veja todos os anúncios ativos com análise por IA</div>
+    </div>
+
+</div>
+
+<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;
+            letter-spacing:1.2px;margin-bottom:10px;">
+    Empresas que serão analisadas ({n_empresas})
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+            padding:4px 18px;margin-bottom:0px;">
+    {nomes_lista_html}
+</div>
+""", height=altura_total, scrolling=False)
+
+        iniciar = st.button(
+            "Identificar páginas →",
+            type="primary",
+            use_container_width=True,
+            key="btn_iniciar_ads_nativo",
+        )
+        st.markdown(
+            "<div style='font-size:12px;color:#9ca3af;text-align:center;"
+            "margin-top:6px;margin-bottom:4px'>"
+            "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
+            unsafe_allow_html=True,
+        )
+
+        if iniciar:
+            with st.spinner("Buscando páginas que estão anunciando…"):
+                for e in todas_empresas:
+                    ck   = e["ads_id"]
+                    alts = buscar_paginas_por_nome(e["search_term"], META_TOKEN)
+                    st.session_state.ads_confirmacao[ck] = {
+                        "status":       "pending",
+                        "alternatives": alts,
+                        "selected_pid": "",
+                    }
+            st.session_state.ads_etapa = "identificacao"
+            st.rerun()
+
+    # ════════════════════════════════════════════════════════════════════
+    # ETAPA 2 — CONFIRMAÇÃO DE PÁGINAS
+    # ════════════════════════════════════════════════════════════════════
+
+    elif st.session_state.ads_etapa == "identificacao":
+
+        ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
+        st.markdown("<style>.st-key-btn_ir_resultados{display:none!important}</style>", unsafe_allow_html=True)
+
+        if ir_resultados:
+            with st.spinner("Buscando anúncios…"):
+                for e in todas_empresas:
+                    ck = e["ads_id"]
+                    if st.session_state.ads_confirmacao.get(ck, {}).get("status") == "not_found":
+                        continue
+                    pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
+                    ads, erro, modo_real, slug = buscar_ads_meta(
+                        search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
+                    )
+                    if erro: st.session_state.ads_erro[ck] = erro
+                    else:    st.session_state.ads_cache[ck] = {
+                        "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "nome": e["nome"], "modo": modo_real, "page_id": pid_final,
+                    }
+            st.session_state.ads_etapa = "resultados"
+            st.rerun()
+
+        # ── Cabeçalho + barra de progresso
+        n_confirmados = sum(
+            1 for e in todas_empresas
+            if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
+        )
+        todos_resolvidos = n_confirmados == len(todas_empresas)
+
+        col_info, col_prog, col_btn = st.columns([4, 3, 2])
+        with col_info:
+            st.markdown(
+                "<div style='padding:8px 0'>"
+                "<div style='font-size:16px;font-weight:800;color:#1a2e4a'>Confirmar páginas do Facebook</div>"
+                "<div style='font-size:13px;color:#6b7280;margin-top:2px'>Escolha qual página corresponde a cada empresa</div>"
+                "</div>", unsafe_allow_html=True)
+        with col_prog:
+            pct = int(n_confirmados / max(len(todas_empresas), 1) * 100)
+            st.markdown(
+                f"<div style='display:flex;align-items:center;gap:10px;padding-top:14px'>"
+                f"<div style='flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden'>"
+                f"<div style='width:{pct}%;height:100%;background:linear-gradient(90deg,#27ae60,#2ecc71);border-radius:3px'></div>"
+                f"</div><span style='font-size:13px;font-weight:700;color:#111827;white-space:nowrap'>"
+                f"{n_confirmados}/{len(todas_empresas)}</span></div>", unsafe_allow_html=True)
+        with col_btn:
+            ver_btn = st.button(
+                "Ver Anúncios →",
+                type="primary" if todos_resolvidos else "secondary",
+                use_container_width=True,
+                key="btn_ver_anuncios",
+                disabled=not todos_resolvidos,
+            )
+
+        if ver_btn and todos_resolvidos:
+            with st.spinner("Buscando anúncios…"):
+                for e in todas_empresas:
+                    ck = e["ads_id"]
+                    if st.session_state.ads_confirmacao.get(ck, {}).get("status") == "not_found":
+                        continue
+                    pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
+                    ads, erro, modo_real, slug = buscar_ads_meta(
+                        search_term=e["search_term"], token=META_TOKEN, page_id=pid_final
+                    )
+                    if erro: st.session_state.ads_erro[ck] = erro
+                    else:    st.session_state.ads_cache[ck] = {
+                        "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "nome": e["nome"], "modo": modo_real, "page_id": pid_final,
+                    }
+            st.session_state.ads_etapa = "resultados"
+            st.rerun()
+
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
+        # ── Cards por empresa
+        for idx_e, e in enumerate(todas_empresas):
+            ck     = e["ads_id"]
+            sk     = safe_key(ck)
+            conf   = st.session_state.ads_confirmacao.get(ck, {})
+            status = conf.get("status", "pending")
+            alts   = conf.get("alternatives", [])
+            cor    = get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])
+            avatar = gerar_avatar(e["nome"])
+
+            # Status chip
+            if status == "confirmed":
+                chip        = "<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✓ Confirmado</span>"
+                card_border = "#27ae60"
+            elif status == "not_found":
+                chip        = "<span style='background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>— Não encontrada</span>"
+                card_border = "#9ca3af"
+            else:
+                chip        = f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>{'⏳ Aguardando seleção' if alts else '⚠ Nenhuma página encontrada'}</span>"
+                card_border = "#e5e7eb"
+
+            # Card header da empresa
+            st.markdown(
+                f"<div style='background:#fff;border:1.5px solid {card_border};border-radius:12px;"
+                f"overflow:hidden;margin-bottom:4px'>"
+                f"<div style='display:flex;align-items:center;gap:14px;padding:14px 18px;"
+                f"background:#fafafa;border-bottom:1px solid #f3f4f6;flex-wrap:wrap'>"
+                f"<div style='width:42px;height:42px;border-radius:50%;background:{cor};"
+                f"display:flex;align-items:center;justify-content:center;"
+                f"font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{avatar}</div>"
+                f"<div style='flex:1;min-width:0'>"
+                f"<div style='font-size:15px;font-weight:700;color:#111827'>{e['nome']}</div>"
+                f"<div style='font-size:12px;color:#6b7280;margin-top:2px'>Busca: <b>{e['search_term']}</b></div>"
+                f"</div><div>{chip}</div></div></div>",
+                unsafe_allow_html=True,
+            )
+
+            # ── PENDING: mostra páginas para selecionar
+            if status == "pending":
+                if alts:
+                    st.markdown(
+                        "<div style='font-size:12px;font-weight:700;color:#6b7280;"
+                        "text-transform:uppercase;letter-spacing:0.8px;"
+                        "margin:10px 0 8px 0'>Páginas encontradas — clique para selecionar:</div>",
+                        unsafe_allow_html=True)
+
+                    cols_alts = st.columns(min(len(alts), 3))
+                    for i_alt, alt in enumerate(alts):
+                        with cols_alts[i_alt % 3]:
+                            pid      = alt["pid"]
+                            nome_alt = alt.get("name", pid)
+                            slug_alt = alt.get("slug", "")
+                            fans_alt = alt.get("fans", "")
+                            ver_alt  = alt.get("verified", False)
+                            fb_link  = f"https://www.facebook.com/{slug_alt}" if slug_alt else f"https://www.facebook.com/{pid}"
+
+                            st.markdown(f"""
+                            <div style='border:1px solid #e5e7eb;border-radius:10px;
+                                        padding:12px 14px;background:#fafafa;margin-bottom:6px'>
+                                <div style='font-size:14px;font-weight:700;color:#111827;
+                                            margin-bottom:4px'>
+                                    {nome_alt}{"  ✓" if ver_alt else ""}
+                                </div>
+                                <div style='font-size:11px;font-family:monospace;
+                                            color:#6b7280;margin-bottom:2px'>ID: {pid}</div>
+                                {f'<div style="font-size:11px;color:#3a9fd6">facebook.com/{slug_alt}</div>' if slug_alt else ''}
+                                {f'<div style="font-size:11px;color:#6b7280">{fans_alt} seguidores</div>' if fans_alt else ''}
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                            col_sel, col_fb = st.columns(2)
+                            with col_sel:
+                                if st.button(
+                                    "✓ Selecionar",
+                                    key=f"sel_{sk}_{safe_key(pid)}",
+                                    use_container_width=True,
+                                    type="primary",
+                                ):
+                                    st.session_state.ads_page_ids[ck] = pid
+                                    st.session_state.ads_confirmacao[ck] = {
+                                        **conf, "status": "confirmed", "selected_pid": pid
+                                    }
+                                    st.rerun()
+                            with col_fb:
+                                st.link_button(
+                                    "Ver no FB",
+                                    fb_link,
+                                    use_container_width=True,
+                                )
+
+                    st.markdown("<div style='height:6px'/>", unsafe_allow_html=True)
+                    bc1, bc2, _ = st.columns([2, 2, 5])
+                    with bc1:
+                        if st.button("🔍 Buscar mais", key=f"bm_{sk}", use_container_width=True):
+                            with st.spinner(f"Buscando mais páginas para {e['nome']}…"):
+                                alts_new = buscar_paginas_por_nome(e["search_term"], META_TOKEN)
+                            st.session_state.ads_confirmacao[ck] = {
+                                **conf, "alternatives": alts_new, "status": "pending"
+                            }
+                            st.rerun()
+                    with bc2:
+                        if st.button("Não apareceu", key=f"na_{sk}", use_container_width=True):
+                            st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found"}
+                            st.rerun()
+
                 else:
                     # Nenhuma página encontrada — DEBUG
                     st.markdown(
