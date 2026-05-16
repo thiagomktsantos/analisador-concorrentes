@@ -77,6 +77,16 @@ ESTADOS_CIDADES = {
     "Tocantins": ["Palmas"]
 }
 
+SUBNICHOS = {
+    "Alimentação": ["Restaurante", "Delivery", "Confeitaria", "Padaria", "Lanchonete", "Food Truck", "Catering", "Franquia de Alimentação"],
+    "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
+    "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
+    "Varejo": ["E-commerce", "Moda", "Eletrônicos", "Alimentos", "Farmácia", "Pet Shop", "Decoração", "Esportes"],
+    "Saúde": ["Clínica Médica", "Odontologia", "Psicologia", "Nutrição", "Fisioterapia", "Academia", "Farmácia", "Estética"],
+    "Educação": ["Escola", "Curso Online", "Coaching", "Consultoria", "Idiomas", "Pré-vestibular", "Creche", "Faculdade"],
+    "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
+}
+
 # ---------------------------------------------------
 # PALETA DE CORES GLOBAL PARA AVATARES
 # ---------------------------------------------------
@@ -1181,9 +1191,6 @@ if st.session_state.pagina == "home":
     emp = st.session_state.dados["minha_empresa"]
     tem_dados = empresa_tem_dados(emp)
 
-    # ----------------------------------------------------------
-    # MODO EDIÇÃO / CADASTRO
-    # ----------------------------------------------------------
     if not tem_dados or st.session_state.editar_empresa:
 
         st.markdown("""
@@ -1241,17 +1248,6 @@ if st.session_state.pagina == "home":
             unsafe_allow_html=True,
         )
 
-        SUBNICHOS = {
-    "Alimentação": ["Restaurante", "Delivery", "Confeitaria", "Padaria", "Lanchonete", "Food Truck", "Catering", "Franquia de Alimentação"],
-    "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
-    "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
-    "Varejo": ["E-commerce", "Moda", "Eletrônicos", "Alimentos", "Farmácia", "Pet Shop", "Decoração", "Esportes"],
-    "Saúde": ["Clínica Médica", "Odontologia", "Psicologia", "Nutrição", "Fisioterapia", "Academia", "Farmácia", "Estética"],
-    "Educação": ["Escola", "Curso Online", "Coaching", "Consultoria", "Idiomas", "Pré-vestibular", "Creche", "Faculdade"],
-    "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
-
-        }
-
         def sec_label(label):
             st.markdown(
                 f"<div style='font-size:11px;font-weight:700;color:#9ca3af;"
@@ -1286,7 +1282,7 @@ if st.session_state.pagina == "home":
 
             # Se o setor mudou, reseta o subnicho para não herdar valor inválido
             if novo_setor != emp["setor"]:
-            emp["tipo"] = ""
+                emp["tipo"] = ""
             emp["setor"] = novo_setor
 
             subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
@@ -1395,8 +1391,7 @@ html, body { background: transparent; overflow: hidden; }
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
             unsafe_allow_html=True,
         )
-        # ── Dados
-        # Usa a cor fixa de "Minha Empresa" (índice 0 da paleta)
+
         cor_empresa = get_minha_empresa_color()
         avatar = gerar_avatar(emp["nome"])
         loc = emp["cidade"] or ""
