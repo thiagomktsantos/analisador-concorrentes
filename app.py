@@ -2678,21 +2678,21 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
-
+ 
 elif st.session_state.pagina == "ads":
-
+ 
     import datetime as _dt
     import json
-
+ 
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
-
+ 
     if "ads_etapa"          not in st.session_state: st.session_state.ads_etapa          = "informativa"
     if "ads_cache"          not in st.session_state: st.session_state.ads_cache          = {}
     if "ads_erro"           not in st.session_state: st.session_state.ads_erro           = {}
     if "ads_page_ids"       not in st.session_state: st.session_state.ads_page_ids       = {}
     if "ads_confirmacao"    not in st.session_state: st.session_state.ads_confirmacao    = {}
-
+ 
     def detectar_modo(identifier: str) -> tuple:
         if not identifier:
             return None, None, "keyword"
@@ -2708,7 +2708,7 @@ elif st.session_state.pagina == "ads":
         if clean.isdigit():
             return clean, None, "page_id"
         return None, clean, "keyword"
-
+ 
     def buscar_alternativas_paginas(nome: str, token: str) -> list:
         resultados = []
         try:
@@ -2743,7 +2743,7 @@ elif st.session_state.pagina == "ads":
             except Exception:
                 pass
         return resultados
-
+ 
     def buscar_ads_meta(search_term, token, limit=20, page_id=None):
         url = "https://graph.facebook.com/v21.0/ads_archive"
         fields = ("id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,"
@@ -2793,22 +2793,22 @@ elif st.session_state.pagina == "ads":
             return resultado, None, modo
         except Exception as e:
             return [], str(e), modo
-
+ 
     def safe_key(s):
         import re
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
-
+ 
     def _plat_icons(plats):
         icons = {"facebook": "🔵 Facebook", "instagram": "📸 Instagram",
                  "messenger": "💬 Messenger", "audience_network": "🌐 Audience Network"}
         return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
-
+ 
     def _truncar(txt, n=120):
         if not txt: return "—"
         return txt[:n] + "…" if len(txt) > n else txt
-
+ 
     META_TOKEN = st.secrets.get("META_ACCESS_TOKEN", "")
-
+ 
     todas_empresas = []
     if emp.get("nome"):
         raw_id = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
@@ -2826,14 +2826,14 @@ elif st.session_state.pagina == "ads":
             "page_id": page_id, "keyword": keyword or raw_id,
             "search_term": c["nome"], "modo": modo, "tipo": "concorrente", "idx": i,
         })
-
+ 
     tem_resultados = bool(st.session_state.ads_cache)
     tem_confirmacoes = bool(st.session_state.ads_page_ids) or bool(st.session_state.ads_confirmacao)
     if tem_resultados and st.session_state.ads_etapa == "informativa":
         st.session_state.ads_etapa = "resultados"
     elif tem_confirmacoes and st.session_state.ads_etapa == "informativa":
         st.session_state.ads_etapa = "identificacao"
-
+ 
     # ── CABEÇALHO
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2851,25 +2851,25 @@ html, body { background: transparent; overflow: hidden; }
 <div class="sub">Criativos, copies e formatos dos anúncios ativos dos seus concorrentes.</div>
 """, height=65)
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px 0'/>", unsafe_allow_html=True)
-
+ 
     # ════════════════════════════════════════════
     # ETAPA 1 — PÁGINA INFORMATIVA
     # ════════════════════════════════════════════
-
+ 
     if st.session_state.ads_etapa == "informativa":
-
+ 
         if not META_TOKEN:
             st.warning("⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets para usar esta funcionalidade.")
             st.stop()
-
+ 
         if not todas_empresas:
             st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
             st.stop()
-
+ 
         # ── Botão fantasma (escondido via CSS) para disparar via JS
         st.markdown("<style>.st-key-btn_iniciar_ads_ghost{display:none!important}</style>", unsafe_allow_html=True)
         iniciar_ghost = st.button("__iniciar_ads__", key="btn_iniciar_ads_ghost")
-
+ 
         n_empresas = len(todas_empresas)
         nomes_lista_html = "".join([
             f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6">'
@@ -2883,14 +2883,14 @@ html, body { background: transparent; overflow: hidden; }
             f'</div>'
             for e in todas_empresas
         ])
-
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:12px; }}
-
+ 
 .steps {{
     display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;
 }}
@@ -2910,7 +2910,7 @@ body {{ padding-bottom:12px; }}
 .step.active .step-title {{ color:#fff; }}
 .step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
 .step.active .step-desc {{ color:rgba(255,255,255,0.65); }}
-
+ 
 .empresas-box {{
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
     padding:16px 20px; margin-bottom:20px;
@@ -2919,7 +2919,7 @@ body {{ padding-bottom:12px; }}
     font-size:11px; font-weight:700; color:#9ca3af;
     text-transform:uppercase; letter-spacing:1.2px; margin-bottom:10px;
 }}
-
+ 
 .cta-row {{
     display:flex; align-items:center; gap:16px;
 }}
@@ -2935,7 +2935,7 @@ body {{ padding-bottom:12px; }}
 .btn-cta:hover {{ background:#1a4070; transform:translateY(-1px); }}
 .cta-sub {{ font-size:13px; color:#9ca3af; }}
 </style>
-
+ 
 <div class="steps">
     <div class="step active">
         <div class="step-header">
@@ -2959,7 +2959,7 @@ body {{ padding-bottom:12px; }}
         <div class="step-desc">Veja todos os anúncios ativos com análise por IA</div>
     </div>
 </div>
-
+ 
 <div class="cta-row">
     <button class="btn-cta" onclick="triggerBtn()">
         <span>Identificar páginas</span>
@@ -2967,7 +2967,7 @@ body {{ padding-bottom:12px; }}
     </button>
     <span class="cta-sub">Leva alguns segundos · IDs salvos automaticamente</span>
 </div>
-
+ 
 <div style="margin:20px 0 8px 0">
     <div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
     <div class="empresas-box">
@@ -2975,7 +2975,7 @@ body {{ padding-bottom:12px; }}
         <div style="padding-top:2px"></div>
     </div>
 </div>
-
+ 
 <script>
 function triggerBtn() {{
     var attempts = 0;
@@ -2991,7 +2991,7 @@ function triggerBtn() {{
     }}
     tryClick();
 }}
-
+ 
 function ajustar() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
@@ -3005,9 +3005,25 @@ setTimeout(ajustar, 200);
 setTimeout(ajustar, 600);
 </script>
 """, height=500, scrolling=False)
-
-        # ── Processa clique do botão fantasma
-        if iniciar_ghost:
+ 
+        # ── Botão nativo Streamlit (visível, funcional)
+        col_cta, col_sub = st.columns([2, 3])
+        with col_cta:
+            iniciar_nativo = st.button(
+                "Identificar páginas →",
+                type="primary",
+                use_container_width=True,
+                key="btn_iniciar_ads_nativo",
+            )
+        with col_sub:
+            st.markdown(
+                "<div style='font-size:13px;color:#9ca3af;padding-top:10px'>"
+                "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
+                unsafe_allow_html=True,
+            )
+ 
+        # ── Processa clique (fantasma via JS ou nativo)
+        if iniciar_ghost or iniciar_nativo:
             with st.spinner("Buscando páginas do Facebook…"):
                 for e in todas_empresas:
                     ck = e["ads_id"]
@@ -3025,18 +3041,18 @@ setTimeout(ajustar, 600);
                         }
             st.session_state.ads_etapa = "identificacao"
             st.rerun()
-
+ 
     # ════════════════════════════════════════════
     # ETAPA 2 — CONFIRMAÇÃO DE PÁGINAS
     # ════════════════════════════════════════════
     elif st.session_state.ads_etapa == "identificacao":
-
+ 
         # ── Botões fantasma para cada ação
         confirmar_triggers    = {}
         rejeitar_triggers     = {}
         salvar_triggers       = {}
         nao_apareceu_triggers = {}
-
+ 
         for e in todas_empresas:
             ck = e["ads_id"]
             sk = safe_key(ck)
@@ -3048,9 +3064,9 @@ setTimeout(ajustar, 600);
                 tk  = f"{ck}_{alt['pid']}"
                 stk = safe_key(tk)
                 salvar_triggers[tk] = st.button(f"__sv_{stk}__", key=f"btn_sv_{stk}")
-
+ 
         ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
-
+ 
         # CSS para esconder todos os botões fantasma
         ghost_sels = []
         for e in todas_empresas:
@@ -3064,19 +3080,19 @@ setTimeout(ajustar, 600);
             f"<style>{','.join(ghost_sels)}{{display:none!important}}</style>",
             unsafe_allow_html=True
         )
-
+ 
         # ── Processa ações dos botões fantasma
         for e in todas_empresas:
             ck   = e["ads_id"]
             conf = st.session_state.ads_confirmacao.get(ck, {})
-
+ 
             if confirmar_triggers.get(ck):
                 pid_conf = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
                 st.session_state.ads_confirmacao[ck] = {**conf, "status": "confirmed"}
                 if pid_conf:
                     st.session_state.ads_page_ids[ck] = pid_conf
                 st.rerun()
-
+ 
             if rejeitar_triggers.get(ck):
                 alts = conf.get("alternatives")
                 if not alts:
@@ -3084,11 +3100,11 @@ setTimeout(ajustar, 600);
                         alts = buscar_alternativas_paginas(e["nome"], META_TOKEN)
                 st.session_state.ads_confirmacao[ck] = {**conf, "status": "rejected", "alternatives": alts or []}
                 st.rerun()
-
+ 
             if nao_apareceu_triggers.get(ck):
                 st.session_state.ads_confirmacao[ck] = {**conf, "status": "not_found", "alternatives": []}
                 st.rerun()
-
+ 
             for alt in conf.get("alternatives", []):
                 tk = f"{ck}_{alt['pid']}"
                 if salvar_triggers.get(tk):
@@ -3096,7 +3112,7 @@ setTimeout(ajustar, 600);
                     st.session_state.ads_confirmacao[ck] = {**conf, "status": "confirmed", "selected_pid": alt["pid"]}
                     st.toast(f"✅ {e['nome']}: Page ID {alt['pid']} salvo!", icon="✅")
                     st.rerun()
-
+ 
         if ir_resultados:
             with st.spinner("Buscando anúncios…"):
                 for e in todas_empresas:
@@ -3118,14 +3134,14 @@ setTimeout(ajustar, 600);
                         }
             st.session_state.ads_etapa = "resultados"
             st.rerun()
-
+ 
         # ── Monta dados para o JS
         n_confirmados   = sum(
             1 for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
         )
         todos_resolvidos = n_confirmados == len(todas_empresas)
-
+ 
         empresas_js_items = []
         for idx_e, e in enumerate(todas_empresas):
             ck   = e["ads_id"]
@@ -3151,16 +3167,16 @@ setTimeout(ajustar, 600);
                 status: {json.dumps(status)}, selected: {json.dumps(selected)}, cor: {json.dumps(cor)}
             }}""")
         empresas_js = "[\n" + ",\n".join(empresas_js_items) + "\n]"
-
+ 
         pct_inicial = int(n_confirmados / max(len(todas_empresas), 1) * 100)
-
+ 
         # Estima altura necessária: top-bar + cards (120px cada + alts se rejected)
         altura_estimada = 120 + len(todas_empresas) * 130
         for e in todas_empresas:
             conf = st.session_state.ads_confirmacao.get(e["ads_id"], {})
             if conf.get("status") in ("rejected",) and conf.get("alternatives"):
                 altura_estimada += len(conf["alternatives"]) * 70 + 80
-
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3170,7 +3186,7 @@ html, body {{
     -webkit-font-smoothing:antialiased; overflow:visible;
 }}
 body {{ padding-bottom:12px; }}
-
+ 
 .top-bar {{
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 20px; background:#fff;
@@ -3184,7 +3200,7 @@ body {{ padding-bottom:12px; }}
 .progress-bar {{ width:140px; height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; }}
 .progress-fill {{ height:100%; background:linear-gradient(90deg,#27ae60,#2ecc71); border-radius:3px; transition:width 0.4s; }}
 .progress-label {{ font-size:13px; font-weight:700; color:#111827; white-space:nowrap; }}
-
+ 
 .btn-ver {{
     padding:11px 22px; border-radius:10px; font-size:14px; font-weight:800;
     font-family:'DM Sans',sans-serif; cursor:pointer; transition:all 0.2s;
@@ -3199,9 +3215,9 @@ body {{ padding-bottom:12px; }}
 .btn-ver.disabled {{
     background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb; cursor:not-allowed;
 }}
-
+ 
 .cards-list {{ display:flex; flex-direction:column; gap:10px; }}
-
+ 
 .card {{
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
     overflow:hidden; transition:border-color 0.2s;
@@ -3209,7 +3225,7 @@ body {{ padding-bottom:12px; }}
 .card.confirmed {{ border-color:#27ae60; }}
 .card.rejected  {{ border-color:#e24b4a; }}
 .card.not_found {{ border-left:4px solid #9ca3af; opacity:0.75; }}
-
+ 
 .card-top {{
     display:flex; align-items:center; gap:14px; padding:14px 18px;
     background:#fafafa; border-bottom:1px solid #f3f4f6; flex-wrap:wrap;
@@ -3223,13 +3239,13 @@ body {{ padding-bottom:12px; }}
 .nome {{ font-size:15px; font-weight:700; color:#111827; }}
 .found-meta {{ font-size:13px; color:#6b7280; margin-top:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }}
 .pid {{ font-family:monospace; background:#f3f4f6; padding:2px 8px; border-radius:5px; font-size:12px; color:#374151; }}
-
+ 
 .chip {{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }}
 .chip-ok      {{ background:#f0fdf4; color:#15803d; border:1px solid #86efac; }}
 .chip-err     {{ background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }}
 .chip-pending {{ background:#fffbeb; color:#92400e; border:1px solid #fcd34d; }}
 .chip-skip    {{ background:#f9fafb; color:#6b7280; border:1px solid #e5e7eb; }}
-
+ 
 .actions {{ display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap; justify-content:flex-end; }}
 .btn-ok   {{ padding:7px 14px; border:1px solid #86efac; border-radius:8px; background:#f0fdf4; font-size:13px; font-weight:700; color:#15803d; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
 .btn-ok:hover {{ background:#dcfce7; }}
@@ -3237,7 +3253,7 @@ body {{ padding-bottom:12px; }}
 .btn-no:hover {{ background:#fee2e2; }}
 .btn-skip {{ padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
 .btn-skip:hover {{ background:#f3f4f6; }}
-
+ 
 .alts-wrap {{ padding:14px 18px; border-top:1px solid #f3f4f6; }}
 .alts-label {{ font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px; }}
 .alt-row {{
@@ -3261,7 +3277,7 @@ body {{ padding-bottom:12px; }}
     background:#f9fafb; border-top:1px solid #f3f4f6;
 }}
 </style>
-
+ 
 <div class="top-bar">
     <div class="top-info">
         <div class="top-title">Confirmar páginas do Facebook</div>
@@ -3278,23 +3294,23 @@ body {{ padding-bottom:12px; }}
         Ver Anúncios →
     </button>
 </div>
-
+ 
 <div class="cards-list" id="cards_list"></div>
-
+ 
 <script>
 const empresas = {empresas_js};
-
+ 
 // Estado local (espelha o que Python já computou)
 const state = {{}};
 empresas.forEach(function(e) {{
     state[e.id] = {{ status: e.status, selected: e.selected || "" }};
 }});
-
+ 
 function getInitials(nome) {{
     const p = nome.trim().toUpperCase().split(" ");
     return p.length > 1 ? p[0][0] + p[1][0] : p[0][0];
 }}
-
+ 
 function triggerParentBtn(label) {{
     var attempts = 0;
     function tryClick() {{
@@ -3309,35 +3325,35 @@ function triggerParentBtn(label) {{
     }}
     tryClick();
 }}
-
+ 
 function safe_key_js(s) {{
     return s.replace(/[^a-zA-Z0-9_]/g, "_");
 }}
-
+ 
 function confirmar(id, sk) {{
     state[id].status = "confirmed";
     triggerParentBtn("__cf_" + sk + "__");
     render();
 }}
-
+ 
 function rejeitar(id, sk) {{
     state[id].status = "rejected";
     state[id].selected = "";
     triggerParentBtn("__rj_" + sk + "__");
     render();
 }}
-
+ 
 function naoApareceu(id, sk) {{
     state[id].status = "not_found";
     triggerParentBtn("__na_" + sk + "__");
     render();
 }}
-
+ 
 function selecionarAlt(id, pid) {{
     state[id].selected = pid;
     render();
 }}
-
+ 
 function salvarAlt(id, sk, pid) {{
     if (!state[id].selected) return;
     state[id].status = "confirmed";
@@ -3345,17 +3361,17 @@ function salvarAlt(id, sk, pid) {{
     triggerParentBtn("__sv_" + stk + "__");
     render();
 }}
-
+ 
 function render() {{
     const el = document.getElementById("cards_list");
     let confirmados = 0;
-
+ 
     el.innerHTML = empresas.map(function(e) {{
         const s     = state[e.id];
         const found = e.found;
         const alts  = e.alts || [];
         if (s.status === "confirmed" || s.status === "not_found") confirmados++;
-
+ 
         // Chip de status
         let chipHtml = "";
         if (s.status === "confirmed")
@@ -3370,7 +3386,7 @@ function render() {{
             chipHtml = '<span class="chip chip-pending">⚠ Não encontrado</span>';
         else
             chipHtml = '<span class="chip chip-pending">⏳ Aguardando</span>';
-
+ 
         // Meta da página encontrada
         let metaHtml = "";
         if (found) {{
@@ -3379,7 +3395,7 @@ function render() {{
         }} else {{
             metaHtml = '<span style="color:#b45309;font-size:12px">⚠ Página não encontrada automaticamente</span>';
         }}
-
+ 
         // Botões de ação
         let btnHtml = "";
         if (found && s.status === "pending") {{
@@ -3398,7 +3414,7 @@ function render() {{
                 '<button class="btn-no"  onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Buscar alternativas</button>'
               + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">Não apareceu</button>';
         }}
-
+ 
         // Alternativas
         let altsHtml = "";
         if ((s.status === "rejected" || (!found && s.status !== "not_found")) && alts.length > 0) {{
@@ -3419,12 +3435,12 @@ function render() {{
         }} else if (s.status === "rejected" && alts.length === 0) {{
             altsHtml = '<div class="not-found-msg">Nenhuma alternativa encontrada. Cole o Page ID numérico no campo <b>"ID Manual Ads"</b> no cadastro do concorrente.</div>';
         }}
-
+ 
         let cardClass = "card";
         if (s.status === "confirmed" || (s.status === "rejected" && s.selected)) cardClass += " confirmed";
         else if (s.status === "rejected") cardClass += " rejected";
         else if (s.status === "not_found") cardClass += " not_found";
-
+ 
         return '<div class="' + cardClass + '">'
             + '<div class="card-top">'
             + '<div class="avatar" style="background:' + e.cor + '">' + getInitials(e.nome) + '</div>'
@@ -3437,40 +3453,40 @@ function render() {{
             + altsHtml
             + '</div>';
     }}).join("");
-
+ 
     // Atualiza progresso e botão
     const pct    = Math.round(confirmados / empresas.length * 100);
     const fill   = document.getElementById('prog_fill');
     const label  = document.getElementById('prog_label');
     const btnRes = document.getElementById('btn_res');
-
+ 
     if (fill)  fill.style.width = pct + '%';
     if (label) label.textContent = confirmados + '/' + empresas.length;
     if (btnRes) {{
         const allDone = confirmados === empresas.length;
         btnRes.className = 'btn-ver ' + (allDone ? 'ready' : 'disabled');
     }}
-
+ 
     ajustar();
 }}
-
+ 
 function ajustar() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
         try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(err) {{}}
     }});
 }}
-
+ 
 new ResizeObserver(ajustar).observe(document.body);
 render();
 </script>
 """, height=max(400, altura_estimada), scrolling=False)
-
+ 
     # ════════════════════════════════════════════
     # ETAPA 3 — RESULTADOS
     # ════════════════════════════════════════════
     elif st.session_state.ads_etapa == "resultados":
-
+ 
         col_btn_voltar, col_btn_atualizar = st.columns([2, 2])
         with col_btn_voltar:
             if st.button("← Gerenciar páginas", use_container_width=True):
@@ -3496,21 +3512,21 @@ render();
                                 "nome": e["nome"], "modo": modo_real, "page_id": pid_final,
                             }
                 st.rerun()
-
+ 
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-
+ 
         empresas_visiveis = [
             e for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") != "not_found"
         ]
         tab_labels = [e["nome"] for e in empresas_visiveis]
-
+ 
         if not tab_labels:
             st.info("Nenhuma empresa confirmada para exibir anúncios.")
             st.stop()
-
+ 
         abas_ads = st.tabs(tab_labels)
-
+ 
         def render_ads_empresa(emp_item):
             ck       = emp_item["ads_id"]
             nome     = emp_item["nome"]
@@ -3518,20 +3534,20 @@ render();
             cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(emp_item["idx"])
             avatar   = gerar_avatar(nome)
             term     = emp_item["search_term"]
-
+ 
             if ck in st.session_state.ads_erro:
                 st.error(f"Erro: {st.session_state.ads_erro[ck]}")
                 return
             if ck not in st.session_state.ads_cache:
                 st.info("Nenhum dado carregado. Clique em **🔄 Atualizar anúncios**.")
                 return
-
+ 
             cache_entry = st.session_state.ads_cache[ck]
             ads_list    = cache_entry["data"]
             ts          = cache_entry["ts"]
             pid         = cache_entry.get("page_id") or st.session_state.ads_page_ids.get(ck, "")
             modo_real   = cache_entry.get("modo", "keyword")
-
+ 
             badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
             badge_txt = "#1d4ed8" if is_minha else "#6b7280"
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
@@ -3543,7 +3559,7 @@ render();
                 f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;"
                 f"padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>🔍 Keyword: {term}</span>"
             )
-
+ 
             st.markdown(f"""
             <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                         padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3565,11 +3581,11 @@ render();
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
+ 
             if not ads_list:
                 st.info(f"Nenhum anúncio ativo encontrado para **{nome}**.")
                 return
-
+ 
             fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
             with fcol1:
                 busca_texto = st.text_input(
@@ -3589,7 +3605,7 @@ render();
                     ["Todas as plataformas"] + [p.capitalize() for p in plats_todas],
                     key=f"ads_plat_{ck}", label_visibility="collapsed"
                 )
-
+ 
             ads_filtrados = ads_list
             if busca_texto:
                 q = busca_texto.lower()
@@ -3601,15 +3617,15 @@ render();
                 ads_filtrados = [a for a in ads_filtrados if a["formato"] == filtro_fmt]
             if filtro_plat != "Todas as plataformas":
                 ads_filtrados = [a for a in ads_filtrados if filtro_plat.lower() in (a["plataformas"] or [])]
-
+ 
             if not ads_filtrados:
                 st.warning("Nenhum anúncio com os filtros aplicados.")
                 return
-
+ 
             n_video  = sum(1 for a in ads_filtrados if "Vídeo"  in a["formato"])
             n_imagem = sum(1 for a in ads_filtrados if "Imagem" in a["formato"])
             n_outros = len(ads_filtrados) - n_video - n_imagem
-
+ 
             st.markdown(f"""
             <div style='display:flex;gap:12px;margin-bottom:20px'>
                 <div style='flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
@@ -3630,7 +3646,7 @@ render();
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
+ 
             cols_ads = st.columns(3)
             for j, ad in enumerate(ads_filtrados):
                 with cols_ads[j % 3]:
@@ -3678,22 +3694,22 @@ render();
                         )
                         st.link_button("🔍 Abrir Ad Library", fallback_url, use_container_width=True)
                     st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-
+ 
             st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
             chave_ia = f"ia_ads_{ck}"
             if chave_ia not in st.session_state: st.session_state[chave_ia] = ""
             safe_ck = safe_key(ck)
-
+ 
             st.markdown(f"<style>.st-key-btn_ia_ads_{safe_ck}{{display:none!important}}</style>", unsafe_allow_html=True)
             ia_ads_btn = st.button(f"__ia_ads_{safe_ck}__", key=f"btn_ia_ads_{safe_ck}")
-
+ 
             resumo_ads = "\n".join([
                 f"- [{a['formato']}] Título: {a['title'][:60] if a['title'] else '—'} | "
                 f"Copy: {a['body'][:80] if a['body'] else '—'} | "
                 f"Impressões: {a['impressoes'] or '—'} | Plataformas: {', '.join(a['plataformas'] or [])}"
                 for a in ads_filtrados[:15]
             ])
-
+ 
             ia_html_content = st.session_state.get(chave_ia, "").replace("\n", "<br>")
             btn_js = (
                 f"var btns=window.parent.document.querySelectorAll('button');"
@@ -3738,7 +3754,7 @@ window.addEventListener('load', ajustar);
 setTimeout(ajustar, 200);
 </script>
 """, height=200, scrolling=False)
-
+ 
             if ia_ads_btn:
                 if gemini_model is None:
                     st.session_state[chave_ia] = "Configure GEMINI_API_KEY nos secrets."
@@ -3762,7 +3778,7 @@ Amostra:
                         except Exception as e:
                             st.session_state[chave_ia] = f"Erro: {e}"
                             st.rerun()
-
+ 
         for aba, emp_item in zip(abas_ads, empresas_visiveis):
             with aba:
                 render_ads_empresa(emp_item)
