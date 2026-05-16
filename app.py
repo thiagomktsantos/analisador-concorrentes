@@ -18,6 +18,7 @@ from supabase import create_client, Client
 
 st.set_page_config(
     page_title="Marketylics · Competitive Intelligence",
+    page_icon="https://raw.githubusercontent.com/thiagomktsantos/marketylics/231a39c102b672fbb803b0ecf335febdd119d3b1/images/favicon.jpg",
     layout="wide"
 )
 
