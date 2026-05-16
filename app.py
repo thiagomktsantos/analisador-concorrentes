@@ -3178,6 +3178,9 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             )
             perms = [p["permission"] for p in r_debug.json().get("data", []) if p.get("status") == "granted"]
             st.info(f"✅ Token ativo | Permissões granted: {', '.join(perms)}")
+        except Exception as ex:
+            st.error(f"❌ Erro no token: {ex}")
+
         # DEBUG COMPLETO
         try:
             debug = {}
@@ -3218,8 +3221,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             st.code(_j.dumps(debug, indent=2, ensure_ascii=False))
         except Exception as ex:
             st.error(str(ex))
-        except Exception as ex:
-            st.error(f"❌ Erro no token: {ex}")
 
         if iniciar:
             with st.spinner("Buscando páginas que estão anunciando…"):
