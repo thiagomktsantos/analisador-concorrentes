@@ -2693,7 +2693,6 @@ elif st.session_state.pagina == "ads":
     if "ads_erro"           not in st.session_state: st.session_state.ads_erro           = {}
     if "ads_page_ids"       not in st.session_state: st.session_state.ads_page_ids       = {}
     if "ads_confirmacao"    not in st.session_state: st.session_state.ads_confirmacao    = {}
-    if "ads_id_manual"      not in st.session_state: st.session_state.ads_id_manual      = {}
 
     # ── Funções auxiliares
     def detectar_modo(identifier: str) -> tuple:
@@ -2801,8 +2800,18 @@ elif st.session_state.pagina == "ads":
         import re
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
 
+    def _plat_icons(plats):
+        icons = {"facebook": "🔵 Facebook", "instagram": "📸 Instagram",
+                 "messenger": "💬 Messenger", "audience_network": "🌐 Audience Network"}
+        return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
+
+    def _truncar(txt, n=120):
+        if not txt: return "—"
+        return txt[:n] + "…" if len(txt) > n else txt
+
     META_TOKEN = st.secrets.get("META_ACCESS_TOKEN", "")
 
+    # ── Monta lista de empresas
     todas_empresas = []
     if emp.get("nome"):
         raw_id = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
@@ -2821,10 +2830,9 @@ elif st.session_state.pagina == "ads":
             "search_term": c["nome"], "modo": modo, "tipo": "concorrente", "idx": i,
         })
 
-    # ── Verifica se já tem resultados para pular etapas
+    # ── Auto-avança etapa se já tem dados
     tem_resultados = bool(st.session_state.ads_cache)
     tem_confirmacoes = bool(st.session_state.ads_page_ids) or bool(st.session_state.ads_confirmacao)
-    
     if tem_resultados and st.session_state.ads_etapa == "informativa":
         st.session_state.ads_etapa = "resultados"
     elif tem_confirmacoes and st.session_state.ads_etapa == "informativa":
@@ -2863,9 +2871,8 @@ html, body { background: transparent; overflow: hidden; }
             st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
             st.stop()
 
-        # Botões fantasma para avançar etapa
+        # ✅ BOTÃO FANTASMA CRIADO PRIMEIRO
         if st.button("__ir_identificacao__", key="btn_ir_identificacao"):
-            # Busca pages para pré-popular
             with st.spinner("Buscando páginas do Facebook…"):
                 for e in todas_empresas:
                     ck = e["ads_id"]
@@ -2878,22 +2885,33 @@ html, body { background: transparent; overflow: hidden; }
                         if primeiro_pid and str(primeiro_pid).isdigit():
                             st.session_state.ads_page_ids[ck] = str(primeiro_pid)
                     if ck not in st.session_state.ads_confirmacao:
-                        st.session_state.ads_confirmacao[ck] = {"status": "pending", "alternatives": [], "selected_pid": ""}
+                        st.session_state.ads_confirmacao[ck] = {
+                            "status": "pending", "alternatives": [], "selected_pid": ""
+                        }
             st.session_state.ads_etapa = "identificacao"
             st.rerun()
 
-        st.markdown("<style>.st-key-btn_ir_identificacao{display:none!important}</style>", unsafe_allow_html=True)
+        # ✅ CSS esconde o botão após criá-lo
+        st.markdown(
+            "<style>.st-key-btn_ir_identificacao{display:none!important}</style>",
+            unsafe_allow_html=True
+        )
 
-        # HTML informativo
-        nomes_lista = "".join([
-            f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">'
-            f'<div style="width:32px;height:32px;border-radius:50%;background:{get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])};'
-            f'display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">{gerar_avatar(e["nome"])}</div>'
-            f'<span style="font-size:14px;font-weight:600;color:#111827">{e["nome"]}</span>'
-            f'<span style="font-size:12px;color:#9ca3af;margin-left:auto">{"Minha Empresa" if e["tipo"]=="minha" else "Concorrente"}</span>'
+        # ✅ HTML do conteúdo por último
+        nomes_lista_html = "".join([
+            f'<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6">'
+            f'<div style="width:36px;height:36px;border-radius:50%;'
+            f'background:{get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])};'
+            f'display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">'
+            f'{gerar_avatar(e["nome"])}</div>'
+            f'<span style="font-size:15px;font-weight:600;color:#111827;flex:1">{e["nome"]}</span>'
+            f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;border-radius:20px;font-weight:500">'
+            f'{"Minha Empresa" if e["tipo"] == "minha" else "Concorrente"}</span>'
             f'</div>'
             for e in todas_empresas
         ])
+
+        n_empresas = len(todas_empresas)
 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -2901,145 +2919,122 @@ html, body { background: transparent; overflow: hidden; }
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
-.wrap {{
-    max-width:680px; margin:0 auto;
-    background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden;
-    box-shadow:0 4px 24px rgba(0,0,0,0.06);
-}}
-.hero {{
-    background:linear-gradient(135deg,#0e2a47 0%,#1a4a7a 100%);
-    padding:40px 40px 32px;
-    text-align:center; position:relative; overflow:hidden;
-}}
-.hero::before {{
-    content:''; position:absolute; inset:0;
-    background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}}
-.hero-icon {{
-    width:64px; height:64px; border-radius:16px;
-    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
-    display:flex; align-items:center; justify-content:center;
-    font-size:28px; margin:0 auto 20px; position:relative;
-}}
-.hero-title {{
-    font-size:24px; font-weight:800; color:#fff; margin-bottom:8px;
-    letter-spacing:-0.3px;
-}}
-.hero-sub {{
-    font-size:15px; color:rgba(255,255,255,0.7); line-height:1.6;
+.sec-label {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1.2px; margin-bottom:12px;
 }}
 .steps {{
-    display:grid; grid-template-columns:1fr 1fr 1fr; gap:0;
-    border-bottom:1px solid #e5e7eb;
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px;
 }}
 .step {{
-    padding:20px 16px; text-align:center;
-    border-right:1px solid #e5e7eb; position:relative;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    padding:20px; position:relative;
 }}
-.step:last-child {{ border-right:none; }}
+.step.active {{
+    background:#0e2a47; border-color:#0e2a47;
+}}
 .step-num {{
-    width:32px; height:32px; border-radius:50%;
-    background:#0e2a47; color:#fff;
+    width:28px; height:28px; border-radius:8px;
+    background:#f3f4f6; color:#6b7280;
     display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:800; margin:0 auto 10px;
+    font-size:13px; font-weight:800; margin-bottom:10px;
 }}
-.step-title {{ font-size:13px; font-weight:700; color:#111827; margin-bottom:4px; }}
-.step-desc {{ font-size:12px; color:#6b7280; line-height:1.5; }}
-.arrow {{
-    position:absolute; right:-8px; top:50%;
-    transform:translateY(-50%);
-    font-size:16px; color:#d1d5db; z-index:1;
+.step.active .step-num {{
+    background:rgba(255,255,255,0.15); color:#fff;
 }}
-.empresas-wrap {{ padding:24px 32px; border-bottom:1px solid #e5e7eb; }}
-.empresas-title {{ font-size:12px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }}
-.cta-wrap {{ padding:24px 32px; text-align:center; }}
+.step-icon {{ font-size:22px; margin-bottom:8px; }}
+.step-title {{ font-size:14px; font-weight:700; color:#111827; margin-bottom:4px; }}
+.step.active .step-title {{ color:#fff; }}
+.step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
+.step.active .step-desc {{ color:rgba(255,255,255,0.65); }}
+.empresas-box {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    padding:20px 24px; margin-bottom:28px;
+}}
 .btn-cta {{
-    display:inline-flex; align-items:center; justify-content:center; gap:10px;
-    padding:14px 36px; border-radius:10px;
-    background:linear-gradient(135deg,#0e2a47,#1a6abf);
-    color:#fff; font-size:16px; font-weight:800;
+    display:inline-flex; align-items:center; gap:10px;
+    padding:14px 28px; border-radius:10px;
+    background:#0e2a47; color:#fff;
+    font-size:15px; font-weight:800;
     border:none; cursor:pointer; font-family:'DM Sans',sans-serif;
-    box-shadow:0 4px 16px rgba(14,42,71,0.3);
-    transition:all 0.2s; letter-spacing:0.2px; text-decoration:none;
+    box-shadow:0 4px 16px rgba(14,42,71,0.25);
+    transition:all 0.2s;
 }}
-.btn-cta:hover {{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(14,42,71,0.4); }}
-.cta-sub {{ font-size:12px; color:#9ca3af; margin-top:12px; }}
+.btn-cta:hover {{ background:#1a4070; transform:translateY(-1px); }}
+.cta-sub {{ font-size:13px; color:#9ca3af; margin-top:10px; }}
 </style>
-<div class="wrap">
-    <div class="hero">
-        <div class="hero-icon">📡</div>
-        <div class="hero-title">Biblioteca de Anúncios</div>
-        <div class="hero-sub">
-            Visualize todos os anúncios ativos dos seus concorrentes no Facebook e Instagram
-            diretamente da Meta Ad Library.
-        </div>
+
+<div class="sec-label">Como funciona</div>
+<div class="steps">
+    <div class="step active">
+        <div class="step-num">1</div>
+        <div class="step-icon">🔍</div>
+        <div class="step-title">Identificação</div>
+        <div class="step-desc">Buscamos automaticamente as páginas do Facebook de cada empresa</div>
     </div>
-    <div class="steps">
-        <div class="step">
-            <div class="step-num">1</div>
-            <div class="step-title">Identificação</div>
-            <div class="step-desc">Confirmamos as páginas corretas no Facebook</div>
-            <span class="arrow">›</span>
-        </div>
-        <div class="step">
-            <div class="step-num">2</div>
-            <div class="step-title">Confirmar</div>
-            <div class="step-desc">Você valida quais páginas quer monitorar</div>
-            <span class="arrow">›</span>
-        </div>
-        <div class="step">
-            <div class="step-num">3</div>
-            <div class="step-title">Resultados</div>
-            <div class="step-desc">Veja todos os anúncios ativos com análise IA</div>
-        </div>
+    <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-icon">✅</div>
+        <div class="step-title">Confirmação</div>
+        <div class="step-desc">Você valida se as páginas encontradas estão corretas</div>
     </div>
-    <div class="empresas-wrap">
-        <div class="empresas-title">Empresas que serão analisadas</div>
-        {nomes_lista}
-    </div>
-    <div class="cta-wrap">
-        <button class="btn-cta" onclick="
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {{
-                if (b.innerText.trim() === '__ir_identificacao__') {{ b.click(); break; }}
-            }}
-        ">
-            <span>Identificar páginas</span>
-            <span style="font-size:18px">→</span>
-        </button>
-        <div class="cta-sub">Isso leva alguns segundos e é salvo automaticamente</div>
+    <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-icon">📊</div>
+        <div class="step-title">Resultados</div>
+        <div class="step-desc">Veja todos os anúncios ativos com análise por IA</div>
     </div>
 </div>
+
+<div class="sec-label">Empresas que serão analisadas ({n_empresas})</div>
+<div class="empresas-box">
+    {nomes_lista_html}
+    <div style="padding-top:4px"></div>
+</div>
+
+<button class="btn-cta" onclick="
+    const btns = window.parent.document.querySelectorAll('button');
+    for (const b of btns) {{
+        if (b.innerText.trim() === '__ir_identificacao__') {{ b.click(); break; }}
+    }}
+">
+    <span>Identificar páginas</span>
+    <span style="font-size:18px">→</span>
+</button>
+<div class="cta-sub">Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>
+
 <script>
 function ajustar() {{
-    var h = document.body.scrollHeight;
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
         try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
     }});
 }}
-window.addEventListener('load', ajustar);
+new ResizeObserver(ajustar).observe(document.body);
 document.addEventListener('DOMContentLoaded', ajustar);
-setTimeout(ajustar, 300);
+window.addEventListener('load', ajustar);
+setTimeout(ajustar, 200);
+setTimeout(ajustar, 600);
 </script>
-""", height=580, scrolling=False)
+""", height=500, scrolling=False)
 
     # ════════════════════════════════════════════
     # ETAPA 2 — IDENTIFICAÇÃO / CONFIRMAÇÃO
     # ════════════════════════════════════════════
     elif st.session_state.ads_etapa == "identificacao":
 
-        # Botões fantasma de ação
-        confirmar_triggers = {}
-        rejeitar_triggers  = {}
-        salvar_triggers    = {}
+        # ✅ TODOS OS BOTÕES FANTASMA CRIADOS PRIMEIRO
+        confirmar_triggers    = {}
+        rejeitar_triggers     = {}
+        salvar_triggers       = {}
         nao_apareceu_triggers = {}
 
         for e in todas_empresas:
-            ck  = e["ads_id"]
-            sk  = safe_key(ck)
-            confirmar_triggers[ck]    = st.button(f"__cf_{sk}__",  key=f"btn_cf_{sk}")
-            rejeitar_triggers[ck]     = st.button(f"__rj_{sk}__",  key=f"btn_rj_{sk}")
-            nao_apareceu_triggers[ck] = st.button(f"__na_{sk}__",  key=f"btn_na_{sk}")
+            ck = e["ads_id"]
+            sk = safe_key(ck)
+            confirmar_triggers[ck]    = st.button(f"__cf_{sk}__", key=f"btn_cf_{sk}")
+            rejeitar_triggers[ck]     = st.button(f"__rj_{sk}__", key=f"btn_rj_{sk}")
+            nao_apareceu_triggers[ck] = st.button(f"__na_{sk}__", key=f"btn_na_{sk}")
             conf = st.session_state.ads_confirmacao.get(ck, {})
             for alt in conf.get("alternatives", []):
                 tk  = f"{ck}_{alt['pid']}"
@@ -3048,21 +3043,21 @@ setTimeout(ajustar, 300);
 
         ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
 
-        # CSS esconde todos fantasmas
-        ghost_sels = [
-            f".st-key-btn_cf_{safe_key(e['ads_id'])},"
-            f".st-key-btn_rj_{safe_key(e['ads_id'])},"
-            f".st-key-btn_na_{safe_key(e['ads_id'])}"
-            for e in todas_empresas
-        ]
+        # ✅ CSS esconde todos os fantasmas
+        ghost_sels = []
         for e in todas_empresas:
+            sk = safe_key(e["ads_id"])
+            ghost_sels += [f".st-key-btn_cf_{sk}", f".st-key-btn_rj_{sk}", f".st-key-btn_na_{sk}"]
             conf = st.session_state.ads_confirmacao.get(e["ads_id"], {})
             for alt in conf.get("alternatives", []):
-                ghost_sels.append(f".st-key-btn_sv_{safe_key(e['ads_id']+'_'+alt['pid'])}")
+                ghost_sels.append(f".st-key-btn_sv_{safe_key(e['ads_id'] + '_' + alt['pid'])}")
         ghost_sels.append(".st-key-btn_ir_resultados")
-        st.markdown(f"<style>{','.join(ghost_sels)}{{display:none!important}}</style>", unsafe_allow_html=True)
+        st.markdown(
+            f"<style>{','.join(ghost_sels)}{{display:none!important}}</style>",
+            unsafe_allow_html=True
+        )
 
-        # Processa cliques
+        # ✅ Processa cliques
         for e in todas_empresas:
             ck   = e["ads_id"]
             conf = st.session_state.ads_confirmacao.get(ck, {})
@@ -3095,7 +3090,6 @@ setTimeout(ajustar, 300);
                     st.rerun()
 
         if ir_resultados:
-            # Busca anúncios para todos confirmados
             with st.spinner("Buscando anúncios…"):
                 for e in todas_empresas:
                     ck = e["ads_id"]
@@ -3117,14 +3111,14 @@ setTimeout(ajustar, 300);
             st.session_state.ads_etapa = "resultados"
             st.rerun()
 
-        # Conta confirmados
-        n_confirmados = sum(
+        # ── Conta progresso
+        n_confirmados   = sum(
             1 for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") in ("confirmed", "not_found")
         )
         todos_resolvidos = n_confirmados == len(todas_empresas)
 
-        # Monta dados para o HTML
+        # ── Monta dados para o JS
         empresas_js_items = []
         for idx_e, e in enumerate(todas_empresas):
             ck   = e["ads_id"]
@@ -3132,12 +3126,14 @@ setTimeout(ajustar, 300);
             conf = st.session_state.ads_confirmacao.get(ck, {})
             pid_encontrado = e["page_id"] or st.session_state.ads_page_ids.get(ck, "")
             page_name_found = ""
-            if pid_encontrado:
-                for ad in st.session_state.ads_cache.get(ck, {}).get("data", []):
-                    if str(ad.get("page_id", "")) == str(pid_encontrado):
-                        page_name_found = ad.get("page_name", "")
-                        break
-            found_obj = json.dumps({"pid": pid_encontrado, "name": page_name_found or e["nome"], "fans": "", "verified": False}) if pid_encontrado else "null"
+            for ad in st.session_state.ads_cache.get(ck, {}).get("data", []):
+                if str(ad.get("page_id", "")) == str(pid_encontrado):
+                    page_name_found = ad.get("page_name", "")
+                    break
+            found_obj = (
+                json.dumps({"pid": pid_encontrado, "name": page_name_found or e["nome"], "fans": "", "verified": False})
+                if pid_encontrado else "null"
+            )
             status   = conf.get("status", "pending" if pid_encontrado else "not_found")
             selected = conf.get("selected_pid", "")
             alts     = conf.get("alternatives", [])
@@ -3149,24 +3145,18 @@ setTimeout(ajustar, 300);
             }}""")
         empresas_js = "[\n" + ",\n".join(empresas_js_items) + "\n]"
 
-        btn_resultados_style = (
-            "background:linear-gradient(135deg,#0e2a47,#1a6abf);color:#fff;border:none;box-shadow:0 4px 16px rgba(14,42,71,0.3);"
-            if todos_resolvidos else
-            "background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb;cursor:not-allowed;"
-        )
+        pct_inicial = int(n_confirmados / max(len(todas_empresas), 1) * 100)
 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
-body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
-.page-wrap {{ display:flex; flex-direction:column; gap:0; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:8px; }}
 .top-bar {{
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 20px; background:#fff;
-    border:1px solid #e5e7eb; border-radius:12px; margin-bottom:16px;
-    gap:16px;
+    border:1px solid #e5e7eb; border-radius:12px; margin-bottom:20px; gap:16px;
 }}
 .top-info {{ flex:1; }}
 .top-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
@@ -3175,18 +3165,22 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 .progress-bar {{ width:140px; height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; }}
 .progress-fill {{ height:100%; background:linear-gradient(90deg,#27ae60,#2ecc71); border-radius:3px; transition:width 0.4s; }}
 .progress-label {{ font-size:13px; font-weight:700; color:#111827; white-space:nowrap; }}
-.btn-resultados {{
-    padding:12px 28px; border-radius:10px;
-    font-size:15px; font-weight:800; font-family:'DM Sans',sans-serif;
-    cursor:pointer; transition:all 0.2s; letter-spacing:0.2px;
+.btn-ver {{
+    padding:12px 24px; border-radius:10px; font-size:15px; font-weight:800;
+    font-family:'DM Sans',sans-serif; cursor:pointer; transition:all 0.2s;
     display:flex; align-items:center; gap:8px;
-    {btn_resultados_style}
 }}
-.btn-resultados:not([disabled]):hover {{ transform:translateY(-2px); }}
+.btn-ver.ready {{
+    background:#0e2a47; color:#fff; border:none;
+    box-shadow:0 4px 16px rgba(14,42,71,0.3);
+}}
+.btn-ver.ready:hover {{ background:#1a4070; transform:translateY(-1px); }}
+.btn-ver.disabled {{
+    background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb; cursor:not-allowed;
+}}
 .cards-list {{ display:flex; flex-direction:column; gap:12px; }}
 .card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    overflow:hidden; transition:border-color 0.2s;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; transition:border-color 0.2s;
 }}
 .card.confirmed {{ border-color:#27ae60; }}
 .card.rejected  {{ border-color:#e24b4a; }}
@@ -3209,12 +3203,12 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 .chip-err     {{ background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }}
 .chip-pending {{ background:#fffbeb; color:#92400e; border:1px solid #fcd34d; }}
 .chip-skip    {{ background:#f9fafb; color:#6b7280; border:1px solid #e5e7eb; }}
-.actions {{ display:flex; gap:8px; flex-shrink:0; align-items:center; }}
-.btn-ok  {{ padding:7px 16px; border:1px solid #86efac; border-radius:8px; background:#f0fdf4; font-size:13px; font-weight:700; color:#15803d; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
+.actions {{ display:flex; gap:8px; flex-shrink:0; align-items:center; flex-wrap:wrap; justify-content:flex-end; }}
+.btn-ok   {{ padding:7px 14px; border:1px solid #86efac; border-radius:8px; background:#f0fdf4; font-size:13px; font-weight:700; color:#15803d; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
 .btn-ok:hover {{ background:#dcfce7; }}
-.btn-no  {{ padding:7px 16px; border:1px solid #fca5a5; border-radius:8px; background:#fef2f2; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
+.btn-no   {{ padding:7px 14px; border:1px solid #fca5a5; border-radius:8px; background:#fef2f2; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
 .btn-no:hover {{ background:#fee2e2; }}
-.btn-skip {{ padding:7px 14px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
+.btn-skip {{ padding:7px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; }}
 .btn-skip:hover {{ background:#f3f4f6; }}
 .alts-wrap {{ padding:16px 20px; border-top:1px solid #f3f4f6; }}
 .alts-label {{ font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px; }}
@@ -3235,91 +3229,115 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 }}
 .btn-save:hover {{ background:#dbeafe; }}
 .not-found-msg {{
-    padding:14px 20px; font-size:13px; color:#6b7280; background:#f9fafb;
-    border-top:1px solid #f3f4f6;
+    padding:14px 20px; font-size:13px; color:#6b7280;
+    background:#f9fafb; border-top:1px solid #f3f4f6;
 }}
 </style>
-<div class="page-wrap">
-    <div class="top-bar">
-        <div class="top-info">
-            <div class="top-title">Confirmar páginas do Facebook</div>
-            <div class="top-sub">Verifique se as páginas encontradas correspondem a cada empresa</div>
+
+<div class="top-bar">
+    <div class="top-info">
+        <div class="top-title">Confirmar páginas do Facebook</div>
+        <div class="top-sub">Verifique se as páginas encontradas correspondem a cada empresa</div>
+    </div>
+    <div class="progress-wrap">
+        <div class="progress-bar">
+            <div class="progress-fill" id="prog_fill" style="width:{pct_inicial}%"></div>
         </div>
-        <div class="progress-wrap">
-            <div class="progress-bar">
-                <div class="progress-fill" id="prog_fill" style="width:{int(n_confirmados/max(len(todas_empresas),1)*100)}%"></div>
-            </div>
-            <span class="progress-label" id="prog_label">{n_confirmados}/{len(todas_empresas)}</span>
-        </div>
-        <button class="btn-resultados" id="btn_res" {"" if todos_resolvidos else 'disabled'} onclick="
-            if (!this.disabled) {{
+        <span class="progress-label" id="prog_label">{n_confirmados}/{len(todas_empresas)}</span>
+    </div>
+    <button class="btn-ver {'ready' if todos_resolvidos else 'disabled'}" id="btn_res"
+        onclick="
+            if (!this.classList.contains('disabled')) {{
                 const btns = window.parent.document.querySelectorAll('button');
                 for (const b of btns) {{
                     if (b.innerText.trim() === '__ir_resultados__') {{ b.click(); break; }}
                 }}
             }}
         ">
-            Ver Anúncios →
-        </button>
-    </div>
-    <div class="cards-list" id="cards_list"></div>
+        Ver Anúncios →
+    </button>
 </div>
+
+<div class="cards-list" id="cards_list"></div>
+
 <script>
-const COLORS = ["#27ae60","#3a9fd6","#2ecc71","#5bc4f5","#1a7abf","#1a2e4a"];
 const empresas = {empresas_js};
 const state = {{}};
 empresas.forEach(function(e) {{
     state[e.id] = {{ status: e.status, selected: e.selected || "" }};
 }});
+
 function getInitials(nome) {{
     const p = nome.trim().toUpperCase().split(" ");
     return p.length > 1 ? p[0][0] + p[1][0] : p[0][0];
 }}
+
 function triggerBtn(label) {{
     const btns = window.parent.document.querySelectorAll("button");
     for (const b of btns) {{ if (b.innerText.trim() === label) {{ b.click(); return; }} }}
 }}
-function confirmar(id, sk) {{ state[id].status = "confirmed"; triggerBtn("__cf_" + sk + "__"); render(); }}
-function rejeitar(id, sk) {{
-    state[id].status = "rejected"; state[id].selected = "";
-    triggerBtn("__rj_" + sk + "__"); render();
+
+function confirmar(id, sk) {{
+    state[id].status = "confirmed";
+    triggerBtn("__cf_" + sk + "__");
+    render();
 }}
+
+function rejeitar(id, sk) {{
+    state[id].status = "rejected";
+    state[id].selected = "";
+    triggerBtn("__rj_" + sk + "__");
+    render();
+}}
+
 function naoApareceu(id, sk) {{
     state[id].status = "not_found";
-    triggerBtn("__na_" + sk + "__"); render();
+    triggerBtn("__na_" + sk + "__");
+    render();
 }}
-function selecionarAlt(id, pid) {{ state[id].selected = pid; render(); }}
+
+function selecionarAlt(id, pid) {{
+    state[id].selected = pid;
+    render();
+}}
+
 function salvarAlt(id, sk, pid) {{
     if (!state[id].selected) return;
     state[id].status = "confirmed";
-    const stk = sk + "_" + pid.replace(/-/g,"_");
-    triggerBtn("__sv_" + stk + "__"); render();
+    const stk = sk + "_" + pid.replace(/-/g, "_");
+    triggerBtn("__sv_" + stk + "__");
+    render();
 }}
+
 function render() {{
     const el = document.getElementById("cards_list");
     let confirmados = 0;
+
     el.innerHTML = empresas.map(function(e) {{
         const s = state[e.id];
         const found = e.found;
-        const alts = e.alts || [];
+        const alts  = e.alts || [];
         if (s.status === "confirmed" || s.status === "not_found") confirmados++;
+
         let chipHtml = "";
-        if (s.status === "confirmed")                                chipHtml = '<span class="chip chip-ok">✓ Confirmado</span>';
-        else if (s.status === "rejected" && s.selected)             chipHtml = '<span class="chip chip-ok">✓ ID corrigido</span>';
-        else if (s.status === "rejected")                            chipHtml = '<span class="chip chip-err">✗ Incorreto</span>';
-        else if (s.status === "not_found")                           chipHtml = '<span class="chip chip-skip">— Não encontrada</span>';
-        else if (!found)                                             chipHtml = '<span class="chip chip-pending">⚠ Não encontrado</span>';
-        else                                                         chipHtml = '<span class="chip chip-pending">⏳ Aguardando</span>';
+        if (s.status === "confirmed")                         chipHtml = '<span class="chip chip-ok">✓ Confirmado</span>';
+        else if (s.status === "rejected" && s.selected)      chipHtml = '<span class="chip chip-ok">✓ ID corrigido</span>';
+        else if (s.status === "rejected")                     chipHtml = '<span class="chip chip-err">✗ Incorreto</span>';
+        else if (s.status === "not_found")                    chipHtml = '<span class="chip chip-skip">— Não encontrada</span>';
+        else if (!found)                                      chipHtml = '<span class="chip chip-pending">⚠ Não encontrado</span>';
+        else                                                  chipHtml = '<span class="chip chip-pending">⏳ Aguardando</span>';
+
         let metaHtml = "";
         if (found) {{
             metaHtml = '<span class="pid"># ' + found.pid + '</span> <span>' + found.name + '</span>';
         }} else {{
             metaHtml = '<span style="color:#b45309;font-size:12px">⚠ Página não encontrada automaticamente</span>';
         }}
+
         let btnHtml = "";
         if (found && s.status === "pending") {{
-            btnHtml = '<button class="btn-ok" onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">✓ Esta é a página correta</button>'
-                    + '<button class="btn-no" onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Incorreto</button>'
+            btnHtml = '<button class="btn-ok"  onclick="confirmar(\'' + e.id + '\',\'' + e.sk + '\')">✓ Esta é a página correta</button>'
+                    + '<button class="btn-no"  onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Incorreto</button>'
                     + '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">A empresa não apareceu</button>';
         }} else if (s.status === "confirmed") {{
             btnHtml = '<button class="btn-skip" onclick="rejeitar(\'' + e.id + '\',\'' + e.sk + '\')">Corrigir</button>';
@@ -3328,10 +3346,11 @@ function render() {{
         }} else if (s.status === "rejected") {{
             btnHtml = '<button class="btn-skip" onclick="naoApareceu(\'' + e.id + '\',\'' + e.sk + '\')">A empresa não apareceu</button>';
         }}
+
         let altsHtml = "";
         if ((s.status === "rejected" || (!found && s.status !== "not_found")) && alts.length > 0) {{
             const altRows = alts.map(function(a) {{
-                const sel = s.selected === a.pid ? " sel" : "";
+                const sel   = s.selected === a.pid ? " sel" : "";
                 const radio = s.selected === a.pid
                     ? '<span style="color:#27ae60;font-size:18px">●</span>'
                     : '<span style="color:#d1d5db;font-size:18px">○</span>';
@@ -3347,47 +3366,47 @@ function render() {{
         }} else if (s.status === "rejected" && alts.length === 0) {{
             altsHtml = '<div class="not-found-msg">Nenhuma alternativa encontrada. Cole o Page ID numérico no campo <b>"ID Manual Ads"</b> no cadastro do concorrente.</div>';
         }}
+
         let cardClass = "card";
         if (s.status === "confirmed" || (s.status === "rejected" && s.selected)) cardClass += " confirmed";
         else if (s.status === "rejected") cardClass += " rejected";
         else if (s.status === "not_found") cardClass += " not_found";
+
         return '<div class="' + cardClass + '">'
             + '<div class="card-top">'
             + '<div class="avatar" style="background:' + e.cor + '">' + getInitials(e.nome) + '</div>'
             + '<div class="info"><div class="nome">' + e.nome + '</div>'
             + '<div class="found-meta">' + metaHtml + '</div></div>'
             + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
-            + chipHtml + '<div class="actions">' + btnHtml + '</div>'
-            + '</div></div>' + altsHtml + '</div>';
+            + chipHtml
+            + '<div class="actions">' + btnHtml + '</div>'
+            + '</div></div>'
+            + altsHtml
+            + '</div>';
     }}).join("");
-    const pct = Math.round(confirmados / empresas.length * 100);
-    const fill = document.getElementById('prog_fill');
-    const label = document.getElementById('prog_label');
+
+    const pct    = Math.round(confirmados / empresas.length * 100);
+    const fill   = document.getElementById('prog_fill');
+    const label  = document.getElementById('prog_label');
     const btnRes = document.getElementById('btn_res');
-    if (fill) fill.style.width = pct + '%';
+
+    if (fill)  fill.style.width = pct + '%';
     if (label) label.textContent = confirmados + '/' + empresas.length;
     if (btnRes) {{
         const allDone = confirmados === empresas.length;
-        btnRes.disabled = !allDone;
-        if (allDone) {{
-            btnRes.style.background = 'linear-gradient(135deg,#0e2a47,#1a6abf)';
-            btnRes.style.color = '#fff'; btnRes.style.border = 'none';
-            btnRes.style.boxShadow = '0 4px 16px rgba(14,42,71,0.3)';
-            btnRes.style.cursor = 'pointer';
-        }} else {{
-            btnRes.style.background = '#f3f4f6'; btnRes.style.color = '#9ca3af';
-            btnRes.style.border = '1px solid #e5e7eb'; btnRes.style.cursor = 'not-allowed';
-            btnRes.style.boxShadow = 'none';
-        }}
+        btnRes.className = 'btn-ver ' + (allDone ? 'ready' : 'disabled');
     }}
+
     ajustar();
 }}
+
 function ajustar() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
         try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(err) {{}}
     }});
 }}
+
 new ResizeObserver(ajustar).observe(document.body);
 render();
 </script>
@@ -3398,16 +3417,6 @@ render();
     # ════════════════════════════════════════════
     elif st.session_state.ads_etapa == "resultados":
 
-        def _plat_icons(plats):
-            icons = {"facebook": "🔵 Facebook", "instagram": "📸 Instagram",
-                     "messenger": "💬 Messenger", "audience_network": "🌐 Audience Network"}
-            return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
-
-        def _truncar(txt, n=120):
-            if not txt: return "—"
-            return txt[:n] + "…" if len(txt) > n else txt
-
-        # Botão voltar para re-identificar
         col_btn_voltar, col_btn_atualizar = st.columns([2, 2])
         with col_btn_voltar:
             if st.button("← Gerenciar páginas", use_container_width=True):
@@ -3419,8 +3428,7 @@ render();
                 with st.spinner("Buscando anúncios…"):
                     for e in todas_empresas:
                         ck = e["ads_id"]
-                        conf_status = st.session_state.ads_confirmacao.get(ck, {}).get("status", "pending")
-                        if conf_status == "not_found":
+                        if st.session_state.ads_confirmacao.get(ck, {}).get("status") == "not_found":
                             continue
                         pid_final = st.session_state.ads_page_ids.get(ck) or e["page_id"]
                         ads, erro, modo_real = buscar_ads_meta(
@@ -3431,17 +3439,17 @@ render();
                         else:
                             st.session_state.ads_cache[ck] = {
                                 "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                                "nome": e["nome"], "modo": modo_real,
-                                "page_id": pid_final,
+                                "nome": e["nome"], "modo": modo_real, "page_id": pid_final,
                             }
                 st.rerun()
 
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
-        tab_labels = [e["nome"] for e in todas_empresas
-                      if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") != "not_found"]
-        empresas_visiveis = [e for e in todas_empresas
-                             if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") != "not_found"]
+        empresas_visiveis = [
+            e for e in todas_empresas
+            if st.session_state.ads_confirmacao.get(e["ads_id"], {}).get("status") != "not_found"
+        ]
+        tab_labels = [e["nome"] for e in empresas_visiveis]
 
         if not tab_labels:
             st.info("Nenhuma empresa confirmada para exibir anúncios.")
@@ -3453,8 +3461,7 @@ render();
             ck       = emp_item["ads_id"]
             nome     = emp_item["nome"]
             is_minha = emp_item["tipo"] == "minha"
-            idx_cor  = emp_item["idx"]
-            cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_cor)
+            cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(emp_item["idx"])
             avatar   = gerar_avatar(nome)
             term     = emp_item["search_term"]
 
@@ -3476,9 +3483,11 @@ render();
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
             modo_badge = (
-                f"<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>✅ Page ID: {pid}</span>"
+                f"<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;"
+                f"padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>✅ Page ID: {pid}</span>"
                 if modo_real == "page_id" and pid else
-                f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>🔍 Keyword: {term}</span>"
+                f"<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;"
+                f"padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>🔍 Keyword: {term}</span>"
             )
 
             st.markdown(f"""
@@ -3509,17 +3518,31 @@ render();
 
             fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
             with fcol1:
-                busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…", key=f"ads_busca_{ck}", label_visibility="collapsed")
+                busca_texto = st.text_input(
+                    "Filtrar", placeholder="Pesquisar no copy…",
+                    key=f"ads_busca_{ck}", label_visibility="collapsed"
+                )
             with fcol2:
-                filtro_fmt = st.selectbox("Formato", ["Todos os formatos"] + sorted(set(a["formato"] for a in ads_list)), key=f"ads_fmt_{ck}", label_visibility="collapsed")
+                filtro_fmt = st.selectbox(
+                    "Formato",
+                    ["Todos os formatos"] + sorted(set(a["formato"] for a in ads_list)),
+                    key=f"ads_fmt_{ck}", label_visibility="collapsed"
+                )
             with fcol3:
                 plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-                filtro_plat = st.selectbox("Plataforma", ["Todas as plataformas"] + [p.capitalize() for p in plats_todas], key=f"ads_plat_{ck}", label_visibility="collapsed")
+                filtro_plat = st.selectbox(
+                    "Plataforma",
+                    ["Todas as plataformas"] + [p.capitalize() for p in plats_todas],
+                    key=f"ads_plat_{ck}", label_visibility="collapsed"
+                )
 
             ads_filtrados = ads_list
             if busca_texto:
                 q = busca_texto.lower()
-                ads_filtrados = [a for a in ads_filtrados if q in (a.get("body") or "").lower() or q in (a.get("title") or "").lower()]
+                ads_filtrados = [
+                    a for a in ads_filtrados
+                    if q in (a.get("body") or "").lower() or q in (a.get("title") or "").lower()
+                ]
             if filtro_fmt != "Todos os formatos":
                 ads_filtrados = [a for a in ads_filtrados if a["formato"] == filtro_fmt]
             if filtro_plat != "Todas as plataformas":
@@ -3532,6 +3555,7 @@ render();
             n_video  = sum(1 for a in ads_filtrados if "Vídeo"  in a["formato"])
             n_imagem = sum(1 for a in ads_filtrados if "Imagem" in a["formato"])
             n_outros = len(ads_filtrados) - n_video - n_imagem
+
             st.markdown(f"""
             <div style='display:flex;gap:12px;margin-bottom:20px'>
                 <div style='flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
@@ -3556,13 +3580,13 @@ render();
             cols_ads = st.columns(3)
             for j, ad in enumerate(ads_filtrados):
                 with cols_ads[j % 3]:
-                    body_preview = _truncar(ad["body"], 100)
+                    body_preview  = _truncar(ad["body"], 100)
                     title_preview = _truncar(ad["title"], 60)
                     desc_preview  = _truncar(ad["description"], 80)
-                    plat_txt = _plat_icons(ad["plataformas"])
-                    snapshot_url = ad.get("snapshot_url", "")
+                    plat_txt      = _plat_icons(ad["plataformas"])
+                    snapshot_url  = ad.get("snapshot_url", "")
                     fmt = ad["formato"]
-                    if "Vídeo" in fmt:    fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
+                    if "Vídeo"   in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
                     elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7", "#92400e", "#fcd34d"
                     else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff", "#5b21b6", "#c4b5fd"
                     copy_sections = []
@@ -3572,12 +3596,16 @@ render();
                         copy_sections.append(f"<div style='font-size:13px;color:#374151;line-height:1.6;font-style:italic'>{body_preview}</div>")
                     if ad["description"]:
                         copy_sections.append(f"<div style='font-size:12px;color:#6b7280;margin-top:4px'>{desc_preview}</div>")
-                    copy_html_inner = "\n".join(copy_sections) if copy_sections else "<div style='font-size:13px;color:#9ca3af;font-style:italic'>Sem copy disponível</div>"
+                    copy_html_inner = (
+                        "\n".join(copy_sections) if copy_sections
+                        else "<div style='font-size:13px;color:#9ca3af;font-style:italic'>Sem copy disponível</div>"
+                    )
                     st.markdown(f"""
                     <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:4px'>
                         <div style='padding:14px 16px 10px;border-bottom:1px solid #f3f4f6'>
                             <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px'>
-                                <span style='background:{fmt_bg};color:{fmt_txt_c};border:1px solid {fmt_brd};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700'>{fmt}</span>
+                                <span style='background:{fmt_bg};color:{fmt_txt_c};border:1px solid {fmt_brd};
+                                             padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700'>{fmt}</span>
                                 <span style='font-size:11px;color:#9ca3af'>{ad["data_inicio"] or "—"}</span>
                             </div>
                             <div style='font-size:12px;color:#6b7280'>{ad["page_name"] or nome}</div>
@@ -3590,41 +3618,73 @@ render();
                     if snapshot_url:
                         st.link_button("🔗 Ver criativo", snapshot_url, use_container_width=True)
                     else:
-                        fallback_url = f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
+                        fallback_url = (
+                            f"https://www.facebook.com/ads/library/?active_status=active"
+                            f"&ad_type=all&country=BR&q={term}&search_type=keyword_unordered"
+                        )
                         st.link_button("🔍 Abrir Ad Library", fallback_url, use_container_width=True)
                     st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
-            # IA
+            # ── Análise IA
             st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
             chave_ia = f"ia_ads_{ck}"
             if chave_ia not in st.session_state: st.session_state[chave_ia] = ""
             safe_ck = safe_key(ck)
+
             st.markdown(f"<style>.st-key-btn_ia_ads_{safe_ck}{{display:none!important}}</style>", unsafe_allow_html=True)
             ia_ads_btn = st.button(f"__ia_ads_{safe_ck}__", key=f"btn_ia_ads_{safe_ck}")
+
             resumo_ads = "\n".join([
-                f"- [{a['formato']}] Título: {a['title'][:60] if a['title'] else '—'} | Copy: {a['body'][:80] if a['body'] else '—'} | Impressões: {a['impressoes'] or '—'} | Plataformas: {', '.join(a['plataformas'] or [])}"
+                f"- [{a['formato']}] Título: {a['title'][:60] if a['title'] else '—'} | "
+                f"Copy: {a['body'][:80] if a['body'] else '—'} | "
+                f"Impressões: {a['impressoes'] or '—'} | Plataformas: {', '.join(a['plataformas'] or [])}"
                 for a in ads_filtrados[:15]
             ])
-            ia_html = st.session_state.get(chave_ia, "").replace("\n", "<br>")
-            btn_js = f"const btns=window.parent.document.querySelectorAll('button');for(const b of btns){{if(b.innerText.trim()==='__ia_ads_{safe_ck}__'){{b.click();break;}}}}"
+
+            ia_html_content = st.session_state.get(chave_ia, "").replace("\n", "<br>")
+            btn_js = (
+                f"const btns=window.parent.document.querySelectorAll('button');"
+                f"for(const b of btns){{if(b.innerText.trim()==='__ia_ads_{safe_ck}__'){{b.click();break;}}}}"
+            )
             ia_content = (
-                f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">{ia_html}</div>'
-                f'<div style="padding:0 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🔄 Nova Análise</button></div>'
-                if ia_html else
-                f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">Clique para análise estratégica com IA.</div>'
-                f'<div style="padding:0 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analisar com IA</button></div>'
+                f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">{ia_html_content}</div>'
+                f'<div style="padding:0 18px 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;'
+                f'border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;'
+                f'color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🔄 Nova Análise</button></div>'
+                if ia_html_content else
+                f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">'
+                f'Clique para análise estratégica com IA.</div>'
+                f'<div style="padding:0 18px 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;'
+                f'border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;'
+                f'color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analisar com IA</button></div>'
             )
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>*{{margin:0;padding:0;box-sizing:border-box;}}html{{background:transparent;font-family:'DM Sans',sans-serif;}}body{{background:transparent;overflow:visible;padding-bottom:8px;}}
-.wrap{{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;}}
-.hdr{{padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;}}
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; }}
+body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+.hdr {{ padding:14px 18px; font-size:14px; font-weight:800; color:#1a2e4a;
+        text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; }}
 </style>
-<div class="wrap"><div class="hdr">📊 Análise Estratégica com IA</div>{ia_content}</div>
+<div class="wrap">
+    <div class="hdr">📊 Análise Estratégica com IA</div>
+    {ia_content}
+</div>
 <script>
-function ajustar(){{var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);window.parent.document.querySelectorAll('iframe').forEach(function(f){{try{{if(f.contentWindow===window)f.style.height=(h+8)+'px';}}catch(e){{}}}});}}
-new ResizeObserver(ajustar).observe(document.body);document.addEventListener('DOMContentLoaded',ajustar);window.addEventListener('load',ajustar);setTimeout(ajustar,200);
-</script>""", height=200, scrolling=False)
+function ajustar() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
+    }});
+}}
+new ResizeObserver(ajustar).observe(document.body);
+document.addEventListener('DOMContentLoaded', ajustar);
+window.addEventListener('load', ajustar);
+setTimeout(ajustar, 200);
+</script>
+""", height=200, scrolling=False)
 
             if ia_ads_btn:
                 if gemini_model is None:
@@ -3635,13 +3695,14 @@ new ResizeObserver(ajustar).observe(document.body);document.addEventListener('DO
                             prompt_ads = f"""Você é um especialista em mídia paga e marketing digital.
 Analise os anúncios ativos abaixo de "{nome}" na Meta Ad Library e gere um relatório estratégico em português.
 Empresa: {nome} | Total: {len(ads_filtrados)} anúncios | {n_imagem} imagens | {n_video} vídeos
-Amostra:\n{resumo_ads}
+Amostra:
+{resumo_ads}
 ---
 ### 🎯 Estratégia de Mídia
 ### 📝 Padrões de Copy
 ### 🖼️ Formatos Predominantes
 ### ⚠️ Pontos de Atenção
-### 💡 Oportunidades Competitivas (3 ações)"""
+### 💡 Oportunidades Competitivas (3 ações concretas)"""
                             resp = gemini_model.generate_content(prompt_ads)
                             st.session_state[chave_ia] = resp.text
                             st.rerun()
