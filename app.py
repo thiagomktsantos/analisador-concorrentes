@@ -3178,7 +3178,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             )
             perms = [p["permission"] for p in r_debug.json().get("data", []) if p.get("status") == "granted"]
             st.info(f"✅ Token ativo | Permissões granted: {', '.join(perms)}")
-            # DEBUG COMPLETO
+        # DEBUG COMPLETO
         try:
             debug = {}
             
