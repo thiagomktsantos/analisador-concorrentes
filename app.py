@@ -1203,7 +1203,6 @@ if st.session_state.pagina == "home":
  
         st.markdown("""
         <style>
-        /* ── RESET COMPLETO DOS CONTAINERS NA PÁGINA HOME ── */
         html body section.main [data-testid="stVerticalBlockBorderWrapper"],
         html body section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
         html body section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
@@ -1224,7 +1223,6 @@ if st.session_state.pagina == "home":
             background: #ffffff !important;
             background-color: #ffffff !important;
         }
- 
         html body section.main [data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e5e7eb !important;
             border-radius: 14px !important;
@@ -1232,8 +1230,6 @@ if st.session_state.pagina == "home":
             margin-bottom: 0px !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
- 
-        /* ── FORM ── */
         html body section.main div[data-testid="stForm"],
         html body section.main div[data-testid="stForm"] > div,
         html body section.main div[data-testid="stForm"] > div > div,
@@ -1252,7 +1248,6 @@ if st.session_state.pagina == "home":
             background: #ffffff !important;
             background-color: #ffffff !important;
         }
- 
         html body section.main div[data-testid="stForm"] {
             background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
@@ -1316,7 +1311,6 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
  
-        # ── IDENTIFICAÇÃO
         with st.container(border=True):
             sec_label("Identificação")
             c1, c2 = st.columns(2)
@@ -1326,7 +1320,6 @@ if st.session_state.pagina == "home":
  
         st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
-        # ── SETOR
         with st.container(border=True):
             sec_label("Setor")
             c3, c4 = st.columns(2)
@@ -1360,7 +1353,6 @@ if st.session_state.pagina == "home":
  
         st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
-        # ── FORM — Redes, Serviços, Localização e botões
         with st.form("cad_empresa", clear_on_submit=False):
  
             sec_label("Redes Sociais")
@@ -1543,9 +1535,9 @@ body {{
 .empresa-ico {{
     width: 36px; height: 36px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    background: #f3f4f6; border-radius: 9px;
+    border-radius: 9px;
 }}
-.empresa-ico svg {{ width: 18px; height: 18px; }}
+.empresa-ico svg {{ width: 20px; height: 20px; }}
 .empresa-lbl {{
     font-size: 11px; color: #9ca3af;
     display: block; margin-bottom: 1px;
@@ -1601,16 +1593,41 @@ body {{
  
         <div class="empresa-grid">
  
+            <!-- PRESENÇA DIGITAL -->
             <div class="empresa-col">
                 <div class="empresa-sec-title">Presença Digital</div>
+
+                <!-- Site -->
                 <div class="empresa-row">
-                    <span class="empresa-ico">
+                    <span class="empresa-ico" style="background:#f3f4f6;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10
+                                     15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Site</span>
+                        <span class="empresa-val">{emp['site'] or '—'}</span>
+                    </div>
+                </div>
+
+                <!-- Instagram -->
+                <div class="empresa-row">
+                    <span class="empresa-ico" style="background:#fff0f6;">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <defs><linearGradient id="ig_grad" x1="0%" y1="100%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#f09433"/>
-                                <stop offset="100%" stop-color="#bc1888"/>
-                            </linearGradient></defs>
-                            <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_grad)"/>
+                            <defs>
+                                <linearGradient id="ig_emp" x1="0%" y1="100%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#f09433"/>
+                                    <stop offset="25%"  stop-color="#e6683c"/>
+                                    <stop offset="50%"  stop-color="#dc2743"/>
+                                    <stop offset="75%"  stop-color="#cc2366"/>
+                                    <stop offset="100%" stop-color="#bc1888"/>
+                                </linearGradient>
+                            </defs>
+                            <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_emp)"/>
                             <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
                             <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
                         </svg>
@@ -1620,10 +1637,16 @@ body {{
                         <span class="empresa-val">{emp['instagram'] or '—'}</span>
                     </div>
                 </div>
+
+                <!-- Facebook -->
                 <div class="empresa-row">
-                    <span class="empresa-ico">
+                    <span class="empresa-ico" style="background:#e8f0fe;">
                         <svg viewBox="0 0 24 24" fill="#1877F2">
-                            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073
+                                     C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047
+                                     V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236
+                                     2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268
+                                     h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
                         </svg>
                     </span>
                     <div>
@@ -1631,28 +1654,17 @@ body {{
                         <span class="empresa-val">{emp['fb_page'] or '—'}</span>
                     </div>
                 </div>
-                <div class="empresa-row">
-                    <span class="empresa-ico">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="2" y1="12" x2="22" y2="12"/>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                        </svg>
-                    </span>
-                    <div>
-                        <span class="empresa-lbl">Site</span>
-                        <span class="empresa-val">{emp['site'] or '—'}</span>
-                    </div>
-                </div>
             </div>
  
             <div class="empresa-divider"></div>
  
+            <!-- LOCALIZAÇÃO -->
             <div class="empresa-col">
                 <div class="empresa-sec-title">Localização</div>
                 <div class="empresa-row">
-                    <span class="empresa-ico">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <span class="empresa-ico" style="background:#f3f4f6;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                             <circle cx="12" cy="10" r="3"/>
                         </svg>
@@ -1666,6 +1678,7 @@ body {{
  
             <div class="empresa-divider"></div>
  
+            <!-- SERVIÇOS -->
             <div class="empresa-col">
                 <div class="empresa-sec-title">Serviços</div>
                 <div class="empresa-tags-wrap">{servicos_html}</div>
