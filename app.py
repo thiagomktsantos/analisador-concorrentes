@@ -2730,6 +2730,8 @@ elif st.session_state.pagina == "ads":
     def resolver_slug(slug: str, token: str) -> dict:
         if not slug:
             return {}
+        
+        # Tentativa 1: endpoint direto pelo slug
         try:
             r = requests.get(
                 f"https://graph.facebook.com/v21.0/{slug}",
@@ -2745,9 +2747,76 @@ elif st.session_state.pagina == "ads":
                     "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
                     "verified": d.get("verification_status") in ("blue_verified", "gray_verified"),
                     "slug":     slug,
+                    "score":    100,
                 }
         except Exception:
             pass
+
+        # Tentativa 2: search_page_ids com slug numérico via busca
+        try:
+            r = requests.get(
+                "https://graph.facebook.com/v21.0/ads_archive",
+                params={
+                    "search_terms":         slug,
+                    "ad_active_status":     "ACTIVE",
+                    "ad_reached_countries": '["BR","US","PT"]',
+                    "fields": "page_id,page_name,ad_snapshot_url",
+                    "limit":  10,
+                    "access_token": token,
+                },
+                timeout=10,
+            )
+            for ad in r.json().get("data", []):
+                pnm = (ad.get("page_name") or "").lower().strip()
+                pid = str(ad.get("page_id", ""))
+                if pid and (slug.lower() in pnm or pnm in slug.lower()):
+                    snap = ad.get("ad_snapshot_url", "")
+                    m = re.search(r'facebook\.com/([a-zA-Z0-9._]+)(?:/|\?|$)', snap)
+                    sl = m.group(1) if m else ""
+                    return {
+                        "pid":      pid,
+                        "name":     ad.get("page_name", ""),
+                        "fans":     "",
+                        "verified": False,
+                        "slug":     sl,
+                        "score":    90,
+                    }
+        except Exception:
+            pass
+
+        # Tentativa 3: URL scraping do og:url da página do Facebook
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)",
+            }
+            r = requests.get(
+                f"https://www.facebook.com/{slug}",
+                headers=headers,
+                timeout=10,
+                allow_redirects=True,
+            )
+            # Extrai page_id do HTML
+            m_id = re.search(r'"pageID"\s*:\s*"(\d+)"', r.text)
+            if not m_id:
+                m_id = re.search(r'"page_id"\s*:\s*"(\d+)"', r.text)
+            if not m_id:
+                m_id = re.search(r'content="https://www\.facebook\.com/(\d+)"', r.text)
+            if m_id:
+                pid = m_id.group(1)
+                # Extrai nome
+                m_name = re.search(r'<title>([^<]+)</title>', r.text)
+                name = m_name.group(1).replace(" | Facebook", "").strip() if m_name else slug
+                return {
+                    "pid":      pid,
+                    "name":     name,
+                    "fans":     "",
+                    "verified": False,
+                    "slug":     slug,
+                    "score":    85,
+                }
+        except Exception:
+            pass
+
         return {}
  
     def buscar_alternativas_paginas(nome: str, token: str, slug_hint: str = "") -> list:
