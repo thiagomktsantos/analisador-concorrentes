@@ -2728,7 +2728,6 @@ elif st.session_state.pagina == "ads":
         return ""
  
     def resolver_slug(slug: str, token: str) -> dict:
-        """GET /{slug} na Graph API → retorna dict com pid, name, fans, verified."""
         if not slug:
             return {}
         try:
@@ -2752,14 +2751,11 @@ elif st.session_state.pagina == "ads":
         return {}
  
     def buscar_alternativas_paginas(nome: str, token: str, slug_hint: str = "") -> list:
-        # 1) slug extraído dos anúncios — altíssima confiança
         if slug_hint:
             resolved = resolver_slug(slug_hint, token)
             if resolved:
                 return [resolved]
- 
         resultados = []
-        # 2) pages/search por nome
         try:
             r = requests.get(
                 "https://graph.facebook.com/v21.0/pages/search",
@@ -2776,8 +2772,6 @@ elif st.session_state.pagina == "ads":
                 })
         except Exception:
             pass
- 
-        # 3) fallback ads_archive
         if not resultados:
             try:
                 r = requests.get(
@@ -2808,7 +2802,6 @@ elif st.session_state.pagina == "ads":
                         })
             except Exception:
                 pass
- 
         return resultados
  
     def buscar_ads_meta(search_term, token, limit=20, page_id=None):
@@ -2931,12 +2924,12 @@ html, body { background:transparent; overflow:hidden; }
 """, height=65)
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px 0'/>", unsafe_allow_html=True)
  
-# ════════════════════════════════════════════════════════════════════
+    # ════════════════════════════════════════════════════════════════════
     # ETAPA 1 — INFORMATIVA
     # ════════════════════════════════════════════════════════════════════
-
+ 
     if st.session_state.ads_etapa == "informativa":
-
+ 
         if not META_TOKEN:
             st.warning("⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets para usar esta funcionalidade.")
             st.stop()
@@ -2945,64 +2938,73 @@ html, body { background:transparent; overflow:hidden; }
             st.stop()
 
         n_empresas = len(todas_empresas)
+
         nomes_lista_html = "".join([
-            f'<div class="emp-row">'
-            f'<div class="emp-av" style="background:{get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])}">'
+            f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;'
+            f'border-bottom:{"none" if i == len(todas_empresas)-1 else "1px solid #f3f4f6"};'
+            f'font-family:DM Sans,sans-serif;">'
+            f'<div style="width:34px;height:34px;border-radius:50%;background:'
+            f'{get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])};'
+            f'display:flex;align-items:center;justify-content:center;'
+            f'font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">'
             f'{gerar_avatar(e["nome"])}</div>'
-            f'<span class="emp-nome">{e["nome"]}</span>'
-            f'<span class="emp-badge">{"Minha Empresa" if e["tipo"]=="minha" else "Concorrente"}</span>'
+            f'<span style="font-size:15px;font-weight:600;color:#111827;flex:1;">{e["nome"]}</span>'
+            f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;'
+            f'border-radius:20px;font-weight:500;white-space:nowrap;">'
+            f'{"Minha Empresa" if e["tipo"]=="minha" else "Concorrente"}</span>'
             f'</div>'
-            for e in todas_empresas
+            for i, e in enumerate(todas_empresas)
         ])
 
-        # ── HTML estático: steps + lista de empresas (sem botão dentro)
         st.markdown(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-.ads-steps {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }}
-.ads-step {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }}
-.ads-step.active {{ background:#0e2a47; border-color:#0e2a47; }}
-.ads-step-hdr {{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }}
-.ads-step-num {{ width:24px; height:24px; border-radius:6px; background:#f3f4f6; color:#6b7280;
-             display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }}
-.ads-step.active .ads-step-num {{ background:rgba(255,255,255,.15); color:#fff; }}
-.ads-step-title {{ font-size:14px; font-weight:700; color:#111827; }}
-.ads-step.active .ads-step-title {{ color:#fff; }}
-.ads-step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
-.ads-step.active .ads-step-desc {{ color:rgba(255,255,255,.65); }}
-.ads-sec-label {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase;
-              letter-spacing:1.2px; margin-bottom:10px; }}
-.ads-emp-box {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 18px; margin-bottom:16px; }}
-.ads-emp-row {{ display:flex; align-items:center; gap:12px; padding:10px 0;
-            border-bottom:1px solid #f3f4f6; font-family:'DM Sans',sans-serif; }}
-.ads-emp-row:last-child {{ border-bottom:none; padding-bottom:0; }}
-.ads-emp-av  {{ width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
-            justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }}
-.ads-emp-nome  {{ font-size:15px; font-weight:600; color:#111827; flex:1; }}
-.ads-emp-badge {{ font-size:12px; color:#9ca3af; background:#f3f4f6; padding:3px 10px;
-              border-radius:20px; font-weight:500; white-space:nowrap; }}
-</style>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
 
-<div class="ads-steps">
-    <div class="ads-step active">
-        <div class="ads-step-hdr"><div class="ads-step-num">1</div><span class="ads-step-title">Identificação</span></div>
-        <div class="ads-step-desc">Buscamos automaticamente as páginas do Facebook de cada empresa</div>
+    <div style="background:#0e2a47;border:1px solid #0e2a47;border-radius:12px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,.15);
+                        color:#fff;display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:800;flex-shrink:0;">1</div>
+            <span style="font-size:14px;font-weight:700;color:#fff;">Identificação</span>
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.5;">
+            Buscamos automaticamente as páginas do Facebook de cada empresa</div>
     </div>
-    <div class="ads-step">
-        <div class="ads-step-hdr"><div class="ads-step-num">2</div><span class="ads-step-title">Confirmação</span></div>
-        <div class="ads-step-desc">Você valida se as páginas encontradas estão corretas</div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:#f3f4f6;
+                        color:#6b7280;display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:800;flex-shrink:0;">2</div>
+            <span style="font-size:14px;font-weight:700;color:#111827;">Confirmação</span>
+        </div>
+        <div style="font-size:13px;color:#6b7280;line-height:1.5;">
+            Você valida se as páginas encontradas estão corretas</div>
     </div>
-    <div class="ads-step">
-        <div class="ads-step-hdr"><div class="ads-step-num">3</div><span class="ads-step-title">Resultados</span></div>
-        <div class="ads-step-desc">Veja todos os anúncios ativos com análise por IA</div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:#f3f4f6;
+                        color:#6b7280;display:flex;align-items:center;justify-content:center;
+                        font-size:12px;font-weight:800;flex-shrink:0;">3</div>
+            <span style="font-size:14px;font-weight:700;color:#111827;">Resultados</span>
+        </div>
+        <div style="font-size:13px;color:#6b7280;line-height:1.5;">
+            Veja todos os anúncios ativos com análise por IA</div>
     </div>
+
 </div>
 
-<div class="ads-sec-label">Empresas que serão analisadas ({n_empresas})</div>
-<div class="ads-emp-box">{nomes_lista_html}</div>
+<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;
+            letter-spacing:1.2px;margin-bottom:10px;">
+    Empresas que serão analisadas ({n_empresas})
+</div>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+            padding:4px 18px;margin-bottom:4px;">
+    {nomes_lista_html}
+</div>
         """, unsafe_allow_html=True)
 
-        # ── Botão nativo Streamlit
         iniciar = st.button(
             "Identificar páginas →",
             type="primary",
@@ -3010,7 +3012,7 @@ html, body { background:transparent; overflow:hidden; }
             key="btn_iniciar_ads_nativo",
         )
         st.markdown(
-            "<div style='font-size:12px;color:#9ca3af;text-align:center;margin-top:6px'>"
+            "<div style='font-size:12px;color:#9ca3af;text-align:center;margin-top:6px;margin-bottom:4px'>"
             "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
             unsafe_allow_html=True,
         )
@@ -3056,13 +3058,12 @@ html, body { background:transparent; overflow:hidden; }
 
             st.session_state.ads_etapa = "identificacao"
             st.rerun()
- 
+
     # ════════════════════════════════════════════════════════════════════
     # ETAPA 2 — CONFIRMAÇÃO DE PÁGINAS
     # ════════════════════════════════════════════════════════════════════
     elif st.session_state.ads_etapa == "identificacao":
  
-        # ── botões fantasma ──────────────────────────────────────────────
         confirmar_triggers    = {}
         rejeitar_triggers     = {}
         salvar_triggers       = {}
@@ -3080,7 +3081,6 @@ html, body { background:transparent; overflow:hidden; }
  
         ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
  
-        # CSS esconde todos os fantasmas
         ghost_sels = []
         for e in todas_empresas:
             sk = safe_key(e["ads_id"])
@@ -3090,7 +3090,6 @@ html, body { background:transparent; overflow:hidden; }
         ghost_sels.append(".st-key-btn_ir_resultados")
         st.markdown(f"<style>{','.join(ghost_sels)}{{display:none!important}}</style>", unsafe_allow_html=True)
  
-        # ── processa ações ───────────────────────────────────────────────
         for e in todas_empresas:
             ck   = e["ads_id"]
             conf = st.session_state.ads_confirmacao.get(ck, {})
@@ -3142,7 +3141,6 @@ html, body { background:transparent; overflow:hidden; }
             st.session_state.ads_etapa = "resultados"
             st.rerun()
  
-        # ── barra progresso + botão "Ver Anúncios" ───────────────────────
         n_confirmados    = sum(
             1 for e in todas_empresas
             if st.session_state.ads_confirmacao.get(e["ads_id"],{}).get("status") in ("confirmed","not_found")
@@ -3191,7 +3189,6 @@ html, body { background:transparent; overflow:hidden; }
  
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
-        # ── cards das empresas ────────────────────────────────────────────
         for idx_e, e in enumerate(todas_empresas):
             ck        = e["ads_id"]
             sk        = safe_key(ck)
@@ -3203,14 +3200,12 @@ html, body { background:transparent; overflow:hidden; }
             cor       = get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])
             avatar    = gerar_avatar(e["nome"])
  
-            # chip status
             if   status == "confirmed": chip = "<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✓ Confirmado</span>";    card_border = "#27ae60"
             elif status == "not_found": chip = "<span style='background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>— Não encontrada</span>"; card_border = "#9ca3af"
             elif status == "rejected":  chip = "<span style='background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>✗ Incorreto</span>";      card_border = "#e24b4a"
             elif pid_enc:               chip = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⏳ Aguardando confirmação</span>"; card_border = "#e5e7eb"
             else:                       chip = "<span style='background:#fffbeb;color:#92400e;border:1px solid #fcd34d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700'>⚠ Não encontrado</span>";   card_border = "#e5e7eb"
  
-            # meta da página
             if pid_enc:
                 meta_html = (
                     f"<span style='font-family:monospace;background:#f3f4f6;padding:2px 8px;border-radius:5px;font-size:12px;color:#374151'># {pid_enc}</span>"
@@ -3235,7 +3230,6 @@ html, body { background:transparent; overflow:hidden; }
                 unsafe_allow_html=True,
             )
  
-            # ── botões de ação nativos ────────────────────────────────────
             if status == "pending" and pid_enc:
                 bc1,bc2,bc3,_ = st.columns([2,2,2,3])
                 with bc1:
@@ -3500,40 +3494,55 @@ html, body { background:transparent; overflow:hidden; }
             chave_ia = f"ia_ads_{ck}"
             if chave_ia not in st.session_state: st.session_state[chave_ia] = ""
             safe_ck  = safe_key(ck)
-            st.markdown(f"<style>.st-key-btn_ia_ads_{safe_ck}{{display:none!important}}</style>", unsafe_allow_html=True)
-            ia_ads_btn = st.button(f"__ia_ads_{safe_ck}__", key=f"btn_ia_ads_{safe_ck}")
+
             resumo_ads = "\n".join([
                 f"- [{a['formato']}] Título: {a['title'][:60] if a['title'] else '—'} | "
                 f"Copy: {a['body'][:80] if a['body'] else '—'} | "
                 f"Impressões: {a['impressoes'] or '—'} | Plataformas: {', '.join(a['plataformas'] or [])}"
                 for a in ads_filtrados[:15]
             ])
+
             ia_html_content = st.session_state.get(chave_ia,"").replace("\n","<br>")
-            btn_js = (
-                f"var btns=window.parent.document.querySelectorAll('button');"
-                f"for(var i=0;i<btns.length;i++){{if(btns[i].innerText.trim()==='__ia_ads_{safe_ck}__'){{btns[i].click();break;}}}}"
-            )
-            ia_content = (
-                f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">{ia_html_content}</div>'
-                f'<div style="padding:0 18px 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🔄 Nova Análise</button></div>'
-                if ia_html_content else
-                f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">Clique para análise estratégica com IA.</div>'
-                f'<div style="padding:0 18px 18px 18px"><button onclick="{btn_js}" style="width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:DM Sans,sans-serif">🤖 Analisar com IA</button></div>'
-            )
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>* {{margin:0;padding:0;box-sizing:border-box;}} html{{background:transparent;font-family:'DM Sans',sans-serif;}} body{{background:transparent;overflow:visible;padding-bottom:8px;}}
-.wrap{{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;}}
-.hdr{{padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;}}
-</style>
-<div class="wrap"><div class="hdr">📊 Análise Estratégica com IA</div>{ia_content}</div>
-<script>
-function ajustar(){{var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);window.parent.document.querySelectorAll('iframe').forEach(function(f){{try{{if(f.contentWindow===window)f.style.height=(h+8)+'px';}}catch(e){{}}}});}}
-new ResizeObserver(ajustar).observe(document.body);
-document.addEventListener('DOMContentLoaded',ajustar);window.addEventListener('load',ajustar);setTimeout(ajustar,200);
-</script>""", height=200, scrolling=False)
- 
-            if ia_ads_btn:
+
+            if ia_html_content:
+                st.markdown(f"""
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px'>
+                    <div style='padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
+                                text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb'>
+                        📊 Análise Estratégica com IA
+                    </div>
+                    <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75'>
+                        {ia_html_content}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                col_nova,_ = st.columns([2,5])
+                with col_nova:
+                    nova_analise = st.button("🔄 Nova Análise", key=f"nova_ia_ads_{safe_ck}", use_container_width=True)
+            else:
+                st.markdown("""
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px'>
+                    <div style='padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
+                                text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb'>
+                        📊 Análise Estratégica com IA
+                    </div>
+                    <div style='padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af'>
+                        Clique no botão abaixo para gerar uma análise estratégica dos anúncios.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                nova_analise = False
+
+            col_ia,_ = st.columns([2,5])
+            with col_ia:
+                gerar_ia = st.button(
+                    "🤖 Analisar com IA" if not ia_html_content else "🔄 Nova Análise",
+                    key=f"btn_ia_ads_{safe_ck}",
+                    use_container_width=True,
+                    type="primary",
+                )
+
+            if gerar_ia or (ia_html_content and nova_analise):
                 if gemini_model is None:
                     st.session_state[chave_ia] = "Configure GEMINI_API_KEY nos secrets."
                 else:
