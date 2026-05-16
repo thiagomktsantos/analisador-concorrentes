@@ -1200,11 +1200,28 @@ if st.session_state.pagina == "home":
             border: 1px solid #e5e7eb !important;
             border-radius: 14px !important;
             padding: 28px 32px !important;
-            margin-bottom: 28px !important;
+            margin-bottom: 0px !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
         div[data-testid="stForm"] > div,
         div[data-testid="stForm"] > div > div {
+            background: #ffffff !important;
+        }
+        .st-key-cad_empresa button {
+            display: none !important;
+        }
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            background: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 14px !important;
+            padding: 20px 32px !important;
+            margin-bottom: 0px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+        }
+        [data-testid="stVerticalBlockBorderWrapper"] > div,
+        [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+        [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
+        [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
             background: #ffffff !important;
         }
         </style>
@@ -1271,40 +1288,41 @@ if st.session_state.pagina == "home":
             emp["site"] = limpar_site(site_digitado)
             st.form_submit_button("dummy_id", disabled=True)
 
-        form_divider()
+        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
-        # ── SETOR — fora do form para reatividade em tempo real
-        sec_label("Setor")
-        c3, c4 = st.columns(2)
-        setor_opcoes = list(SUBNICHOS.keys())
-        setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+        # ── SETOR — container branco, fora do form para reatividade
+        with st.container(border=True):
+            sec_label("Setor")
+            c3, c4 = st.columns(2)
+            setor_opcoes = list(SUBNICHOS.keys())
+            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
 
-        def on_setor_change():
-            emp["tipo"] = ""
-            st.session_state["_tipo_reset"] = True
+            def on_setor_change():
+                emp["tipo"] = ""
+                st.session_state["_tipo_reset"] = True
 
-        emp["setor"] = c3.selectbox(
-            "Setor",
-            setor_opcoes,
-            index=setor_idx,
-            key="sel_setor",
-            on_change=on_setor_change,
-        )
+            emp["setor"] = c3.selectbox(
+                "Setor",
+                setor_opcoes,
+                index=setor_idx,
+                key="sel_setor",
+                on_change=on_setor_change,
+            )
 
-        subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-        tipo_idx = 0 if st.session_state.get("_tipo_reset") else (
-            subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
-        )
-        st.session_state["_tipo_reset"] = False
+            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+            tipo_idx = 0 if st.session_state.get("_tipo_reset") else (
+                subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+            )
+            st.session_state["_tipo_reset"] = False
 
-        emp["tipo"] = c4.selectbox(
-            "Sub-nicho",
-            subnichos_disponiveis,
-            index=tipo_idx,
-            key="sel_tipo",
-        )
+            emp["tipo"] = c4.selectbox(
+                "Sub-nicho",
+                subnichos_disponiveis,
+                index=tipo_idx,
+                key="sel_tipo",
+            )
 
-        form_divider()
+        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
         # ── FORM 2 — Redes, Serviços, Localização e botões
         with st.form("cad_empresa_2", clear_on_submit=False):
