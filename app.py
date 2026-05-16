@@ -2805,42 +2805,16 @@ elif st.session_state.pagina == "ads":
         return resultados
 
     def buscar_paginas_por_nome(nome: str, token: str) -> list:
-        """Busca páginas do Facebook pelo nome via pages/search e ads_archive."""
         resultados = {}
 
-        # Tentativa 1: pages/search
-        try:
-            r = requests.get(
-                "https://graph.facebook.com/v21.0/pages/search",
-                params={
-                    "q": nome,
-                    "fields": "id,name,fan_count,verification_status,username",
-                    "limit": 10,
-                    "access_token": token,
-                },
-                timeout=15,
-            )
-            for p in r.json().get("data", []):
-                pid = str(p["id"])
-                fans = p.get("fan_count", 0)
-                resultados[pid] = {
-                    "pid":      pid,
-                    "name":     p.get("name", ""),
-                    "slug":     p.get("username", ""),
-                    "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
-                    "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
-                }
-        except Exception:
-            pass
-
-        # Tentativa 2: ads_archive ACTIVE
-        if len(resultados) < 5:
+        # Tentativa 1: ads_archive ACTIVE — mais confiável sem permissões extras
+        for status in ["ACTIVE", "ALL"]:
             try:
                 r = requests.get(
                     "https://graph.facebook.com/v21.0/ads_archive",
                     params={
                         "search_terms":         nome,
-                        "ad_active_status":     "ACTIVE",
+                        "ad_active_status":     status,
                         "ad_reached_countries": '["BR"]',
                         "fields": "page_id,page_name,ad_snapshot_url",
                         "limit":  50,
@@ -2848,7 +2822,8 @@ elif st.session_state.pagina == "ads":
                     },
                     timeout=15,
                 )
-                for ad in r.json().get("data", []):
+                data = r.json()
+                for ad in data.get("data", []):
                     pid  = str(ad.get("page_id", ""))
                     pnm  = ad.get("page_name", "")
                     snap = ad.get("ad_snapshot_url", "")
@@ -2866,8 +2841,10 @@ elif st.session_state.pagina == "ads":
                         }
             except Exception:
                 pass
+            if len(resultados) >= 5:
+                break
 
-        # Tentativa 3: ads_archive ALL
+        # Tentativa 2: busca sem filtro de país
         if len(resultados) < 3:
             try:
                 r = requests.get(
@@ -2875,7 +2852,7 @@ elif st.session_state.pagina == "ads":
                     params={
                         "search_terms":         nome,
                         "ad_active_status":     "ALL",
-                        "ad_reached_countries": '["BR"]',
+                        "ad_reached_countries": '["BR","US","PT"]',
                         "fields": "page_id,page_name,ad_snapshot_url",
                         "limit":  50,
                         "access_token": token,
@@ -2901,12 +2878,41 @@ elif st.session_state.pagina == "ads":
             except Exception:
                 pass
 
-        # Tentativa 4: slug direto
-        slug_guess = nome.lower().replace(" ", "").replace(".", "")
+        # Tentativa 3: slug direto pelo nome
+        slug_guess = re.sub(r'[^a-z0-9]', '', nome.lower())
         if slug_guess:
-            resolved = resolver_slug(slug_guess, token)
-            if resolved.get("pid") and resolved["pid"] not in resultados:
-                resultados[resolved["pid"]] = resolved
+            try:
+                resolved = resolver_slug(slug_guess, token)
+                if resolved.get("pid") and resolved["pid"] not in resultados:
+                    resultados[resolved["pid"]] = resolved
+            except Exception:
+                pass
+
+        # Tentativa 4: pages/search (requer permissão, mas tenta mesmo assim)
+        try:
+            r = requests.get(
+                "https://graph.facebook.com/v21.0/pages/search",
+                params={
+                    "q":      nome,
+                    "fields": "id,name,fan_count,verification_status,username",
+                    "limit":  10,
+                    "access_token": token,
+                },
+                timeout=15,
+            )
+            for p in r.json().get("data", []):
+                pid  = str(p["id"])
+                fans = p.get("fan_count", 0)
+                if pid not in resultados:
+                    resultados[pid] = {
+                        "pid":      pid,
+                        "name":     p.get("name", ""),
+                        "slug":     p.get("username", ""),
+                        "fans":     f"{fans/1000:.1f}K" if fans >= 1000 else str(fans),
+                        "verified": p.get("verification_status") in ("blue_verified", "gray_verified"),
+                    }
+        except Exception:
+            pass
 
         return list(resultados.values())
  
@@ -3148,10 +3154,11 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     # ════════════════════════════════════════════════════════════════════
     # ETAPA 2 — CONFIRMAÇÃO DE PÁGINAS
     # ════════════════════════════════════════════════════════════════════
+
     elif st.session_state.ads_etapa == "identificacao":
 
         ir_resultados = st.button("__ir_resultados__", key="btn_ir_resultados")
-        st.markdown(".st-key-btn_ir_resultados{display:none!important}", unsafe_allow_html=True)
+        st.markdown("<style>.st-key-btn_ir_resultados{display:none!important}</style>", unsafe_allow_html=True)
 
         if ir_resultados:
             with st.spinner("Buscando anúncios…"):
