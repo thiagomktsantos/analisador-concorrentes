@@ -2931,24 +2931,20 @@ html, body { background:transparent; overflow:hidden; }
 """, height=65)
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 24px 0'/>", unsafe_allow_html=True)
  
+# ════════════════════════════════════════════════════════════════════
+    # ETAPA 1 — INFORMATIVA
     # ════════════════════════════════════════════════════════════════════
-    # ETAPA 1 — INFORMATIVA  (tudo dentro de 1 único iframe)
-    # ════════════════════════════════════════════════════════════════════
- 
+
     if st.session_state.ads_etapa == "informativa":
- 
+
         if not META_TOKEN:
             st.warning("⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets para usar esta funcionalidade.")
             st.stop()
         if not todas_empresas:
             st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
             st.stop()
- 
-        # botão fantasma — acionado pelo JS do iframe
-        st.markdown("<style>.st-key-btn_iniciar_ads_ghost{display:none!important}</style>", unsafe_allow_html=True)
-        iniciar_ghost = st.button("__iniciar_ads__", key="btn_iniciar_ads_ghost")
- 
-        n_empresas       = len(todas_empresas)
+
+        n_empresas = len(todas_empresas)
         nomes_lista_html = "".join([
             f'<div class="emp-row">'
             f'<div class="emp-av" style="background:{get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])}">'
@@ -2958,91 +2954,68 @@ html, body { background:transparent; overflow:hidden; }
             f'</div>'
             for e in todas_empresas
         ])
- 
-        components.html(f"""
+
+        # ── HTML estático: steps + lista de empresas (sem botão dentro)
+        st.markdown(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html,body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:6px; }}
- 
-.steps {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }}
-.step {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }}
-.step.active {{ background:#0e2a47; border-color:#0e2a47; }}
-.step-hdr {{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }}
-.step-num {{ width:24px; height:24px; border-radius:6px; background:#f3f4f6; color:#6b7280;
+.ads-steps {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }}
+.ads-step {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }}
+.ads-step.active {{ background:#0e2a47; border-color:#0e2a47; }}
+.ads-step-hdr {{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }}
+.ads-step-num {{ width:24px; height:24px; border-radius:6px; background:#f3f4f6; color:#6b7280;
              display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }}
-.step.active .step-num {{ background:rgba(255,255,255,.15); color:#fff; }}
-.step-title {{ font-size:14px; font-weight:700; color:#111827; }}
-.step.active .step-title {{ color:#fff; }}
-.step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
-.step.active .step-desc {{ color:rgba(255,255,255,.65); }}
- 
-.sec-label {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase;
+.ads-step.active .ads-step-num {{ background:rgba(255,255,255,.15); color:#fff; }}
+.ads-step-title {{ font-size:14px; font-weight:700; color:#111827; }}
+.ads-step.active .ads-step-title {{ color:#fff; }}
+.ads-step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
+.ads-step.active .ads-step-desc {{ color:rgba(255,255,255,.65); }}
+.ads-sec-label {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase;
               letter-spacing:1.2px; margin-bottom:10px; }}
-.emp-box {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 18px; margin-bottom:16px; }}
-.emp-row {{ display:flex; align-items:center; gap:12px; padding:10px 0;
-            border-bottom:1px solid #f3f4f6; }}
-.emp-row:last-child {{ border-bottom:none; padding-bottom:0; }}
-.emp-av  {{ width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
+.ads-emp-box {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 18px; margin-bottom:16px; }}
+.ads-emp-row {{ display:flex; align-items:center; gap:12px; padding:10px 0;
+            border-bottom:1px solid #f3f4f6; font-family:'DM Sans',sans-serif; }}
+.ads-emp-row:last-child {{ border-bottom:none; padding-bottom:0; }}
+.ads-emp-av  {{ width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
             justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }}
-.emp-nome  {{ font-size:15px; font-weight:600; color:#111827; flex:1; }}
-.emp-badge {{ font-size:12px; color:#9ca3af; background:#f3f4f6; padding:3px 10px;
+.ads-emp-nome  {{ font-size:15px; font-weight:600; color:#111827; flex:1; }}
+.ads-emp-badge {{ font-size:12px; color:#9ca3af; background:#f3f4f6; padding:3px 10px;
               border-radius:20px; font-weight:500; white-space:nowrap; }}
- 
-.btn-iniciar {{
-    width:100%; padding:14px; border:none; border-radius:10px;
-    background:#0780c0; color:#fff; font-size:15px; font-weight:700;
-    font-family:'DM Sans',sans-serif; cursor:pointer; transition:background .15s;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-}}
-.btn-iniciar:hover {{ background:#065f9e; }}
-.btn-sub {{ font-size:12px; color:#9ca3af; text-align:center; margin-top:8px; }}
 </style>
- 
-<div class="steps">
-    <div class="step active">
-        <div class="step-hdr"><div class="step-num">1</div><span class="step-title">Identificação</span></div>
-        <div class="step-desc">Buscamos automaticamente as páginas do Facebook de cada empresa</div>
+
+<div class="ads-steps">
+    <div class="ads-step active">
+        <div class="ads-step-hdr"><div class="ads-step-num">1</div><span class="ads-step-title">Identificação</span></div>
+        <div class="ads-step-desc">Buscamos automaticamente as páginas do Facebook de cada empresa</div>
     </div>
-    <div class="step">
-        <div class="step-hdr"><div class="step-num">2</div><span class="step-title">Confirmação</span></div>
-        <div class="step-desc">Você valida se as páginas encontradas estão corretas</div>
+    <div class="ads-step">
+        <div class="ads-step-hdr"><div class="ads-step-num">2</div><span class="ads-step-title">Confirmação</span></div>
+        <div class="ads-step-desc">Você valida se as páginas encontradas estão corretas</div>
     </div>
-    <div class="step">
-        <div class="step-hdr"><div class="step-num">3</div><span class="step-title">Resultados</span></div>
-        <div class="step-desc">Veja todos os anúncios ativos com análise por IA</div>
+    <div class="ads-step">
+        <div class="ads-step-hdr"><div class="ads-step-num">3</div><span class="ads-step-title">Resultados</span></div>
+        <div class="ads-step-desc">Veja todos os anúncios ativos com análise por IA</div>
     </div>
 </div>
- 
-<div class="sec-label">Empresas que serão analisadas ({n_empresas})</div>
-<div class="emp-box">{nomes_lista_html}</div>
- 
-<button class="btn-iniciar" onclick="iniciar()">Identificar páginas →</button>
-<div class="btn-sub">Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>
- 
-<script>
-function iniciar() {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if (b.innerText.trim() === '__iniciar_ads__') {{ b.click(); return; }}
-    }}
-}}
-function ajustar() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
-    }});
-}}
-new ResizeObserver(ajustar).observe(document.body);
-document.addEventListener('DOMContentLoaded', ajustar);
-window.addEventListener('load', ajustar);
-setTimeout(ajustar, 100); setTimeout(ajustar, 400);
-</script>
-""", height=60, scrolling=False)
- 
-        # processa clique
-        if iniciar_ghost:
+
+<div class="ads-sec-label">Empresas que serão analisadas ({n_empresas})</div>
+<div class="ads-emp-box">{nomes_lista_html}</div>
+        """, unsafe_allow_html=True)
+
+        # ── Botão nativo Streamlit
+        iniciar = st.button(
+            "Identificar páginas →",
+            type="primary",
+            use_container_width=True,
+            key="btn_iniciar_ads_nativo",
+        )
+        st.markdown(
+            "<div style='font-size:12px;color:#9ca3af;text-align:center;margin-top:6px'>"
+            "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
+            unsafe_allow_html=True,
+        )
+
+        if iniciar:
             with st.spinner("Buscando e identificando páginas…"):
                 for e in todas_empresas:
                     ck        = e["ads_id"]
@@ -3050,49 +3023,37 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                     ads, erro, modo_real, slug = buscar_ads_meta(
                         search_term=e["search_term"], token=META_TOKEN, page_id=pid_final, limit=10
                     )
-                    # salva slug extraído dos anúncios
                     if slug:
                         st.session_state.ads_page_slugs[ck] = slug
- 
-                    # tenta resolver page_id automaticamente:
-                    # prioridade 1 — page_id nos próprios anúncios
+
                     if not pid_final and ads:
                         primeiro_pid = ads[0].get("page_id","")
                         if primeiro_pid and str(primeiro_pid).isdigit():
                             st.session_state.ads_page_ids[ck] = str(primeiro_pid)
                             pid_final = str(primeiro_pid)
- 
-                    # prioridade 2 — resolve slug via Graph API
+
                     if not pid_final and slug:
                         resolved = resolver_slug(slug, META_TOKEN)
                         if resolved.get("pid"):
                             st.session_state.ads_page_ids[ck] = resolved["pid"]
                             pid_final = resolved["pid"]
- 
-                    # define estado inicial da confirmação
+
                     if ck not in st.session_state.ads_confirmacao:
-                        # se conseguimos um page_id confiável via slug → pré-confirma
                         if pid_final and slug:
                             st.session_state.ads_confirmacao[ck] = {
-                                "status": "confirmed",
-                                "alternatives": [],
-                                "selected_pid": pid_final,
+                                "status": "confirmed", "alternatives": [], "selected_pid": pid_final,
                             }
                         elif pid_final:
                             st.session_state.ads_confirmacao[ck] = {
-                                "status": "pending",
-                                "alternatives": [],
-                                "selected_pid": "",
+                                "status": "pending", "alternatives": [], "selected_pid": "",
                             }
                         else:
-                            # busca alternativas automaticamente para já mostrar opções
                             alts = buscar_alternativas_paginas(e["nome"], META_TOKEN, slug_hint=slug)
                             st.session_state.ads_confirmacao[ck] = {
                                 "status": "rejected" if alts else "pending",
-                                "alternatives": alts,
-                                "selected_pid": "",
+                                "alternatives": alts, "selected_pid": "",
                             }
- 
+
             st.session_state.ads_etapa = "identificacao"
             st.rerun()
  
