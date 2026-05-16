@@ -1242,12 +1242,14 @@ if st.session_state.pagina == "home":
         )
 
         SUBNICHOS = {
-            "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
-            "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
-            "Varejo": ["E-commerce", "Moda", "Eletrônicos", "Alimentos", "Farmácia", "Pet Shop", "Decoração", "Esportes"],
-            "Saúde": ["Clínica Médica", "Odontologia", "Psicologia", "Nutrição", "Fisioterapia", "Academia", "Farmácia", "Estética"],
-            "Educação": ["Escola", "Curso Online", "Coaching", "Consultoria", "Idiomas", "Pré-vestibular", "Creche", "Faculdade"],
-            "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
+    "Alimentação": ["Restaurante", "Delivery", "Confeitaria", "Padaria", "Lanchonete", "Food Truck", "Catering", "Franquia de Alimentação"],
+    "Marketing": ["Agência Digital", "Marketing de Conteúdo", "SEO", "Tráfego Pago", "Social Media", "Branding", "Email Marketing", "Inbound Marketing"],
+    "Tecnologia": ["Software House", "SaaS", "Consultoria TI", "Segurança", "Dados & BI", "Mobile", "Cloud", "Inteligência Artificial"],
+    "Varejo": ["E-commerce", "Moda", "Eletrônicos", "Alimentos", "Farmácia", "Pet Shop", "Decoração", "Esportes"],
+    "Saúde": ["Clínica Médica", "Odontologia", "Psicologia", "Nutrição", "Fisioterapia", "Academia", "Farmácia", "Estética"],
+    "Educação": ["Escola", "Curso Online", "Coaching", "Consultoria", "Idiomas", "Pré-vestibular", "Creche", "Faculdade"],
+    "Indústria": ["Manufatura", "Construção", "Agronegócio", "Química", "Têxtil", "Metalurgia", "Energia", "Logística"],
+
         }
 
         def sec_label(label):
@@ -1280,7 +1282,13 @@ if st.session_state.pagina == "home":
             c3, c4 = st.columns(2)
             setor_opcoes = list(SUBNICHOS.keys())
             setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
-            emp["setor"] = c3.selectbox("Setor", setor_opcoes, index=setor_idx)
+            novo_setor = c3.selectbox("Setor", setor_opcoes, index=setor_idx)
+
+            # Se o setor mudou, reseta o subnicho para não herdar valor inválido
+            if novo_setor != emp["setor"]:
+            emp["tipo"] = ""
+            emp["setor"] = novo_setor
+
             subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
             tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
             emp["tipo"] = c4.selectbox("Sub-nicho", subnichos_disponiveis, index=tipo_idx)
