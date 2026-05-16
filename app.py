@@ -2808,6 +2808,32 @@ elif st.session_state.pagina == "ads":
         resultados = {}
         nome_lower = nome.lower().strip()
 
+        # PRIMEIRO: tenta slug direto — mais confiável
+        slug_guess = re.sub(r'[^a-z0-9]', '', nome_lower)
+        if slug_guess:
+            try:
+                resolved = resolver_slug(slug_guess, token)
+                if resolved.get("pid"):
+                    resultados[resolved["pid"]] = {**resolved, "score": 100}
+            except Exception:
+                pass
+
+        # Tenta variações do slug
+        for variacao in [nome_lower.replace(" ", ""), nome_lower.replace(" ", "-"), nome_lower.replace(" ", "_")]:
+            variacao = re.sub(r'[^a-z0-9\-_]', '', variacao)
+            if variacao and variacao != slug_guess:
+                try:
+                    resolved = resolver_slug(variacao, token)
+                    if resolved.get("pid") and resolved["pid"] not in resultados:
+                        resultados[resolved["pid"]] = {**resolved, "score": 95}
+                except Exception:
+                    pass
+
+        # SE já achou pelo slug, retorna direto sem precisar da API de ads
+        if any(v["score"] >= 95 for v in resultados.values()):
+            return sorted(resultados.values(), key=lambda x: x["score"], reverse=True)[:6]
+
+        # FALLBACK: busca por keyword no ads_archive
         for status in ["ACTIVE", "ALL"]:
             try:
                 r = requests.get(
@@ -2828,13 +2854,12 @@ elif st.session_state.pagina == "ads":
                     snap = ad.get("ad_snapshot_url", "")
                     if not pid:
                         continue
-                    # Calcula score de similaridade com o nome buscado
                     pnm_lower = pnm.lower().strip()
                     if nome_lower == pnm_lower:
                         score = 100
                     elif nome_lower in pnm_lower or pnm_lower in nome_lower:
                         score = 80
-                    elif any(p in pnm_lower for p in nome_lower.split()):
+                    elif any(p in pnm_lower for p in nome_lower.split() if len(p) > 2):
                         score = 50
                     else:
                         score = 10
@@ -2845,31 +2870,15 @@ elif st.session_state.pagina == "ads":
                         if slug.lower() in SLUGS_IGNORADOS or slug.isdigit():
                             slug = ""
                         resultados[pid] = {
-                            "pid":      pid,
-                            "name":     pnm,
-                            "slug":     slug,
-                            "fans":     "",
-                            "verified": False,
-                            "score":    score,
+                            "pid": pid, "name": pnm,
+                            "slug": slug, "fans": "",
+                            "verified": False, "score": score,
                         }
             except Exception:
                 pass
             if any(v["score"] >= 80 for v in resultados.values()):
                 break
 
-        # Tenta slug direto pelo nome sem espaços
-        slug_guess = re.sub(r'[^a-z0-9]', '', nome_lower)
-        if slug_guess:
-            try:
-                resolved = resolver_slug(slug_guess, token)
-                if resolved.get("pid"):
-                    pid = resolved["pid"]
-                    if pid not in resultados or resultados[pid]["score"] < 90:
-                        resultados[pid] = {**resolved, "score": 90}
-            except Exception:
-                pass
-
-        # Ordena por score e retorna top 6
         ordenados = sorted(resultados.values(), key=lambda x: x["score"], reverse=True)
         return ordenados[:6]
  
@@ -3099,6 +3108,11 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             with st.spinner("Buscando páginas que estão anunciando…"):
                 for e in todas_empresas:
                     ck   = e["ads_id"]
+                    # DEBUG — testa resolver_slug direto
+                    slug_test = re.sub(r'[^a-z0-9]', '', e["search_term"].lower())
+                    resolved_test = resolver_slug(slug_test, META_TOKEN)
+                    st.toast(f"Slug '{slug_test}': {resolved_test}", icon="🔍")
+                    
                     alts = buscar_paginas_por_nome(e["search_term"], META_TOKEN)
                     st.session_state.ads_confirmacao[ck] = {
                         "status":       "pending",
