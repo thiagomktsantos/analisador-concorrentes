@@ -3041,25 +3041,33 @@ html, body { background: transparent; overflow: hidden; }
         altura_lista = 16 + (n_empresas * 54)
         altura_total = 240 + altura_lista
  
-        nomes_lista_html = "".join([
-            f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;'
-            f'border-bottom:{"none" if i == len(todas_empresas)-1 else "1px solid #f3f4f6"};'
-            f'font-family:DM Sans,sans-serif;">'
-            f'<div style="width:34px;height:34px;border-radius:50%;background:'
-            f'{get_minha_empresa_color() if e["tipo"]=="minha" else get_concorrente_color(e["idx"])};'
-            f'display:flex;align-items:center;justify-content:center;'
-            f'font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">'
-            f'{gerar_avatar(e["nome"])}</div>'
-            f'<div style="flex:1;min-width:0">'
-            f'<span style="font-size:15px;font-weight:600;color:#111827;">{e["nome"]}</span>'
-            f'{"<div style=\\"font-size:12px;color:#9ca3af;margin-top:1px\\">FB: " + e["fb_raw"] + "</div>" if e["fb_raw"] else ""}'
-            f'</div>'
-            f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;'
-            f'border-radius:20px;font-weight:500;white-space:nowrap;">'
-            f'{"Minha Empresa" if e["tipo"]=="minha" else "Concorrente"}</span>'
-            f'</div>'
-            for i, e in enumerate(todas_empresas)
-        ])
+        def _item_empresa_html(i, e):
+            borda    = "none" if i == len(todas_empresas) - 1 else "1px solid #f3f4f6"
+            cor      = get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])
+            av       = gerar_avatar(e["nome"])
+            fb_sub   = (
+                '<div style="font-size:12px;color:#9ca3af;margin-top:1px">FB: ' + e["fb_raw"] + '</div>'
+                if e["fb_raw"] else ""
+            )
+            badge    = "Minha Empresa" if e["tipo"] == "minha" else "Concorrente"
+            return (
+                f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;'
+                f'border-bottom:{borda};font-family:DM Sans,sans-serif;">'
+                f'<div style="width:34px;height:34px;border-radius:50%;background:{cor};'
+                f'display:flex;align-items:center;justify-content:center;'
+                f'font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">{av}</div>'
+                f'<div style="flex:1;min-width:0">'
+                f'<span style="font-size:15px;font-weight:600;color:#111827;">{e["nome"]}</span>'
+                f'{fb_sub}'
+                f'</div>'
+                f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;'
+                f'border-radius:20px;font-weight:500;white-space:nowrap;">{badge}</span>'
+                f'</div>'
+            )
+ 
+        nomes_lista_html = "".join(
+            _item_empresa_html(i, e) for i, e in enumerate(todas_empresas)
+        )
  
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
