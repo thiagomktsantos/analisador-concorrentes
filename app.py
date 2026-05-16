@@ -1262,52 +1262,53 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
 
+        # ── FORM 1 — Identificação
         with st.form("cad_empresa", clear_on_submit=False):
-
-            # ── IDENTIFICAÇÃO
             sec_label("Identificação")
             c1, c2 = st.columns(2)
             emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"])
             site_digitado = c2.text_input("Site", value=emp["site"])
             emp["site"] = limpar_site(site_digitado)
+            st.form_submit_button("dummy_id", disabled=True)
 
-            form_divider()
+        form_divider()
 
-            # ── SETOR
-            sec_label("Setor")
-            c3, c4 = st.columns(2)
-            setor_opcoes = list(SUBNICHOS.keys())
-            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+        # ── SETOR — fora do form para reatividade em tempo real
+        sec_label("Setor")
+        c3, c4 = st.columns(2)
+        setor_opcoes = list(SUBNICHOS.keys())
+        setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
 
-            setor_atual = c3.selectbox(
-                "Setor",
-                setor_opcoes,
-                index=setor_idx,
-                key="sel_setor_form",
-            )
+        def on_setor_change():
+            emp["tipo"] = ""
+            st.session_state["_tipo_reset"] = True
 
-            if setor_atual != st.session_state.get("_ultimo_setor", setor_atual):
-                st.session_state["_tipo_reset"] = True
-            st.session_state["_ultimo_setor"] = setor_atual
-            emp["setor"] = setor_atual
+        emp["setor"] = c3.selectbox(
+            "Setor",
+            setor_opcoes,
+            index=setor_idx,
+            key="sel_setor",
+            on_change=on_setor_change,
+        )
 
-            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-            if st.session_state.get("_tipo_reset"):
-                tipo_idx = 0
-                st.session_state["_tipo_reset"] = False
-            else:
-                tipo_idx = subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+        subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+        tipo_idx = 0 if st.session_state.get("_tipo_reset") else (
+            subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+        )
+        st.session_state["_tipo_reset"] = False
 
-            emp["tipo"] = c4.selectbox(
-                "Sub-nicho",
-                subnichos_disponiveis,
-                index=tipo_idx,
-                key="sel_tipo_form",
-            )
+        emp["tipo"] = c4.selectbox(
+            "Sub-nicho",
+            subnichos_disponiveis,
+            index=tipo_idx,
+            key="sel_tipo",
+        )
 
-            form_divider()
+        form_divider()
 
-            # ── REDES SOCIAIS
+        # ── FORM 2 — Redes, Serviços, Localização e botões
+        with st.form("cad_empresa_2", clear_on_submit=False):
+
             sec_label("Redes Sociais")
             c5, c6 = st.columns(2)
             emp["instagram"] = c5.text_input("Instagram", value=emp["instagram"])
@@ -1321,7 +1322,6 @@ if st.session_state.pagina == "home":
 
             form_divider()
 
-            # ── LOCALIZAÇÃO
             sec_label("Localização")
             loc1, loc2 = st.columns(2)
             estados = list(ESTADOS_CIDADES.keys())
@@ -1331,7 +1331,8 @@ if st.session_state.pagina == "home":
             cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
             emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
 
-            # ── Botões
+            form_divider()
+
             col_salvar, col_cancelar = st.columns(2)
             salvar   = col_salvar.form_submit_button("Salvar",   use_container_width=True)
             cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
@@ -1503,7 +1504,6 @@ body {{
     padding: 4px 12px; border-radius: 20px;
     font-size: 13px; font-weight: 500;
 }}
-
 @media (max-width: 700px) {{
     .empresa-grid {{ grid-template-columns: 1fr !important; }}
     .empresa-divider {{ display: none !important; }}
