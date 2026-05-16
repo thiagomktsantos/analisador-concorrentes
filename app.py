@@ -2675,8 +2675,7 @@ setTimeout(ajustarAltura, 600);
 
     components.html(analises_html, height=60, scrolling=False)
 
-# ---------------------------------------------------
-# else:
+                else:
                     # Nenhuma página encontrada — DEBUG
                     st.markdown(
                         "<div style='background:#fef9ec;border:1px solid #fcd34d;border-radius:8px;"
