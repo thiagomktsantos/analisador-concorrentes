@@ -2855,7 +2855,7 @@ html, body { background: transparent; overflow: hidden; }
     # ════════════════════════════════════════════
     # ETAPA 1 — PÁGINA INFORMATIVA
     # ════════════════════════════════════════════
-    if st.session_state.ads_etapa == "informativa":
+if st.session_state.ads_etapa == "informativa":
 
         if not META_TOKEN:
             st.warning("⚠️ Configure `META_ACCESS_TOKEN` no Streamlit Secrets para usar esta funcionalidade.")
@@ -2865,8 +2865,143 @@ html, body { background: transparent; overflow: hidden; }
             st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
             st.stop()
 
-        # ✅ BOTÃO FANTASMA CRIADO PRIMEIRO
-        if st.button("__ir_identificacao__", key="btn_ir_identificacao"):
+        nomes_lista_html = "".join([
+            f'<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6">'
+            f'<div style="width:36px;height:36px;border-radius:50%;'
+            f'background:{get_minha_empresa_color() if e["tipo"] == "minha" else get_concorrente_color(e["idx"])};'
+            f'display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">'
+            f'{gerar_avatar(e["nome"])}</div>'
+            f'<span style="font-size:15px;font-weight:600;color:#111827;flex:1">{e["nome"]}</span>'
+            f'<span style="font-size:12px;color:#9ca3af;background:#f3f4f6;padding:3px 10px;border-radius:20px;font-weight:500">'
+            f'{"Minha Empresa" if e["tipo"] == "minha" else "Concorrente"}</span>'
+            f'</div>'
+            for e in todas_empresas
+        ])
+
+        n_empresas = len(todas_empresas)
+
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+.steps {{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:28px;
+}}
+.step {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;
+}}
+.step.active {{
+    background:#0e2a47; border-color:#0e2a47;
+}}
+.step-header {{
+    display:flex; align-items:center; gap:10px; margin-bottom:8px;
+}}
+.step-num {{
+    width:26px; height:26px; border-radius:7px;
+    background:#f3f4f6; color:#6b7280;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; flex-shrink:0;
+}}
+.step.active .step-num {{
+    background:rgba(255,255,255,0.15); color:#fff;
+}}
+.step-title {{ font-size:15px; font-weight:700; color:#111827; }}
+.step.active .step-title {{ color:#fff; }}
+.step-desc {{ font-size:13px; color:#6b7280; line-height:1.5; }}
+.step.active .step-desc {{ color:rgba(255,255,255,0.65); }}
+.empresas-box {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    padding:20px 24px; margin-bottom:16px;
+}}
+.empresas-label {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1.2px; margin-bottom:12px;
+}}
+</style>
+
+<div class="steps">
+    <div class="step active">
+        <div class="step-header">
+            <div class="step-num">1</div>
+            <div class="step-title">Identificação</div>
+        </div>
+        <div class="step-desc">Buscamos automaticamente as páginas do Facebook de cada empresa</div>
+    </div>
+    <div class="step">
+        <div class="step-header">
+            <div class="step-num">2</div>
+            <div class="step-title">Confirmação</div>
+        </div>
+        <div class="step-desc">Você valida se as páginas encontradas estão corretas</div>
+    </div>
+    <div class="step">
+        <div class="step-header">
+            <div class="step-num">3</div>
+            <div class="step-title">Resultados</div>
+        </div>
+        <div class="step-desc">Veja todos os anúncios ativos com análise por IA</div>
+    </div>
+</div>
+
+<div class="empresas-label">Empresas que serão analisadas ({n_empresas})</div>
+<div class="empresas-box">
+    {nomes_lista_html}
+</div>
+
+<script>
+function ajustar() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
+    }});
+}}
+new ResizeObserver(ajustar).observe(document.body);
+document.addEventListener('DOMContentLoaded', ajustar);
+window.addEventListener('load', ajustar);
+setTimeout(ajustar, 200);
+setTimeout(ajustar, 600);
+</script>
+""", height=420, scrolling=False)
+
+        # ✅ BOTÃO NATIVO STREAMLIT — sempre funciona
+        st.markdown("""
+        <style>
+        div[data-testid="stButton"].ads-cta-btn > button {
+            background: #0e2a47 !important;
+            color: #fff !important;
+            border: none !important;
+            font-size: 15px !important;
+            font-weight: 800 !important;
+            padding: 14px 28px !important;
+            border-radius: 10px !important;
+            width: 100% !important;
+            max-width: 320px !important;
+            box-shadow: 0 4px 16px rgba(14,42,71,0.25) !important;
+        }
+        div[data-testid="stButton"].ads-cta-btn > button:hover {
+            background: #1a4070 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        col_cta, col_sub = st.columns([2, 3])
+        with col_cta:
+            iniciar = st.button(
+                "Identificar páginas →",
+                type="primary",
+                use_container_width=True,
+                key="btn_iniciar_ads"
+            )
+        with col_sub:
+            st.markdown(
+                "<div style='font-size:13px;color:#9ca3af;padding-top:10px'>"
+                "Leva alguns segundos · IDs salvos automaticamente para futuras buscas</div>",
+                unsafe_allow_html=True
+            )
+
+        if iniciar:
             with st.spinner("Buscando páginas do Facebook…"):
                 for e in todas_empresas:
                     ck = e["ads_id"]
