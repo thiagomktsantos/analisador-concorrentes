@@ -3178,6 +3178,46 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
             )
             perms = [p["permission"] for p in r_debug.json().get("data", []) if p.get("status") == "granted"]
             st.info(f"✅ Token ativo | Permissões granted: {', '.join(perms)}")
+            # DEBUG COMPLETO
+        try:
+            debug = {}
+            
+            # Testa endpoint direto
+            for slug_try in ["kedu", "kedubr", "kedu.br"]:
+                r = requests.get(
+                    f"https://graph.facebook.com/v21.0/{slug_try}",
+                    params={"fields": "id,name,fan_count,username", "access_token": META_TOKEN},
+                    timeout=10,
+                )
+                debug[f"slug_{slug_try}"] = r.json()
+
+            # Testa pages/search
+            r2 = requests.get(
+                "https://graph.facebook.com/v21.0/pages/search",
+                params={"q": "Kedu", "fields": "id,name,username,fan_count", "limit": 5, "access_token": META_TOKEN},
+                timeout=10,
+            )
+            debug["pages_search"] = r2.json()
+
+            # Testa ads_archive retornando page_name
+            r3 = requests.get(
+                "https://graph.facebook.com/v21.0/ads_archive",
+                params={
+                    "search_terms": "Kedu",
+                    "ad_active_status": "ACTIVE",
+                    "ad_reached_countries": '["BR"]',
+                    "fields": "page_id,page_name",
+                    "limit": 5,
+                    "access_token": META_TOKEN,
+                },
+                timeout=15,
+            )
+            debug["ads_archive_BR"] = r3.json()
+
+            import json as _j
+            st.code(_j.dumps(debug, indent=2, ensure_ascii=False))
+        except Exception as ex:
+            st.error(str(ex))
         except Exception as ex:
             st.error(f"❌ Erro no token: {ex}")
 
