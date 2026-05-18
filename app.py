@@ -2700,36 +2700,29 @@ elif st.session_state.pagina == "ads":
         return txt[:n] + "…" if len(txt) > n else txt
  
     def _is_dynamic(txt):
-        """Detecta se o texto é um template dinâmico da Meta ({{...}})"""
         if not txt: return False
         return bool(re.search(r'\{\{[^}]+\}\}', txt))
  
     def _clean_dynamic(txt):
-        """Remove placeholders {{...}} do texto, retornando texto limpo ou vazio"""
         if not txt: return ""
         cleaned = re.sub(r'\{\{[^}]+\}\}', '', txt).strip()
-        # Remove linhas que ficaram vazias após remover placeholders
         lines = [l.strip() for l in cleaned.split('\n') if l.strip()]
         return ' '.join(lines)
  
     def _plat_icons(plats):
-        # Retorna lista de dicts para ser serializada como JSON e renderizada no iframe via JS
         icons = {
-            "facebook":         {"label": "Facebook",         "color": "#1877F2", "emoji": "f"},
-            "instagram":        {"label": "Instagram",        "color": "#E1306C", "emoji": "ig"},
-            "messenger":        {"label": "Messenger",        "color": "#0099FF", "emoji": "m"},
-            "audience_network": {"label": "Audience Network", "color": "#6b7280", "emoji": "an"},
-            "whatsapp":         {"label": "WhatsApp",         "color": "#25D366", "emoji": "w"},
+            "facebook":         {"label": "Facebook",         "color": "#1877F2"},
+            "instagram":        {"label": "Instagram",        "color": "#E1306C"},
+            "messenger":        {"label": "Messenger",        "color": "#0099FF"},
+            "audience_network": {"label": "Audience Network", "color": "#6b7280"},
+            "whatsapp":         {"label": "WhatsApp",         "color": "#25D366"},
         }
         result = []
         for p in (plats or []):
-            info = icons.get(p.lower(), {"label": p.capitalize(), "color": "#6b7280", "emoji": p[:2]})
+            info = icons.get(p.lower(), {"label": p.capitalize(), "color": "#6b7280"})
             result.append(info["label"])
-        return result  # lista de strings
+        return result
  
-    # ------------------------------------------------------------------
-    # Extrai de forma recursiva qualquer campo de um dict aninhado
-    # ------------------------------------------------------------------
     def _deep_get(obj, *keys, default=""):
         for k in keys:
             if isinstance(obj, dict):
@@ -2743,9 +2736,6 @@ elif st.session_state.pagina == "ads":
                 return default
         return obj or default
  
-    # ------------------------------------------------------------------
-    # Extrai TODAS as imagens de um objeto de anúncio
-    # ------------------------------------------------------------------
     def _extract_images(ad: dict) -> list:
         imgs = []
         seen = set()
@@ -2797,9 +2787,6 @@ elif st.session_state.pagina == "ads":
  
         return imgs
  
-    # ------------------------------------------------------------------
-    # Extrai copies
-    # ------------------------------------------------------------------
     def _extract_copy(ad: dict) -> dict:
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -2862,9 +2849,6 @@ elif st.session_state.pagina == "ads":
             "caption": caption,
         }
  
-    # ------------------------------------------------------------------
-    # Extrai vídeos
-    # ------------------------------------------------------------------
     def _extract_videos(ad: dict) -> list:
         vids = []
         seen = set()
@@ -2888,9 +2872,6 @@ elif st.session_state.pagina == "ads":
  
         return vids
  
-    # ------------------------------------------------------------------
-    # buscar_page_id
-    # ------------------------------------------------------------------
     def buscar_page_id(query: str):
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key:
@@ -2936,9 +2917,6 @@ elif st.session_state.pagina == "ads":
         except Exception as e:
             return None, str(e)
  
-    # ------------------------------------------------------------------
-    # buscar_ads_searchapi
-    # ------------------------------------------------------------------
     def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key:
@@ -2981,7 +2959,11 @@ elif st.session_state.pagina == "ads":
                 videos  = _extract_videos(ad)
                 copy    = _extract_copy(ad)
  
-                plats    = ad.get("publisher_platforms") or []
+                # ── FIX 1: fallback de plataformas quando a API retorna vazio ──
+                plats = ad.get("publisher_platforms") or []
+                if not plats:
+                    plats = ["facebook", "instagram"]
+ 
                 has_video = bool(videos) or (ad.get("media_type") or "").upper() == "VIDEO"
                 has_cards = len(cards) > 1
  
@@ -2990,14 +2972,12 @@ elif st.session_state.pagina == "ads":
                 elif images:    fmt = "Imagem 🖼️"
                 else:           fmt = "Texto 📝"
  
-                # Detecta se é anúncio dinâmico
                 is_dynamic_ad = (
                     _is_dynamic(copy["body"]) or
                     _is_dynamic(copy["title"]) or
                     _is_dynamic(copy["desc"])
                 )
  
-                # Limpa copies dinâmicos
                 body_clean  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
                 title_clean = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
                 desc_clean  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
@@ -3010,7 +2990,6 @@ elif st.session_state.pagina == "ads":
                     imp_str = str(imp) if imp else ""
  
                 start_raw = (ad.get("ad_delivery_start_time") or "")[:10]
-                # Formata data para dd/mm/yyyy
                 if start_raw and len(start_raw) == 10:
                     try:
                         dt_obj = _dt.datetime.strptime(start_raw, "%Y-%m-%d")
@@ -3020,8 +2999,8 @@ elif st.session_state.pagina == "ads":
                 else:
                     start_fmt = ""
  
-                ad_id     = str(ad.get("id") or ad.get("ad_archive_id") or "")
-                snap_url  = (
+                ad_id    = str(ad.get("id") or ad.get("ad_archive_id") or "")
+                snap_url = (
                     f"https://www.facebook.com/ads/library/?id={ad_id}"
                     if ad_id else (ad.get("ad_snapshot_url") or "")
                 )
@@ -3254,7 +3233,7 @@ html, body { background: transparent; overflow: hidden; }
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
     # ------------------------------------------------------------------
-    # render_ads_empresa  — cards estilo Meta Ad Library
+    # render_ads_empresa — cards estilo Meta Ad Library
     # ------------------------------------------------------------------
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3290,7 +3269,7 @@ html, body { background: transparent; overflow: hidden; }
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
  
-        # ── Header da empresa ──────────────────────────────────────────
+        # ── Header da empresa
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3324,7 +3303,7 @@ html, body { background: transparent; overflow: hidden; }
             )
             return
  
-        # ── Filtros ────────────────────────────────────────────────────
+        # ── Filtros
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
         with fcol1:
             busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…",
@@ -3356,12 +3335,11 @@ html, body { background: transparent; overflow: hidden; }
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
-        # ── Estatísticas ───────────────────────────────────────────────
-        n_video   = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
-        n_imagem  = sum(1 for a in ads_f if "Imagem"    in a["formato"])
+        # ── Estatísticas
+        n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
+        n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
-        n_dynamic = sum(1 for a in ads_f if a.get("is_dynamic"))
-        n_outros  = len(ads_f) - n_video - n_imagem - n_carrossel
+        n_dynamic   = sum(1 for a in ads_f if a.get("is_dynamic"))
  
         st.markdown(f"""
         <div style='display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap'>
@@ -3380,7 +3358,7 @@ html, body { background: transparent; overflow: hidden; }
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
  
-        # ── Cards estilo Meta Ad Library ───────────────────────────────
+        # ── Cards estilo Meta Ad Library
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
@@ -3391,21 +3369,20 @@ html, body { background: transparent; overflow: hidden; }
                 is_dyn      = ad.get("is_dynamic", False)
                 ad_id_short = ad.get("id", "")[:15] + "…" if len(ad.get("id","")) > 15 else ad.get("id","")
                 plats       = ad.get("plataformas") or []
-                plat_names  = _plat_icons(plats)   # lista de strings ["Facebook", "Instagram"]
+                plat_names  = _plat_icons(plats)
                 plat_js     = _json.dumps(plat_names)
                 data_inicio = ad.get("data_inicio", "")
                 impressoes  = ad.get("impressoes", "")
  
-                # ── Texto do copy ───────────────────────────────────
-                body    = ad.get("body")    or ""
-                title   = ad.get("title")   or ""
+                body    = ad.get("body")        or ""
+                title   = ad.get("title")       or ""
                 desc    = ad.get("description") or ""
-                cta     = ad.get("cta")     or ""
+                cta     = ad.get("cta")         or ""
  
-                # ── Bloco de mídia ──────────────────────────────────
-                uid = f"{safe_key(ck)}_{j}"
+                uid     = f"{safe_key(ck)}_{j}"
                 srcs_js = _json.dumps(images[:3]) if images else "[]"
  
+                # ── Bloco de mídia
                 if videos:
                     if snap_url:
                         media_block = f"""
@@ -3464,7 +3441,7 @@ function imgFallback_{uid}(img) {{
 }}
 </script>"""
                 else:
-                    # Sem mídia — placeholder elegante
+                    # Sem mídia — placeholder com link direto para o Ad Library
                     media_block = f"""
 <div class="media-block no-media-block" {'onclick="window.open(\'' + snap_url + '\',\'_blank\')"' if snap_url else ''} style="{'cursor:pointer;' if snap_url else ''}">
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
@@ -3475,33 +3452,45 @@ function imgFallback_{uid}(img) {{
     <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;font-family:DM Sans,sans-serif;">{'Ver criativo →' if snap_url else 'Sem criativo disponível'}</span>
 </div>"""
  
-                # ── CTA label amigável ────────────────────────────
+                # ── CTA label amigável
                 cta_labels = {
-                    "LEARN_MORE": "Saiba Mais",
-                    "SIGN_UP": "Cadastre-se",
-                    "CONTACT_US": "Fale Conosco",
-                    "GET_QUOTE": "Solicitar Orçamento",
-                    "BOOK_TRAVEL": "Reservar",
-                    "WHATSAPP_MESSAGE": "Enviar Mensagem",
-                    "SEND_WHATSAPP_MESSAGE": "WhatsApp",
-                    "MESSAGE_PAGE": "Enviar Mensagem",
-                    "SHOP_NOW": "Comprar Agora",
-                    "DOWNLOAD": "Baixar",
-                    "WATCH_MORE": "Ver Mais",
-                    "APPLY_NOW": "Candidatar-se",
-                    "GET_OFFER": "Ver Oferta",
-                    "SUBSCRIBE": "Assinar",
-                    "CALL_NOW": "Ligar Agora",
-                    "SEND_MESSAGE": "Enviar Mensagem",
-                    "GET_DIRECTIONS": "Como Chegar",
-                    "BUY_NOW": "Comprar",
-                    "DONATE": "Doar",
-                    "OPEN_LINK": "Abrir Link",
-                    "NO_BUTTON": "",
+                    "LEARN_MORE":              "Saiba Mais",
+                    "SIGN_UP":                 "Cadastre-se",
+                    "CONTACT_US":              "Fale Conosco",
+                    "GET_QUOTE":               "Solicitar Orçamento",
+                    "BOOK_TRAVEL":             "Reservar",
+                    "WHATSAPP_MESSAGE":        "Enviar Mensagem",
+                    "SEND_WHATSAPP_MESSAGE":   "WhatsApp",
+                    "MESSAGE_PAGE":            "Enviar Mensagem",
+                    "SHOP_NOW":                "Comprar Agora",
+                    "DOWNLOAD":                "Baixar",
+                    "WATCH_MORE":              "Ver Mais",
+                    "APPLY_NOW":               "Candidatar-se",
+                    "GET_OFFER":               "Ver Oferta",
+                    "SUBSCRIBE":               "Assinar",
+                    "CALL_NOW":                "Ligar Agora",
+                    "SEND_MESSAGE":            "Enviar Mensagem",
+                    "GET_DIRECTIONS":          "Como Chegar",
+                    "BUY_NOW":                 "Comprar",
+                    "DONATE":                  "Doar",
+                    "OPEN_LINK":               "Abrir Link",
+                    "NO_BUTTON":               "",
                 }
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
-                # ── HTML do card ──────────────────────────────────
+                # ── Calcula altura dinâmica do card
+                # Base: status(44) + meta(52) + copy_section(~110) + cta_footer(46) + padding
+                # Com imagem: +220; com video: +200; sem mídia: +100
+                # Com impressoes: +32; com copy longa: +30 extra
+                h_base    = 44 + 52 + 46 + 32  # status + meta + cta + margins
+                h_copy    = 130 if (body or title or desc) else 80
+                h_copy   += 30 if body and len(body) > 200 else 0  # "ver mais"
+                h_media   = 230 if images else (210 if videos else 110)
+                h_imp     = 32 if impressoes else 0
+                h_padding = 40  # folga generosa para garantir que nada seja cortado
+                card_height = h_base + h_copy + h_media + h_imp + h_padding
+ 
+                # ── HTML do card
                 card_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -3514,7 +3503,8 @@ html, body {{
     -webkit-font-smoothing: antialiased;
     overflow: visible;
 }}
-body {{ padding-bottom: 4px; }}
+/* FIX 3: padding inferior generoso para nunca cortar o CTA */
+body {{ padding-bottom: 20px; }}
  
 .card {{
     background: #fff;
@@ -3554,12 +3544,12 @@ body {{ padding-bottom: 4px; }}
 .ad-id {{
     font-size: 10px;
     color: #8a8d91;
-    font-family: 'DM Mono', monospace;
+    font-family: monospace;
 }}
  
 /* ── META INFO ── */
 .meta-info {{
-    padding: 6px 14px 8px;
+    padding: 8px 14px 10px;
     border-bottom: 1px solid #f0f2f5;
     background: #fafbfc;
 }}
@@ -3569,11 +3559,12 @@ body {{ padding-bottom: 4px; }}
     gap: 6px;
     font-size: 11px;
     color: #65676b;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
     flex-wrap: wrap;
 }}
+.meta-row:last-child {{ margin-bottom: 0; }}
 .meta-label {{
-    font-weight: 600;
+    font-weight: 700;
     color: #444950;
     flex-shrink: 0;
 }}
@@ -3581,6 +3572,17 @@ body {{ padding-bottom: 4px; }}
     display: flex;
     align-items: center;
     gap: 5px;
+    flex-wrap: wrap;
+}}
+.plat-badge {{
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 600;
 }}
 .dynamic-badge {{
     display: inline-flex;
@@ -3693,8 +3695,9 @@ body {{ padding-bottom: 4px; }}
 .video-block:hover .video-play-icon {{
     transform: scale(1.1);
 }}
+/* FIX 2: no-media maior para o link ficar mais visível */
 .no-media-block {{
-    height: 100px;
+    height: 120px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -3702,6 +3705,7 @@ body {{ padding-bottom: 4px; }}
     background: #f7f8fa;
     border-top: 1px solid #f0f2f5;
     border-bottom: 1px solid #f0f2f5;
+    gap: 8px;
 }}
  
 /* ── CTA FOOTER ── */
@@ -3709,11 +3713,11 @@ body {{ padding-bottom: 4px; }}
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px;
+    padding: 12px 14px;
     background: #f7f8fa;
     border-top: 1px solid #e4e6ea;
     gap: 10px;
-    min-height: 46px;
+    min-height: 50px;
 }}
 .cta-domain {{
     font-size: 11px;
@@ -3730,7 +3734,7 @@ body {{ padding-bottom: 4px; }}
     color: #050505;
     border: none;
     border-radius: 6px;
-    padding: 7px 14px;
+    padding: 8px 16px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -3745,7 +3749,7 @@ body {{ padding-bottom: 4px; }}
  
 /* ── IMPRESSOES ── */
 .imp-bar {{
-    padding: 6px 14px;
+    padding: 7px 14px;
     font-size: 11px;
     color: #15803d;
     font-weight: 600;
@@ -3765,12 +3769,12 @@ body {{ padding-bottom: 4px; }}
  
     <!-- META INFO -->
     <div class="meta-info">
-        {f'<div class="meta-row"><span class="meta-label">Veiculação iniciada em</span>&nbsp;{data_inicio}</div>' if data_inicio else ''}
-        <div class="meta-row" id="plat_row_{uid}">
-            <span class="meta-label">Plataformas</span>
+        {f'<div class="meta-row"><span class="meta-label">Início:&nbsp;</span>{data_inicio}</div>' if data_inicio else ''}
+        <div class="meta-row">
+            <span class="meta-label">Plataformas:&nbsp;</span>
             <span id="plat_icons_{uid}" class="plat-icons">—</span>
         </div>
-        {f'<div class="meta-row"><span class="meta-label">Impressões</span>&nbsp;{impressoes}</div>' if impressoes else ''}
+        {f'<div class="meta-row"><span class="meta-label">Impressões:&nbsp;</span>{impressoes}</div>' if impressoes else ''}
     </div>
  
     <!-- COPY SECTION -->
@@ -3784,15 +3788,15 @@ body {{ padding-bottom: 4px; }}
         </div>
  
         {f'''<div>
-          <div class="copy-body" id="body_{uid}">
+          <div class="copy-body" id="cbody_{uid}">
             <span id="body_short_{uid}">{_truncar(body, 200).replace(chr(10), "<br>")}</span>
             <span id="body_full_{uid}" style="display:none">{body.replace(chr(10), "<br>")}</span>
-            {'<span class="ver-mais" onclick="toggleBody(\''''  + uid + '\')">Ver mais</span>' if len(body) > 200 else ''}
+            {'<span class="ver-mais" onclick="toggleBody(\'' + uid + '\')">Ver mais</span>' if len(body) > 200 else ''}
           </div>
         ''' if body else ''}
         {f'<div class="copy-title">{title}</div>' if title else ''}
         {f'<div class="copy-desc">{_truncar(desc, 140)}</div>' if desc else ''}
-        {'<div class="no-copy">Sem copy disponível.<br><small style="color:#9ca3af">Clique em \"Ver criativo\" para ver o anúncio completo.</small></div>' if not body and not title and not desc else ''}
+        {'<div class="no-copy">Sem copy disponível.<br><small style="color:#9ca3af">Clique em &ldquo;Ver criativo&rdquo; para ver o anúncio completo.</small></div>' if not body and not title and not desc else ''}
     </div>
  
     <!-- MEDIA -->
@@ -3806,20 +3810,20 @@ body {{ padding-bottom: 4px; }}
         </a>
     </div>
  
-    <!-- IMPRESSÕES BAR (se hover) -->
+    <!-- IMPRESSÕES BAR -->
     {f'<div class="imp-bar">👁 {impressoes} impressões estimadas</div>' if impressoes else ''}
  
 </div>
  
 <script>
-// ── Platform icons
+// ── Platform badges com cores corretas
 (function() {{
     var plats = {plat_js};
     var platColors = {{
-        "Facebook": "#1877F2",
-        "Instagram": "#E1306C",
-        "Messenger": "#0099FF",
-        "WhatsApp": "#25D366",
+        "Facebook":         "#1877F2",
+        "Instagram":        "#E1306C",
+        "Messenger":        "#0099FF",
+        "WhatsApp":         "#25D366",
         "Audience Network": "#6b7280"
     }};
     var el = document.getElementById('plat_icons_{uid}');
@@ -3827,15 +3831,15 @@ body {{ padding-bottom: 4px; }}
     if (!plats || plats.length === 0) {{ el.textContent = '—'; return; }}
     el.innerHTML = plats.map(function(p) {{
         var color = platColors[p] || '#6b7280';
-        return '<span style="display:inline-flex;align-items:center;gap:3px;background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;color:' + color + '">' + p + '</span>';
-    }}).join(' ');
+        return '<span class="plat-badge" style="color:' + color + '">' + p + '</span>';
+    }}).join('');
 }})();
  
 // ── Ver mais / menos toggle
 function toggleBody(uid) {{
-    var s = document.getElementById('body_short_' + uid);
-    var f = document.getElementById('body_full_' + uid);
-    var btn = document.querySelector('#body_' + uid + ' .ver-mais');
+    var s   = document.getElementById('body_short_' + uid);
+    var f   = document.getElementById('body_full_'  + uid);
+    var btn = document.querySelector('#cbody_' + uid + ' .ver-mais');
     if (!s || !f) return;
     var expanded = f.style.display !== 'none';
     s.style.display = expanded ? '' : 'none';
@@ -3844,32 +3848,33 @@ function toggleBody(uid) {{
     setTimeout(ajustarAltura, 50);
 }}
  
-// ── Altura do iframe
+// ── Ajuste dinâmico da altura do iframe
 function ajustarAltura() {{
     var card = document.querySelector('.card');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
+        try {{ if (f.contentWindow === window) f.style.height = (h + 24) + 'px'; }} catch(e) {{}}
     }});
 }}
 document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
 document.querySelectorAll('img').forEach(function(img) {{
-    img.addEventListener('load', ajustarAltura);
+    img.addEventListener('load',  ajustarAltura);
     img.addEventListener('error', ajustarAltura);
 }});
-setTimeout(ajustarAltura, 300);
-setTimeout(ajustarAltura, 800);
-setTimeout(ajustarAltura, 1500);
+setTimeout(ajustarAltura, 200);
+setTimeout(ajustarAltura, 600);
+setTimeout(ajustarAltura, 1200);
 </script>
 </body>
 </html>"""
  
-                components.html(card_html, height=520, scrolling=False)
+                # FIX 2: altura calculada dinamicamente por tipo de card
+                components.html(card_html, height=card_height, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
-        # ── Análise IA ─────────────────────────────────────────────────
+        # ── Análise IA
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
         chave_ia = f"ia_ads_{safe_key(ck)}"
