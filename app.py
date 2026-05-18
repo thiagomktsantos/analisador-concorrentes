@@ -3319,9 +3319,21 @@ html, body { background:transparent; overflow:hidden; }
                 srcs_js     = _json.dumps(images[:3]) if images else "[]"
  
                 # Bloco de mídia
-                if videos:
-                    media_block = f"""
-<div class="media-block video-block" {'onclick="window.open(\\''+snap_url+'\\',\\'_blank\\')"' if snap_url else ''} style="{'cursor:pointer;' if snap_url else ''}">
+                # Pre-compute onclick/style strings (backslashes can't be in f-string expressions)
+if snap_url:
+    video_onclick = f'onclick="window.open(\'{snap_url}\',\'_blank\')"'
+    video_style   = "cursor:pointer;"
+    no_media_onclick = f'onclick="window.open(\'{snap_url}\',\'_blank\')"'
+    no_media_style   = "cursor:pointer;"
+else:
+    video_onclick    = ""
+    video_style      = ""
+    no_media_onclick = ""
+    no_media_style   = ""
+
+if videos:
+    media_block = f"""
+<div class="media-block video-block" {video_onclick} style="{video_style}">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
@@ -3331,8 +3343,8 @@ html, body { background:transparent; overflow:hidden; }
     </div>
     <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
-                elif images:
-                    media_block = f"""
+elif images:
+    media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}">
     <img id="mimg_{uid}" src="{images[0]}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
@@ -3357,9 +3369,9 @@ function imgFallback_{uid}(img){{
     else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
-                else:
-                    media_block = f"""
-<div class="media-block no-media-block" {'onclick="window.open(\''+snap_url+'\',\'_blank\')"' if snap_url else ''} style="{'cursor:pointer;' if snap_url else ''}">
+else:
+    media_block = f"""
+<div class="media-block no-media-block" {no_media_onclick} style="{no_media_style}">
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
