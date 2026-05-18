@@ -2718,16 +2718,17 @@ elif st.session_state.pagina == "ads":
  
         try:
             params = {
-                "engine":      "facebook_ads_library",
+                "engine":      "meta_ad_library",
                 "api_key":     api_key,
                 "ad_type":     "ALL",
                 "ad_reached_countries": "BR",
                 "media_type":  "all",
+                "active_status":   "all",
             }
  
             # Se for numérico, filtra por page_id; senão busca por nome
             if query.strip().isdigit():
-                params["view_all_page_id"] = query.strip()
+                params["page_id"] = query.strip()
             else:
                 params["q"] = query.strip()
  
