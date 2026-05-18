@@ -3301,8 +3301,8 @@ def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
 
     except Exception as e:
         return [], str(e)
-Agora melhore o bloco de inputs para mostrar o Page ID encontrado e orientar o usuário:
-python    # ── INPUTS
+
+# ── INPUTS
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
         "letter-spacing:1px;margin-bottom:4px'>Informe o Page ID ou nome de cada empresa</div>",
