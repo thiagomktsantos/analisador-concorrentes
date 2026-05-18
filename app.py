@@ -2713,14 +2713,19 @@ elif st.session_state.pagina == "ads":
         return ' '.join(lines)
  
     def _plat_icons(plats):
+        # Retorna lista de dicts para ser serializada como JSON e renderizada no iframe via JS
         icons = {
-            "facebook":         '<svg width="14" height="14" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
-            "instagram":        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_plat" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_plat)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
-            "messenger":        '<svg width="14" height="14" viewBox="0 0 24 24" fill="#0099FF"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111C24 4.975 18.627 0 12 0zm1.193 14.963l-3.056-3.259-5.963 3.259 6.559-6.963 3.13 3.259 5.889-3.259-6.559 6.963z"/></svg>',
-            "audience_network": '<svg width="14" height="14" viewBox="0 0 24 24" fill="#6b7280"><circle cx="12" cy="12" r="10" stroke="#6b7280" stroke-width="2" fill="none"/><line x1="2" y1="12" x2="22" y2="12" stroke="#6b7280" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#6b7280" stroke-width="2" fill="none"/></svg>',
-            "whatsapp":         '<svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>',
+            "facebook":         {"label": "Facebook",         "color": "#1877F2", "emoji": "f"},
+            "instagram":        {"label": "Instagram",        "color": "#E1306C", "emoji": "ig"},
+            "messenger":        {"label": "Messenger",        "color": "#0099FF", "emoji": "m"},
+            "audience_network": {"label": "Audience Network", "color": "#6b7280", "emoji": "an"},
+            "whatsapp":         {"label": "WhatsApp",         "color": "#25D366", "emoji": "w"},
         }
-        return " ".join(icons.get(p, f'<span style="font-size:11px;color:#6b7280">{p}</span>') for p in (plats or []))
+        result = []
+        for p in (plats or []):
+            info = icons.get(p.lower(), {"label": p.capitalize(), "color": "#6b7280", "emoji": p[:2]})
+            result.append(info["label"])
+        return result  # lista de strings
  
     # ------------------------------------------------------------------
     # Extrai de forma recursiva qualquer campo de um dict aninhado
@@ -3386,7 +3391,8 @@ html, body { background: transparent; overflow: hidden; }
                 is_dyn      = ad.get("is_dynamic", False)
                 ad_id_short = ad.get("id", "")[:15] + "…" if len(ad.get("id","")) > 15 else ad.get("id","")
                 plats       = ad.get("plataformas") or []
-                plat_icons  = _plat_icons(plats)
+                plat_names  = _plat_icons(plats)   # lista de strings ["Facebook", "Instagram"]
+                plat_js     = _json.dumps(plat_names)
                 data_inicio = ad.get("data_inicio", "")
                 impressoes  = ad.get("impressoes", "")
  
@@ -3650,6 +3656,15 @@ body {{ padding-bottom: 4px; }}
     color: #bcc0c4;
     font-style: italic;
 }}
+.ver-mais {{
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1877F2;
+    cursor: pointer;
+}}
+.ver-mais:hover {{ text-decoration: underline; }}
  
 /* ── MEDIA BLOCK ── */
 .media-block {{
@@ -3750,12 +3765,12 @@ body {{ padding-bottom: 4px; }}
  
     <!-- META INFO -->
     <div class="meta-info">
-        {f'<div class="meta-row"><span class="meta-label">Veiculação iniciada em</span>{data_inicio}</div>' if data_inicio else ''}
-        <div class="meta-row">
+        {f'<div class="meta-row"><span class="meta-label">Veiculação iniciada em</span>&nbsp;{data_inicio}</div>' if data_inicio else ''}
+        <div class="meta-row" id="plat_row_{uid}">
             <span class="meta-label">Plataformas</span>
-            <span class="plat-icons">{plat_icons}</span>
+            <span id="plat_icons_{uid}" class="plat-icons">—</span>
         </div>
-        {f'<div class="meta-row"><span class="meta-label">Impressões</span>{impressoes}</div>' if impressoes else ''}
+        {f'<div class="meta-row"><span class="meta-label">Impressões</span>&nbsp;{impressoes}</div>' if impressoes else ''}
     </div>
  
     <!-- COPY SECTION -->
@@ -3768,10 +3783,16 @@ body {{ padding-bottom: 4px; }}
             </div>
         </div>
  
-        {f'<div class="copy-body">{_truncar(body, 220)}</div>' if body else ''}
-        {f'<div class="copy-title">{_truncar(title, 90)}</div>' if title else ''}
-        {f'<div class="copy-desc">{_truncar(desc, 100)}</div>' if desc else ''}
-        {'<div class="no-copy">Sem copy disponível para este anúncio.</div>' if not body and not title and not desc else ''}
+        {f'''<div>
+          <div class="copy-body" id="body_{uid}">
+            <span id="body_short_{uid}">{_truncar(body, 200).replace(chr(10), "<br>")}</span>
+            <span id="body_full_{uid}" style="display:none">{body.replace(chr(10), "<br>")}</span>
+            {'<span class="ver-mais" onclick="toggleBody(\''''  + uid + '\')">Ver mais</span>' if len(body) > 200 else ''}
+          </div>
+        ''' if body else ''}
+        {f'<div class="copy-title">{title}</div>' if title else ''}
+        {f'<div class="copy-desc">{_truncar(desc, 140)}</div>' if desc else ''}
+        {'<div class="no-copy">Sem copy disponível.<br><small style="color:#9ca3af">Clique em \"Ver criativo\" para ver o anúncio completo.</small></div>' if not body and not title and not desc else ''}
     </div>
  
     <!-- MEDIA -->
@@ -3780,7 +3801,9 @@ body {{ padding-bottom: 4px; }}
     <!-- CTA FOOTER -->
     <div class="cta-footer">
         <span class="cta-domain">{ad.get("caption") or (snap_url.replace("https://","").split("/")[0] if snap_url else "")}</span>
-        {f'<a href="{snap_url}" target="_blank" class="cta-btn">{cta_display or "Ver detalhes"}</a>' if snap_url else (f'<span class="cta-btn" style="opacity:0.5;cursor:default">{cta_display}</span>' if cta_display else '')}
+        <a href="{snap_url or '#'}" target="_blank" class="cta-btn" {'style="pointer-events:none;opacity:0.4"' if not snap_url else ''}>
+            {cta_display or "Ver detalhes"}
+        </a>
     </div>
  
     <!-- IMPRESSÕES BAR (se hover) -->
@@ -3789,6 +3812,39 @@ body {{ padding-bottom: 4px; }}
 </div>
  
 <script>
+// ── Platform icons
+(function() {{
+    var plats = {plat_js};
+    var platColors = {{
+        "Facebook": "#1877F2",
+        "Instagram": "#E1306C",
+        "Messenger": "#0099FF",
+        "WhatsApp": "#25D366",
+        "Audience Network": "#6b7280"
+    }};
+    var el = document.getElementById('plat_icons_{uid}');
+    if (!el) return;
+    if (!plats || plats.length === 0) {{ el.textContent = '—'; return; }}
+    el.innerHTML = plats.map(function(p) {{
+        var color = platColors[p] || '#6b7280';
+        return '<span style="display:inline-flex;align-items:center;gap:3px;background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;color:' + color + '">' + p + '</span>';
+    }}).join(' ');
+}})();
+ 
+// ── Ver mais / menos toggle
+function toggleBody(uid) {{
+    var s = document.getElementById('body_short_' + uid);
+    var f = document.getElementById('body_full_' + uid);
+    var btn = document.querySelector('#body_' + uid + ' .ver-mais');
+    if (!s || !f) return;
+    var expanded = f.style.display !== 'none';
+    s.style.display = expanded ? '' : 'none';
+    f.style.display = expanded ? 'none' : '';
+    if (btn) btn.textContent = expanded ? 'Ver mais' : 'Ver menos';
+    setTimeout(ajustarAltura, 50);
+}}
+ 
+// ── Altura do iframe
 function ajustarAltura() {{
     var card = document.querySelector('.card');
     if (!card) return;
