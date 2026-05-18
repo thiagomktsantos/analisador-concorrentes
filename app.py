@@ -2687,9 +2687,64 @@ elif st.session_state.pagina == "ads":
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
  
-    if "ads_cache"     not in st.session_state: st.session_state.ads_cache     = {}
-    if "ads_erro"      not in st.session_state: st.session_state.ads_erro      = {}
-    if "ads_raw_debug" not in st.session_state: st.session_state.ads_raw_debug = {}
+    # ------------------------------------------------------------------
+    # SISTEMA DE CACHE PERSISTENTE
+    #
+    # Fluxo:
+    #   1. Na primeira visita da sessão, carrega do Supabase (coluna ads_cache).
+    #   2. Os dados ficam em st.session_state.ads_cache durante toda a sessão.
+    #   3. A API externa SÓ é chamada quando o usuário clica em
+    #      "Buscar / Atualizar Anúncios" — filtros, abas e mudanças de
+    #      design nunca disparam nova requisição.
+    #   4. Após cada busca bem-sucedida o cache é gravado de volta no Supabase.
+    #   5. Um badge mostra se o cache está "fresco" (< 24 h) ou antigo.
+    # ------------------------------------------------------------------
+ 
+    CACHE_TTL_HORAS = 24
+ 
+    def salvar_cache_ads(dados: dict):
+        try:
+            supabase.table("ci_dados").upsert(
+                {"user_id": st.session_state.user.id, "ads_cache": dados},
+                on_conflict="user_id",
+            ).execute()
+        except Exception as e:
+            st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
+ 
+    def carregar_cache_ads() -> dict:
+        try:
+            res = (
+                supabase.table("ci_dados")
+                .select("ads_cache")
+                .eq("user_id", st.session_state.user.id)
+                .execute()
+            )
+            if res.data and res.data[0].get("ads_cache"):
+                return res.data[0]["ads_cache"]
+        except Exception:
+            pass
+        return {}
+ 
+    def cache_esta_fresco(ts_str: str) -> bool:
+        if not ts_str:
+            return False
+        try:
+            ts = _dt.datetime.strptime(ts_str, "%d/%m/%Y %H:%M")
+            return (_dt.datetime.now() - ts).total_seconds() < CACHE_TTL_HORAS * 3600
+        except Exception:
+            return False
+ 
+    # Carrega do Supabase apenas uma vez por sessão
+    if "ads_cache" not in st.session_state:
+        st.session_state.ads_cache = carregar_cache_ads()
+    if "ads_erro" not in st.session_state:
+        st.session_state.ads_erro = {}
+    if "ads_raw_debug" not in st.session_state:
+        st.session_state.ads_raw_debug = {}
+ 
+    # ------------------------------------------------------------------
+    # HELPERS
+    # ------------------------------------------------------------------
  
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
@@ -2710,208 +2765,116 @@ elif st.session_state.pagina == "ads":
         return ' '.join(lines)
  
     def _plat_icons(plats):
-        icons = {
-            "facebook":         {"label": "Facebook",         "color": "#1877F2"},
-            "instagram":        {"label": "Instagram",        "color": "#E1306C"},
-            "messenger":        {"label": "Messenger",        "color": "#0099FF"},
-            "audience_network": {"label": "Audience Network", "color": "#6b7280"},
-            "whatsapp":         {"label": "WhatsApp",         "color": "#25D366"},
+        mapa = {
+            "facebook":         "Facebook",
+            "instagram":        "Instagram",
+            "messenger":        "Messenger",
+            "audience_network": "Audience Network",
+            "whatsapp":         "WhatsApp",
         }
-        result = []
-        for p in (plats or []):
-            info = icons.get(p.lower(), {"label": p.capitalize(), "color": "#6b7280"})
-            result.append(info["label"])
-        return result
- 
-    def _deep_get(obj, *keys, default=""):
-        for k in keys:
-            if isinstance(obj, dict):
-                obj = obj.get(k, default)
-            elif isinstance(obj, list):
-                try:
-                    obj = obj[int(k)]
-                except Exception:
-                    return default
-            else:
-                return default
-        return obj or default
+        return [mapa.get(p.lower(), p.capitalize()) for p in (plats or [])]
  
     def _extract_images(ad: dict) -> list:
         imgs = []
         seen = set()
- 
         def add(url):
             url = (url or "").strip()
             if url and url not in seen and url.startswith("http"):
-                seen.add(url)
-                imgs.append(url)
- 
+                seen.add(url); imgs.append(url)
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
- 
-        for k in ("image_url", "original_image_url", "resized_image_url",
-                  "thumbnail_url", "preview_image_url", "full_picture"):
+        for k in ("image_url","original_image_url","resized_image_url","thumbnail_url","preview_image_url","full_picture"):
             add(ad.get(k))
- 
-        for k in ("image_url", "original_image_url", "resized_image_url",
-                  "thumbnail_url", "background_image"):
+        for k in ("image_url","original_image_url","resized_image_url","thumbnail_url","background_image"):
             add(snapshot.get(k))
- 
         for card in cards:
-            if not isinstance(card, dict):
-                continue
-            for k in ("original_image_url", "image_url", "resized_image_url",
-                      "thumbnail_url", "picture"):
+            if not isinstance(card, dict): continue
+            for k in ("original_image_url","image_url","resized_image_url","thumbnail_url","picture"):
                 add(card.get(k))
- 
         for obj in (ad.get("creative_images") or []):
             if isinstance(obj, dict):
-                for k in ("original_image_url", "image_url", "url"):
-                    add(obj.get(k))
-            elif isinstance(obj, str):
-                add(obj)
- 
+                for k in ("original_image_url","image_url","url"): add(obj.get(k))
+            elif isinstance(obj, str): add(obj)
         for obj in (ad.get("images") or []):
             if isinstance(obj, dict):
-                for k in ("original_image_url", "image_url", "url", "src"):
-                    add(obj.get(k))
-            elif isinstance(obj, str):
-                add(obj)
- 
+                for k in ("original_image_url","image_url","url","src"): add(obj.get(k))
+            elif isinstance(obj, str): add(obj)
         for obj in (ad.get("ad_creative_images") or []):
             if isinstance(obj, dict):
-                for k in ("original_image_url", "image_url", "url"):
-                    add(obj.get(k))
-            elif isinstance(obj, str):
-                add(obj)
- 
+                for k in ("original_image_url","image_url","url"): add(obj.get(k))
+            elif isinstance(obj, str): add(obj)
         return imgs
  
     def _extract_copy(ad: dict) -> dict:
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
- 
         def first_str(val):
             if isinstance(val, list):
                 for v in val:
-                    if v and isinstance(v, str) and v.strip():
-                        return v.strip()
-            if isinstance(val, str) and val.strip():
-                return val.strip()
+                    if v and isinstance(v, str) and v.strip(): return v.strip()
+            if isinstance(val, str) and val.strip(): return val.strip()
             return ""
- 
-        body = (
-            first_str(ad.get("ad_creative_bodies"))
-            or first_str(snapshot.get("body"))
-            or first_str(ad.get("body"))
-            or first_str(ad.get("message"))
-            or first_str(snapshot.get("message"))
-        )
- 
-        title = (
-            first_str(ad.get("ad_creative_link_titles"))
-            or first_str(snapshot.get("title"))
-            or first_str(ad.get("title"))
-            or first_str(snapshot.get("link_title"))
-        )
- 
-        desc = (
-            first_str(ad.get("ad_creative_link_descriptions"))
-            or first_str(snapshot.get("link_description"))
-            or first_str(ad.get("description"))
-            or first_str(snapshot.get("description"))
-        )
- 
-        cta = (
-            first_str(ad.get("cta_type"))
-            or first_str(snapshot.get("cta_type"))
-            or first_str(ad.get("call_to_action_type"))
-        )
- 
-        caption = (
-            first_str(snapshot.get("caption"))
-            or first_str(ad.get("caption"))
-        )
- 
+        body = (first_str(ad.get("ad_creative_bodies")) or first_str(snapshot.get("body"))
+                or first_str(ad.get("body")) or first_str(ad.get("message")) or first_str(snapshot.get("message")))
+        title = (first_str(ad.get("ad_creative_link_titles")) or first_str(snapshot.get("title"))
+                 or first_str(ad.get("title")) or first_str(snapshot.get("link_title")))
+        desc = (first_str(ad.get("ad_creative_link_descriptions")) or first_str(snapshot.get("link_description"))
+                or first_str(ad.get("description")) or first_str(snapshot.get("description")))
+        cta = (first_str(ad.get("cta_type")) or first_str(snapshot.get("cta_type"))
+               or first_str(ad.get("call_to_action_type")))
+        caption = first_str(snapshot.get("caption")) or first_str(ad.get("caption"))
         if not body and cards:
             for card in cards:
                 if isinstance(card, dict):
                     v = first_str(card.get("body") or card.get("message") or card.get("title") or "")
-                    if v:
-                        body = v
-                        break
- 
-        return {
-            "body":    body,
-            "title":   title,
-            "desc":    desc,
-            "cta":     cta,
-            "caption": caption,
-        }
+                    if v: body = v; break
+        return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
  
     def _extract_videos(ad: dict) -> list:
         vids = []
         seen = set()
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
- 
         def add(url):
             url = (url or "").strip()
             if url and url not in seen and url.startswith("http"):
-                seen.add(url)
-                vids.append(url)
- 
-        for k in ("video_hd_url", "video_sd_url", "video_url"):
-            add(ad.get(k))
-            add(snapshot.get(k))
- 
+                seen.add(url); vids.append(url)
+        for k in ("video_hd_url","video_sd_url","video_url"):
+            add(ad.get(k)); add(snapshot.get(k))
         for card in cards:
             if isinstance(card, dict):
-                for k in ("video_hd_url", "video_sd_url", "video_url"):
-                    add(card.get(k))
- 
+                for k in ("video_hd_url","video_sd_url","video_url"): add(card.get(k))
         return vids
+ 
+    # ------------------------------------------------------------------
+    # CHAMADAS DE API (executadas SOMENTE quando o usuário pede)
+    # ------------------------------------------------------------------
  
     def buscar_page_id(query: str):
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
-        if not api_key:
-            return None, "SEARCHAPI_KEY não configurada"
-        query_lower = query.lower().strip()
+        if not api_key: return None, "SEARCHAPI_KEY não configurada"
         try:
             r = requests.get(
                 "https://www.searchapi.io/api/v1/search",
-                params={
-                    "engine": "meta_ad_library",
-                    "api_key": api_key,
-                    "ad_type": "ALL",
-                    "ad_reached_countries": "BR",
-                    "q": query,
-                    "active_status": "active",
-                },
+                params={"engine":"meta_ad_library","api_key":api_key,"ad_type":"ALL",
+                        "ad_reached_countries":"BR","q":query,"active_status":"active"},
                 timeout=20,
             )
             data = r.json()
             ads  = data.get("ads", [])
-            if not ads:
-                return None, "Nenhum anúncio encontrado"
- 
+            if not ads: return None, "Nenhum anúncio encontrado"
             seen = {}
             for ad in ads:
-                pid   = str(ad.get("page_id") or "").strip()
+                pid = str(ad.get("page_id") or "").strip()
                 pname = (ad.get("page_name") or "").strip()
-                if pid and pid not in seen:
-                    seen[pid] = pname
- 
+                if pid and pid not in seen: seen[pid] = pname
+            ql = query.lower().strip()
             for pid, pname in seen.items():
-                if pname.lower() == query_lower:
-                    return pid, None
+                if pname.lower() == ql: return pid, None
             for pid, pname in seen.items():
-                if query_lower in pname.lower():
-                    return pid, None
+                if ql in pname.lower(): return pid, None
             for pid, pname in seen.items():
-                if pname.lower() in query_lower:
-                    return pid, None
- 
+                if pname.lower() in ql: return pid, None
             first_pid, first_name = next(iter(seen.items()))
             return first_pid, f"⚠️ Match aproximado: **'{first_name}'** (ID `{first_pid}`). Se incorreto, use o Page ID numérico."
         except Exception as e:
@@ -2919,121 +2882,113 @@ elif st.session_state.pagina == "ads":
  
     def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
-        if not api_key:
-            return [], [], "SEARCHAPI_KEY não configurada nos secrets."
+        if not api_key: return [], [], "SEARCHAPI_KEY não configurada nos secrets."
         try:
-            params = {
-                "engine":               "meta_ad_library",
-                "api_key":              api_key,
-                "ad_type":              "ALL",
-                "ad_reached_countries": "BR",
-                "media_type":           "all",
-                "active_status":        "all",
-            }
+            params = {"engine":"meta_ad_library","api_key":api_key,"ad_type":"ALL",
+                      "ad_reached_countries":"BR","media_type":"all","active_status":"all"}
             query = query.strip()
-            if query.isdigit():
-                params["page_id"] = query
-            else:
-                params["q"] = query
- 
+            if query.isdigit(): params["page_id"] = query
+            else:               params["q"]       = query
             r    = requests.get("https://www.searchapi.io/api/v1/search", params=params, timeout=20)
             data = r.json()
- 
-            if "error" in data:
-                return [], [], data["error"]
- 
+            if "error" in data: return [], [], data["error"]
             ads_raw = data.get("ads", [])
- 
             if not query.isdigit() and ads_raw:
-                q_lower = query.lower()
-                filtrado = [a for a in ads_raw if q_lower in (a.get("page_name") or "").lower()]
-                if filtrado:
-                    ads_raw = filtrado
- 
+                ql       = query.lower()
+                filtrado = [a for a in ads_raw if ql in (a.get("page_name") or "").lower()]
+                if filtrado: ads_raw = filtrado
             resultado = []
             for ad in ads_raw[:limit]:
                 snapshot = ad.get("snapshot") or {}
                 cards    = snapshot.get("cards") or []
- 
-                images  = _extract_images(ad)
-                videos  = _extract_videos(ad)
-                copy    = _extract_copy(ad)
- 
-                # ── FIX 1: fallback de plataformas quando a API retorna vazio ──
-                plats = ad.get("publisher_platforms") or []
-                if not plats:
-                    plats = ["facebook", "instagram"]
- 
+                images   = _extract_images(ad)
+                videos   = _extract_videos(ad)
+                copy     = _extract_copy(ad)
+                plats    = ad.get("publisher_platforms") or []
+                if not plats: plats = ["facebook", "instagram"]
                 has_video = bool(videos) or (ad.get("media_type") or "").upper() == "VIDEO"
                 has_cards = len(cards) > 1
- 
                 if has_video:   fmt = "Vídeo 🎬"
                 elif has_cards: fmt = "Carrossel 🎠"
                 elif images:    fmt = "Imagem 🖼️"
                 else:           fmt = "Texto 📝"
- 
-                is_dynamic_ad = (
-                    _is_dynamic(copy["body"]) or
-                    _is_dynamic(copy["title"]) or
-                    _is_dynamic(copy["desc"])
-                )
- 
-                body_clean  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
-                title_clean = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
-                desc_clean  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
- 
+                is_dyn     = _is_dynamic(copy["body"]) or _is_dynamic(copy["title"]) or _is_dynamic(copy["desc"])
+                body_c     = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
+                title_c    = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
+                desc_c     = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
                 imp = ad.get("impressions") or {}
                 if isinstance(imp, dict):
-                    lo, hi  = imp.get("lower_bound", ""), imp.get("upper_bound", "")
+                    lo, hi  = imp.get("lower_bound",""), imp.get("upper_bound","")
                     imp_str = f"{lo}–{hi}" if (lo or hi) else ""
-                else:
-                    imp_str = str(imp) if imp else ""
- 
+                else: imp_str = str(imp) if imp else ""
                 start_raw = (ad.get("ad_delivery_start_time") or "")[:10]
                 if start_raw and len(start_raw) == 10:
                     try:
-                        dt_obj = _dt.datetime.strptime(start_raw, "%Y-%m-%d")
-                        start_fmt = f"{dt_obj.day} de {['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][dt_obj.month-1]} de {dt_obj.year}"
-                    except:
-                        start_fmt = start_raw
-                else:
-                    start_fmt = ""
- 
+                        dto = _dt.datetime.strptime(start_raw, "%Y-%m-%d")
+                        start_fmt = f"{dto.day} de {['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][dto.month-1]} de {dto.year}"
+                    except: start_fmt = start_raw
+                else: start_fmt = ""
                 ad_id    = str(ad.get("id") or ad.get("ad_archive_id") or "")
-                snap_url = (
-                    f"https://www.facebook.com/ads/library/?id={ad_id}"
-                    if ad_id else (ad.get("ad_snapshot_url") or "")
-                )
- 
+                snap_url = f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else (ad.get("ad_snapshot_url") or "")
                 resultado.append({
-                    "id":           ad_id,
-                    "page_name":    ad.get("page_name") or "",
-                    "page_id":      str(ad.get("page_id") or ""),
-                    "body":         body_clean,
-                    "body_raw":     copy["body"],
-                    "title":        title_clean,
-                    "description":  desc_clean,
-                    "cta":          copy["cta"],
-                    "caption":      copy["caption"],
-                    "images":       images,
-                    "videos":       videos,
-                    "snapshot_url": snap_url,
-                    "data_inicio":  start_fmt,
-                    "data_raw":     start_raw,
-                    "impressoes":   imp_str,
-                    "plataformas":  plats,
-                    "formato":      fmt,
-                    "is_dynamic":   is_dynamic_ad,
+                    "id":ad_id,"page_name":ad.get("page_name") or "","page_id":str(ad.get("page_id") or ""),
+                    "body":body_c,"body_raw":copy["body"],"title":title_c,"description":desc_c,
+                    "cta":copy["cta"],"caption":copy["caption"],"images":images,"videos":videos,
+                    "snapshot_url":snap_url,"data_inicio":start_fmt,"data_raw":start_raw,
+                    "impressoes":imp_str,"plataformas":plats,"formato":fmt,"is_dynamic":is_dyn,
                 })
- 
             return resultado, ads_raw[:3], None
- 
         except Exception as e:
             return [], [], str(e)
  
-    SEARCHAPI_KEY = st.secrets.get("SEARCHAPI_KEY", "")
+    def executar_busca(empresas: list, query_values: dict):
+        """Chama a API e persiste o resultado no Supabase. Chamado APENAS pelo clique do usuário."""
+        erros  = {}
+        novos  = {}
+        debugs = {}
+        with st.status("Buscando anúncios...", expanded=True) as status:
+            for e in empresas:
+                ck    = e["nome"]
+                query = query_values.get(ck, "").strip()
+                if not query: continue
+                st.write(f"Buscando **{ck}** ({query})...")
+                page_id = query if query.isdigit() else None
+                if not query.isdigit():
+                    st.write(f"🔍 Resolvendo Page ID de **{ck}**...")
+                    page_id, aviso = buscar_page_id(query)
+                    if page_id:
+                        st.write(f"📌 Page ID encontrado: **{page_id}**")
+                        if aviso: st.warning(aviso)
+                    else:
+                        st.write("⚠️ Page ID não encontrado, buscando por nome...")
+                ads, raw, erro = buscar_ads_searchapi(page_id or query)
+                debugs[ck] = raw
+                if erro:
+                    erros[ck] = erro
+                    st.write(f"❌ {erro}")
+                else:
+                    novos[ck] = {
+                        "data":          ads,
+                        "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "nome":          ck,
+                        "query":         query,
+                        "page_id_usado": page_id or query,
+                    }
+                    st.write(f"✅ {len(ads)} anúncios encontrados")
+            status.update(label="✅ Busca concluída!", state="complete")
+        # Mescla: mantém dados de empresas que não foram rebuscadas
+        cache_atual = dict(st.session_state.ads_cache or {})
+        cache_atual.update(novos)
+        st.session_state.ads_cache     = cache_atual
+        st.session_state.ads_erro      = erros
+        st.session_state.ads_raw_debug = debugs
+        salvar_cache_ads(cache_atual)  # persiste no Supabase
+        st.rerun()
  
-    # ── Lista de empresas
+    # ------------------------------------------------------------------
+    # LISTA DE EMPRESAS
+    # ------------------------------------------------------------------
+ 
     todas_empresas = []
     if emp.get("nome"):
         todas_empresas.append({"nome": emp["nome"], "tipo": "minha", "idx": 0})
@@ -3041,7 +2996,26 @@ elif st.session_state.pagina == "ads":
         if c.get("nome"):
             todas_empresas.append({"nome": c["nome"], "tipo": "concorrente", "idx": i})
  
-    # ── Cabeçalho
+    # Pré-preenche queries da sessão (recupera do cache se existir)
+    for e in todas_empresas:
+        sk    = safe_key(e["nome"])
+        chave = f"_query_saved_{sk}"
+        if not st.session_state.get(chave, "").strip():
+            cached_entry = st.session_state.ads_cache.get(e["nome"], {})
+            if cached_entry.get("query"):
+                st.session_state[chave] = cached_entry["query"]
+            else:
+                if e["tipo"] == "minha":
+                    fonte = emp.get("fb_page") or emp.get("instagram","").lstrip("@") or emp.get("nome","")
+                else:
+                    cd    = concs[e["idx"]]
+                    fonte = cd.get("ads_id") or cd.get("fb_page") or cd.get("instagram","").lstrip("@") or cd.get("nome","")
+                if fonte: st.session_state[chave] = fonte.strip()
+ 
+    # ------------------------------------------------------------------
+    # CABEÇALHO
+    # ------------------------------------------------------------------
+ 
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3049,8 +3023,8 @@ elif st.session_state.pagina == "ads":
     font-family: 'Animo';
     src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { background: transparent; overflow: hidden; }
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; overflow:hidden; }
 .titulo { font-family:'Animo','DM Sans',sans-serif; font-size:32px; font-weight:700; color:#1a2e4a; text-transform:uppercase; margin:0 0 6px 0; letter-spacing:0.5px; }
 .sub    { font-family:'DM Sans',sans-serif; font-size:14px; color:#6b7280; }
 </style>
@@ -3063,23 +3037,32 @@ html, body { background: transparent; overflow: hidden; }
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
         st.stop()
  
-    if not SEARCHAPI_KEY:
+    if not st.secrets.get("SEARCHAPI_KEY", ""):
         st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
  
-    # ── Pré-preenche queries
-    for e in todas_empresas:
-        sk    = safe_key(e["nome"])
-        chave = f"_query_saved_{sk}"
-        if not st.session_state.get(chave, "").strip():
-            if e["tipo"] == "minha":
-                fonte = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
-            else:
-                cd = concs[e["idx"]]
-                fonte = cd.get("ads_id") or cd.get("fb_page") or cd.get("instagram", "").lstrip("@") or cd.get("nome", "")
-            if fonte:
-                st.session_state[chave] = fonte.strip()
+    # ── Banner de status global do cache
+    empresas_com_cache = [e for e in todas_empresas if e["nome"] in st.session_state.ads_cache]
+    if empresas_com_cache:
+        tss         = [st.session_state.ads_cache[e["nome"]].get("ts","") for e in empresas_com_cache]
+        ts_antigo   = min(tss, key=lambda t: t or "")
+        fresco_glob = cache_esta_fresco(ts_antigo)
+        cor_b  = "#f0fdf4" if fresco_glob else "#fffbeb"
+        brd_b  = "#86efac" if fresco_glob else "#fcd34d"
+        txt_b  = "#15803d" if fresco_glob else "#92400e"
+        ico_b  = "✅"      if fresco_glob else "🕐"
+        msg_b  = f"Cache atualizado em {ts_antigo}" if fresco_glob else f"Cache de {ts_antigo} — considere atualizar"
+        st.markdown(
+            f"<div style='display:flex;align-items:center;gap:10px;padding:10px 16px;"
+            f"background:{cor_b};border:1px solid {brd_b};border-radius:8px;margin-bottom:16px;"
+            f"font-size:13px;color:{txt_b};font-weight:600'>"
+            f"{ico_b} {msg_b} &nbsp;·&nbsp; {len(empresas_com_cache)} empresa(s) em cache</div>",
+            unsafe_allow_html=True,
+        )
  
-    # ── Inputs
+    # ------------------------------------------------------------------
+    # INPUTS + BOTÕES
+    # ------------------------------------------------------------------
+ 
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
         "letter-spacing:1px;margin-bottom:4px'>Confirme o Page ID ou nome de cada empresa</div>",
@@ -3100,6 +3083,7 @@ html, body { background: transparent; overflow: hidden; }
         av       = gerar_avatar(ck)
         badge    = "Minha Empresa" if is_minha else "Concorrente"
         saved_q  = st.session_state.get(f"_query_saved_{sk}", "")
+        cached   = st.session_state.ads_cache.get(ck, {})
  
         col_av, col_inp, col_tip = st.columns([1, 5, 3])
         with col_av:
@@ -3111,130 +3095,85 @@ html, body { background: transparent; overflow: hidden; }
             )
         with col_inp:
             query_values[ck] = st.text_input(
-                f"{ck} ({badge})",
-                value=saved_q,
+                f"{ck} ({badge})", value=saved_q,
                 placeholder="Page ID numérico (ex: 123456789) ou nome da página",
                 key=f"query_input_{sk}",
             )
         with col_tip:
-            cached = st.session_state.ads_cache.get(ck, {})
-            if cached.get("page_id_usado"):
+            if cached.get("ts"):
+                fresco_e = cache_esta_fresco(cached["ts"])
+                cor_t = "#059669" if fresco_e else "#92400e"
+                bg_t  = "#f0fdf4" if fresco_e else "#fffbeb"
+                brd_t = "#86efac" if fresco_e else "#fcd34d"
+                ico_t = "✅"      if fresco_e else "🕐"
                 st.markdown(
-                    f"<div style='margin-top:28px;font-size:12px;color:#059669;"
-                    f"background:#f0fdf4;border:1px solid #86efac;border-radius:6px;"
-                    f"padding:6px 10px'>✅ Page ID: <b>{cached['page_id_usado']}</b></div>",
+                    f"<div style='margin-top:28px;font-size:12px;color:{cor_t};"
+                    f"background:{bg_t};border:1px solid {brd_t};border-radius:6px;padding:6px 10px'>"
+                    f"{ico_t} Cache: <b>{cached['ts']}</b><br>"
+                    f"<span style='font-size:11px'>Page ID: {cached.get('page_id_usado','—')}</span></div>",
                     unsafe_allow_html=True,
                 )
             elif saved_q and not saved_q.isdigit():
                 st.markdown(
-                    f"<div style='margin-top:28px;font-size:12px;color:#92400e;"
-                    f"background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;"
-                    f"padding:6px 10px'>⚠️ Use o Page ID numérico para resultados precisos</div>",
+                    "<div style='margin-top:28px;font-size:12px;color:#92400e;"
+                    "background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:6px 10px'>"
+                    "⚠️ Use o Page ID numérico para resultados precisos</div>",
                     unsafe_allow_html=True,
                 )
  
-    buscar = st.button("🔍 Buscar Anúncios", use_container_width=True, type="primary")
+    bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
+    with bcol1:
+        buscar = st.button("🔍 Buscar / Atualizar Anúncios", use_container_width=True, type="primary")
+    with bcol2:
+        limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True)
+    with bcol3:
+        debug_mode = st.toggle("🔍 Debug JSON", value=False)
+ 
+    if limpar_cache:
+        st.session_state.ads_cache     = {}
+        st.session_state.ads_erro      = {}
+        st.session_state.ads_raw_debug = {}
+        salvar_cache_ads({})
+        st.toast("Cache limpo!", icon="🗑️")
+        st.rerun()
  
     if buscar:
         for e in todas_empresas:
             sk = safe_key(e["nome"])
             v  = query_values.get(e["nome"], "").strip()
-            if v:
-                st.session_state[f"_query_saved_{sk}"] = v
- 
-        algum = any(query_values.get(e["nome"], "").strip() for e in todas_empresas)
-        if not algum:
+            if v: st.session_state[f"_query_saved_{sk}"] = v
+        if not any(query_values.get(e["nome"], "").strip() for e in todas_empresas):
             st.warning("Informe pelo menos um Page ID ou nome de página.")
         else:
-            st.session_state.ads_cache     = {}
-            st.session_state.ads_erro      = {}
-            st.session_state.ads_raw_debug = {}
+            executar_busca(todas_empresas, query_values)
  
-            with st.status("Buscando anúncios...", expanded=True) as status:
-                for e in todas_empresas:
-                    ck    = e["nome"]
-                    query = query_values.get(ck, "").strip()
-                    if not query:
-                        continue
-                    st.write(f"Buscando **{ck}** ({query})...")
+    # ------------------------------------------------------------------
+    # RESULTADOS — lidos do cache em memória, sem nova requisição
+    # ------------------------------------------------------------------
  
-                    page_id = query if query.isdigit() else None
-                    aviso   = None
-                    if not query.isdigit():
-                        st.write(f"🔍 Buscando Page ID de **{ck}**...")
-                        page_id, aviso = buscar_page_id(query)
-                        if page_id:
-                            st.write(f"📌 Page ID: **{page_id}**")
-                            if aviso:
-                                st.warning(aviso)
-                        else:
-                            st.write(f"⚠️ Page ID não encontrado, buscando por nome...")
- 
-                    ads, raw, erro = buscar_ads_searchapi(page_id or query)
-                    st.session_state.ads_raw_debug[ck] = raw
- 
-                    if erro:
-                        st.session_state.ads_erro[ck] = erro
-                        st.write(f"❌ {erro}")
-                    else:
-                        st.session_state.ads_cache[ck] = {
-                            "data":          ads,
-                            "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "nome":          ck,
-                            "query":         query,
-                            "page_id_usado": page_id or query,
-                        }
-                        st.write(f"✅ {len(ads)} anúncios encontrados")
-                status.update(label="✅ Busca concluída!", state="complete")
-            st.rerun()
- 
-    # ── Resultados
     empresas_com_dados = [
         e for e in todas_empresas
         if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
     ]
+ 
     if not empresas_com_dados:
+        st.markdown("""
+        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                    padding:48px 32px;text-align:center;margin-top:8px'>
+            <div style='font-size:32px;margin-bottom:12px'>📢</div>
+            <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
+            <div style='font-size:14px;color:#9ca3af'>Informe o Page ID e clique em <b>Buscar / Atualizar Anúncios</b>.</div>
+        </div>
+        """, unsafe_allow_html=True)
         st.stop()
- 
-    col_att, col_dbg, _ = st.columns([2, 2, 3])
-    with col_att:
-        if st.button("🔄 Atualizar", type="primary", use_container_width=True):
-            st.session_state.ads_cache     = {}
-            st.session_state.ads_erro      = {}
-            st.session_state.ads_raw_debug = {}
-            with st.spinner("Atualizando..."):
-                for e in todas_empresas:
-                    ck    = e["nome"]
-                    sk    = safe_key(ck)
-                    query = st.session_state.get(f"_query_saved_{sk}", "").strip()
-                    if not query:
-                        continue
-                    page_id = query if query.isdigit() else None
-                    if not query.isdigit():
-                        page_id, _ = buscar_page_id(query)
-                    ads, raw, erro = buscar_ads_searchapi(page_id or query)
-                    st.session_state.ads_raw_debug[ck] = raw
-                    if erro:
-                        st.session_state.ads_erro[ck] = erro
-                    else:
-                        st.session_state.ads_cache[ck] = {
-                            "data":          ads,
-                            "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "nome":          ck,
-                            "query":         query,
-                            "page_id_usado": page_id or query,
-                        }
-            st.rerun()
- 
-    with col_dbg:
-        debug_mode = st.toggle("🔍 Debug (ver JSON bruto)", value=False)
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
     # ------------------------------------------------------------------
-    # render_ads_empresa — cards estilo Meta Ad Library
+    # RENDER DE CADA EMPRESA
     # ------------------------------------------------------------------
+ 
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
         nome     = emp_item["nome"]
@@ -3248,28 +3187,32 @@ html, body { background: transparent; overflow: hidden; }
  
         cache_entry = st.session_state.ads_cache.get(ck)
         if not cache_entry:
-            st.info("Sem dados. Informe o Page ID ou nome e clique em Buscar.")
+            st.info("Sem dados. Informe o Page ID e clique em Buscar.")
             return
  
         ads_list      = cache_entry["data"]
         ts            = cache_entry["ts"]
         query         = cache_entry.get("query", "")
         page_id_usado = cache_entry.get("page_id_usado", "")
+        fresco_aba    = cache_esta_fresco(ts)
  
         if debug_mode:
             raw = st.session_state.ads_raw_debug.get(ck, [])
             if raw:
-                with st.expander("🔍 JSON bruto do 1º anúncio (debug)", expanded=True):
+                with st.expander("🔍 JSON bruto (debug)", expanded=True):
                     st.json(raw[0])
-                    if len(raw) > 1:
-                        st.json(raw[1])
+                    if len(raw) > 1: st.json(raw[1])
  
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+        cor_ts    = "#15803d" if fresco_aba else "#92400e"
+        bg_ts     = "#f0fdf4" if fresco_aba else "#fffbeb"
+        brd_ts    = "#86efac" if fresco_aba else "#fcd34d"
+        ico_ts    = "✅"      if fresco_aba else "🕐"
  
-        # ── Header da empresa
+        # Header
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3281,29 +3224,26 @@ html, body { background: transparent; overflow: hidden; }
                 <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px'>
                     <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
                                  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                    <span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;
+                    <span style='background:{bg_ts};color:{cor_ts};border:1px solid {brd_ts};
                                  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
-                        Busca: {query}
+                        {ico_ts} Cache: {ts}
                     </span>
                     {f"<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Page ID: {page_id_usado}</span>" if page_id_usado and page_id_usado != query else ""}
-                    <span style='font-size:12px;color:#9ca3af'>· {ts}</span>
                 </div>
             </div>
             <div style='text-align:right;flex-shrink:0'>
                 <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
-                <div style='font-size:12px;color:#9ca3af'>anúncios encontrados</div>
+                <div style='font-size:12px;color:#9ca3af'>anúncios em cache</div>
             </div>
         </div>""", unsafe_allow_html=True)
  
         if not ads_list:
             st.info("Nenhum anúncio encontrado. Verifique o Page ID ou nome da página.")
-            st.link_button(
-                "🔍 Verificar no Ad Library",
-                f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q={query}",
-            )
+            st.link_button("🔍 Verificar no Ad Library",
+                f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q={query}")
             return
  
-        # ── Filtros
+        # Filtros (apenas UI — não gera nova requisição)
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
         with fcol1:
             busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…",
@@ -3335,7 +3275,7 @@ html, body { background: transparent; overflow: hidden; }
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
-        # ── Estatísticas
+        # Estatísticas
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -3358,35 +3298,30 @@ html, body { background: transparent; overflow: hidden; }
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
  
-        # ── Cards estilo Meta Ad Library
+        # ── Cards
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
-                fmt         = ad["formato"]
                 snap_url    = ad.get("snapshot_url") or ""
                 images      = ad.get("images") or []
                 videos      = ad.get("videos") or []
                 is_dyn      = ad.get("is_dynamic", False)
-                ad_id_short = ad.get("id", "")[:15] + "…" if len(ad.get("id","")) > 15 else ad.get("id","")
+                ad_id_short = ad.get("id","")[:15] + "…" if len(ad.get("id","")) > 15 else ad.get("id","")
                 plats       = ad.get("plataformas") or []
-                plat_names  = _plat_icons(plats)
-                plat_js     = _json.dumps(plat_names)
-                data_inicio = ad.get("data_inicio", "")
-                impressoes  = ad.get("impressoes", "")
+                plat_js     = _json.dumps(_plat_icons(plats))
+                data_inicio = ad.get("data_inicio","")
+                impressoes  = ad.get("impressoes","")
+                body        = ad.get("body")        or ""
+                title       = ad.get("title")       or ""
+                desc        = ad.get("description") or ""
+                cta         = ad.get("cta")         or ""
+                uid         = f"{safe_key(ck)}_{j}"
+                srcs_js     = _json.dumps(images[:3]) if images else "[]"
  
-                body    = ad.get("body")        or ""
-                title   = ad.get("title")       or ""
-                desc    = ad.get("description") or ""
-                cta     = ad.get("cta")         or ""
- 
-                uid     = f"{safe_key(ck)}_{j}"
-                srcs_js = _json.dumps(images[:3]) if images else "[]"
- 
-                # ── Bloco de mídia
+                # Bloco de mídia
                 if videos:
-                    if snap_url:
-                        media_block = f"""
-<div class="media-block video-block" onclick="window.open('{snap_url}','_blank')" style="cursor:pointer;">
+                    media_block = f"""
+<div class="media-block video-block" {'onclick="window.open(\\''+snap_url+'\\',\\'_blank\\')"' if snap_url else ''} style="{'cursor:pointer;' if snap_url else ''}">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
@@ -3394,18 +3329,7 @@ html, body { background: transparent; overflow: hidden; }
             <polygon points="22,18 40,27 22,36" fill="white"/>
         </svg>
     </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">Clique para ver o vídeo</div>
-</div>"""
-                    else:
-                        media_block = """
-<div class="media-block video-block">
-    <div class="video-play-icon">
-        <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
-            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.1)"/>
-            <polygon points="22,18 40,27 22,36" fill="white"/>
-        </svg>
-    </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:8px;font-family:'DM Sans',sans-serif;">Vídeo</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
                 elif images:
                     media_block = f"""
@@ -3416,10 +3340,9 @@ html, body { background: transparent; overflow: hidden; }
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;
          align-items:center;justify-content:center;flex-direction:column;gap:8px;
          background:#f9fafb;position:absolute;top:0;left:0;">
-        {'<a href="' + snap_url + '" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">' if snap_url else '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'}
+        {'<a href="'+snap_url+'" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">' if snap_url else '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'}
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
             </svg>
             <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#9ca3af'};font-weight:600;font-family:DM Sans,sans-serif;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
@@ -3427,347 +3350,90 @@ html, body { background: transparent; overflow: hidden; }
     </div>
 </div>
 <script>
-var _srcs_{uid} = {srcs_js};
-var _idx_{uid}  = 0;
-function imgFallback_{uid}(img) {{
+var _srcs_{uid}={srcs_js};var _idx_{uid}=0;
+function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if (_idx_{uid} < _srcs_{uid}.length) {{
-        img.src = _srcs_{uid}[_idx_{uid}];
-    }} else {{
-        img.style.display = 'none';
-        var err = document.getElementById('merr_{uid}');
-        if (err) err.style.display = 'flex';
-    }}
+    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
+    else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
                 else:
-                    # Sem mídia — placeholder com link direto para o Ad Library
                     media_block = f"""
-<div class="media-block no-media-block" {'onclick="window.open(\'' + snap_url + '\',\'_blank\')"' if snap_url else ''} style="{'cursor:pointer;' if snap_url else ''}">
+<div class="media-block no-media-block" {'onclick="window.open(\''+snap_url+'\',\'_blank\')"' if snap_url else ''} style="{'cursor:pointer;' if snap_url else ''}">
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
     </svg>
     <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;font-family:DM Sans,sans-serif;">{'Ver criativo →' if snap_url else 'Sem criativo disponível'}</span>
 </div>"""
  
-                # ── CTA label amigável
                 cta_labels = {
-                    "LEARN_MORE":              "Saiba Mais",
-                    "SIGN_UP":                 "Cadastre-se",
-                    "CONTACT_US":              "Fale Conosco",
-                    "GET_QUOTE":               "Solicitar Orçamento",
-                    "BOOK_TRAVEL":             "Reservar",
-                    "WHATSAPP_MESSAGE":        "Enviar Mensagem",
-                    "SEND_WHATSAPP_MESSAGE":   "WhatsApp",
-                    "MESSAGE_PAGE":            "Enviar Mensagem",
-                    "SHOP_NOW":                "Comprar Agora",
-                    "DOWNLOAD":                "Baixar",
-                    "WATCH_MORE":              "Ver Mais",
-                    "APPLY_NOW":               "Candidatar-se",
-                    "GET_OFFER":               "Ver Oferta",
-                    "SUBSCRIBE":               "Assinar",
-                    "CALL_NOW":                "Ligar Agora",
-                    "SEND_MESSAGE":            "Enviar Mensagem",
-                    "GET_DIRECTIONS":          "Como Chegar",
-                    "BUY_NOW":                 "Comprar",
-                    "DONATE":                  "Doar",
-                    "OPEN_LINK":               "Abrir Link",
-                    "NO_BUTTON":               "",
+                    "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
+                    "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
+                    "WHATSAPP_MESSAGE":"Enviar Mensagem","SEND_WHATSAPP_MESSAGE":"WhatsApp",
+                    "MESSAGE_PAGE":"Enviar Mensagem","SHOP_NOW":"Comprar Agora","DOWNLOAD":"Baixar",
+                    "WATCH_MORE":"Ver Mais","APPLY_NOW":"Candidatar-se","GET_OFFER":"Ver Oferta",
+                    "SUBSCRIBE":"Assinar","CALL_NOW":"Ligar Agora","SEND_MESSAGE":"Enviar Mensagem",
+                    "GET_DIRECTIONS":"Como Chegar","BUY_NOW":"Comprar","DONATE":"Doar",
+                    "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
                 }
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
-                # ── Calcula altura dinâmica do card
-                # Base: status(44) + meta(52) + copy_section(~110) + cta_footer(46) + padding
-                # Com imagem: +220; com video: +200; sem mídia: +100
-                # Com impressoes: +32; com copy longa: +30 extra
-                h_base    = 44 + 52 + 46 + 32  # status + meta + cta + margins
-                h_copy    = 130 if (body or title or desc) else 80
-                h_copy   += 30 if body and len(body) > 200 else 0  # "ver mais"
-                h_media   = 230 if images else (210 if videos else 110)
-                h_imp     = 32 if impressoes else 0
-                h_padding = 40  # folga generosa para garantir que nada seja cortado
-                card_height = h_base + h_copy + h_media + h_imp + h_padding
+                # Altura dinâmica
+                h_base  = 44 + 60 + 50 + 32
+                h_copy  = 130 if (body or title or desc) else 80
+                h_copy += 30  if body and len(body) > 200 else 0
+                h_media = 230 if images else (210 if videos else 120)
+                h_imp   = 32  if impressoes else 0
+                card_height = h_base + h_copy + h_media + h_imp + 40
  
-                # ── HTML do card
                 card_html = f"""<!DOCTYPE html>
-<html>
-<head>
+<html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background: transparent;
-    font-family: 'DM Sans', -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow: visible;
-}}
-/* FIX 3: padding inferior generoso para nunca cortar o CTA */
-body {{ padding-bottom: 20px; }}
- 
-.card {{
-    background: #fff;
-    border: 1px solid #dde1e7;
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}}
- 
-/* ── STATUS HEADER ── */
-.status-bar {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px 8px;
-    border-bottom: 1px solid #f0f2f5;
-    background: #fafbfc;
-}}
-.status-dot {{
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #1aab40;
-}}
-.status-dot::before {{
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #1aab40;
-    flex-shrink: 0;
-}}
-.ad-id {{
-    font-size: 10px;
-    color: #8a8d91;
-    font-family: monospace;
-}}
- 
-/* ── META INFO ── */
-.meta-info {{
-    padding: 8px 14px 10px;
-    border-bottom: 1px solid #f0f2f5;
-    background: #fafbfc;
-}}
-.meta-row {{
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: #65676b;
-    margin-bottom: 4px;
-    flex-wrap: wrap;
-}}
-.meta-row:last-child {{ margin-bottom: 0; }}
-.meta-label {{
-    font-weight: 700;
-    color: #444950;
-    flex-shrink: 0;
-}}
-.plat-icons {{
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-wrap: wrap;
-}}
-.plat-badge {{
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    background: #f3f4f6;
-    border-radius: 4px;
-    padding: 2px 7px;
-    font-size: 11px;
-    font-weight: 600;
-}}
-.dynamic-badge {{
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #fff3e0;
-    color: #e65100;
-    border: 1px solid #ffcc80;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    margin-left: 4px;
-}}
- 
-/* ── COPY SECTION ── */
-.copy-section {{
-    padding: 12px 14px 10px;
-    border-bottom: 1px solid #f0f2f5;
-    flex: 1;
-}}
-.page-header {{
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}}
-.page-avatar {{
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: {cor_av};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0;
-}}
-.page-name {{
-    font-size: 13px;
-    font-weight: 700;
-    color: #050505;
-    line-height: 1.2;
-}}
-.page-sponsored {{
-    font-size: 11px;
-    color: #65676b;
-}}
-.copy-body {{
-    font-size: 14px;
-    color: #050505;
-    line-height: 1.65;
-    white-space: pre-line;
-    word-break: break-word;
-}}
-.copy-title {{
-    font-size: 14px;
-    font-weight: 700;
-    color: #050505;
-    margin-top: 8px;
-    line-height: 1.4;
-}}
-.copy-desc {{
-    font-size: 12px;
-    color: #65676b;
-    margin-top: 3px;
-    line-height: 1.4;
-}}
-.no-copy {{
-    font-size: 13px;
-    color: #bcc0c4;
-    font-style: italic;
-}}
-.ver-mais {{
-    display: inline-block;
-    margin-top: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1877F2;
-    cursor: pointer;
-}}
-.ver-mais:hover {{ text-decoration: underline; }}
- 
-/* ── MEDIA BLOCK ── */
-.media-block {{
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-    background: #f0f2f5;
-}}
-.img-block {{
-    height: 220px;
-}}
-.video-block {{
-    height: 200px;
-    background: linear-gradient(135deg, #0f1f35 0%, #1a3a5c 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}}
-.video-play-icon {{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-}}
-.video-block:hover .video-play-icon {{
-    transform: scale(1.1);
-}}
-/* FIX 2: no-media maior para o link ficar mais visível */
-.no-media-block {{
-    height: 120px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #f7f8fa;
-    border-top: 1px solid #f0f2f5;
-    border-bottom: 1px solid #f0f2f5;
-    gap: 8px;
-}}
- 
-/* ── CTA FOOTER ── */
-.cta-footer {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 14px;
-    background: #f7f8fa;
-    border-top: 1px solid #e4e6ea;
-    gap: 10px;
-    min-height: 50px;
-}}
-.cta-domain {{
-    font-size: 11px;
-    color: #65676b;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}}
-.cta-btn {{
-    background: #e4e6eb;
-    color: #050505;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    font-family: 'DM Sans', sans-serif;
-    text-decoration: none;
-    display: inline-block;
-    transition: background 0.15s;
-    flex-shrink: 0;
-}}
-.cta-btn:hover {{ background: #d8dadf; }}
- 
-/* ── IMPRESSOES ── */
-.imp-bar {{
-    padding: 7px 14px;
-    font-size: 11px;
-    color: #15803d;
-    font-weight: 600;
-    background: #f0fdf4;
-    border-top: 1px solid #dcfce7;
-}}
-</style>
-</head>
-<body>
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
+body{{padding-bottom:20px;}}
+.card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
+.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
+.status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
+.status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
+.ad-id{{font-size:10px;color:#8a8d91;font-family:monospace;}}
+.meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
+.meta-row{{display:flex;align-items:center;gap:6px;font-size:11px;color:#65676b;margin-bottom:4px;flex-wrap:wrap;}}
+.meta-row:last-child{{margin-bottom:0;}}
+.meta-label{{font-weight:700;color:#444950;flex-shrink:0;}}
+.plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
+.plat-badge{{display:inline-flex;align-items:center;background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;}}
+.dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
+.copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;flex:1;}}
+.page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
+.page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
+.page-name{{font-size:13px;font-weight:700;color:#050505;line-height:1.2;}}
+.page-sponsored{{font-size:11px;color:#65676b;}}
+.copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;}}
+.copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;line-height:1.4;}}
+.copy-desc{{font-size:12px;color:#65676b;margin-top:3px;line-height:1.4;}}
+.no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;}}
+.ver-mais{{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;color:#1877F2;cursor:pointer;}}
+.ver-mais:hover{{text-decoration:underline;}}
+.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;}}
+.img-block{{height:220px;}}
+.video-block{{height:200px;background:linear-gradient(135deg,#0f1f35 0%,#1a3a5c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
+.video-play-icon{{display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}}
+.video-block:hover .video-play-icon{{transform:scale(1.1);}}
+.no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;border-top:1px solid #f0f2f5;border-bottom:1px solid #f0f2f5;gap:8px;}}
+.cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:10px;min-height:50px;}}
+.cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;letter-spacing:0.3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-block;transition:background 0.15s;flex-shrink:0;}}
+.cta-btn:hover{{background:#d8dadf;}}
+.imp-bar{{padding:7px 14px;font-size:11px;color:#15803d;font-weight:600;background:#f0fdf4;border-top:1px solid #dcfce7;}}
+</style></head><body>
 <div class="card">
- 
-    <!-- STATUS BAR -->
     <div class="status-bar">
         <div class="status-dot">Ativo</div>
         {f'<span class="ad-id">ID: {ad_id_short}</span>' if ad_id_short else ''}
     </div>
- 
-    <!-- META INFO -->
     <div class="meta-info">
         {f'<div class="meta-row"><span class="meta-label">Início:&nbsp;</span>{data_inicio}</div>' if data_inicio else ''}
         <div class="meta-row">
@@ -3776,8 +3442,6 @@ body {{ padding-bottom: 20px; }}
         </div>
         {f'<div class="meta-row"><span class="meta-label">Impressões:&nbsp;</span>{impressoes}</div>' if impressoes else ''}
     </div>
- 
-    <!-- COPY SECTION -->
     <div class="copy-section">
         <div class="page-header">
             <div class="page-avatar">{avatar}</div>
@@ -3786,91 +3450,63 @@ body {{ padding-bottom: 20px; }}
                 <div class="page-sponsored">Patrocinado</div>
             </div>
         </div>
- 
-        {f'''<div>
-          <div class="copy-body" id="cbody_{uid}">
-            <span id="body_short_{uid}">{_truncar(body, 200).replace(chr(10), "<br>")}</span>
-            <span id="body_full_{uid}" style="display:none">{body.replace(chr(10), "<br>")}</span>
-            {'<span class="ver-mais" onclick="toggleBody(\'' + uid + '\')">Ver mais</span>' if len(body) > 200 else ''}
-          </div>
-        ''' if body else ''}
+        {f'<div><div class="copy-body" id="cbody_{uid}"><span id="body_short_{uid}">{_truncar(body,200).replace(chr(10),"<br>")}</span><span id="body_full_{uid}" style="display:none">{body.replace(chr(10),"<br>")}</span>{"<span class=ver-mais onclick=toggleBody(&#39;"+uid+"&#39;)>Ver mais</span>" if len(body)>200 else ""}</div></div>' if body else ''}
         {f'<div class="copy-title">{title}</div>' if title else ''}
-        {f'<div class="copy-desc">{_truncar(desc, 140)}</div>' if desc else ''}
+        {f'<div class="copy-desc">{_truncar(desc,140)}</div>' if desc else ''}
         {'<div class="no-copy">Sem copy disponível.<br><small style="color:#9ca3af">Clique em &ldquo;Ver criativo&rdquo; para ver o anúncio completo.</small></div>' if not body and not title and not desc else ''}
     </div>
- 
-    <!-- MEDIA -->
     {media_block}
- 
-    <!-- CTA FOOTER -->
     <div class="cta-footer">
         <span class="cta-domain">{ad.get("caption") or (snap_url.replace("https://","").split("/")[0] if snap_url else "")}</span>
         <a href="{snap_url or '#'}" target="_blank" class="cta-btn" {'style="pointer-events:none;opacity:0.4"' if not snap_url else ''}>
             {cta_display or "Ver detalhes"}
         </a>
     </div>
- 
-    <!-- IMPRESSÕES BAR -->
     {f'<div class="imp-bar">👁 {impressoes} impressões estimadas</div>' if impressoes else ''}
- 
 </div>
- 
 <script>
-// ── Platform badges com cores corretas
-(function() {{
-    var plats = {plat_js};
-    var platColors = {{
-        "Facebook":         "#1877F2",
-        "Instagram":        "#E1306C",
-        "Messenger":        "#0099FF",
-        "WhatsApp":         "#25D366",
-        "Audience Network": "#6b7280"
-    }};
-    var el = document.getElementById('plat_icons_{uid}');
-    if (!el) return;
-    if (!plats || plats.length === 0) {{ el.textContent = '—'; return; }}
-    el.innerHTML = plats.map(function(p) {{
-        var color = platColors[p] || '#6b7280';
-        return '<span class="plat-badge" style="color:' + color + '">' + p + '</span>';
+(function(){{
+    var plats={plat_js};
+    var platColors={{"Facebook":"#1877F2","Instagram":"#E1306C","Messenger":"#0099FF","WhatsApp":"#25D366","Audience Network":"#6b7280"}};
+    var el=document.getElementById('plat_icons_{uid}');
+    if(!el)return;
+    if(!plats||plats.length===0){{el.textContent='—';return;}}
+    el.innerHTML=plats.map(function(p){{
+        var c=platColors[p]||'#6b7280';
+        return '<span class="plat-badge" style="color:'+c+'">'+p+'</span>';
     }}).join('');
 }})();
- 
-// ── Ver mais / menos toggle
-function toggleBody(uid) {{
-    var s   = document.getElementById('body_short_' + uid);
-    var f   = document.getElementById('body_full_'  + uid);
-    var btn = document.querySelector('#cbody_' + uid + ' .ver-mais');
-    if (!s || !f) return;
-    var expanded = f.style.display !== 'none';
-    s.style.display = expanded ? '' : 'none';
-    f.style.display = expanded ? 'none' : '';
-    if (btn) btn.textContent = expanded ? 'Ver mais' : 'Ver menos';
-    setTimeout(ajustarAltura, 50);
+function toggleBody(uid){{
+    var s=document.getElementById('body_short_'+uid);
+    var f=document.getElementById('body_full_'+uid);
+    var btn=document.querySelector('#cbody_'+uid+' .ver-mais');
+    if(!s||!f)return;
+    var exp=f.style.display!=='none';
+    s.style.display=exp?'':'none';
+    f.style.display=exp?'none':'';
+    if(btn)btn.textContent=exp?'Ver mais':'Ver menos';
+    setTimeout(ajustarAltura,50);
 }}
- 
-// ── Ajuste dinâmico da altura do iframe
-function ajustarAltura() {{
-    var card = document.querySelector('.card');
-    if (!card) return;
-    var h = card.getBoundingClientRect().height;
-    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 24) + 'px'; }} catch(e) {{}}
+function ajustarAltura(){{
+    var card=document.querySelector('.card');
+    if(!card)return;
+    var h=card.getBoundingClientRect().height;
+    window.parent.document.querySelectorAll('iframe').forEach(function(f){{
+        try{{if(f.contentWindow===window)f.style.height=(h+24)+'px';}}catch(e){{}}
     }});
 }}
-document.addEventListener('DOMContentLoaded', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
-document.querySelectorAll('img').forEach(function(img) {{
-    img.addEventListener('load',  ajustarAltura);
-    img.addEventListener('error', ajustarAltura);
+document.addEventListener('DOMContentLoaded',ajustarAltura);
+window.addEventListener('load',ajustarAltura);
+document.querySelectorAll('img').forEach(function(img){{
+    img.addEventListener('load',ajustarAltura);
+    img.addEventListener('error',ajustarAltura);
 }});
-setTimeout(ajustarAltura, 200);
-setTimeout(ajustarAltura, 600);
-setTimeout(ajustarAltura, 1200);
+setTimeout(ajustarAltura,200);
+setTimeout(ajustarAltura,700);
+setTimeout(ajustarAltura,1400);
 </script>
-</body>
-</html>"""
+</body></html>"""
  
-                # FIX 2: altura calculada dinamicamente por tipo de card
                 components.html(card_html, height=card_height, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
@@ -3883,22 +3519,20 @@ setTimeout(ajustarAltura, 1200);
  
         resumo_ads = "\n".join([
             f"- [{a['formato']}{'(dinâmico)' if a.get('is_dynamic') else ''}] "
-            f"Título: {_truncar(a.get('title',''), 60) or '—'} | "
-            f"Copy: {_truncar(a.get('body',''), 100) or '—'} | "
+            f"Título: {_truncar(a.get('title',''),60) or '—'} | "
+            f"Copy: {_truncar(a.get('body',''),100) or '—'} | "
             f"Impressões: {a['impressoes'] or '—'} | "
             f"Plat: {', '.join(a['plataformas'] or [])}"
             for a in ads_f[:15]
         ])
  
-        ia_html_content = st.session_state.get(chave_ia, "").replace("\n", "<br>")
+        ia_html_content = st.session_state.get(chave_ia,"").replace("\n","<br>")
  
         if ia_html_content:
             st.markdown(f"""
-            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                        overflow:hidden;margin-bottom:8px'>
+            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px'>
                 <div style='padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
-                            text-transform:uppercase;letter-spacing:0.3px;
-                            border-bottom:1px solid #e5e7eb'>
+                            text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb'>
                     📊 Análise Estratégica com IA
                 </div>
                 <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75'>
@@ -3911,8 +3545,7 @@ setTimeout(ajustarAltura, 1200);
             gerar_ia = st.button(
                 "🔄 Nova Análise" if ia_html_content else "🤖 Analisar com IA",
                 key=f"btn_ia_ads_{safe_key(ck)}",
-                use_container_width=True,
-                type="primary",
+                use_container_width=True, type="primary",
             )
  
         if gerar_ia:
@@ -3940,7 +3573,6 @@ Amostra:
 ### 📊 Estimativa de Investimento e Alcance
 ### ⚠️ Pontos de Atenção
 ### 💡 Oportunidades Competitivas (3 ações concretas)"""
- 
                         resp = gemini_model.generate_content(prompt_ads)
                         st.session_state[chave_ia] = resp.text
                         st.rerun()
