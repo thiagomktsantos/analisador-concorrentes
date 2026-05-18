@@ -3100,21 +3100,74 @@ html, body { background: transparent; overflow: hidden; }
  
                 impressoes_html = f"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ {ad['impressoes']} impressões</div>" if ad["impressoes"] else ""
  
-                st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:4px'>
-                    {img_html}
-                    <div style='padding:14px 16px 10px;border-bottom:1px solid #f3f4f6'>
-                        <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px'>
-                            <span style='background:{fmt_bg};color:{fmt_txt_c};border:1px solid {fmt_brd};
-                                         padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700'>{fmt}</span>
-                            <span style='font-size:11px;color:#9ca3af'>{ad["data_inicio"] or "—"}</span>
-                        </div>
-                        <div style='font-size:12px;color:#6b7280'>{ad["page_name"] or nome}</div>
-                        {impressoes_html}
-                    </div>
-                    <div style='padding:14px 16px;min-height:80px'>{copy_html_inner}</div>
-                    <div style='padding:0 16px 10px'><div style='font-size:11px;color:#9ca3af'>{plat_txt or "—"}</div></div>
-                </div>""", unsafe_allow_html=True)
+# ── Cards de anúncios
+        cols_ads = st.columns(3)
+        for j, ad in enumerate(ads_f):
+            with cols_ads[j % 3]:
+                fmt = ad["formato"]
+                if   "Vídeo"  in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff","#1d4ed8","#bfdbfe"
+                elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7","#92400e","#fcd34d"
+                else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff","#5b21b6","#c4b5fd"
+
+                plat_txt = _plat_icons(ad["plataformas"])
+
+                # Build image HTML safely
+                if ad["images"]:
+                    img_html = f'<div style="width:100%;height:160px;overflow:hidden;border-bottom:1px solid #f3f4f6"><img src="{ad["images"][0]}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.display=\'none\'" /></div>'
+                else:
+                    img_html = ""
+
+                copy_parts = []
+                if ad["title"]:
+                    copy_parts.append(f'<div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:4px">{_truncar(ad["title"],60)}</div>')
+                if ad["body"]:
+                    copy_parts.append(f'<div style="font-size:13px;color:#374151;line-height:1.6;font-style:italic">{_truncar(ad["body"],100)}</div>')
+                if ad["description"]:
+                    copy_parts.append(f'<div style="font-size:12px;color:#6b7280;margin-top:4px">{_truncar(ad["description"],80)}</div>')
+                copy_html_inner = "\n".join(copy_parts) if copy_parts else '<div style="font-size:13px;color:#9ca3af;font-style:italic">Sem copy disponível</div>'
+
+                impressoes_html = f'<div style="font-size:12px;color:#059669;font-weight:600">👁️ {ad["impressoes"]} impressões</div>' if ad["impressoes"] else ""
+
+                card_html = f"""<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:4px; }}
+.card {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+.meta {{ padding:14px 16px 10px; border-bottom:1px solid #f3f4f6; }}
+.badge {{ display:inline-block; background:{fmt_bg}; color:{fmt_txt_c}; border:1px solid {fmt_brd}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
+.date {{ font-size:11px; color:#9ca3af; }}
+.page {{ font-size:12px; color:#6b7280; margin-top:4px; }}
+.copy {{ padding:14px 16px; min-height:80px; }}
+.plat {{ padding:0 16px 10px; font-size:11px; color:#9ca3af; }}
+</style>
+</head>
+<body>
+<div class="card">
+    {img_html}
+    <div class="meta">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span class="badge">{fmt}</span>
+            <span class="date">{ad["data_inicio"] or "—"}</span>
+        </div>
+        <div class="page">{ad["page_name"] or nome}</div>
+        {impressoes_html}
+    </div>
+    <div class="copy">{copy_html_inner}</div>
+    <div class="plat">{plat_txt or "—"}</div>
+</div>
+</body>
+</html>"""
+
+                components.html(card_html, height=380, scrolling=False)
+
+                if ad.get("snapshot_url"):
+                    st.link_button("🔗 Ver criativo", ad["snapshot_url"], use_container_width=True)
+
+                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
                 if ad.get("snapshot_url"):
                     st.link_button("🔗 Ver criativo", ad["snapshot_url"], use_container_width=True)
