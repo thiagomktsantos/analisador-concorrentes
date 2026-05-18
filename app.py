@@ -2869,27 +2869,35 @@ html, body { background: transparent; overflow: hidden; }
         st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
  
     # ── INSTRUÇÃO
-    st.markdown("""
-    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 20px;margin-bottom:20px'>
-        <div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>
-            Como buscar os anúncios
+    components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.card {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:4px; }}
+.badge {{ padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
+.copy-box {{ padding:14px 16px; min-height:80px; font-size:13px; color:#374151; line-height:1.6; font-style:italic; }}
+.meta {{ padding:14px 16px 10px; border-bottom:1px solid #f3f4f6; }}
+</style>
+<div class="card">
+    {img_html}
+    <div class="meta">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span class="badge" style="background:{fmt_bg};color:{fmt_txt_c};border:1px solid {fmt_brd}">{fmt}</span>
+            <span style="font-size:11px;color:#9ca3af">{ad["data_inicio"] or "—"}</span>
         </div>
-        <div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px'>
-            <div style='background:#f9fafb;border-radius:10px;padding:12px 14px'>
-                <div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>Opção 1 — Page ID</div>
-                <div style='font-size:12px;color:#6b7280;line-height:1.5'>Cole o ID numérico da página do Facebook. Resultado mais preciso.</div>
-            </div>
-            <div style='background:#f9fafb;border-radius:10px;padding:12px 14px'>
-                <div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>Opção 2 — Nome da Página</div>
-                <div style='font-size:12px;color:#6b7280;line-height:1.5'>Use o nome exato da empresa no Facebook. A SearchAPI faz a busca automaticamente.</div>
-            </div>
-            <div style='background:#0e2a47;border-radius:10px;padding:12px 14px'>
-                <div style='font-size:13px;font-weight:700;color:#fff;margin-bottom:4px'>Como achar o Page ID</div>
-                <div style='font-size:12px;color:rgba(255,255,255,.7);line-height:1.5'>Em <b style="color:#fff">facebook.com/ads/library</b>, busque a empresa e na URL aparece <b style="color:#fff">view_all_page_id=XXXXXXX</b></div>
-            </div>
-        </div>
+        <div style="font-size:12px;color:#6b7280">{ad["page_name"] or nome}</div>
+        {"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ " + ad["impressoes"] + " impressões</div>" if ad["impressoes"] else ""}
     </div>
-    """, unsafe_allow_html=True)
+    <div class="copy-box">
+        {"<div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>" + _truncar(ad["title"],60) + "</div>" if ad["title"] else ""}
+        {"<div>" + _truncar(ad["body"],100) + "</div>" if ad["body"] else ""}
+        {"<div style='font-size:12px;color:#6b7280;margin-top:4px'>" + _truncar(ad["description"],80) + "</div>" if ad["description"] else ""}
+        {"" if (ad["title"] or ad["body"] or ad["description"]) else "<span style='color:#9ca3af'>Sem copy disponível</span>"}
+    </div>
+    <div style="padding:0 16px 10px;font-size:11px;color:#9ca3af">{plat_txt or "—"}</div>
+</div>
+""", height=420, scrolling=False)
  
     # ── INPUTS
     st.markdown(
