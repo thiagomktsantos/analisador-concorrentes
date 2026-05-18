@@ -2687,19 +2687,6 @@ elif st.session_state.pagina == "ads":
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
  
-    # ------------------------------------------------------------------
-    # SISTEMA DE CACHE PERSISTENTE
-    #
-    # Fluxo:
-    #   1. Na primeira visita da sessão, carrega do Supabase (coluna ads_cache).
-    #   2. Os dados ficam em st.session_state.ads_cache durante toda a sessão.
-    #   3. A API externa SÓ é chamada quando o usuário clica em
-    #      "Buscar / Atualizar Anúncios" — filtros, abas e mudanças de
-    #      design nunca disparam nova requisição.
-    #   4. Após cada busca bem-sucedida o cache é gravado de volta no Supabase.
-    #   5. Um badge mostra se o cache está "fresco" (< 24 h) ou antigo.
-    # ------------------------------------------------------------------
- 
     CACHE_TTL_HORAS = 24
  
     def salvar_cache_ads(dados: dict):
@@ -2734,17 +2721,12 @@ elif st.session_state.pagina == "ads":
         except Exception:
             return False
  
-    # Carrega do Supabase apenas uma vez por sessão
     if "ads_cache" not in st.session_state:
         st.session_state.ads_cache = carregar_cache_ads()
     if "ads_erro" not in st.session_state:
         st.session_state.ads_erro = {}
     if "ads_raw_debug" not in st.session_state:
         st.session_state.ads_raw_debug = {}
- 
-    # ------------------------------------------------------------------
-    # HELPERS
-    # ------------------------------------------------------------------
  
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
@@ -2846,10 +2828,6 @@ elif st.session_state.pagina == "ads":
                 for k in ("video_hd_url","video_sd_url","video_url"): add(card.get(k))
         return vids
  
-    # ------------------------------------------------------------------
-    # CHAMADAS DE API (executadas SOMENTE quando o usuário pede)
-    # ------------------------------------------------------------------
- 
     def buscar_page_id(query: str):
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key: return None, "SEARCHAPI_KEY não configurada"
@@ -2942,7 +2920,6 @@ elif st.session_state.pagina == "ads":
             return [], [], str(e)
  
     def executar_busca(empresas: list, query_values: dict):
-        """Chama a API e persiste o resultado no Supabase. Chamado APENAS pelo clique do usuário."""
         erros  = {}
         novos  = {}
         debugs = {}
@@ -2976,18 +2953,13 @@ elif st.session_state.pagina == "ads":
                     }
                     st.write(f"✅ {len(ads)} anúncios encontrados")
             status.update(label="✅ Busca concluída!", state="complete")
-        # Mescla: mantém dados de empresas que não foram rebuscadas
         cache_atual = dict(st.session_state.ads_cache or {})
         cache_atual.update(novos)
         st.session_state.ads_cache     = cache_atual
         st.session_state.ads_erro      = erros
         st.session_state.ads_raw_debug = debugs
-        salvar_cache_ads(cache_atual)  # persiste no Supabase
+        salvar_cache_ads(cache_atual)
         st.rerun()
- 
-    # ------------------------------------------------------------------
-    # LISTA DE EMPRESAS
-    # ------------------------------------------------------------------
  
     todas_empresas = []
     if emp.get("nome"):
@@ -2996,7 +2968,6 @@ elif st.session_state.pagina == "ads":
         if c.get("nome"):
             todas_empresas.append({"nome": c["nome"], "tipo": "concorrente", "idx": i})
  
-    # Pré-preenche queries da sessão (recupera do cache se existir)
     for e in todas_empresas:
         sk    = safe_key(e["nome"])
         chave = f"_query_saved_{sk}"
@@ -3011,10 +2982,6 @@ elif st.session_state.pagina == "ads":
                     cd    = concs[e["idx"]]
                     fonte = cd.get("ads_id") or cd.get("fb_page") or cd.get("instagram","").lstrip("@") or cd.get("nome","")
                 if fonte: st.session_state[chave] = fonte.strip()
- 
-    # ------------------------------------------------------------------
-    # CABEÇALHO
-    # ------------------------------------------------------------------
  
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3040,7 +3007,6 @@ html, body { background:transparent; overflow:hidden; }
     if not st.secrets.get("SEARCHAPI_KEY", ""):
         st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
  
-    # ── Banner de status global do cache
     empresas_com_cache = [e for e in todas_empresas if e["nome"] in st.session_state.ads_cache]
     if empresas_com_cache:
         tss         = [st.session_state.ads_cache[e["nome"]].get("ts","") for e in empresas_com_cache]
@@ -3058,10 +3024,6 @@ html, body { background:transparent; overflow:hidden; }
             f"{ico_b} {msg_b} &nbsp;·&nbsp; {len(empresas_com_cache)} empresa(s) em cache</div>",
             unsafe_allow_html=True,
         )
- 
-    # ------------------------------------------------------------------
-    # INPUTS + BOTÕES
-    # ------------------------------------------------------------------
  
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
@@ -3147,10 +3109,6 @@ html, body { background:transparent; overflow:hidden; }
         else:
             executar_busca(todas_empresas, query_values)
  
-    # ------------------------------------------------------------------
-    # RESULTADOS — lidos do cache em memória, sem nova requisição
-    # ------------------------------------------------------------------
- 
     empresas_com_dados = [
         e for e in todas_empresas
         if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
@@ -3169,10 +3127,6 @@ html, body { background:transparent; overflow:hidden; }
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
- 
-    # ------------------------------------------------------------------
-    # RENDER DE CADA EMPRESA
-    # ------------------------------------------------------------------
  
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3212,7 +3166,6 @@ html, body { background:transparent; overflow:hidden; }
         brd_ts    = "#86efac" if fresco_aba else "#fcd34d"
         ico_ts    = "✅"      if fresco_aba else "🕐"
  
-        # Header
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3243,7 +3196,6 @@ html, body { background:transparent; overflow:hidden; }
                 f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q={query}")
             return
  
-        # Filtros (apenas UI — não gera nova requisição)
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
         with fcol1:
             busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…",
@@ -3275,7 +3227,6 @@ html, body { background:transparent; overflow:hidden; }
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
-        # Estatísticas
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -3298,7 +3249,6 @@ html, body { background:transparent; overflow:hidden; }
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
  
-        # ── Cards
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
@@ -3318,21 +3268,23 @@ html, body { background:transparent; overflow:hidden; }
                 uid         = f"{safe_key(ck)}_{j}"
                 srcs_js     = _json.dumps(images[:3]) if images else "[]"
  
-                # Bloco de mídia
-                # Pre-compute onclick/style strings (backslashes can't be in f-string expressions)
-if snap_url:
-    video_onclick = f'onclick="window.open(\'{snap_url}\',\'_blank\')"'
-    video_style   = "cursor:pointer;"
-    no_media_onclick = f'onclick="window.open(\'{snap_url}\',\'_blank\')"'
-    no_media_style   = "cursor:pointer;"
-else:
-    video_onclick    = ""
-    video_style      = ""
-    no_media_onclick = ""
-    no_media_style   = ""
-
-if videos:
-    media_block = f"""
+                # ── Pre-compute onclick/style strings
+                # (backslashes cannot be used inside f-string expressions)
+                if snap_url:
+                    _snap_safe      = snap_url.replace("'", "\\'")
+                    video_onclick   = f"onclick=\"window.open('{_snap_safe}','_blank')\""
+                    video_style     = "cursor:pointer;"
+                    nomedia_onclick = f"onclick=\"window.open('{_snap_safe}','_blank')\""
+                    nomedia_style   = "cursor:pointer;"
+                else:
+                    video_onclick   = ""
+                    video_style     = ""
+                    nomedia_onclick = ""
+                    nomedia_style   = ""
+ 
+                # ── Media block
+                if videos:
+                    media_block = f"""
 <div class="media-block video-block" {video_onclick} style="{video_style}">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
@@ -3343,8 +3295,19 @@ if videos:
     </div>
     <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
-elif images:
-    media_block = f"""
+                elif images:
+                    if snap_url:
+                        fallback_link_open  = f'<a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">'
+                        fallback_link_close = '</a>'
+                        fallback_color      = '#3a9fd6'
+                        fallback_label      = 'Ver criativo →'
+                    else:
+                        fallback_link_open  = '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
+                        fallback_link_close = '</div>'
+                        fallback_color      = '#9ca3af'
+                        fallback_label      = 'Sem imagem'
+ 
+                    media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}">
     <img id="mimg_{uid}" src="{images[0]}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
@@ -3352,13 +3315,13 @@ elif images:
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;
          align-items:center;justify-content:center;flex-direction:column;gap:8px;
          background:#f9fafb;position:absolute;top:0;left:0;">
-        {'<a href="'+snap_url+'" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">' if snap_url else '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'}
+        {fallback_link_open}
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
             </svg>
-            <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#9ca3af'};font-weight:600;font-family:DM Sans,sans-serif;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
-        {'</a>' if snap_url else '</div>'}
+            <span style="font-size:12px;color:{fallback_color};font-weight:600;font-family:DM Sans,sans-serif;">{fallback_label}</span>
+        {fallback_link_close}
     </div>
 </div>
 <script>
@@ -3369,14 +3332,16 @@ function imgFallback_{uid}(img){{
     else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
-else:
-    media_block = f"""
-<div class="media-block no-media-block" {no_media_onclick} style="{no_media_style}">
+                else:
+                    nomedia_color = '#3a9fd6' if snap_url else '#c4c4c4'
+                    nomedia_label = 'Ver criativo →' if snap_url else 'Sem criativo disponível'
+                    media_block = f"""
+<div class="media-block no-media-block" {nomedia_onclick} style="{nomedia_style}">
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
     </svg>
-    <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;font-family:DM Sans,sans-serif;">{'Ver criativo →' if snap_url else 'Sem criativo disponível'}</span>
+    <span style="font-size:12px;color:{nomedia_color};font-weight:600;margin-top:8px;font-family:DM Sans,sans-serif;">{nomedia_label}</span>
 </div>"""
  
                 cta_labels = {
@@ -3391,7 +3356,6 @@ else:
                 }
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
-                # Altura dinâmica
                 h_base  = 44 + 60 + 50 + 32
                 h_copy  = 130 if (body or title or desc) else 80
                 h_copy += 30  if body and len(body) > 200 else 0
@@ -3522,7 +3486,6 @@ setTimeout(ajustarAltura,1400);
                 components.html(card_html, height=card_height, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
-        # ── Análise IA
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
         chave_ia = f"ia_ads_{safe_key(ck)}"
