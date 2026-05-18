@@ -2699,14 +2699,28 @@ elif st.session_state.pagina == "ads":
         txt = str(txt).strip()
         return txt[:n] + "…" if len(txt) > n else txt
  
+    def _is_dynamic(txt):
+        """Detecta se o texto é um template dinâmico da Meta ({{...}})"""
+        if not txt: return False
+        return bool(re.search(r'\{\{[^}]+\}\}', txt))
+ 
+    def _clean_dynamic(txt):
+        """Remove placeholders {{...}} do texto, retornando texto limpo ou vazio"""
+        if not txt: return ""
+        cleaned = re.sub(r'\{\{[^}]+\}\}', '', txt).strip()
+        # Remove linhas que ficaram vazias após remover placeholders
+        lines = [l.strip() for l in cleaned.split('\n') if l.strip()]
+        return ' '.join(lines)
+ 
     def _plat_icons(plats):
         icons = {
-            "facebook":         "🔵 Facebook",
-            "instagram":        "📸 Instagram",
-            "messenger":        "💬 Messenger",
-            "audience_network": "🌐 Audience Network",
+            "facebook":         '<svg width="14" height="14" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
+            "instagram":        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_plat" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_plat)"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
+            "messenger":        '<svg width="14" height="14" viewBox="0 0 24 24" fill="#0099FF"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111C24 4.975 18.627 0 12 0zm1.193 14.963l-3.056-3.259-5.963 3.259 6.559-6.963 3.13 3.259 5.889-3.259-6.559 6.963z"/></svg>',
+            "audience_network": '<svg width="14" height="14" viewBox="0 0 24 24" fill="#6b7280"><circle cx="12" cy="12" r="10" stroke="#6b7280" stroke-width="2" fill="none"/><line x1="2" y1="12" x2="22" y2="12" stroke="#6b7280" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#6b7280" stroke-width="2" fill="none"/></svg>',
+            "whatsapp":         '<svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>',
         }
-        return " · ".join(icons.get(p, p.capitalize()) for p in (plats or []))
+        return " ".join(icons.get(p, f'<span style="font-size:11px;color:#6b7280">{p}</span>') for p in (plats or []))
  
     # ------------------------------------------------------------------
     # Extrai de forma recursiva qualquer campo de um dict aninhado
@@ -2725,7 +2739,7 @@ elif st.session_state.pagina == "ads":
         return obj or default
  
     # ------------------------------------------------------------------
-    # Extrai TODAS as imagens de um objeto de anúncio (qualquer estrutura)
+    # Extrai TODAS as imagens de um objeto de anúncio
     # ------------------------------------------------------------------
     def _extract_images(ad: dict) -> list:
         imgs = []
@@ -2740,17 +2754,14 @@ elif st.session_state.pagina == "ads":
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
  
-        # ── Raiz do anúncio ──
         for k in ("image_url", "original_image_url", "resized_image_url",
                   "thumbnail_url", "preview_image_url", "full_picture"):
             add(ad.get(k))
  
-        # ── Snapshot ──
         for k in ("image_url", "original_image_url", "resized_image_url",
                   "thumbnail_url", "background_image"):
             add(snapshot.get(k))
  
-        # ── Cards (carrossel) ──
         for card in cards:
             if not isinstance(card, dict):
                 continue
@@ -2758,7 +2769,6 @@ elif st.session_state.pagina == "ads":
                       "thumbnail_url", "picture"):
                 add(card.get(k))
  
-        # ── creative_images ──
         for obj in (ad.get("creative_images") or []):
             if isinstance(obj, dict):
                 for k in ("original_image_url", "image_url", "url"):
@@ -2766,7 +2776,6 @@ elif st.session_state.pagina == "ads":
             elif isinstance(obj, str):
                 add(obj)
  
-        # ── images array ──
         for obj in (ad.get("images") or []):
             if isinstance(obj, dict):
                 for k in ("original_image_url", "image_url", "url", "src"):
@@ -2774,7 +2783,6 @@ elif st.session_state.pagina == "ads":
             elif isinstance(obj, str):
                 add(obj)
  
-        # ── ad_creative_images ──
         for obj in (ad.get("ad_creative_images") or []):
             if isinstance(obj, dict):
                 for k in ("original_image_url", "image_url", "url"):
@@ -2785,7 +2793,7 @@ elif st.session_state.pagina == "ads":
         return imgs
  
     # ------------------------------------------------------------------
-    # Extrai TODOS os textos/copies de um anúncio
+    # Extrai copies
     # ------------------------------------------------------------------
     def _extract_copy(ad: dict) -> dict:
         snapshot = ad.get("snapshot") or {}
@@ -2800,7 +2808,6 @@ elif st.session_state.pagina == "ads":
                 return val.strip()
             return ""
  
-        # Campos de body/texto principal
         body = (
             first_str(ad.get("ad_creative_bodies"))
             or first_str(snapshot.get("body"))
@@ -2809,7 +2816,6 @@ elif st.session_state.pagina == "ads":
             or first_str(snapshot.get("message"))
         )
  
-        # Título
         title = (
             first_str(ad.get("ad_creative_link_titles"))
             or first_str(snapshot.get("title"))
@@ -2817,7 +2823,6 @@ elif st.session_state.pagina == "ads":
             or first_str(snapshot.get("link_title"))
         )
  
-        # Descrição / subtítulo
         desc = (
             first_str(ad.get("ad_creative_link_descriptions"))
             or first_str(snapshot.get("link_description"))
@@ -2825,20 +2830,17 @@ elif st.session_state.pagina == "ads":
             or first_str(snapshot.get("description"))
         )
  
-        # CTA
         cta = (
             first_str(ad.get("cta_type"))
             or first_str(snapshot.get("cta_type"))
             or first_str(ad.get("call_to_action_type"))
         )
  
-        # Caption / subtexto
         caption = (
             first_str(snapshot.get("caption"))
             or first_str(ad.get("caption"))
         )
  
-        # Tenta pegar copy dos cards se não houver no nível raiz
         if not body and cards:
             for card in cards:
                 if isinstance(card, dict):
@@ -2930,7 +2932,7 @@ elif st.session_state.pagina == "ads":
             return None, str(e)
  
     # ------------------------------------------------------------------
-    # buscar_ads_searchapi — versão v2 com extração robusta
+    # buscar_ads_searchapi
     # ------------------------------------------------------------------
     def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
@@ -2959,7 +2961,6 @@ elif st.session_state.pagina == "ads":
  
             ads_raw = data.get("ads", [])
  
-            # Filtra por nome da página quando buscou por nome
             if not query.isdigit() and ads_raw:
                 q_lower = query.lower()
                 filtrado = [a for a in ads_raw if q_lower in (a.get("page_name") or "").lower()]
@@ -2984,6 +2985,18 @@ elif st.session_state.pagina == "ads":
                 elif images:    fmt = "Imagem 🖼️"
                 else:           fmt = "Texto 📝"
  
+                # Detecta se é anúncio dinâmico
+                is_dynamic_ad = (
+                    _is_dynamic(copy["body"]) or
+                    _is_dynamic(copy["title"]) or
+                    _is_dynamic(copy["desc"])
+                )
+ 
+                # Limpa copies dinâmicos
+                body_clean  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
+                title_clean = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
+                desc_clean  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
+ 
                 imp = ad.get("impressions") or {}
                 if isinstance(imp, dict):
                     lo, hi  = imp.get("lower_bound", ""), imp.get("upper_bound", "")
@@ -2992,6 +3005,16 @@ elif st.session_state.pagina == "ads":
                     imp_str = str(imp) if imp else ""
  
                 start_raw = (ad.get("ad_delivery_start_time") or "")[:10]
+                # Formata data para dd/mm/yyyy
+                if start_raw and len(start_raw) == 10:
+                    try:
+                        dt_obj = _dt.datetime.strptime(start_raw, "%Y-%m-%d")
+                        start_fmt = f"{dt_obj.day} de {['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][dt_obj.month-1]} de {dt_obj.year}"
+                    except:
+                        start_fmt = start_raw
+                else:
+                    start_fmt = ""
+ 
                 ad_id     = str(ad.get("id") or ad.get("ad_archive_id") or "")
                 snap_url  = (
                     f"https://www.facebook.com/ads/library/?id={ad_id}"
@@ -2999,24 +3022,26 @@ elif st.session_state.pagina == "ads":
                 )
  
                 resultado.append({
-                    "id":          ad_id,
-                    "page_name":   ad.get("page_name") or "",
-                    "page_id":     str(ad.get("page_id") or ""),
-                    "body":        copy["body"],
-                    "title":       copy["title"],
-                    "description": copy["desc"],
-                    "cta":         copy["cta"],
-                    "caption":     copy["caption"],
-                    "images":      images,
-                    "videos":      videos,
+                    "id":           ad_id,
+                    "page_name":    ad.get("page_name") or "",
+                    "page_id":      str(ad.get("page_id") or ""),
+                    "body":         body_clean,
+                    "body_raw":     copy["body"],
+                    "title":        title_clean,
+                    "description":  desc_clean,
+                    "cta":          copy["cta"],
+                    "caption":      copy["caption"],
+                    "images":       images,
+                    "videos":       videos,
                     "snapshot_url": snap_url,
-                    "data_inicio": start_raw,
-                    "impressoes":  imp_str,
-                    "plataformas": plats,
-                    "formato":     fmt,
+                    "data_inicio":  start_fmt,
+                    "data_raw":     start_raw,
+                    "impressoes":   imp_str,
+                    "plataformas":  plats,
+                    "formato":      fmt,
+                    "is_dynamic":   is_dynamic_ad,
                 })
  
-            # Retorna também o raw para debug
             return resultado, ads_raw[:3], None
  
         except Exception as e:
@@ -3224,7 +3249,7 @@ html, body { background: transparent; overflow: hidden; }
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
     # ------------------------------------------------------------------
-    # render_ads_empresa
+    # render_ads_empresa  — cards estilo Meta Ad Library
     # ------------------------------------------------------------------
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3247,7 +3272,6 @@ html, body { background: transparent; overflow: hidden; }
         query         = cache_entry.get("query", "")
         page_id_usado = cache_entry.get("page_id_usado", "")
  
-        # ── Debug: mostra JSON bruto do primeiro anúncio ──────────────
         if debug_mode:
             raw = st.session_state.ads_raw_debug.get(ck, [])
             if raw:
@@ -3261,6 +3285,7 @@ html, body { background: transparent; overflow: hidden; }
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
  
+        # ── Header da empresa ──────────────────────────────────────────
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3294,7 +3319,7 @@ html, body { background: transparent; overflow: hidden; }
             )
             return
  
-        # Filtros
+        # ── Filtros ────────────────────────────────────────────────────
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
         with fcol1:
             busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…",
@@ -3315,7 +3340,8 @@ html, body { background: transparent; overflow: hidden; }
             ads_f = [a for a in ads_f if
                      q in (a.get("body") or "").lower() or
                      q in (a.get("title") or "").lower() or
-                     q in (a.get("caption") or "").lower()]
+                     q in (a.get("caption") or "").lower() or
+                     q in (a.get("body_raw") or "").lower()]
         if filtro_fmt != "Todos":
             ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
         if filtro_plat != "Todas":
@@ -3325,302 +3351,466 @@ html, body { background: transparent; overflow: hidden; }
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
-        n_video  = sum(1 for a in ads_f if "Vídeo"  in a["formato"])
-        n_imagem = sum(1 for a in ads_f if "Imagem" in a["formato"])
-        n_outros = len(ads_f) - n_video - n_imagem
+        # ── Estatísticas ───────────────────────────────────────────────
+        n_video   = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
+        n_imagem  = sum(1 for a in ads_f if "Imagem"    in a["formato"])
+        n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
+        n_dynamic = sum(1 for a in ads_f if a.get("is_dynamic"))
+        n_outros  = len(ads_f) - n_video - n_imagem - n_carrossel
  
         st.markdown(f"""
-        <div style='display:flex;gap:12px;margin-bottom:20px'>
-            <div style='flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
+        <div style='display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap'>
+            <div style='flex:1;min-width:80px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
                 <div style='font-size:22px;font-weight:800;color:#15803d'>{len(ads_f)}</div>
                 <div style='font-size:12px;color:#16a34a;font-weight:600'>Total</div></div>
-            <div style='flex:1;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;text-align:center'>
+            <div style='flex:1;min-width:80px;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;text-align:center'>
                 <div style='font-size:22px;font-weight:800;color:#92400e'>{n_imagem}</div>
                 <div style='font-size:12px;color:#b45309;font-weight:600'>Imagens</div></div>
-            <div style='flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;text-align:center'>
+            <div style='flex:1;min-width:80px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;text-align:center'>
                 <div style='font-size:22px;font-weight:800;color:#1e40af'>{n_video}</div>
                 <div style='font-size:12px;color:#1d4ed8;font-weight:600'>Vídeos</div></div>
-            <div style='flex:1;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#5b21b6'>{n_outros}</div>
-                <div style='font-size:12px;color:#6d28d9;font-weight:600'>Outros</div></div>
+            <div style='flex:1;min-width:80px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:12px 16px;text-align:center'>
+                <div style='font-size:22px;font-weight:800;color:#5b21b6'>{n_carrossel}</div>
+                <div style='font-size:12px;color:#6d28d9;font-weight:600'>Carrossel</div></div>
+            {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
  
-        # ── Cards ──────────────────────────────────────────────────────
+        # ── Cards estilo Meta Ad Library ───────────────────────────────
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
-                fmt      = ad["formato"]
-                snap_url = ad.get("snapshot_url") or ""
-                images   = ad.get("images") or []
-                videos   = ad.get("videos") or []
+                fmt         = ad["formato"]
+                snap_url    = ad.get("snapshot_url") or ""
+                images      = ad.get("images") or []
+                videos      = ad.get("videos") or []
+                is_dyn      = ad.get("is_dynamic", False)
+                ad_id_short = ad.get("id", "")[:15] + "…" if len(ad.get("id","")) > 15 else ad.get("id","")
+                plats       = ad.get("plataformas") or []
+                plat_icons  = _plat_icons(plats)
+                data_inicio = ad.get("data_inicio", "")
+                impressoes  = ad.get("impressoes", "")
  
-                if   "Vídeo"  in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
-                elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7", "#92400e", "#fcd34d"
-                elif "Texto"  in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#f3f4f6", "#374151", "#d1d5db"
-                else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff", "#5b21b6", "#c4b5fd"
- 
-                plat_txt = _plat_icons(ad["plataformas"])
-                uid      = f"{safe_key(ck)}_{j}"
- 
-                # ── Bloco de mídia ──────────────────────────────────
-                if videos:
-                    if snap_url:
-                        media_html = f"""
-<div onclick="window.open('{snap_url}','_blank')"
-     style="width:100%;height:180px;border-bottom:1px solid #f3f4f6;
-            border-radius:12px 12px 0 0;cursor:pointer;
-            background:linear-gradient(135deg,#0f172a,#1e3a5f);
-            display:flex;align-items:center;justify-content:center;
-            flex-direction:column;gap:8px;">
-  <svg width="54" height="54" viewBox="0 0 54 54" fill="none">
-    <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.12)"/>
-    <circle cx="27" cy="27" r="20" fill="rgba(255,255,255,0.18)"/>
-    <polygon points="22,18 40,27 22,36" fill="white"/>
-  </svg>
-  <span style="font-size:11px;color:rgba(255,255,255,0.7);
-               font-family:'DM Sans',sans-serif;">Clique para ver o vídeo</span>
-</div>"""
-                    else:
-                        media_html = """
-<div style="width:100%;height:180px;border-bottom:1px solid #f3f4f6;
-            border-radius:12px 12px 0 0;
-            background:linear-gradient(135deg,#0f172a,#1e3a5f);
-            display:flex;align-items:center;justify-content:center;
-            flex-direction:column;gap:8px;">
-  <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
-    <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.1)"/>
-    <polygon points="22,18 40,27 22,36" fill="white"/>
-  </svg>
-  <span style="font-size:11px;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif;">Vídeo</span>
-</div>"""
- 
-                elif images:
-                    # Usa diretamente a URL original da Meta — sem proxy
-                    # O iframe já isola o contexto e muitas URLs funcionam diretamente
-                    img_src = images[0]
-                    # Fallback em cascata: até 3 imagens
-                    img_srcs = images[:3]
-                    # Monta lista JS de fallbacks
-                    srcs_js = _json.dumps(img_srcs)
- 
-                    media_html = f"""
-<div style="width:100%;height:180px;overflow:hidden;
-            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
-            background:#f3f4f6;position:relative;" id="mwrap_{uid}">
- 
-  <img id="mimg_{uid}"
-    src="{img_src}"
-    style="width:100%;height:100%;object-fit:cover;display:block;"
-    loading="lazy"
-  />
- 
-  <div id="merr_{uid}"
-    style="display:none;width:100%;height:100%;position:absolute;top:0;left:0;
-           background:#f3f4f6;align-items:center;justify-content:center;
-           flex-direction:column;gap:8px;">
-    {'<a href="' + snap_url + '" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;">' if snap_url else '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">'}
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
-      </svg>
-      <span style="font-size:12px;color:#3a9fd6;font-family:'DM Sans',sans-serif;font-weight:600;">
-        {'Ver criativo →' if snap_url else 'Imagem indisponível'}
-      </span>
-    {'</a>' if snap_url else '</div>'}
-  </div>
-</div>
- 
-<script>
-(function() {{
-  var srcs   = {srcs_js};
-  var idx    = 0;
-  var img    = document.getElementById('mimg_{uid}');
-  var errDiv = document.getElementById('merr_{uid}');
-  if (!img) return;
-  img.onerror = function() {{
-    idx++;
-    if (idx < srcs.length) {{
-      img.src = srcs[idx];
-    }} else {{
-      img.style.display = 'none';
-      if (errDiv) errDiv.style.display = 'flex';
-    }}
-  }};
-}})();
-</script>"""
- 
-                else:
-                    # Sem mídia — placeholder
-                    if snap_url:
-                        media_html = f"""
-<div onclick="window.open('{snap_url}','_blank')"
-     style="width:100%;height:110px;border-bottom:1px solid #f3f4f6;
-            border-radius:12px 12px 0 0;background:#f9fafb;cursor:pointer;
-            display:flex;align-items:center;justify-content:center;
-            flex-direction:column;gap:6px;">
-  <span style="font-size:26px;">📋</span>
-  <span style="font-size:11px;color:#9ca3af;font-family:'DM Sans',sans-serif;">Ver criativo →</span>
-</div>"""
-                    else:
-                        media_html = """
-<div style="width:100%;height:100px;border-bottom:1px solid #f3f4f6;
-            border-radius:12px 12px 0 0;background:#f9fafb;
-            display:flex;align-items:center;justify-content:center;font-size:28px;">📄</div>"""
- 
-                # ── Copy ────────────────────────────────────────────
+                # ── Texto do copy ───────────────────────────────────
                 body    = ad.get("body")    or ""
                 title   = ad.get("title")   or ""
                 desc    = ad.get("description") or ""
-                caption = ad.get("caption") or ""
                 cta     = ad.get("cta")     or ""
  
-                copy_parts = []
-                if title:
-                    copy_parts.append(
-                        f'<div style="font-size:13px;font-weight:700;color:#111827;'
-                        f'margin-bottom:6px;line-height:1.4">{_truncar(title, 90)}</div>'
-                    )
-                if body:
-                    copy_parts.append(
-                        f'<div style="font-size:13px;color:#374151;line-height:1.6;">'
-                        f'{_truncar(body, 180)}</div>'
-                    )
-                if desc and desc != body:
-                    copy_parts.append(
-                        f'<div style="font-size:12px;color:#6b7280;margin-top:6px;">'
-                        f'{_truncar(desc, 100)}</div>'
-                    )
-                if caption and caption not in (body, desc):
-                    copy_parts.append(
-                        f'<div style="font-size:12px;color:#6b7280;margin-top:4px;'
-                        f'font-style:italic">{_truncar(caption, 80)}</div>'
-                    )
-                if cta:
-                    copy_parts.append(
-                        f'<div style="margin-top:8px;display:inline-block;'
-                        f'background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;'
-                        f'padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">'
-                        f'{cta}</div>'
-                    )
+                # ── Bloco de mídia ──────────────────────────────────
+                uid = f"{safe_key(ck)}_{j}"
+                srcs_js = _json.dumps(images[:3]) if images else "[]"
  
-                copy_inner = (
-                    "\n".join(copy_parts)
-                    if copy_parts
-                    else '<div style="font-size:13px;color:#9ca3af;font-style:italic">Sem copy disponível</div>'
-                )
+                if videos:
+                    if snap_url:
+                        media_block = f"""
+<div class="media-block video-block" onclick="window.open('{snap_url}','_blank')" style="cursor:pointer;">
+    <div class="video-play-icon">
+        <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
+            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
+            <circle cx="27" cy="27" r="20" fill="rgba(255,255,255,0.2)"/>
+            <polygon points="22,18 40,27 22,36" fill="white"/>
+        </svg>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">Clique para ver o vídeo</div>
+</div>"""
+                    else:
+                        media_block = """
+<div class="media-block video-block">
+    <div class="video-play-icon">
+        <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
+            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.1)"/>
+            <polygon points="22,18 40,27 22,36" fill="white"/>
+        </svg>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:8px;font-family:'DM Sans',sans-serif;">Vídeo</div>
+</div>"""
+                elif images:
+                    media_block = f"""
+<div class="media-block img-block" id="mwrap_{uid}">
+    <img id="mimg_{uid}" src="{images[0]}" loading="lazy"
+        style="width:100%;height:100%;object-fit:cover;display:block;"
+        onerror="imgFallback_{uid}(this)" />
+    <div id="merr_{uid}" style="display:none;width:100%;height:100%;
+         align-items:center;justify-content:center;flex-direction:column;gap:8px;
+         background:#f9fafb;position:absolute;top:0;left:0;">
+        {'<a href="' + snap_url + '" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">' if snap_url else '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'}
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#9ca3af'};font-weight:600;font-family:DM Sans,sans-serif;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
+        {'</a>' if snap_url else '</div>'}
+    </div>
+</div>
+<script>
+var _srcs_{uid} = {srcs_js};
+var _idx_{uid}  = 0;
+function imgFallback_{uid}(img) {{
+    _idx_{uid}++;
+    if (_idx_{uid} < _srcs_{uid}.length) {{
+        img.src = _srcs_{uid}[_idx_{uid}];
+    }} else {{
+        img.style.display = 'none';
+        var err = document.getElementById('merr_{uid}');
+        if (err) err.style.display = 'flex';
+    }}
+}}
+</script>"""
+                else:
+                    # Sem mídia — placeholder elegante
+                    media_block = f"""
+<div class="media-block no-media-block" {'onclick="window.open(\'' + snap_url + '\',\'_blank\')"' if snap_url else ''} style="{'cursor:pointer;' if snap_url else ''}">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+    </svg>
+    <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;font-family:DM Sans,sans-serif;">{'Ver criativo →' if snap_url else 'Sem criativo disponível'}</span>
+</div>"""
  
-                imp_html = (
-                    f'<div style="font-size:12px;color:#059669;font-weight:600;margin-top:4px">'
-                    f'👁️ {ad["impressoes"]} impressões</div>'
-                    if ad["impressoes"] else ""
-                )
+                # ── CTA label amigável ────────────────────────────
+                cta_labels = {
+                    "LEARN_MORE": "Saiba Mais",
+                    "SIGN_UP": "Cadastre-se",
+                    "CONTACT_US": "Fale Conosco",
+                    "GET_QUOTE": "Solicitar Orçamento",
+                    "BOOK_TRAVEL": "Reservar",
+                    "WHATSAPP_MESSAGE": "Enviar Mensagem",
+                    "SEND_WHATSAPP_MESSAGE": "WhatsApp",
+                    "MESSAGE_PAGE": "Enviar Mensagem",
+                    "SHOP_NOW": "Comprar Agora",
+                    "DOWNLOAD": "Baixar",
+                    "WATCH_MORE": "Ver Mais",
+                    "APPLY_NOW": "Candidatar-se",
+                    "GET_OFFER": "Ver Oferta",
+                    "SUBSCRIBE": "Assinar",
+                    "CALL_NOW": "Ligar Agora",
+                    "SEND_MESSAGE": "Enviar Mensagem",
+                    "GET_DIRECTIONS": "Como Chegar",
+                    "BUY_NOW": "Comprar",
+                    "DONATE": "Doar",
+                    "OPEN_LINK": "Abrir Link",
+                    "NO_BUTTON": "",
+                }
+                cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
-                ver_btn = (
-                    f'<a href="{snap_url}" target="_blank" style="'
-                    f'display:block;width:100%;padding:10px 0;text-align:center;'
-                    f'border:1px solid #e5e7eb;border-radius:8px;font-size:13px;'
-                    f'font-weight:600;color:#374151;text-decoration:none;background:#fff;'
-                    f'margin-top:12px;transition:background 0.15s;"'
-                    f'onmouseover="this.style.background=\'#f9fafb\'"'
-                    f'onmouseout="this.style.background=\'#fff\'">🔗 Ver criativo</a>'
-                ) if snap_url else ""
- 
+                # ── HTML do card ──────────────────────────────────
                 card_html = f"""<!DOCTYPE html>
 <html>
 <head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{
-    background:transparent;
-    font-family:'DM Sans',sans-serif;
-    -webkit-font-smoothing:antialiased;
-    overflow:visible;
+    background: transparent;
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: visible;
 }}
-body {{ padding-bottom:4px; }}
+body {{ padding-bottom: 4px; }}
+ 
 .card {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
+    background: #fff;
+    border: 1px solid #dde1e7;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }}
-.meta {{
-    padding:12px 14px 10px;
-    border-bottom:1px solid #f3f4f6;
+ 
+/* ── STATUS HEADER ── */
+.status-bar {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid #f0f2f5;
+    background: #fafbfc;
+}}
+.status-dot {{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1aab40;
+}}
+.status-dot::before {{
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1aab40;
+    flex-shrink: 0;
+}}
+.ad-id {{
+    font-size: 10px;
+    color: #8a8d91;
+    font-family: 'DM Mono', monospace;
+}}
+ 
+/* ── META INFO ── */
+.meta-info {{
+    padding: 6px 14px 8px;
+    border-bottom: 1px solid #f0f2f5;
+    background: #fafbfc;
 }}
 .meta-row {{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #65676b;
+    margin-bottom: 3px;
+    flex-wrap: wrap;
 }}
-.badge {{
-    display:inline-block;
-    background:{fmt_bg};
-    color:{fmt_txt_c};
-    border:1px solid {fmt_brd};
-    padding:3px 10px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:700;
+.meta-label {{
+    font-weight: 600;
+    color: #444950;
+    flex-shrink: 0;
 }}
-.date {{ font-size:11px; color:#9ca3af; }}
-.page {{ font-size:12px; color:#6b7280; margin-top:2px; }}
-.copy {{ padding:12px 14px; flex:1; }}
-.footer {{
-    padding:0 14px 14px;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
+.plat-icons {{
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }}
-.plat {{ font-size:11px; color:#9ca3af; }}
+.dynamic-badge {{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ffcc80;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 4px;
+}}
+ 
+/* ── COPY SECTION ── */
+.copy-section {{
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid #f0f2f5;
+    flex: 1;
+}}
+.page-header {{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}}
+.page-avatar {{
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: {cor_av};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}}
+.page-name {{
+    font-size: 13px;
+    font-weight: 700;
+    color: #050505;
+    line-height: 1.2;
+}}
+.page-sponsored {{
+    font-size: 11px;
+    color: #65676b;
+}}
+.copy-body {{
+    font-size: 14px;
+    color: #050505;
+    line-height: 1.65;
+    white-space: pre-line;
+    word-break: break-word;
+}}
+.copy-title {{
+    font-size: 14px;
+    font-weight: 700;
+    color: #050505;
+    margin-top: 8px;
+    line-height: 1.4;
+}}
+.copy-desc {{
+    font-size: 12px;
+    color: #65676b;
+    margin-top: 3px;
+    line-height: 1.4;
+}}
+.no-copy {{
+    font-size: 13px;
+    color: #bcc0c4;
+    font-style: italic;
+}}
+ 
+/* ── MEDIA BLOCK ── */
+.media-block {{
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    background: #f0f2f5;
+}}
+.img-block {{
+    height: 220px;
+}}
+.video-block {{
+    height: 200px;
+    background: linear-gradient(135deg, #0f1f35 0%, #1a3a5c 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}}
+.video-play-icon {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}}
+.video-block:hover .video-play-icon {{
+    transform: scale(1.1);
+}}
+.no-media-block {{
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f7f8fa;
+    border-top: 1px solid #f0f2f5;
+    border-bottom: 1px solid #f0f2f5;
+}}
+ 
+/* ── CTA FOOTER ── */
+.cta-footer {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f7f8fa;
+    border-top: 1px solid #e4e6ea;
+    gap: 10px;
+    min-height: 46px;
+}}
+.cta-domain {{
+    font-size: 11px;
+    color: #65676b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}}
+.cta-btn {{
+    background: #e4e6eb;
+    color: #050505;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}}
+.cta-btn:hover {{ background: #d8dadf; }}
+ 
+/* ── IMPRESSOES ── */
+.imp-bar {{
+    padding: 6px 14px;
+    font-size: 11px;
+    color: #15803d;
+    font-weight: 600;
+    background: #f0fdf4;
+    border-top: 1px solid #dcfce7;
+}}
 </style>
 </head>
 <body>
 <div class="card">
-    {media_html}
-    <div class="meta">
+ 
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <div class="status-dot">Ativo</div>
+        {f'<span class="ad-id">ID: {ad_id_short}</span>' if ad_id_short else ''}
+    </div>
+ 
+    <!-- META INFO -->
+    <div class="meta-info">
+        {f'<div class="meta-row"><span class="meta-label">Veiculação iniciada em</span>{data_inicio}</div>' if data_inicio else ''}
         <div class="meta-row">
-            <span class="badge">{fmt}</span>
-            <span class="date">{ad["data_inicio"] or "—"}</span>
+            <span class="meta-label">Plataformas</span>
+            <span class="plat-icons">{plat_icons}</span>
         </div>
-        <div class="page">{ad["page_name"] or nome}</div>
-        {imp_html}
+        {f'<div class="meta-row"><span class="meta-label">Impressões</span>{impressoes}</div>' if impressoes else ''}
     </div>
-    <div class="copy">{copy_inner}</div>
-    <div class="footer">
-        <div class="plat">{plat_txt or "—"}</div>
-        {ver_btn}
+ 
+    <!-- COPY SECTION -->
+    <div class="copy-section">
+        <div class="page-header">
+            <div class="page-avatar">{avatar}</div>
+            <div>
+                <div class="page-name">{ad.get("page_name") or nome}{' <span class="dynamic-badge">⚡ Dinâmico</span>' if is_dyn else ''}</div>
+                <div class="page-sponsored">Patrocinado</div>
+            </div>
+        </div>
+ 
+        {f'<div class="copy-body">{_truncar(body, 220)}</div>' if body else ''}
+        {f'<div class="copy-title">{_truncar(title, 90)}</div>' if title else ''}
+        {f'<div class="copy-desc">{_truncar(desc, 100)}</div>' if desc else ''}
+        {'<div class="no-copy">Sem copy disponível para este anúncio.</div>' if not body and not title and not desc else ''}
     </div>
+ 
+    <!-- MEDIA -->
+    {media_block}
+ 
+    <!-- CTA FOOTER -->
+    <div class="cta-footer">
+        <span class="cta-domain">{ad.get("caption") or (snap_url.replace("https://","").split("/")[0] if snap_url else "")}</span>
+        {f'<a href="{snap_url}" target="_blank" class="cta-btn">{cta_display or "Ver detalhes"}</a>' if snap_url else (f'<span class="cta-btn" style="opacity:0.5;cursor:default">{cta_display}</span>' if cta_display else '')}
+    </div>
+ 
+    <!-- IMPRESSÕES BAR (se hover) -->
+    {f'<div class="imp-bar">👁 {impressoes} impressões estimadas</div>' if impressoes else ''}
+ 
 </div>
+ 
 <script>
 function ajustarAltura() {{
     var card = document.querySelector('.card');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{
-            if (f.contentWindow === window) f.style.height = (h + 8) + 'px';
-        }} catch(e) {{}}
+        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
     }});
 }}
 document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
-setTimeout(ajustarAltura, 300);
-setTimeout(ajustarAltura, 800);
-setTimeout(ajustarAltura, 1500);
 document.querySelectorAll('img').forEach(function(img) {{
     img.addEventListener('load', ajustarAltura);
     img.addEventListener('error', ajustarAltura);
 }});
+setTimeout(ajustarAltura, 300);
+setTimeout(ajustarAltura, 800);
+setTimeout(ajustarAltura, 1500);
 </script>
 </body>
 </html>"""
  
-                components.html(card_html, height=480, scrolling=False)
+                components.html(card_html, height=520, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
         # ── Análise IA ─────────────────────────────────────────────────
@@ -3631,7 +3821,7 @@ document.querySelectorAll('img').forEach(function(img) {{
             st.session_state[chave_ia] = ""
  
         resumo_ads = "\n".join([
-            f"- [{a['formato']}] "
+            f"- [{a['formato']}{'(dinâmico)' if a.get('is_dynamic') else ''}] "
             f"Título: {_truncar(a.get('title',''), 60) or '—'} | "
             f"Copy: {_truncar(a.get('body',''), 100) or '—'} | "
             f"Impressões: {a['impressoes'] or '—'} | "
@@ -3670,12 +3860,13 @@ document.querySelectorAll('img').forEach(function(img) {{
             else:
                 with st.spinner("Analisando com IA…"):
                     try:
+                        n_dyn = sum(1 for a in ads_f if a.get("is_dynamic"))
                         n_vid = sum(1 for a in ads_f if "Vídeo"  in a["formato"])
                         n_img = sum(1 for a in ads_f if "Imagem" in a["formato"])
                         prompt_ads = f"""Você é especialista em mídia paga e marketing digital.
 Analise os anúncios de "{nome}" e gere um relatório estratégico completo em português.
  
-Empresa: {nome} | Total: {len(ads_f)} | {n_img} imagens | {n_vid} vídeos
+Empresa: {nome} | Total: {len(ads_f)} | {n_img} imagens | {n_vid} vídeos | {n_dyn} anúncios dinâmicos
  
 Amostra:
 {resumo_ads}
@@ -3684,6 +3875,7 @@ Amostra:
 ### 🎯 Estratégia de Mídia
 ### 📝 Padrões de Copy e Mensagem
 ### 🖼️ Análise de Formatos
+### ⚡ Uso de Anúncios Dinâmicos
 ### 📊 Estimativa de Investimento e Alcance
 ### ⚠️ Pontos de Atenção
 ### 💡 Oportunidades Competitivas (3 ações concretas)"""
