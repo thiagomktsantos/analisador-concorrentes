@@ -2683,6 +2683,7 @@ elif st.session_state.pagina == "ads":
  
     import datetime as _dt
     import json as _json
+    import base64 as _b64
  
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
@@ -2720,6 +2721,54 @@ elif st.session_state.pagina == "ads":
             return (_dt.datetime.now() - ts).total_seconds() < CACHE_TTL_HORAS * 3600
         except Exception:
             return False
+ 
+    # ── MELHORIA 1: converte URL de imagem em base64 durante a coleta
+    # Resolve o problema de URLs da Meta que expiram em minutos.
+    def _url_para_base64(url: str) -> str:
+        """Baixa a imagem e retorna string data:image/... pronta para <img src>."""
+        if not url or not url.startswith("http"):
+            return ""
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://www.facebook.com/",
+            }
+            r = requests.get(url, headers=headers, timeout=10, stream=True)
+            if r.status_code != 200:
+                return ""
+            ct = r.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+            if not ct.startswith("image/"):
+                ct = "image/jpeg"
+            data = _b64.b64encode(r.content).decode("utf-8")
+            return f"data:{ct};base64,{data}"
+        except Exception:
+            return ""
+ 
+    # ── MELHORIA 2: gera URL do Microlink para screenshot do criativo
+    def _microlink_screenshot(snap_url: str) -> str:
+        """Retorna URL do Microlink que tira screenshot da página do Ad Library."""
+        if not snap_url:
+            return ""
+        import urllib.parse
+        encoded = urllib.parse.quote(snap_url, safe="")
+        return f"https://api.microlink.io/?url={encoded}&screenshot=true&meta=false&embed=screenshot.url"
+ 
+    # ── MELHORIA 4: extrai thumbnail de vídeo
+    def _extract_video_thumbnail(ad: dict) -> str:
+        """Tenta extrair thumbnail do vídeo de vários campos da API."""
+        snapshot = ad.get("snapshot") or {}
+        cards    = snapshot.get("cards") or []
+        for k in ("thumbnail_url", "preview_image_url", "image_url", "original_image_url"):
+            v = ad.get(k) or snapshot.get(k) or ""
+            if v and v.startswith("http"):
+                return v
+        for card in cards:
+            if not isinstance(card, dict): continue
+            for k in ("thumbnail_url", "preview_image_url", "image_url"):
+                v = card.get(k, "")
+                if v and v.startswith("http"):
+                    return v
+        return ""
  
     if "ads_cache" not in st.session_state:
         st.session_state.ads_cache = carregar_cache_ads()
@@ -2908,12 +2957,37 @@ elif st.session_state.pagina == "ads":
                 else: start_fmt = ""
                 ad_id    = str(ad.get("id") or ad.get("ad_archive_id") or "")
                 snap_url = f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else (ad.get("ad_snapshot_url") or "")
+ 
+                # ── MELHORIA 1: converte imagens para base64 na coleta
+                # Tenta apenas a primeira imagem para não travar muito a coleta.
+                # As demais ficam como URL de fallback.
+                images_b64 = []
+                if images:
+                    b64 = _url_para_base64(images[0])
+                    images_b64.append(b64 if b64 else images[0])
+                    images_b64.extend(images[1:3])  # restantes como URL normal
+ 
+                # ── MELHORIA 4: extrai thumbnail de vídeo
+                video_thumb_url = _extract_video_thumbnail(ad) if has_video else ""
+                video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
+ 
                 resultado.append({
-                    "id":ad_id,"page_name":ad.get("page_name") or "","page_id":str(ad.get("page_id") or ""),
-                    "body":body_c,"body_raw":copy["body"],"title":title_c,"description":desc_c,
-                    "cta":copy["cta"],"caption":copy["caption"],"images":images,"videos":videos,
-                    "snapshot_url":snap_url,"data_inicio":start_fmt,"data_raw":start_raw,
-                    "impressoes":imp_str,"plataformas":plats,"formato":fmt,"is_dynamic":is_dyn,
+                    "id": ad_id,
+                    "page_name": ad.get("page_name") or "",
+                    "page_id": str(ad.get("page_id") or ""),
+                    "body": body_c, "body_raw": copy["body"],
+                    "title": title_c, "description": desc_c,
+                    "cta": copy["cta"], "caption": copy["caption"],
+                    "images": images,           # URLs originais (fallback)
+                    "images_b64": images_b64,   # base64 persistente
+                    "videos": videos,
+                    "video_thumb": video_thumb_b64 or video_thumb_url,
+                    "snapshot_url": snap_url,
+                    "data_inicio": start_fmt, "data_raw": start_raw,
+                    "impressoes": imp_str,
+                    "plataformas": plats,
+                    "formato": fmt,
+                    "is_dynamic": is_dyn,
                 })
             return resultado, ads_raw[:3], None
         except Exception as e:
@@ -3128,6 +3202,10 @@ html, body { background:transparent; overflow:hidden; }
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
+    # ------------------------------------------------------------------
+    # RENDER DE CADA EMPRESA
+    # ------------------------------------------------------------------
+ 
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
         nome     = emp_item["nome"]
@@ -3166,6 +3244,9 @@ html, body { background:transparent; overflow:hidden; }
         brd_ts    = "#86efac" if fresco_aba else "#fcd34d"
         ico_ts    = "✅"      if fresco_aba else "🕐"
  
+        # ── MELHORIA 3: botão Ver no Ad Library bem visível no cabeçalho
+        lib_url = f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&view_all_page_id={page_id_usado}" if page_id_usado else ""
+ 
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3184,16 +3265,19 @@ html, body { background:transparent; overflow:hidden; }
                     {f"<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Page ID: {page_id_usado}</span>" if page_id_usado and page_id_usado != query else ""}
                 </div>
             </div>
-            <div style='text-align:right;flex-shrink:0'>
-                <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
-                <div style='font-size:12px;color:#9ca3af'>anúncios em cache</div>
+            <div style='display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0'>
+                <div style='text-align:right'>
+                    <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
+                    <div style='font-size:12px;color:#9ca3af'>anúncios em cache</div>
+                </div>
+                {f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">🔗 Ver no Ad Library</a>' if lib_url else ''}
             </div>
         </div>""", unsafe_allow_html=True)
  
         if not ads_list:
             st.info("Nenhum anúncio encontrado. Verifique o Page ID ou nome da página.")
-            st.link_button("🔍 Verificar no Ad Library",
-                f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q={query}")
+            if lib_url:
+                st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
  
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
@@ -3249,27 +3333,43 @@ html, body { background:transparent; overflow:hidden; }
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
  
+        # ── Cards
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
-                snap_url    = ad.get("snapshot_url") or ""
-                images      = ad.get("images") or []
-                videos      = ad.get("videos") or []
-                is_dyn      = ad.get("is_dynamic", False)
-                ad_id_short = ad.get("id","")[:15] + "…" if len(ad.get("id","")) > 15 else ad.get("id","")
-                plats       = ad.get("plataformas") or []
-                plat_js     = _json.dumps(_plat_icons(plats))
-                data_inicio = ad.get("data_inicio","")
-                impressoes  = ad.get("impressoes","")
-                body        = ad.get("body")        or ""
-                title       = ad.get("title")       or ""
-                desc        = ad.get("description") or ""
-                cta         = ad.get("cta")         or ""
-                uid         = f"{safe_key(ck)}_{j}"
-                srcs_js     = _json.dumps(images[:3]) if images else "[]"
+                snap_url     = ad.get("snapshot_url") or ""
+                images       = ad.get("images") or []
+                images_b64   = ad.get("images_b64") or []
+                videos       = ad.get("videos") or []
+                video_thumb  = ad.get("video_thumb") or ""
+                is_dyn       = ad.get("is_dynamic", False)
+                ad_id        = ad.get("id", "")
+                ad_id_short  = ad_id[:15] + "…" if len(ad_id) > 15 else ad_id
+                plats        = ad.get("plataformas") or []
+                plat_js      = _json.dumps(_plat_icons(plats))
+                data_inicio  = ad.get("data_inicio","")
+                impressoes   = ad.get("impressoes","")
+                body         = ad.get("body")        or ""
+                title        = ad.get("title")       or ""
+                desc         = ad.get("description") or ""
+                cta          = ad.get("cta")         or ""
+                uid          = f"{safe_key(ck)}_{j}"
  
-                # ── Pre-compute onclick/style strings
-                # (backslashes cannot be used inside f-string expressions)
+                # ── MELHORIA 2: Microlink screenshot como fallback final
+                microlink_url = _microlink_screenshot(snap_url)
+ 
+                # Fonte primária da imagem: base64 (persistente) > URL original > Microlink
+                img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
+                # Fallbacks adicionais para o JS tentar em sequência
+                img_fallbacks = []
+                if images_b64 and len(images_b64) > 1:
+                    img_fallbacks.extend(images_b64[1:])
+                img_fallbacks.extend([u for u in images if u not in img_fallbacks])
+                if microlink_url:
+                    img_fallbacks.append(microlink_url)
+                srcs_js = _json.dumps(img_fallbacks)
+ 
+                # ── Pre-compute onclick/style (sem backslash em f-string)
                 if snap_url:
                     _snap_safe      = snap_url.replace("'", "\\'")
                     video_onclick   = f"onclick=\"window.open('{_snap_safe}','_blank')\""
@@ -3282,9 +3382,38 @@ html, body { background:transparent; overflow:hidden; }
                     nomedia_onclick = ""
                     nomedia_style   = ""
  
-                # ── Media block
+                # ── MELHORIA 4: bloco de vídeo mostra thumbnail real
                 if videos:
-                    media_block = f"""
+                    if video_thumb:
+                        # Tem thumbnail: mostra a imagem com ícone de play sobreposto
+                        media_block = f"""
+<div class="media-block video-thumb-block" {video_onclick} style="{video_style}position:relative;">
+    <img src="{video_thumb}" loading="lazy"
+         style="width:100%;height:100%;object-fit:cover;display:block;"
+         onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
+    <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;
+         background:linear-gradient(135deg,#0f1f35,#1a3a5c);
+         align-items:center;justify-content:center;flex-direction:column;gap:8px">
+        <svg width="36" height="36" viewBox="0 0 54 54" fill="none">
+            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
+            <polygon points="22,18 40,27 22,36" fill="white"/>
+        </svg>
+    </div>
+    <!-- Play overlay -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="width:52px;height:52px;border-radius:50%;
+                    background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);
+                    display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 54 54" fill="none">
+                <polygon points="18,14 42,27 18,40" fill="white"/>
+            </svg>
+        </div>
+    </div>
+    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:DM Sans,sans-serif;">▶ VER VÍDEO</div>' if snap_url else ''}
+</div>"""
+                    else:
+                        # Sem thumbnail: fundo escuro + play
+                        media_block = f"""
 <div class="media-block video-block" {video_onclick} style="{video_style}">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
@@ -3295,7 +3424,9 @@ html, body { background:transparent; overflow:hidden; }
     </div>
     <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
-                elif images:
+ 
+                elif img_primary:
+                    # ── Imagem: base64 primário + fallbacks em sequência
                     if snap_url:
                         fallback_link_open  = f'<a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">'
                         fallback_link_close = '</a>'
@@ -3308,8 +3439,8 @@ html, body { background:transparent; overflow:hidden; }
                         fallback_label      = 'Sem imagem'
  
                     media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}">
-    <img id="mimg_{uid}" src="{images[0]}" loading="lazy"
+<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;">
+    <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;
@@ -3325,17 +3456,43 @@ html, body { background:transparent; overflow:hidden; }
     </div>
 </div>
 <script>
-var _srcs_{uid}={srcs_js};var _idx_{uid}=0;
+var _srcs_{uid}={srcs_js};
+var _idx_{uid}=0;
 function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
-    else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
+    if(_idx_{uid}<_srcs_{uid}.length){{
+        img.src=_srcs_{uid}[_idx_{uid}];
+    }} else {{
+        img.style.display='none';
+        var e=document.getElementById('merr_{uid}');
+        if(e) e.style.display='flex';
+    }}
 }}
 </script>"""
                 else:
-                    nomedia_color = '#3a9fd6' if snap_url else '#c4c4c4'
-                    nomedia_label = 'Ver criativo →' if snap_url else 'Sem criativo disponível'
-                    media_block = f"""
+                    # ── Sem mídia: Microlink screenshot ou placeholder
+                    if microlink_url:
+                        media_block = f"""
+<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;">
+    <img id="mimg_{uid}" src="{microlink_url}" loading="lazy"
+        style="width:100%;height:100%;object-fit:cover;display:block;"
+        onerror="this.style.display='none';document.getElementById('mnomedia_{uid}').style.display='flex'" />
+    <div id="mnomedia_{uid}" style="display:none;width:100%;height:100%;
+         align-items:center;justify-content:center;flex-direction:column;gap:8px;
+         background:#f9fafb;position:absolute;top:0;left:0;">
+        <a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span style="font-size:12px;color:#3a9fd6;font-weight:600;font-family:DM Sans,sans-serif;">Ver criativo →</span>
+        </a>
+    </div>
+</div>"""
+                    else:
+                        nomedia_color = '#3a9fd6' if snap_url else '#c4c4c4'
+                        nomedia_label = 'Ver criativo →' if snap_url else 'Sem criativo disponível'
+                        media_block = f"""
 <div class="media-block no-media-block" {nomedia_onclick} style="{nomedia_style}">
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
@@ -3356,12 +3513,25 @@ function imgFallback_{uid}(img){{
                 }
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
-                h_base  = 44 + 60 + 50 + 32
-                h_copy  = 130 if (body or title or desc) else 80
-                h_copy += 30  if body and len(body) > 200 else 0
-                h_media = 230 if images else (210 if videos else 120)
-                h_imp   = 32  if impressoes else 0
+                h_base      = 44 + 60 + 50 + 32 + 44  # +44 para o botão Ad Library
+                h_copy      = 130 if (body or title or desc) else 80
+                h_copy     += 30  if body and len(body) > 200 else 0
+                h_media     = 230 if (img_primary or microlink_url) else (210 if videos else 120)
+                h_imp       = 32  if impressoes else 0
                 card_height = h_base + h_copy + h_media + h_imp + 40
+ 
+                # ── MELHORIA 3: botão "Ver no Ad Library" dentro do card
+                lib_btn_html = ""
+                if snap_url:
+                    lib_btn_html = f"""
+<a href="{snap_url}" target="_blank" class="lib-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/>
+        <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+    Ver criativo no Ad Library
+</a>"""
  
                 card_html = f"""<!DOCTYPE html>
 <html><head>
@@ -3395,15 +3565,23 @@ body{{padding-bottom:20px;}}
 .ver-mais:hover{{text-decoration:underline;}}
 .media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;}}
 .img-block{{height:220px;}}
+.video-thumb-block{{height:220px;}}
 .video-block{{height:200px;background:linear-gradient(135deg,#0f1f35 0%,#1a3a5c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
 .video-play-icon{{display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}}
 .video-block:hover .video-play-icon{{transform:scale(1.1);}}
+.video-thumb-block:hover img{{opacity:0.92;}}
 .no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;border-top:1px solid #f0f2f5;border-bottom:1px solid #f0f2f5;gap:8px;}}
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:10px;min-height:50px;}}
 .cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;letter-spacing:0.3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-block;transition:background 0.15s;flex-shrink:0;}}
 .cta-btn:hover{{background:#d8dadf;}}
 .imp-bar{{padding:7px 14px;font-size:11px;color:#15803d;font-weight:600;background:#f0fdf4;border-top:1px solid #dcfce7;}}
+.lib-btn{{display:flex;align-items:center;justify-content:center;gap:7px;
+          width:100%;padding:10px;background:#1877F2;color:#fff;
+          border:none;border-radius:0 0 10px 10px;
+          font-size:13px;font-weight:700;text-decoration:none;
+          font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
+.lib-btn:hover{{background:#166fe5;}}
 </style></head><body>
 <div class="card">
     <div class="status-bar">
@@ -3429,7 +3607,7 @@ body{{padding-bottom:20px;}}
         {f'<div><div class="copy-body" id="cbody_{uid}"><span id="body_short_{uid}">{_truncar(body,200).replace(chr(10),"<br>")}</span><span id="body_full_{uid}" style="display:none">{body.replace(chr(10),"<br>")}</span>{"<span class=ver-mais onclick=toggleBody(&#39;"+uid+"&#39;)>Ver mais</span>" if len(body)>200 else ""}</div></div>' if body else ''}
         {f'<div class="copy-title">{title}</div>' if title else ''}
         {f'<div class="copy-desc">{_truncar(desc,140)}</div>' if desc else ''}
-        {'<div class="no-copy">Sem copy disponível.<br><small style="color:#9ca3af">Clique em &ldquo;Ver criativo&rdquo; para ver o anúncio completo.</small></div>' if not body and not title and not desc else ''}
+        {'<div class="no-copy">Sem copy disponível.</div>' if not body and not title and not desc else ''}
     </div>
     {media_block}
     <div class="cta-footer">
@@ -3439,6 +3617,7 @@ body{{padding-bottom:20px;}}
         </a>
     </div>
     {f'<div class="imp-bar">👁 {impressoes} impressões estimadas</div>' if impressoes else ''}
+    {lib_btn_html}
 </div>
 <script>
 (function(){{
@@ -3558,7 +3737,7 @@ Amostra:
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
-             
+              
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
 # ---------------------------------------------------
