@@ -2708,10 +2708,6 @@ elif st.session_state.pagina == "ads":
  
     # ── Busca via SearchAPI.io ──────────────────────────────────────────
     def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
-        """
-        Busca anúncios na Meta Ad Library usando SearchAPI.io.
-        `query` pode ser um page_id numérico ou o nome da página.
-        """
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key:
             return [], "SEARCHAPI_KEY não configurada nos secrets."
@@ -2726,7 +2722,6 @@ elif st.session_state.pagina == "ads":
                 "active_status":   "all",
             }
  
-            # Se for numérico, filtra por page_id; senão busca por nome
             if query.strip().isdigit():
                 params["page_id"] = query.strip()
             else:
@@ -2746,27 +2741,22 @@ elif st.session_state.pagina == "ads":
             resultado = []
  
             for ad in ads_raw[:limit]:
-                # ── Corpo / copy
                 body = ad.get("ad_creative_bodies", [""])
                 body = body[0] if isinstance(body, list) and body else (body or "")
  
-                # ── Título e descrição
                 titles = ad.get("ad_creative_link_titles", [""])
                 title  = titles[0] if isinstance(titles, list) and titles else (titles or "")
                 descs  = ad.get("ad_creative_link_descriptions", [""])
                 desc   = descs[0] if isinstance(descs, list) and descs else (descs or "")
  
-                # ── Imagens / vídeos
                 images = []
                 videos = []
                 snapshot = ad.get("snapshot", {}) or {}
  
-                # Imagens direto no objeto
                 for key in ("image_url", "original_image_url", "resized_image_url"):
                     if ad.get(key):
                         images.append(ad[key])
  
-                # Cards / carousel no snapshot
                 for card in (snapshot.get("cards") or []):
                     if isinstance(card, dict):
                         for k in ("original_image_url", "image_url", "resized_image_url"):
@@ -2778,22 +2768,18 @@ elif st.session_state.pagina == "ads":
                                 videos.append(card[k])
                                 break
  
-                # Vídeo principal
                 for key in ("video_hd_url", "video_sd_url"):
                     if snapshot.get(key):
                         videos.append(snapshot[key])
  
-                # ── Plataformas
                 plats = ad.get("publisher_platforms", []) or []
  
-                # ── Formato
                 has_video = bool(videos) or ad.get("media_type", "").upper() == "VIDEO"
                 has_cards = len((snapshot.get("cards") or [])) > 1
                 if has_video:   fmt = "Vídeo 🎬"
                 elif has_cards: fmt = "Carrossel 🎠"
                 else:           fmt = "Imagem 🖼️"
  
-                # ── Impressões
                 imp = ad.get("impressions", {}) or {}
                 if isinstance(imp, dict):
                     lo = imp.get("lower_bound", "")
@@ -2802,11 +2788,9 @@ elif st.session_state.pagina == "ads":
                 else:
                     imp_str = str(imp) if imp else ""
  
-                # ── Data início
                 start_raw = ad.get("ad_delivery_start_time", "") or ""
                 start_str = start_raw[:10] if start_raw else ""
  
-                # ── URL snapshot
                 ad_id    = str(ad.get("id", "") or ad.get("ad_archive_id", ""))
                 snap_url = (
                     f"https://www.facebook.com/ads/library/?id={ad_id}"
@@ -2867,37 +2851,6 @@ html, body { background: transparent; overflow: hidden; }
  
     if not SEARCHAPI_KEY:
         st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
- 
-    # ── INSTRUÇÃO
-    components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.card {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:4px; }}
-.badge {{ padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-.copy-box {{ padding:14px 16px; min-height:80px; font-size:13px; color:#374151; line-height:1.6; font-style:italic; }}
-.meta {{ padding:14px 16px 10px; border-bottom:1px solid #f3f4f6; }}
-</style>
-<div class="card">
-    {img_html}
-    <div class="meta">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <span class="badge" style="background:{fmt_bg};color:{fmt_txt_c};border:1px solid {fmt_brd}">{fmt}</span>
-            <span style="font-size:11px;color:#9ca3af">{ad["data_inicio"] or "—"}</span>
-        </div>
-        <div style="font-size:12px;color:#6b7280">{ad["page_name"] or nome}</div>
-        {"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ " + ad["impressoes"] + " impressões</div>" if ad["impressoes"] else ""}
-    </div>
-    <div class="copy-box">
-        {"<div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>" + _truncar(ad["title"],60) + "</div>" if ad["title"] else ""}
-        {"<div>" + _truncar(ad["body"],100) + "</div>" if ad["body"] else ""}
-        {"<div style='font-size:12px;color:#6b7280;margin-top:4px'>" + _truncar(ad["description"],80) + "</div>" if ad["description"] else ""}
-        {"" if (ad["title"] or ad["body"] or ad["description"]) else "<span style='color:#9ca3af'>Sem copy disponível</span>"}
-    </div>
-    <div style="padding:0 16px 10px;font-size:11px;color:#9ca3af">{plat_txt or "—"}</div>
-</div>
-""", height=420, scrolling=False)
  
     # ── INPUTS
     st.markdown(
@@ -3116,7 +3069,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
                 <div style='font-size:12px;color:#6d28d9;font-weight:600'>Outros</div></div>
         </div>""", unsafe_allow_html=True)
  
-        # Cards
+        # ── Cards de anúncios
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
@@ -3127,6 +3080,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
  
                 plat_txt = _plat_icons(ad["plataformas"])
  
+                # Monta img_html aqui dentro do loop, onde ad está definido
                 img_html = ""
                 if ad["images"]:
                     img_html = f"""
@@ -3144,6 +3098,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
                     copy_parts.append(f"<div style='font-size:12px;color:#6b7280;margin-top:4px'>{_truncar(ad['description'],80)}</div>")
                 copy_html_inner = "\n".join(copy_parts) if copy_parts else "<div style='font-size:13px;color:#9ca3af;font-style:italic'>Sem copy disponível</div>"
  
+                impressoes_html = f"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ {ad['impressoes']} impressões</div>" if ad["impressoes"] else ""
+ 
                 st.markdown(f"""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:4px'>
                     {img_html}
@@ -3154,7 +3110,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
                             <span style='font-size:11px;color:#9ca3af'>{ad["data_inicio"] or "—"}</span>
                         </div>
                         <div style='font-size:12px;color:#6b7280'>{ad["page_name"] or nome}</div>
-                        {"<div style='font-size:12px;color:#059669;font-weight:600'>👁️ " + ad["impressoes"] + " impressões</div>" if ad["impressoes"] else ""}
+                        {impressoes_html}
                     </div>
                     <div style='padding:14px 16px;min-height:80px'>{copy_html_inner}</div>
                     <div style='padding:0 16px 10px'><div style='font-size:11px;color:#9ca3af'>{plat_txt or "—"}</div></div>
@@ -3247,7 +3203,6 @@ O que esta empresa está fazendo que pode ser uma ameaça?
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
- 
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
