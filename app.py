@@ -2706,26 +2706,58 @@ elif st.session_state.pagina == "ads":
         if not txt: return "—"
         return txt[:n] + "…" if len(txt) > n else txt
  
-    # ── Busca via SearchAPI.io ──────────────────────────────────────────
+    def buscar_page_id(query: str):
+        """Tenta encontrar o Page ID do Facebook pelo nome da página."""
+        api_key = st.secrets.get("SEARCHAPI_KEY", "")
+        if not api_key:
+            return None, "SEARCHAPI_KEY não configurada"
+        try:
+            r = requests.get(
+                "https://www.searchapi.io/api/v1/search",
+                params={
+                    "engine": "meta_ad_library",
+                    "api_key": api_key,
+                    "ad_type": "ALL",
+                    "ad_reached_countries": "BR",
+                    "q": query,
+                    "active_status": "active",
+                },
+                timeout=20,
+            )
+            data = r.json()
+            ads = data.get("ads", [])
+            query_lower = query.lower().strip()
+            for ad in ads:
+                page_name = (ad.get("page_name") or "").lower()
+                page_id   = str(ad.get("page_id") or "")
+                if page_id and (query_lower in page_name or page_name in query_lower):
+                    return page_id, None
+            for ad in ads:
+                page_id = str(ad.get("page_id") or "")
+                if page_id:
+                    return page_id, f"Match aproximado: '{ad.get('page_name','')}' — verifique se é a empresa correta"
+            return None, "Nenhuma página encontrada com esse nome"
+        except Exception as e:
+            return None, str(e)
+ 
     def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key:
             return [], "SEARCHAPI_KEY não configurada nos secrets."
- 
         try:
             params = {
-                "engine":      "meta_ad_library",
-                "api_key":     api_key,
-                "ad_type":     "ALL",
+                "engine":               "meta_ad_library",
+                "api_key":              api_key,
+                "ad_type":              "ALL",
                 "ad_reached_countries": "BR",
-                "media_type":  "all",
-                "active_status":   "all",
+                "media_type":           "all",
+                "active_status":        "all",
             }
- 
-            if query.strip().isdigit():
-                params["page_id"] = query.strip()
+            query = query.strip()
+            if query.isdigit():
+                params["page_id"] = query
             else:
-                params["q"] = query.strip()
+                params["q"] = query
  
             r = requests.get(
                 "https://www.searchapi.io/api/v1/search",
@@ -2738,19 +2770,27 @@ elif st.session_state.pagina == "ads":
                 return [], data["error"]
  
             ads_raw = data.get("ads", [])
+ 
+            if not query.isdigit() and ads_raw:
+                query_lower = query.lower()
+                ads_filtrados = [
+                    a for a in ads_raw
+                    if query_lower in (a.get("page_name") or "").lower()
+                ]
+                if ads_filtrados:
+                    ads_raw = ads_filtrados
+ 
             resultado = []
- 
             for ad in ads_raw[:limit]:
-                body = ad.get("ad_creative_bodies", [""])
-                body = body[0] if isinstance(body, list) and body else (body or "")
- 
+                body   = ad.get("ad_creative_bodies", [""])
+                body   = body[0] if isinstance(body, list) and body else (body or "")
                 titles = ad.get("ad_creative_link_titles", [""])
                 title  = titles[0] if isinstance(titles, list) and titles else (titles or "")
                 descs  = ad.get("ad_creative_link_descriptions", [""])
                 desc   = descs[0] if isinstance(descs, list) and descs else (descs or "")
  
-                images = []
-                videos = []
+                images   = []
+                videos   = []
                 snapshot = ad.get("snapshot", {}) or {}
  
                 for key in ("image_url", "original_image_url", "resized_image_url"):
@@ -2772,8 +2812,7 @@ elif st.session_state.pagina == "ads":
                     if snapshot.get(key):
                         videos.append(snapshot[key])
  
-                plats = ad.get("publisher_platforms", []) or []
- 
+                plats     = ad.get("publisher_platforms", []) or []
                 has_video = bool(videos) or ad.get("media_type", "").upper() == "VIDEO"
                 has_cards = len((snapshot.get("cards") or [])) > 1
                 if has_video:   fmt = "Vídeo 🎬"
@@ -2782,17 +2821,15 @@ elif st.session_state.pagina == "ads":
  
                 imp = ad.get("impressions", {}) or {}
                 if isinstance(imp, dict):
-                    lo = imp.get("lower_bound", "")
-                    hi = imp.get("upper_bound", "")
+                    lo, hi = imp.get("lower_bound", ""), imp.get("upper_bound", "")
                     imp_str = f"{lo}–{hi}" if (lo or hi) else ""
                 else:
                     imp_str = str(imp) if imp else ""
  
                 start_raw = ad.get("ad_delivery_start_time", "") or ""
                 start_str = start_raw[:10] if start_raw else ""
- 
-                ad_id    = str(ad.get("id", "") or ad.get("ad_archive_id", ""))
-                snap_url = (
+                ad_id     = str(ad.get("id", "") or ad.get("ad_archive_id", ""))
+                snap_url  = (
                     f"https://www.facebook.com/ads/library/?id={ad_id}"
                     if ad_id else (ad.get("ad_snapshot_url") or "")
                 )
@@ -2800,6 +2837,7 @@ elif st.session_state.pagina == "ads":
                 resultado.append({
                     "id":           ad_id,
                     "page_name":    ad.get("page_name", ""),
+                    "page_id":      str(ad.get("page_id", "") or ""),
                     "body":         body,
                     "title":        title,
                     "description":  desc,
@@ -2855,9 +2893,15 @@ html, body { background: transparent; overflow: hidden; }
     # ── INPUTS
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
-        "letter-spacing:1px;margin-bottom:12px'>Informe o Page ID ou nome de cada empresa</div>",
+        "letter-spacing:1px;margin-bottom:4px'>Informe o Page ID ou nome de cada empresa</div>",
         unsafe_allow_html=True,
     )
+    st.info(
+        "💡 **Dica:** Para resultados precisos, use o **Page ID numérico** da página do Facebook. "
+        "Você pode encontrá-lo em: facebook.com/ads/library → pesquise a empresa → copie o ID da URL. "
+        "Buscas por nome podem retornar páginas de outras empresas.",
+    )
+    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
     query_values = {}
     for e in todas_empresas:
@@ -2869,7 +2913,7 @@ html, body { background: transparent; overflow: hidden; }
         badge    = "Minha Empresa" if is_minha else "Concorrente"
         saved_q  = st.session_state.get(f"_query_saved_{sk}", "")
  
-        col_av, col_inp = st.columns([1, 6])
+        col_av, col_inp, col_tip = st.columns([1, 5, 3])
         with col_av:
             st.markdown(
                 f"<div style='width:38px;height:38px;border-radius:50%;background:{cor};"
@@ -2881,9 +2925,25 @@ html, body { background: transparent; overflow: hidden; }
             query_values[ck] = st.text_input(
                 f"{ck} ({badge})",
                 value=saved_q,
-                placeholder="Page ID numérico ou nome da página no Facebook",
+                placeholder="Cole o Page ID numérico (ex: 123456789) ou nome da página",
                 key=f"query_input_{sk}",
             )
+        with col_tip:
+            cached = st.session_state.ads_cache.get(ck, {})
+            if cached.get("page_id_usado"):
+                st.markdown(
+                    f"<div style='margin-top:28px;font-size:12px;color:#059669;"
+                    f"background:#f0fdf4;border:1px solid #86efac;border-radius:6px;"
+                    f"padding:6px 10px'>✅ Page ID: <b>{cached['page_id_usado']}</b></div>",
+                    unsafe_allow_html=True,
+                )
+            elif saved_q and not saved_q.isdigit():
+                st.markdown(
+                    f"<div style='margin-top:28px;font-size:12px;color:#92400e;"
+                    f"background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;"
+                    f"padding:6px 10px'>⚠️ Use o Page ID numérico para resultados precisos</div>",
+                    unsafe_allow_html=True,
+                )
  
     buscar = st.button("🔍 Buscar Anúncios", use_container_width=True, type="primary")
  
@@ -2908,16 +2968,31 @@ html, body { background: transparent; overflow: hidden; }
                     if not query:
                         continue
                     st.write(f"Buscando **{ck}** ({query})...")
-                    ads, erro = buscar_ads_searchapi(query)
+ 
+                    page_id_encontrado = query if query.isdigit() else None
+                    aviso_page_id = None
+ 
+                    if not query.isdigit():
+                        st.write(f"🔍 Procurando Page ID de **{ck}**...")
+                        page_id_encontrado, aviso_page_id = buscar_page_id(query)
+                        if page_id_encontrado:
+                            st.write(f"📌 Page ID encontrado: **{page_id_encontrado}**")
+                            if aviso_page_id:
+                                st.warning(aviso_page_id)
+                        else:
+                            st.write(f"⚠️ Page ID não encontrado, buscando por nome...")
+ 
+                    ads, erro = buscar_ads_searchapi(page_id_encontrado or query)
                     if erro:
                         st.session_state.ads_erro[ck] = erro
                         st.write(f"❌ {erro}")
                     else:
                         st.session_state.ads_cache[ck] = {
-                            "data":  ads,
-                            "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "nome":  ck,
-                            "query": query,
+                            "data":          ads,
+                            "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "nome":          ck,
+                            "query":         query,
+                            "page_id_usado": page_id_encontrado or query,
                         }
                         st.write(f"✅ {len(ads)} anúncios encontrados")
                 status.update(label="✅ Busca concluída!", state="complete")
@@ -2943,15 +3018,19 @@ html, body { background: transparent; overflow: hidden; }
                     query = st.session_state.get(f"_query_saved_{sk}", "").strip()
                     if not query:
                         continue
-                    ads, erro = buscar_ads_searchapi(query)
+                    page_id_encontrado = query if query.isdigit() else None
+                    if not query.isdigit():
+                        page_id_encontrado, _ = buscar_page_id(query)
+                    ads, erro = buscar_ads_searchapi(page_id_encontrado or query)
                     if erro:
                         st.session_state.ads_erro[ck] = erro
                     else:
                         st.session_state.ads_cache[ck] = {
-                            "data":  ads,
-                            "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "nome":  ck,
-                            "query": query,
+                            "data":          ads,
+                            "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "nome":          ck,
+                            "query":         query,
+                            "page_id_usado": page_id_encontrado or query,
                         }
             st.rerun()
  
@@ -2977,6 +3056,7 @@ html, body { background: transparent; overflow: hidden; }
         ads_list = cache_entry["data"]
         ts       = cache_entry["ts"]
         query    = cache_entry.get("query", "")
+        page_id_usado = cache_entry.get("page_id_usado", "")
  
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
@@ -2998,6 +3078,7 @@ html, body { background: transparent; overflow: hidden; }
                                  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
                         Busca: {query}
                     </span>
+                    {f"<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Page ID: {page_id_usado}</span>" if page_id_usado and page_id_usado != query else ""}
                     <span style='font-size:12px;color:#9ca3af'>· {ts}</span>
                 </div>
             </div>
@@ -3077,336 +3158,9 @@ html, body { background: transparent; overflow: hidden; }
                 if   "Vídeo"  in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff","#1d4ed8","#bfdbfe"
                 elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7","#92400e","#fcd34d"
                 else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff","#5b21b6","#c4b5fd"
-
+ 
                 plat_txt = _plat_icons(ad["plataformas"])
-
-                # Build image HTML safely
-                if ad["images"]:
-                    img_html = f'<div style="width:100%;height:160px;overflow:hidden;border-bottom:1px solid #f3f4f6"><img src="{ad["images"][0]}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.display=\'none\'" /></div>'
-                else:
-                    img_html = ""
-
-                copy_parts = []
-                if ad["title"]:
-                    copy_parts.append(f'<div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:4px">{_truncar(ad["title"],60)}</div>')
-                if ad["body"]:
-                    copy_parts.append(f'<div style="font-size:13px;color:#374151;line-height:1.6;font-style:italic">{_truncar(ad["body"],100)}</div>')
-                if ad["description"]:
-                    copy_parts.append(f'<div style="font-size:12px;color:#6b7280;margin-top:4px">{_truncar(ad["description"],80)}</div>')
-                copy_html_inner = "\n".join(copy_parts) if copy_parts else '<div style="font-size:13px;color:#9ca3af;font-style:italic">Sem copy disponível</div>'
-
-                impressoes_html = f'<div style="font-size:12px;color:#059669;font-weight:600">👁️ {ad["impressoes"]} impressões</div>' if ad["impressoes"] else ""
-
-                card_html = f"""<!DOCTYPE html>
-<html>
-<head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:4px; }}
-.card {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
-.meta {{ padding:14px 16px 10px; border-bottom:1px solid #f3f4f6; }}
-.badge {{ display:inline-block; background:{fmt_bg}; color:{fmt_txt_c}; border:1px solid {fmt_brd}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-.date {{ font-size:11px; color:#9ca3af; }}
-.page {{ font-size:12px; color:#6b7280; margin-top:4px; }}
-.copy {{ padding:14px 16px; min-height:80px; }}
-.plat {{ padding:0 16px 10px; font-size:11px; color:#9ca3af; }}
-</style>
-</head>
-<body>
-<div class="card">
-    {img_html}
-    <div class="meta">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <span class="badge">{fmt}</span>
-            <span class="date">{ad["data_inicio"] or "—"}</span>
-        </div>
-        <div class="page">{ad["page_name"] or nome}</div>
-        {impressoes_html}
-    </div>
-    <div class="copy">{copy_html_inner}</div>
-    <div class="plat">{plat_txt or "—"}</div>
-</div>
-</body>
-</html>"""
-
-                components.html(card_html, height=380, scrolling=False)
-
-                if ad.get("snapshot_url"):
-                    st.link_button("🔗 Ver criativo", ad["snapshot_url"], use_container_width=True)
-
-                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-
-    """Tenta encontrar o Page ID do Facebook pelo nome da página."""
-    api_key = st.secrets.get("SEARCHAPI_KEY", "")
-    if not api_key:
-        return None, "SEARCHAPI_KEY não configurada"
-    try:
-        # Busca pelo nome para encontrar o page_id correto
-        r = requests.get(
-            "https://www.searchapi.io/api/v1/search",
-            params={
-                "engine": "meta_ad_library",
-                "api_key": api_key,
-                "ad_type": "ALL",
-                "ad_reached_countries": "BR",
-                "q": query,
-                "active_status": "active",  # só ativos para achar mais fácil
-            },
-            timeout=20,
-        )
-        data = r.json()
-        ads = data.get("ads", [])
-        
-        # Tenta encontrar um anúncio cujo page_name bate com a query
-        query_lower = query.lower().strip()
-        for ad in ads:
-            page_name = (ad.get("page_name") or "").lower()
-            page_id   = str(ad.get("page_id") or "")
-            if page_id and (query_lower in page_name or page_name in query_lower):
-                return page_id, None
-        
-        # Se não achou match exato, retorna o primeiro page_id disponível com aviso
-        for ad in ads:
-            page_id = str(ad.get("page_id") or "")
-            if page_id:
-                return page_id, f"Match aproximado: '{ad.get('page_name','')}'  — verifique se é a empresa correta"
-        
-        return None, "Nenhuma página encontrada com esse nome"
-    except Exception as e:
-        return None, str(e)
-
-
-def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
-    api_key = st.secrets.get("SEARCHAPI_KEY", "")
-    if not api_key:
-        return [], "SEARCHAPI_KEY não configurada nos secrets."
-
-    try:
-        params = {
-            "engine":               "meta_ad_library",
-            "api_key":              api_key,
-            "ad_type":              "ALL",
-            "ad_reached_countries": "BR",
-            "media_type":           "all",
-            "active_status":        "all",
-        }
-
-        # Se for numérico, usa como page_id diretamente
-        # Se não, usa como q= (busca textual por nome de página)
-        query = query.strip()
-        if query.isdigit():
-            params["page_id"] = query
-        else:
-            # Usa q= mas avisa que resultados podem ser imprecisos
-            params["q"] = query
-
-        r = requests.get(
-            "https://www.searchapi.io/api/v1/search",
-            params=params,
-            timeout=20,
-        )
-        data = r.json()
-
-        if "error" in data:
-            return [], data["error"]
-
-        ads_raw = data.get("ads", [])
-        
-        # Se usou busca por nome (não page_id), filtra apenas anúncios
-        # cujo page_name contenha a query para evitar resultados irrelevantes
-        if not query.isdigit() and ads_raw:
-            query_lower = query.lower()
-            ads_filtrados = [
-                a for a in ads_raw
-                if query_lower in (a.get("page_name") or "").lower()
-            ]
-            # Só aplica filtro se encontrou algo; senão mantém todos
-            if ads_filtrados:
-                ads_raw = ads_filtrados
-
-        resultado = []
-        for ad in ads_raw[:limit]:
-            body   = ad.get("ad_creative_bodies", [""])
-            body   = body[0] if isinstance(body, list) and body else (body or "")
-            titles = ad.get("ad_creative_link_titles", [""])
-            title  = titles[0] if isinstance(titles, list) and titles else (titles or "")
-            descs  = ad.get("ad_creative_link_descriptions", [""])
-            desc   = descs[0] if isinstance(descs, list) and descs else (descs or "")
-
-            images   = []
-            videos   = []
-            snapshot = ad.get("snapshot", {}) or {}
-
-            for key in ("image_url", "original_image_url", "resized_image_url"):
-                if ad.get(key):
-                    images.append(ad[key])
-
-            for card in (snapshot.get("cards") or []):
-                if isinstance(card, dict):
-                    for k in ("original_image_url", "image_url", "resized_image_url"):
-                        if card.get(k):
-                            images.append(card[k])
-                            break
-                    for k in ("video_hd_url", "video_sd_url"):
-                        if card.get(k):
-                            videos.append(card[k])
-                            break
-
-            for key in ("video_hd_url", "video_sd_url"):
-                if snapshot.get(key):
-                    videos.append(snapshot[key])
-
-            plats    = ad.get("publisher_platforms", []) or []
-            has_video = bool(videos) or ad.get("media_type", "").upper() == "VIDEO"
-            has_cards = len((snapshot.get("cards") or [])) > 1
-            if has_video:   fmt = "Vídeo 🎬"
-            elif has_cards: fmt = "Carrossel 🎠"
-            else:           fmt = "Imagem 🖼️"
-
-            imp = ad.get("impressions", {}) or {}
-            if isinstance(imp, dict):
-                lo, hi = imp.get("lower_bound", ""), imp.get("upper_bound", "")
-                imp_str = f"{lo}–{hi}" if (lo or hi) else ""
-            else:
-                imp_str = str(imp) if imp else ""
-
-            start_raw = ad.get("ad_delivery_start_time", "") or ""
-            start_str = start_raw[:10] if start_raw else ""
-            ad_id     = str(ad.get("id", "") or ad.get("ad_archive_id", ""))
-            snap_url  = (
-                f"https://www.facebook.com/ads/library/?id={ad_id}"
-                if ad_id else (ad.get("ad_snapshot_url") or "")
-            )
-
-            resultado.append({
-                "id":           ad_id,
-                "page_name":    ad.get("page_name", ""),
-                "page_id":      str(ad.get("page_id", "") or ""),
-                "body":         body,
-                "title":        title,
-                "description":  desc,
-                "images":       images,
-                "videos":       videos,
-                "cards":        snapshot.get("cards", []),
-                "snapshot_url": snap_url,
-                "data_inicio":  start_str,
-                "impressoes":   imp_str,
-                "plataformas":  plats,
-                "formato":      fmt,
-            })
-
-        return resultado, None
-
-    except Exception as e:
-        return [], str(e)
-
-# ── INPUTS
-    st.markdown(
-        "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
-        "letter-spacing:1px;margin-bottom:4px'>Informe o Page ID ou nome de cada empresa</div>",
-        unsafe_allow_html=True,
-    )
-    st.info(
-        "💡 **Dica:** Para resultados precisos, use o **Page ID numérico** da página do Facebook. "
-        "Você pode encontrá-lo em: facebook.com/ads/library → pesquise a empresa → copie o ID da URL. "
-        "Buscas por nome podem retornar páginas de outras empresas.",
-        
-    )
-    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-
-    query_values = {}
-    for e in todas_empresas:
-        ck       = e["nome"]
-        sk       = safe_key(ck)
-        is_minha = e["tipo"] == "minha"
-        cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-        av       = gerar_avatar(ck)
-        badge    = "Minha Empresa" if is_minha else "Concorrente"
-        saved_q  = st.session_state.get(f"_query_saved_{sk}", "")
-
-        col_av, col_inp, col_tip = st.columns([1, 5, 3])
-        with col_av:
-            st.markdown(
-                f"<div style='width:38px;height:38px;border-radius:50%;background:{cor};"
-                f"display:flex;align-items:center;justify-content:center;"
-                f"font-size:13px;font-weight:700;color:#fff;margin-top:28px'>{av}</div>",
-                unsafe_allow_html=True,
-            )
-        with col_inp:
-            query_values[ck] = st.text_input(
-                f"{ck} ({badge})",
-                value=saved_q,
-                placeholder="Cole o Page ID numérico (ex: 123456789) ou nome da página",
-                key=f"query_input_{sk}",
-            )
-        with col_tip:
-            # Mostra o page_id encontrado na última busca (se houver)
-            cached = st.session_state.ads_cache.get(ck, {})
-            if cached.get("page_id_usado"):
-                st.markdown(
-                    f"<div style='margin-top:28px;font-size:12px;color:#059669;"
-                    f"background:#f0fdf4;border:1px solid #86efac;border-radius:6px;"
-                    f"padding:6px 10px'>✅ Page ID: <b>{cached['page_id_usado']}</b></div>",
-                    unsafe_allow_html=True,
-                )
-            elif saved_q and not saved_q.isdigit():
-                st.markdown(
-                    f"<div style='margin-top:28px;font-size:12px;color:#92400e;"
-                    f"background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;"
-                    f"padding:6px 10px'>⚠️ Use o Page ID numérico para resultados precisos</div>",
-                    unsafe_allow_html=True,
-                )
-
-        with st.status("Buscando anúncios via SearchAPI.io...", expanded=True) as status:
-            for e in todas_empresas:
-                ck    = e["nome"]
-                query = query_values.get(ck, "").strip()
-                if not query:
-                    continue
-                st.write(f"Buscando **{ck}** ({query})...")
-                
-                # Se não é numérico, tenta encontrar o page_id primeiro
-                page_id_encontrado = query if query.isdigit() else None
-                aviso_page_id = None
-                
-                if not query.isdigit():
-                    st.write(f"🔍 Procurando Page ID de **{ck}**...")
-                    page_id_encontrado, aviso_page_id = buscar_page_id(query)
-                    if page_id_encontrado:
-                        st.write(f"📌 Page ID encontrado: **{page_id_encontrado}**")
-                        if aviso_page_id:
-                            st.warning(aviso_page_id)
-                    else:
-                        st.write(f"⚠️ Page ID não encontrado, buscando por nome...")
-                
-                ads, erro = buscar_ads_searchapi(page_id_encontrado or query)
-                if erro:
-                    st.session_state.ads_erro[ck] = erro
-                    st.write(f"❌ {erro}")
-                else:
-                    st.session_state.ads_cache[ck] = {
-                        "data":          ads,
-                        "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "nome":          ck,
-                        "query":         query,
-                        "page_id_usado": page_id_encontrado or query,
-                    }
-                    st.write(f"✅ {len(ads)} anúncios encontrados")
-
- # ── Cards de anúncios
-        cols_ads = st.columns(3)
-        for j, ad in enumerate(ads_f):
-            with cols_ads[j % 3]:
-                fmt = ad["formato"]
-                if   "Vídeo"  in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff","#1d4ed8","#bfdbfe"
-                elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7","#92400e","#fcd34d"
-                else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff","#5b21b6","#c4b5fd"
-
-                plat_txt = _plat_icons(ad["plataformas"])
-
-                # Imagem
+ 
                 if ad["images"]:
                     img_html = (
                         f'<div style="width:100%;height:180px;overflow:hidden;'
@@ -3429,8 +3183,7 @@ def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
                         f'background:#f9fafb;display:flex;align-items:center;'
                         f'justify-content:center;font-size:32px;">📄</div>'
                     )
-
-                # Copy
+ 
                 copy_parts = []
                 if ad["title"]:
                     copy_parts.append(
@@ -3452,15 +3205,15 @@ def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
                     if copy_parts
                     else '<div style="font-size:13px;color:#9ca3af;font-style:italic">Sem copy disponível</div>'
                 )
-
+ 
                 imp_html = (
                     f'<div style="font-size:12px;color:#059669;font-weight:600;margin-top:4px">'
                     f'👁️ {ad["impressoes"]} impressões</div>'
                     if ad["impressoes"] else ""
                 )
-
-                snap_url  = ad.get("snapshot_url", "") or ""
-                ver_btn   = (
+ 
+                snap_url = ad.get("snapshot_url", "") or ""
+                ver_btn  = (
                     f'<a href="{snap_url}" target="_blank" style="'
                     f'display:block;width:100%;padding:10px 0;text-align:center;'
                     f'border:1px solid #e5e7eb;border-radius:8px;'
@@ -3471,7 +3224,7 @@ def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
                     f'onmouseout="this.style.background=\'#fff\'">'
                     f'🔗 Ver criativo</a>'
                 ) if snap_url else ""
-
+ 
                 card_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -3563,18 +3316,8 @@ setTimeout(ajustarAltura, 800);
 </script>
 </body>
 </html>"""
-
+ 
                 components.html(card_html, height=480, scrolling=False)
-                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-
-                if ad.get("snapshot_url"):
-                    st.link_button("🔗 Ver criativo", ad["snapshot_url"], use_container_width=True)
-
-                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
- 
-                if ad.get("snapshot_url"):
-                    st.link_button("🔗 Ver criativo", ad["snapshot_url"], use_container_width=True)
- 
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
         # ── ANÁLISE DE IA
