@@ -3025,6 +3025,44 @@ html, body { background: transparent; overflow: hidden; }
                         st.write(f"✅ {len(ads)} anúncios encontrados via {fonte}")
                 status.update(label="✅ Busca concluída!", state="complete")
             st.rerun()
+
+# DEBUG TEMPORÁRIO — adicione logo após o "if buscar:"
+if st.button("🔧 Debug API", type="secondary"):
+    pid = "106563541907639"
+    token = META_TOKEN
+    
+    # Teste 1: Graph API
+    import requests
+    r1 = requests.get(
+        "https://graph.facebook.com/v21.0/ads_archive",
+        params={
+            "ad_active_status": "ALL",
+            "ad_reached_countries": '["BR"]',
+            "fields": "id,page_name,ad_creative_bodies",
+            "limit": 5,
+            "access_token": token,
+            "search_page_ids": pid,
+        },
+        timeout=15,
+    )
+    st.write("**Graph API search_page_ids:**")
+    st.json(r1.json())
+    
+    # Teste 2: Graph API com search_terms
+    r2 = requests.get(
+        "https://graph.facebook.com/v21.0/ads_archive",
+        params={
+            "ad_active_status": "ALL",
+            "ad_reached_countries": '["BR"]',
+            "fields": "id,page_name,ad_creative_bodies",
+            "limit": 5,
+            "access_token": token,
+            "search_terms": "Kedu",
+        },
+        timeout=15,
+    )
+    st.write("**Graph API search_terms:**")
+    st.json(r2.json())
  
     # ── RESULTADOS
     empresas_com_dados = [
