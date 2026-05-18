@@ -2793,24 +2793,48 @@ elif st.session_state.pagina == "ads":
                 videos   = []
                 snapshot = ad.get("snapshot", {}) or {}
  
+                # --- CORREÇÃO: coleta exaustiva de imagens em múltiplos campos ---
                 for key in ("image_url", "original_image_url", "resized_image_url"):
-                    if ad.get(key):
-                        images.append(ad[key])
+                    v = ad.get(key) or ""
+                    if v and v not in images:
+                        images.append(v)
  
+                # imagens dentro de snapshot raiz
+                for key in ("image_url", "original_image_url", "resized_image_url"):
+                    v = snapshot.get(key) or ""
+                    if v and v not in images:
+                        images.append(v)
+ 
+                # imagens dentro dos cards do snapshot
                 for card in (snapshot.get("cards") or []):
                     if isinstance(card, dict):
                         for k in ("original_image_url", "image_url", "resized_image_url"):
-                            if card.get(k):
-                                images.append(card[k])
+                            v = card.get(k) or ""
+                            if v and v not in images:
+                                images.append(v)
                                 break
                         for k in ("video_hd_url", "video_sd_url"):
-                            if card.get(k):
-                                videos.append(card[k])
+                            v = card.get(k) or ""
+                            if v and v not in videos:
+                                videos.append(v)
                                 break
  
+                # vídeos no snapshot raiz
                 for key in ("video_hd_url", "video_sd_url"):
-                    if snapshot.get(key):
-                        videos.append(snapshot[key])
+                    v = snapshot.get(key) or ""
+                    if v and v not in videos:
+                        videos.append(v)
+ 
+                # imagens dentro de creative_images (campo alternativo)
+                for img_obj in (ad.get("creative_images") or []):
+                    if isinstance(img_obj, dict):
+                        for k in ("original_image_url", "image_url", "url"):
+                            v = img_obj.get(k) or ""
+                            if v and v not in images:
+                                images.append(v)
+                                break
+                    elif isinstance(img_obj, str) and img_obj and img_obj not in images:
+                        images.append(img_obj)
  
                 plats     = ad.get("publisher_platforms", []) or []
                 has_video = bool(videos) or ad.get("media_type", "").upper() == "VIDEO"
@@ -2858,12 +2882,13 @@ elif st.session_state.pagina == "ads":
  
     SEARCHAPI_KEY = st.secrets.get("SEARCHAPI_KEY", "")
  
-    # ── Lista de empresas
+    # ── Lista de empresas usando dados do banco
     todas_empresas = []
     if emp.get("nome"):
         todas_empresas.append({"nome": emp["nome"], "tipo": "minha", "idx": 0})
     for i, c in enumerate(concs):
-        todas_empresas.append({"nome": c["nome"], "tipo": "concorrente", "idx": i})
+        if c.get("nome"):
+            todas_empresas.append({"nome": c["nome"], "tipo": "concorrente", "idx": i})
  
     # ── CABEÇALHO
     components.html("""
@@ -2890,16 +2915,41 @@ html, body { background: transparent; overflow: hidden; }
     if not SEARCHAPI_KEY:
         st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
  
-    # ── INPUTS
+    # ── Verifica se há empresas sem query salva para confirmar com usuário
+    empresas_sem_query = [
+        e for e in todas_empresas
+        if not st.session_state.get(f"_query_saved_{safe_key(e['nome'])}", "").strip()
+    ]
+ 
+    # ── Pré-preenche query com dados do banco se ainda não foi definida
+    for e in todas_empresas:
+        sk = safe_key(e["nome"])
+        chave = f"_query_saved_{sk}"
+        if not st.session_state.get(chave, "").strip():
+            # Tenta preencher automaticamente com fb_page, instagram ou nome
+            if e["tipo"] == "minha":
+                fonte = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
+            else:
+                conc_data = concs[e["idx"]]
+                fonte = (
+                    conc_data.get("ads_id") or
+                    conc_data.get("fb_page") or
+                    conc_data.get("instagram", "").lstrip("@") or
+                    conc_data.get("nome", "")
+                )
+            if fonte:
+                st.session_state[chave] = fonte.strip()
+ 
+    # ── INPUTS — nome/page ID de cada empresa
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
-        "letter-spacing:1px;margin-bottom:4px'>Informe o Page ID ou nome de cada empresa</div>",
+        "letter-spacing:1px;margin-bottom:4px'>Confirme o Page ID ou nome de cada empresa</div>",
         unsafe_allow_html=True,
     )
     st.info(
-        "💡 **Dica:** Para resultados precisos, use o **Page ID numérico** da página do Facebook. "
-        "Você pode encontrá-lo em: facebook.com/ads/library → pesquise a empresa → copie o ID da URL. "
-        "Buscas por nome podem retornar páginas de outras empresas.",
+        "💡 **Dica:** Os campos já foram preenchidos com os dados cadastrados. "
+        "Para resultados mais precisos, substitua pelo **Page ID numérico** da página do Facebook. "
+        "Encontre em: facebook.com/ads/library → pesquise a empresa → copie o ID da URL.",
     )
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
@@ -2925,7 +2975,7 @@ html, body { background: transparent; overflow: hidden; }
             query_values[ck] = st.text_input(
                 f"{ck} ({badge})",
                 value=saved_q,
-                placeholder="Cole o Page ID numérico (ex: 123456789) ou nome da página",
+                placeholder="Page ID numérico (ex: 123456789) ou nome da página",
                 key=f"query_input_{sk}",
             )
         with col_tip:
@@ -3161,28 +3211,44 @@ html, body { background: transparent; overflow: hidden; }
  
                 plat_txt = _plat_icons(ad["plataformas"])
  
-                if ad["images"]:
-                    img_html = (
-                        f'<div style="width:100%;height:180px;overflow:hidden;'
-                        f'border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;">'
-                        f'<img src="{ad["images"][0]}" '
-                        f'style="width:100%;height:100%;object-fit:cover;" '
-                        f'onerror="this.parentElement.style.display=\'none\'" /></div>'
-                    )
-                elif ad["videos"]:
-                    img_html = (
-                        f'<div style="width:100%;height:180px;overflow:hidden;'
-                        f'border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;'
-                        f'background:#000;display:flex;align-items:center;justify-content:center;">'
-                        f'<span style="font-size:40px;">🎬</span></div>'
-                    )
+                # --- CORREÇÃO: lógica de exibição de imagem mais robusta ---
+                primeira_img = ad["images"][0] if ad["images"] else ""
+                primeiro_vid = ad["videos"][0] if ad["videos"] else ""
+ 
+                if primeira_img:
+                    # Usa referência à variável para evitar problemas de escaping no onerror
+                    img_html = f"""
+<div style="width:100%;height:180px;overflow:hidden;
+            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
+            background:#f9fafb;position:relative;">
+  <img
+    src="{primeira_img}"
+    style="width:100%;height:100%;object-fit:cover;display:block;"
+    loading="lazy"
+    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+  />
+  <div style="display:none;width:100%;height:100%;position:absolute;top:0;left:0;
+              align-items:center;justify-content:center;flex-direction:column;gap:6px;
+              background:#f9fafb;">
+    <span style="font-size:32px;">🖼️</span>
+    <span style="font-size:11px;color:#9ca3af;">Imagem não disponível</span>
+  </div>
+</div>"""
+                elif primeiro_vid:
+                    img_html = """
+<div style="width:100%;height:180px;overflow:hidden;
+            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
+            background:#111;display:flex;align-items:center;justify-content:center;
+            flex-direction:column;gap:6px;">
+  <span style="font-size:48px;">🎬</span>
+  <span style="font-size:11px;color:#9ca3af;">Vídeo</span>
+</div>"""
                 else:
-                    img_html = (
-                        f'<div style="width:100%;height:100px;'
-                        f'border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;'
-                        f'background:#f9fafb;display:flex;align-items:center;'
-                        f'justify-content:center;font-size:32px;">📄</div>'
-                    )
+                    img_html = """
+<div style="width:100%;height:100px;
+            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
+            background:#f9fafb;display:flex;align-items:center;
+            justify-content:center;font-size:32px;">📄</div>"""
  
                 copy_parts = []
                 if ad["title"]:
@@ -3313,6 +3379,11 @@ document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
 setTimeout(ajustarAltura, 300);
 setTimeout(ajustarAltura, 800);
+// Re-ajusta após imagens carregarem ou falharem
+document.querySelectorAll('img').forEach(function(img) {{
+    img.addEventListener('load', ajustarAltura);
+    img.addEventListener('error', ajustarAltura);
+}});
 </script>
 </body>
 </html>"""
@@ -3402,6 +3473,7 @@ O que esta empresa está fazendo que pode ser uma ameaça?
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
+ 
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
