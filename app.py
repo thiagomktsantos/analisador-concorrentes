@@ -2706,200 +2706,134 @@ elif st.session_state.pagina == "ads":
         if not txt: return "—"
         return txt[:n] + "…" if len(txt) > n else txt
  
-    # ── Busca via scraping do Ad Library público ──────────────────────────
-    def buscar_ads_scraping(page_id: str, limit: int = 30) -> tuple:
+    # ── Busca via SearchAPI.io ──────────────────────────────────────────
+    def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
         """
-        Usa o endpoint interno do Facebook Ad Library (não requer token).
-        Mesmo endpoint que o site facebook.com/ads/library usa.
+        Busca anúncios na Meta Ad Library usando SearchAPI.io.
+        `query` pode ser um page_id numérico ou o nome da página.
         """
-        try:
-            url = "https://www.facebook.com/ads/library/async/search_ads/"
-            params = {
-                "ad_type":        "all",
-                "active_status":  "all",
-                "countries[0]":   "BR",
-                "view_all_page_id": page_id,
-                "sort_data[direction]": "desc",
-                "sort_data[mode]":      "relevancy_monthly_grouped",
-                "search_type":    "page",
-                "media_type":     "all",
-            }
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-                "Accept": "application/json, text/javascript, */*; q=0.01",
-                "Accept-Language": "pt-BR,pt;q=0.9",
-                "X-Requested-With": "XMLHttpRequest",
-                "Referer": f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&view_all_page_id={page_id}",
-            }
-            r = requests.get(url, params=params, headers=headers, timeout=20)
-            
-            # Facebook retorna JSON com prefixo "for (;;);" — remove
-            text = r.text
-            if text.startswith("for (;;);"):
-                text = text[9:]
-            
-            data = json.loads(text)
-            ads_raw = (
-                data.get("payload", {}).get("results", []) or
-                data.get("results", []) or
-                []
-            )
-            
-            resultado = []
-            for ad in ads_raw[:limit]:
-                # Extrai campos do formato do Ad Library
-                snap = ad.get("snapshot", {}) or {}
-                body_parts = snap.get("body", {})
-                body = ""
-                if isinstance(body_parts, dict):
-                    body = body_parts.get("markup", {}).get("__html", "") or body_parts.get("text", "")
-                elif isinstance(body_parts, str):
-                    body = body_parts
-                # Remove tags HTML do body
-                body = re.sub(r"<[^>]+>", " ", body).strip()
+        api_key = st.secrets.get("SEARCHAPI_KEY", "")
+        if not api_key:
+            return [], "SEARCHAPI_KEY não configurada nos secrets."
  
-                title = snap.get("title", "") or ""
-                cards = snap.get("cards", []) or []
-                
-                # Imagens/vídeos
+        try:
+            params = {
+                "engine":      "facebook_ads_library",
+                "api_key":     api_key,
+                "ad_type":     "ALL",
+                "ad_reached_countries": "BR",
+                "media_type":  "all",
+            }
+ 
+            # Se for numérico, filtra por page_id; senão busca por nome
+            if query.strip().isdigit():
+                params["view_all_page_id"] = query.strip()
+            else:
+                params["q"] = query.strip()
+ 
+            r = requests.get(
+                "https://www.searchapi.io/api/v1/search",
+                params=params,
+                timeout=20,
+            )
+            data = r.json()
+ 
+            if "error" in data:
+                return [], data["error"]
+ 
+            ads_raw = data.get("ads", [])
+            resultado = []
+ 
+            for ad in ads_raw[:limit]:
+                # ── Corpo / copy
+                body = ad.get("ad_creative_bodies", [""])
+                body = body[0] if isinstance(body, list) and body else (body or "")
+ 
+                # ── Título e descrição
+                titles = ad.get("ad_creative_link_titles", [""])
+                title  = titles[0] if isinstance(titles, list) and titles else (titles or "")
+                descs  = ad.get("ad_creative_link_descriptions", [""])
+                desc   = descs[0] if isinstance(descs, list) and descs else (descs or "")
+ 
+                # ── Imagens / vídeos
                 images = []
                 videos = []
-                
-                # Imagem principal
-                img_url = snap.get("images", [{}])
-                if img_url and isinstance(img_url, list):
-                    for img in img_url:
-                        if isinstance(img, dict) and img.get("original_image_url"):
-                            images.append(img["original_image_url"])
-                        elif isinstance(img, str):
-                            images.append(img)
-                
-                # Video
-                vid_url = snap.get("videos", [])
-                if vid_url and isinstance(vid_url, list):
-                    for v in vid_url:
-                        if isinstance(v, dict):
-                            videos.append(v.get("video_hd_url") or v.get("video_sd_url") or "")
+                snapshot = ad.get("snapshot", {}) or {}
  
-                # Cards (carrossel)
-                for card in cards:
+                # Imagens direto no objeto
+                for key in ("image_url", "original_image_url", "resized_image_url"):
+                    if ad.get(key):
+                        images.append(ad[key])
+ 
+                # Cards / carousel no snapshot
+                for card in (snapshot.get("cards") or []):
                     if isinstance(card, dict):
-                        ci = card.get("original_image_url") or card.get("image_url") or ""
-                        if ci: images.append(ci)
-                        cv = card.get("video_hd_url") or card.get("video_sd_url") or ""
-                        if cv: videos.append(cv)
+                        for k in ("original_image_url", "image_url", "resized_image_url"):
+                            if card.get(k):
+                                images.append(card[k])
+                                break
+                        for k in ("video_hd_url", "video_sd_url"):
+                            if card.get(k):
+                                videos.append(card[k])
+                                break
  
-                # Plataformas
-                plats = ad.get("publisher_platform", []) or []
+                # Vídeo principal
+                for key in ("video_hd_url", "video_sd_url"):
+                    if snapshot.get(key):
+                        videos.append(snapshot[key])
  
-                # Formato
-                has_video = bool(videos)
-                has_cards = len(cards) > 1
-                if has_video:       fmt = "Vídeo 🎬"
-                elif has_cards:     fmt = "Carrossel 🎠"
-                else:               fmt = "Imagem 🖼️"
+                # ── Plataformas
+                plats = ad.get("publisher_platforms", []) or []
  
-                # Impressões
-                imp = ad.get("impressions_with_index", {}) or {}
-                imp_str = ""
-                lo = imp.get("impressions_lower_bound", "")
-                hi = imp.get("impressions_upper_bound", "")
-                if lo or hi: imp_str = f"{lo}–{hi}"
+                # ── Formato
+                has_video = bool(videos) or ad.get("media_type", "").upper() == "VIDEO"
+                has_cards = len((snapshot.get("cards") or [])) > 1
+                if has_video:   fmt = "Vídeo 🎬"
+                elif has_cards: fmt = "Carrossel 🎠"
+                else:           fmt = "Imagem 🖼️"
  
-                # Data início
+                # ── Impressões
+                imp = ad.get("impressions", {}) or {}
+                if isinstance(imp, dict):
+                    lo = imp.get("lower_bound", "")
+                    hi = imp.get("upper_bound", "")
+                    imp_str = f"{lo}–{hi}" if (lo or hi) else ""
+                else:
+                    imp_str = str(imp) if imp else ""
+ 
+                # ── Data início
                 start_raw = ad.get("ad_delivery_start_time", "") or ""
                 start_str = start_raw[:10] if start_raw else ""
  
-                # Snapshot URL
-                snap_url = f"https://www.facebook.com/ads/library/?id={ad.get('ad_archive_id','')}" if ad.get("ad_archive_id") else ""
+                # ── URL snapshot
+                ad_id    = str(ad.get("id", "") or ad.get("ad_archive_id", ""))
+                snap_url = (
+                    f"https://www.facebook.com/ads/library/?id={ad_id}"
+                    if ad_id else (ad.get("ad_snapshot_url") or "")
+                )
  
                 resultado.append({
-                    "id":           str(ad.get("ad_archive_id", "")),
+                    "id":           ad_id,
                     "page_name":    ad.get("page_name", ""),
                     "body":         body,
                     "title":        title,
-                    "description":  snap.get("link_description", "") or "",
+                    "description":  desc,
                     "images":       images,
                     "videos":       videos,
-                    "cards":        cards,
+                    "cards":        snapshot.get("cards", []),
                     "snapshot_url": snap_url,
                     "data_inicio":  start_str,
                     "impressoes":   imp_str,
                     "plataformas":  plats,
                     "formato":      fmt,
                 })
-            
+ 
             return resultado, None
  
         except Exception as e:
             return [], str(e)
  
-    # ── Fallback: Graph API oficial ───────────────────────────────────────
-    def buscar_ads_graph(page_id: str, token: str, limit: int = 25) -> tuple:
-        url    = "https://graph.facebook.com/v21.0/ads_archive"
-        fields = (
-            "id,page_id,page_name,ad_creative_bodies,ad_creative_link_captions,"
-            "ad_creative_link_descriptions,ad_creative_link_titles,"
-            "ad_snapshot_url,ad_delivery_start_time,impressions,publisher_platforms,media_type"
-        )
-        params = {
-            "ad_active_status":     "ALL",
-            "ad_reached_countries": '["BR","US","PT"]',
-            "fields":               fields,
-            "limit":                limit,
-            "access_token":         token,
-            "search_page_ids":      page_id,
-        }
-        try:
-            r    = requests.get(url, params=params, timeout=15)
-            data = r.json()
-            if "error" in data:
-                return [], data["error"].get("message", "Erro")
-            resultado = []
-            for ad in data.get("data", []):
-                bodies = ad.get("ad_creative_bodies") or []
-                titles = ad.get("ad_creative_link_titles") or []
-                descs  = ad.get("ad_creative_link_descriptions") or []
-                plats  = ad.get("publisher_platforms") or []
-                media  = ad.get("media_type", "")
-                if   media in ("VIDEO","video"): fmt = "Vídeo 🎬"
-                elif media in ("IMAGE","image"): fmt = "Imagem 🖼️"
-                elif len(bodies) > 1:            fmt = "Carrossel 🎠"
-                else:                            fmt = "Imagem 🖼️"
-                imp = ad.get("impressions", {})
-                imp_str = ""
-                if isinstance(imp, dict):
-                    lo, hi = imp.get("lower_bound",""), imp.get("upper_bound","")
-                    if lo or hi: imp_str = f"{lo}–{hi}"
-                resultado.append({
-                    "id":           ad.get("id",""),
-                    "page_name":    ad.get("page_name",""),
-                    "body":         bodies[0] if bodies else "",
-                    "title":        titles[0] if titles else "",
-                    "description":  descs[0]  if descs  else "",
-                    "images":       [],
-                    "videos":       [],
-                    "cards":        [],
-                    "snapshot_url": ad.get("ad_snapshot_url",""),
-                    "data_inicio":  (ad.get("ad_delivery_start_time","")[:10] if ad.get("ad_delivery_start_time") else ""),
-                    "impressoes":   imp_str,
-                    "plataformas":  plats,
-                    "formato":      fmt,
-                })
-            return resultado, None
-        except Exception as e:
-            return [], str(e)
- 
-    def buscar_ads(page_id: str, token: str) -> tuple:
-        """Tenta scraping primeiro, fallback para Graph API."""
-        ads, erro = buscar_ads_scraping(page_id)
-        if ads:
-            return ads, None, "scraping"
-        # fallback
-        ads, erro = buscar_ads_graph(page_id, token)
-        return ads, erro, "graph"
- 
-    META_TOKEN = st.secrets.get("META_ACCESS_TOKEN", "")
+    SEARCHAPI_KEY = st.secrets.get("SEARCHAPI_KEY", "")
  
     # ── Lista de empresas
     todas_empresas = []
@@ -2930,37 +2864,40 @@ html, body { background: transparent; overflow: hidden; }
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
         st.stop()
  
+    if not SEARCHAPI_KEY:
+        st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
+ 
     # ── INSTRUÇÃO
     st.markdown("""
     <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 20px;margin-bottom:20px'>
         <div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px'>
-            Como encontrar o Page ID
+            Como buscar os anúncios
         </div>
         <div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px'>
             <div style='background:#f9fafb;border-radius:10px;padding:12px 14px'>
-                <div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>1. Acesse o Ad Library</div>
-                <div style='font-size:12px;color:#6b7280;line-height:1.5'>Vá em <b>facebook.com/ads/library</b> e busque o nome da empresa</div>
+                <div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>Opção 1 — Page ID</div>
+                <div style='font-size:12px;color:#6b7280;line-height:1.5'>Cole o ID numérico da página do Facebook. Resultado mais preciso.</div>
             </div>
             <div style='background:#f9fafb;border-radius:10px;padding:12px 14px'>
-                <div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>2. Clique na empresa</div>
-                <div style='font-size:12px;color:#6b7280;line-height:1.5'>Clique no nome da empresa nos resultados para ver todos os anúncios dela</div>
+                <div style='font-size:13px;font-weight:700;color:#111827;margin-bottom:4px'>Opção 2 — Nome da Página</div>
+                <div style='font-size:12px;color:#6b7280;line-height:1.5'>Use o nome exato da empresa no Facebook. A SearchAPI faz a busca automaticamente.</div>
             </div>
             <div style='background:#0e2a47;border-radius:10px;padding:12px 14px'>
-                <div style='font-size:13px;font-weight:700;color:#fff;margin-bottom:4px'>3. Copie o ID da URL</div>
-                <div style='font-size:12px;color:rgba(255,255,255,.7);line-height:1.5'>Na URL aparece <b style="color:#fff">view_all_page_id=XXXXXXXX</b> — copie esse número</div>
+                <div style='font-size:13px;font-weight:700;color:#fff;margin-bottom:4px'>Como achar o Page ID</div>
+                <div style='font-size:12px;color:rgba(255,255,255,.7);line-height:1.5'>Em <b style="color:#fff">facebook.com/ads/library</b>, busque a empresa e na URL aparece <b style="color:#fff">view_all_page_id=XXXXXXX</b></div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
  
-    # ── INPUTS sem form
+    # ── INPUTS
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
-        "letter-spacing:1px;margin-bottom:12px'>Informe o Page ID de cada empresa</div>",
+        "letter-spacing:1px;margin-bottom:12px'>Informe o Page ID ou nome de cada empresa</div>",
         unsafe_allow_html=True,
     )
  
-    pid_values = {}
+    query_values = {}
     for e in todas_empresas:
         ck       = e["nome"]
         sk       = safe_key(ck)
@@ -2968,7 +2905,7 @@ html, body { background: transparent; overflow: hidden; }
         cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
         av       = gerar_avatar(ck)
         badge    = "Minha Empresa" if is_minha else "Concorrente"
-        saved_id = st.session_state.get(f"_pid_saved_{sk}", "")
+        saved_q  = st.session_state.get(f"_query_saved_{sk}", "")
  
         col_av, col_inp = st.columns([1, 6])
         with col_av:
@@ -2979,38 +2916,37 @@ html, body { background: transparent; overflow: hidden; }
                 unsafe_allow_html=True,
             )
         with col_inp:
-            pid_values[ck] = st.text_input(
+            query_values[ck] = st.text_input(
                 f"{ck} ({badge})",
-                value=saved_id,
-                placeholder="Ex: 123456789012345",
-                key=f"pid_input_{sk}",
+                value=saved_q,
+                placeholder="Page ID numérico ou nome da página no Facebook",
+                key=f"query_input_{sk}",
             )
  
     buscar = st.button("🔍 Buscar Anúncios", use_container_width=True, type="primary")
  
     if buscar:
-        # persiste valores
         for e in todas_empresas:
             ck = e["nome"]
             sk = safe_key(ck)
-            v  = pid_values.get(ck, "").strip()
+            v  = query_values.get(ck, "").strip()
             if v:
-                st.session_state[f"_pid_saved_{sk}"] = v
+                st.session_state[f"_query_saved_{sk}"] = v
  
-        algum = any(pid_values.get(e["nome"], "").strip() for e in todas_empresas)
+        algum = any(query_values.get(e["nome"], "").strip() for e in todas_empresas)
         if not algum:
-            st.warning("Informe pelo menos um Page ID.")
+            st.warning("Informe pelo menos um Page ID ou nome de página.")
         else:
             st.session_state.ads_cache = {}
             st.session_state.ads_erro  = {}
-            with st.status("Buscando anúncios...", expanded=True) as status:
+            with st.status("Buscando anúncios via SearchAPI.io...", expanded=True) as status:
                 for e in todas_empresas:
-                    ck  = e["nome"]
-                    pid = pid_values.get(ck, "").strip()
-                    if not pid:
+                    ck    = e["nome"]
+                    query = query_values.get(ck, "").strip()
+                    if not query:
                         continue
-                    st.write(f"Buscando **{ck}** (page_id: {pid})...")
-                    ads, erro, fonte = buscar_ads(pid, META_TOKEN)
+                    st.write(f"Buscando **{ck}** ({query})...")
+                    ads, erro = buscar_ads_searchapi(query)
                     if erro:
                         st.session_state.ads_erro[ck] = erro
                         st.write(f"❌ {erro}")
@@ -3019,50 +2955,11 @@ html, body { background: transparent; overflow: hidden; }
                             "data":  ads,
                             "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
                             "nome":  ck,
-                            "pid":   pid,
-                            "fonte": fonte,
+                            "query": query,
                         }
-                        st.write(f"✅ {len(ads)} anúncios encontrados via {fonte}")
+                        st.write(f"✅ {len(ads)} anúncios encontrados")
                 status.update(label="✅ Busca concluída!", state="complete")
             st.rerun()
-
-# DEBUG TEMPORÁRIO — adicione logo após o "if buscar:"
-if st.button("🔧 Debug API", type="secondary"):
-    pid = "106563541907639"
-    token = META_TOKEN
-    
-    # Teste 1: Graph API
-    import requests
-    r1 = requests.get(
-        "https://graph.facebook.com/v21.0/ads_archive",
-        params={
-            "ad_active_status": "ALL",
-            "ad_reached_countries": '["BR"]',
-            "fields": "id,page_name,ad_creative_bodies",
-            "limit": 5,
-            "access_token": token,
-            "search_page_ids": pid,
-        },
-        timeout=15,
-    )
-    st.write("**Graph API search_page_ids:**")
-    st.json(r1.json())
-    
-    # Teste 2: Graph API com search_terms
-    r2 = requests.get(
-        "https://graph.facebook.com/v21.0/ads_archive",
-        params={
-            "ad_active_status": "ALL",
-            "ad_reached_countries": '["BR"]',
-            "fields": "id,page_name,ad_creative_bodies",
-            "limit": 5,
-            "access_token": token,
-            "search_terms": "Kedu",
-        },
-        timeout=15,
-    )
-    st.write("**Graph API search_terms:**")
-    st.json(r2.json())
  
     # ── RESULTADOS
     empresas_com_dados = [
@@ -3079,17 +2976,20 @@ if st.button("🔧 Debug API", type="secondary"):
             st.session_state.ads_erro  = {}
             with st.spinner("Atualizando..."):
                 for e in todas_empresas:
-                    ck  = e["nome"]
-                    sk  = safe_key(ck)
-                    pid = st.session_state.get(f"_pid_saved_{sk}", "").strip()
-                    if not pid: continue
-                    ads, erro, fonte = buscar_ads(pid, META_TOKEN)
+                    ck    = e["nome"]
+                    sk    = safe_key(ck)
+                    query = st.session_state.get(f"_query_saved_{sk}", "").strip()
+                    if not query:
+                        continue
+                    ads, erro = buscar_ads_searchapi(query)
                     if erro:
                         st.session_state.ads_erro[ck] = erro
                     else:
                         st.session_state.ads_cache[ck] = {
-                            "data": ads, "ts": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "nome": ck, "pid": pid, "fonte": fonte,
+                            "data":  ads,
+                            "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "nome":  ck,
+                            "query": query,
                         }
             st.rerun()
  
@@ -3109,13 +3009,12 @@ if st.button("🔧 Debug API", type="secondary"):
  
         cache_entry = st.session_state.ads_cache.get(ck)
         if not cache_entry:
-            st.info("Sem dados. Informe o Page ID e clique em Buscar.")
+            st.info("Sem dados. Informe o Page ID ou nome e clique em Buscar.")
             return
  
         ads_list = cache_entry["data"]
         ts       = cache_entry["ts"]
-        pid      = cache_entry.get("pid", "")
-        fonte    = cache_entry.get("fonte", "")
+        query    = cache_entry.get("query", "")
  
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
@@ -3135,7 +3034,7 @@ if st.button("🔧 Debug API", type="secondary"):
                                  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
                     <span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;
                                  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
-                        Page ID: {pid}
+                        Busca: {query}
                     </span>
                     <span style='font-size:12px;color:#9ca3af'>· {ts}</span>
                 </div>
@@ -3147,27 +3046,33 @@ if st.button("🔧 Debug API", type="secondary"):
         </div>""", unsafe_allow_html=True)
  
         if not ads_list:
-            st.info("Nenhum anúncio encontrado. Verifique se o Page ID está correto.")
+            st.info("Nenhum anúncio encontrado. Verifique o Page ID ou nome da página.")
             st.link_button(
                 "🔍 Verificar no Ad Library",
-                f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&view_all_page_id={pid}",
+                f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q={query}",
             )
             return
  
         # Filtros
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
         with fcol1:
-            busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…",
-                key=f"ads_busca_{safe_key(ck)}", label_visibility="collapsed")
+            busca_texto = st.text_input(
+                "Filtrar", placeholder="Pesquisar no copy…",
+                key=f"ads_busca_{safe_key(ck)}", label_visibility="collapsed"
+            )
         with fcol2:
-            filtro_fmt = st.selectbox("Formato",
+            filtro_fmt = st.selectbox(
+                "Formato",
                 ["Todos"] + sorted(set(a["formato"] for a in ads_list)),
-                key=f"ads_fmt_{safe_key(ck)}", label_visibility="collapsed")
+                key=f"ads_fmt_{safe_key(ck)}", label_visibility="collapsed"
+            )
         with fcol3:
             plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-            filtro_plat = st.selectbox("Plataforma",
+            filtro_plat = st.selectbox(
+                "Plataforma",
                 ["Todas"] + [p.capitalize() for p in plats_todas],
-                key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed")
+                key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed"
+            )
  
         ads_f = ads_list
         if busca_texto:
@@ -3182,8 +3087,8 @@ if st.button("🔧 Debug API", type="secondary"):
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
-        n_video  = sum(1 for a in ads_f if "Vídeo"    in a["formato"])
-        n_imagem = sum(1 for a in ads_f if "Imagem"   in a["formato"])
+        n_video  = sum(1 for a in ads_f if "Vídeo"  in a["formato"])
+        n_imagem = sum(1 for a in ads_f if "Imagem" in a["formato"])
         n_outros = len(ads_f) - n_video - n_imagem
  
         st.markdown(f"""
@@ -3213,7 +3118,6 @@ if st.button("🔧 Debug API", type="secondary"):
  
                 plat_txt = _plat_icons(ad["plataformas"])
  
-                # Imagem de preview (se tiver)
                 img_html = ""
                 if ad["images"]:
                     img_html = f"""
@@ -3334,6 +3238,7 @@ O que esta empresa está fazendo que pode ser uma ameaça?
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
+ 
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
