@@ -2706,11 +2706,37 @@ elif st.session_state.pagina == "ads":
         if not txt: return "—"
         return txt[:n] + "…" if len(txt) > n else txt
  
+    def img_proxy(url: str) -> str:
+        """
+        Retorna a URL da imagem passando por um proxy público para evitar
+        bloqueios de hotlink/CORS das CDNs da Meta.
+        Usa images.weserv.nl (gratuito, sem autenticação).
+        """
+        if not url:
+            return ""
+        # Remove schema para o weserv
+        clean = url.replace("https://", "").replace("http://", "")
+        return f"https://images.weserv.nl/?url={clean}&w=600&output=jpg&q=80"
+ 
+    # ------------------------------------------------------------------
+    # buscar_page_id — versão corrigida com matching mais rigoroso
+    # ------------------------------------------------------------------
     def buscar_page_id(query: str):
-        """Tenta encontrar o Page ID do Facebook pelo nome da página."""
+        """
+        Busca o Page ID do Facebook.
+        Estratégia:
+          1. Busca exata pelo nome (query completo em page_name)
+          2. Busca parcial (query contido em page_name)
+          3. Match reverso (page_name contido em query)
+          4. Primeiro resultado disponível (match aproximado — avisa o usuário)
+        Retorna (page_id | None, aviso | None)
+        """
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key:
             return None, "SEARCHAPI_KEY não configurada"
+ 
+        query_lower = query.lower().strip()
+ 
         try:
             r = requests.get(
                 "https://www.searchapi.io/api/v1/search",
@@ -2726,20 +2752,47 @@ elif st.session_state.pagina == "ads":
             )
             data = r.json()
             ads = data.get("ads", [])
-            query_lower = query.lower().strip()
+ 
+            if not ads:
+                return None, "Nenhum anúncio encontrado com esse termo"
+ 
+            # Coleta pares únicos (page_id, page_name)
+            seen = {}
             for ad in ads:
-                page_name = (ad.get("page_name") or "").lower()
-                page_id   = str(ad.get("page_id") or "")
-                if page_id and (query_lower in page_name or page_name in query_lower):
-                    return page_id, None
-            for ad in ads:
-                page_id = str(ad.get("page_id") or "")
-                if page_id:
-                    return page_id, f"Match aproximado: '{ad.get('page_name','')}' — verifique se é a empresa correta"
-            return None, "Nenhuma página encontrada com esse nome"
+                pid = str(ad.get("page_id") or "").strip()
+                pname = (ad.get("page_name") or "").strip()
+                if pid and pid not in seen:
+                    seen[pid] = pname
+ 
+            # 1️⃣ Match exato
+            for pid, pname in seen.items():
+                if pname.lower() == query_lower:
+                    return pid, None
+ 
+            # 2️⃣ Query contida no nome da página
+            for pid, pname in seen.items():
+                if query_lower in pname.lower():
+                    return pid, None
+ 
+            # 3️⃣ Nome da página contido na query
+            for pid, pname in seen.items():
+                if pname.lower() in query_lower:
+                    return pid, None
+ 
+            # 4️⃣ Fallback: primeiro resultado — avisa o usuário
+            first_pid, first_name = next(iter(seen.items()))
+            return (
+                first_pid,
+                f"⚠️ Match aproximado: página encontrada foi **'{first_name}'** "
+                f"(ID `{first_pid}`). Se não for a correta, insira o Page ID numérico manualmente."
+            )
+ 
         except Exception as e:
             return None, str(e)
  
+    # ------------------------------------------------------------------
+    # buscar_ads_searchapi — versão corrigida
+    # ------------------------------------------------------------------
     def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key:
@@ -2771,6 +2824,7 @@ elif st.session_state.pagina == "ads":
  
             ads_raw = data.get("ads", [])
  
+            # Filtra por nome apenas quando a busca foi por nome (não por ID)
             if not query.isdigit() and ads_raw:
                 query_lower = query.lower()
                 ads_filtrados = [
@@ -2793,19 +2847,17 @@ elif st.session_state.pagina == "ads":
                 videos   = []
                 snapshot = ad.get("snapshot", {}) or {}
  
-                # --- CORREÇÃO: coleta exaustiva de imagens em múltiplos campos ---
+                # ── Coleta exaustiva de imagens ──────────────────────────────
                 for key in ("image_url", "original_image_url", "resized_image_url"):
                     v = ad.get(key) or ""
                     if v and v not in images:
                         images.append(v)
  
-                # imagens dentro de snapshot raiz
                 for key in ("image_url", "original_image_url", "resized_image_url"):
                     v = snapshot.get(key) or ""
                     if v and v not in images:
                         images.append(v)
  
-                # imagens dentro dos cards do snapshot
                 for card in (snapshot.get("cards") or []):
                     if isinstance(card, dict):
                         for k in ("original_image_url", "image_url", "resized_image_url"):
@@ -2819,13 +2871,11 @@ elif st.session_state.pagina == "ads":
                                 videos.append(v)
                                 break
  
-                # vídeos no snapshot raiz
                 for key in ("video_hd_url", "video_sd_url"):
                     v = snapshot.get(key) or ""
                     if v and v not in videos:
                         videos.append(v)
  
-                # imagens dentro de creative_images (campo alternativo)
                 for img_obj in (ad.get("creative_images") or []):
                     if isinstance(img_obj, dict):
                         for k in ("original_image_url", "image_url", "url"):
@@ -2835,6 +2885,9 @@ elif st.session_state.pagina == "ads":
                                 break
                     elif isinstance(img_obj, str) and img_obj and img_obj not in images:
                         images.append(img_obj)
+ 
+                # ── Aplica proxy em todas as imagens ─────────────────────────
+                images = [img_proxy(u) for u in images if u]
  
                 plats     = ad.get("publisher_platforms", []) or []
                 has_video = bool(videos) or ad.get("media_type", "").upper() == "VIDEO"
@@ -2882,7 +2935,7 @@ elif st.session_state.pagina == "ads":
  
     SEARCHAPI_KEY = st.secrets.get("SEARCHAPI_KEY", "")
  
-    # ── Lista de empresas usando dados do banco
+    # ── Lista de empresas
     todas_empresas = []
     if emp.get("nome"):
         todas_empresas.append({"nome": emp["nome"], "tipo": "minha", "idx": 0})
@@ -2915,18 +2968,11 @@ html, body { background: transparent; overflow: hidden; }
     if not SEARCHAPI_KEY:
         st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
  
-    # ── Verifica se há empresas sem query salva para confirmar com usuário
-    empresas_sem_query = [
-        e for e in todas_empresas
-        if not st.session_state.get(f"_query_saved_{safe_key(e['nome'])}", "").strip()
-    ]
- 
     # ── Pré-preenche query com dados do banco se ainda não foi definida
     for e in todas_empresas:
         sk = safe_key(e["nome"])
         chave = f"_query_saved_{sk}"
         if not st.session_state.get(chave, "").strip():
-            # Tenta preencher automaticamente com fb_page, instagram ou nome
             if e["tipo"] == "minha":
                 fonte = emp.get("fb_page") or emp.get("instagram", "").lstrip("@") or emp.get("nome", "")
             else:
@@ -3211,29 +3257,38 @@ html, body { background: transparent; overflow: hidden; }
  
                 plat_txt = _plat_icons(ad["plataformas"])
  
-                # --- CORREÇÃO: lógica de exibição de imagem mais robusta ---
                 primeira_img = ad["images"][0] if ad["images"] else ""
                 primeiro_vid = ad["videos"][0] if ad["videos"] else ""
  
                 if primeira_img:
-                    # Usa referência à variável para evitar problemas de escaping no onerror
+                    # Imagem via proxy — sem onerror problemático, usa elemento alternativo no próprio DOM
                     img_html = f"""
 <div style="width:100%;height:180px;overflow:hidden;
             border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
-            background:#f9fafb;position:relative;">
+            background:#f9fafb;position:relative;" id="img_wrap_{j}">
   <img
+    id="img_{j}"
     src="{primeira_img}"
     style="width:100%;height:100%;object-fit:cover;display:block;"
     loading="lazy"
-    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
   />
-  <div style="display:none;width:100%;height:100%;position:absolute;top:0;left:0;
-              align-items:center;justify-content:center;flex-direction:column;gap:6px;
-              background:#f9fafb;">
+  <div id="img_err_{j}" style="display:none;width:100%;height:100%;position:absolute;top:0;left:0;
+       align-items:center;justify-content:center;flex-direction:column;gap:6px;background:#f9fafb;">
     <span style="font-size:32px;">🖼️</span>
     <span style="font-size:11px;color:#9ca3af;">Imagem não disponível</span>
   </div>
-</div>"""
+</div>
+<script>
+(function(){{
+  var img = document.getElementById('img_{j}');
+  var err = document.getElementById('img_err_{j}');
+  if (!img || !err) return;
+  img.onerror = function() {{
+    img.style.display = 'none';
+    err.style.display = 'flex';
+  }};
+}})();
+</script>"""
                 elif primeiro_vid:
                     img_html = """
 <div style="width:100%;height:180px;overflow:hidden;
@@ -3379,7 +3434,7 @@ document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
 setTimeout(ajustarAltura, 300);
 setTimeout(ajustarAltura, 800);
-// Re-ajusta após imagens carregarem ou falharem
+setTimeout(ajustarAltura, 1500);
 document.querySelectorAll('img').forEach(function(img) {{
     img.addEventListener('load', ajustarAltura);
     img.addEventListener('error', ajustarAltura);
@@ -3473,8 +3528,7 @@ O que esta empresa está fazendo que pode ser uma ameaça?
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
- 
-
+            
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
 # ---------------------------------------------------
