@@ -3396,12 +3396,8 @@ python    if buscar:
                         "page_id_usado": page_id_encontrado or query,
                     }
                     st.write(f"✅ {len(ads)} anúncios encontrados")
-Resumo do problema e solução:
-ProblemaCausaSoluçãoAnúncios erradosBusca por nome retorna qualquer empresa com aquela palavraUsar Page ID numéricoPage ID desconhecidoUsuário não sabe o IDAuto-busca do Page ID antes de buscar anúnciosSem filtroAPI retorna páginas irrelevantesFiltro por page_name após busca por nome
-O caminho mais confiável ainda é o usuário ir em facebook.com/ads/library, pesquisar a empresa, e pegar o número ID da URL ou da página — esse ID garante 100% de precisão.Você disse: o layout onde mostra os anuncios esta quebradoo layout onde mostra os anuncios esta quebrado11:48Claude respondeu: Vejo o problema — cada card está mostrando dois botões "Ver criativo" separados do card, e o layout está desalinhado.Vejo o problema — cada card está mostrando dois botões "Ver criativo" separados do card, e o layout está desalinhado. Isso acontece porque o components.html() cria um iframe isolado e o st.link_button() fica fora dele, causando desalinhamento.
-A solução é colocar o botão "Ver criativo" dentro do próprio HTML do card:
-Substitua todo o bloco # ── Cards de anúncios dentro de render_ads_empresa por este:
-python        # ── Cards de anúncios
+
+ # ── Cards de anúncios
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
