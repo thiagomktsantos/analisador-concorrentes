@@ -3137,20 +3137,7 @@ body {{ padding-bottom:4px; }}
                     st.link_button("🔗 Ver criativo", ad["snapshot_url"], use_container_width=True)
 
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-The key changes:
 
-Each card uses components.html() instead of st.markdown() — this ensures the HTML is actually rendered, not displayed as escaped text
-Single quotes in onerror are escaped with \' inside the f-string
-Double quotes used consistently inside HTML attributes to avoid f-string conflicts
-
-The root cause was that st.markdown(unsafe_allow_html=True) was receiving the HTML but Streamlit was treating the nested HTML variable content as literal text in some contexts, while components.html() renders a true isolated iframe with full HTML support.Você disse: nao esta achando os anuncios da empresa, mesmo a mesma tendo anuncios ativosnao esta achando os anuncios da empresa, mesmo a mesma tendo anuncios ativos11:45Claude respondeu: O problema é que a busca por nome ("kedu") na Meta Ad Library via SearchAPI retorna anúncios aleatórios de outras empresas que contêm essa palavra.O problema é que a busca por nome ("kedu") na Meta Ad Library via SearchAPI retorna anúncios aleatórios de outras empresas que contêm essa palavra. A API precisa do Page ID numérico do Facebook para encontrar os anúncios corretos.
-Há duas melhorias necessárias:
-
-Buscar o Page ID automaticamente pelo nome da página
-Melhorar o input para orientar o usuário a usar o Page ID
-
-Aqui está a correção da função buscar_ads_searchapi e do fluxo de busca:
-pythondef buscar_page_id(query: str) -> tuple:
     """Tenta encontrar o Page ID do Facebook pelo nome da página."""
     api_key = st.secrets.get("SEARCHAPI_KEY", "")
     if not api_key:
