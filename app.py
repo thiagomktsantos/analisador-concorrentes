@@ -3358,9 +3358,7 @@ def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
                     f"padding:6px 10px'>⚠️ Use o Page ID numérico para resultados precisos</div>",
                     unsafe_allow_html=True,
                 )
-E no bloco de busca, salve o page_id encontrado no cache:
-python    if buscar:
-        # ... código existente ...
+
         with st.status("Buscando anúncios via SearchAPI.io...", expanded=True) as status:
             for e in todas_empresas:
                 ck    = e["nome"]
