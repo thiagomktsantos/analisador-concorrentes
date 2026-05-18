@@ -2706,31 +2706,28 @@ elif st.session_state.pagina == "ads":
         if not txt: return "—"
         return txt[:n] + "…" if len(txt) > n else txt
  
+    # ------------------------------------------------------------------
+    # Proxy de imagem — usa allorigins para contornar CORS/hotlink
+    # ------------------------------------------------------------------
     def img_proxy(url: str) -> str:
         """
-        Retorna a URL da imagem passando por um proxy público para evitar
-        bloqueios de hotlink/CORS das CDNs da Meta.
-        Usa images.weserv.nl (gratuito, sem autenticação).
+        Retorna URL via proxy para contornar bloqueio de hotlink das CDNs da Meta.
+        Tenta múltiplas estratégias.
         """
         if not url:
             return ""
-        # Remove schema para o weserv
-        clean = url.replace("https://", "").replace("http://", "")
-        return f"https://images.weserv.nl/?url={clean}&w=600&output=jpg&q=80"
+        # Remove parâmetros problemáticos e garante HTTPS
+        clean = url.strip()
+        if not clean.startswith("http"):
+            clean = "https://" + clean
+        # Usa images.weserv.nl com opções extras
+        encoded = clean.replace("https://", "").replace("http://", "")
+        return f"https://images.weserv.nl/?url={encoded}&w=600&output=webp&q=85&default=1"
  
     # ------------------------------------------------------------------
-    # buscar_page_id — versão corrigida com matching mais rigoroso
+    # buscar_page_id
     # ------------------------------------------------------------------
     def buscar_page_id(query: str):
-        """
-        Busca o Page ID do Facebook.
-        Estratégia:
-          1. Busca exata pelo nome (query completo em page_name)
-          2. Busca parcial (query contido em page_name)
-          3. Match reverso (page_name contido em query)
-          4. Primeiro resultado disponível (match aproximado — avisa o usuário)
-        Retorna (page_id | None, aviso | None)
-        """
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
         if not api_key:
             return None, "SEARCHAPI_KEY não configurada"
@@ -2756,42 +2753,37 @@ elif st.session_state.pagina == "ads":
             if not ads:
                 return None, "Nenhum anúncio encontrado com esse termo"
  
-            # Coleta pares únicos (page_id, page_name)
             seen = {}
             for ad in ads:
-                pid = str(ad.get("page_id") or "").strip()
+                pid   = str(ad.get("page_id") or "").strip()
                 pname = (ad.get("page_name") or "").strip()
                 if pid and pid not in seen:
                     seen[pid] = pname
  
-            # 1️⃣ Match exato
             for pid, pname in seen.items():
                 if pname.lower() == query_lower:
                     return pid, None
  
-            # 2️⃣ Query contida no nome da página
             for pid, pname in seen.items():
                 if query_lower in pname.lower():
                     return pid, None
  
-            # 3️⃣ Nome da página contido na query
             for pid, pname in seen.items():
                 if pname.lower() in query_lower:
                     return pid, None
  
-            # 4️⃣ Fallback: primeiro resultado — avisa o usuário
             first_pid, first_name = next(iter(seen.items()))
             return (
                 first_pid,
                 f"⚠️ Match aproximado: página encontrada foi **'{first_name}'** "
-                f"(ID `{first_pid}`). Se não for a correta, insira o Page ID numérico manualmente."
+                f"(ID `{first_pid}`). Se não for a correta, insira o Page ID numérico manualmente.",
             )
  
         except Exception as e:
             return None, str(e)
  
     # ------------------------------------------------------------------
-    # buscar_ads_searchapi — versão corrigida
+    # buscar_ads_searchapi — versão corrigida com extração robusta de imagens
     # ------------------------------------------------------------------
     def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
         api_key = st.secrets.get("SEARCHAPI_KEY", "")
@@ -2824,7 +2816,6 @@ elif st.session_state.pagina == "ads":
  
             ads_raw = data.get("ads", [])
  
-            # Filtra por nome apenas quando a busca foi por nome (não por ID)
             if not query.isdigit() and ads_raw:
                 query_lower = query.lower()
                 ads_filtrados = [
@@ -2847,35 +2838,43 @@ elif st.session_state.pagina == "ads":
                 videos   = []
                 snapshot = ad.get("snapshot", {}) or {}
  
-                # ── Coleta exaustiva de imagens ──────────────────────────────
-                for key in ("image_url", "original_image_url", "resized_image_url"):
+                # ── Coleta TODAS as imagens possíveis ──────────────────
+                # Nível raiz do anúncio
+                for key in ("image_url", "original_image_url", "resized_image_url",
+                             "thumbnail_url", "preview_image_url"):
                     v = ad.get(key) or ""
                     if v and v not in images:
                         images.append(v)
  
-                for key in ("image_url", "original_image_url", "resized_image_url"):
+                # Snapshot principal
+                for key in ("image_url", "original_image_url", "resized_image_url",
+                             "thumbnail_url"):
                     v = snapshot.get(key) or ""
                     if v and v not in images:
                         images.append(v)
  
+                # Cards do snapshot (carrosséis)
                 for card in (snapshot.get("cards") or []):
                     if isinstance(card, dict):
-                        for k in ("original_image_url", "image_url", "resized_image_url"):
+                        for k in ("original_image_url", "image_url", "resized_image_url",
+                                  "thumbnail_url"):
                             v = card.get(k) or ""
                             if v and v not in images:
                                 images.append(v)
                                 break
+                        # Vídeos nos cards
                         for k in ("video_hd_url", "video_sd_url"):
                             v = card.get(k) or ""
                             if v and v not in videos:
                                 videos.append(v)
-                                break
  
+                # Vídeos no snapshot
                 for key in ("video_hd_url", "video_sd_url"):
                     v = snapshot.get(key) or ""
                     if v and v not in videos:
                         videos.append(v)
  
+                # creative_images
                 for img_obj in (ad.get("creative_images") or []):
                     if isinstance(img_obj, dict):
                         for k in ("original_image_url", "image_url", "url"):
@@ -2886,8 +2885,14 @@ elif st.session_state.pagina == "ads":
                     elif isinstance(img_obj, str) and img_obj and img_obj not in images:
                         images.append(img_obj)
  
-                # ── Aplica proxy em todas as imagens ─────────────────────────
-                images = [img_proxy(u) for u in images if u]
+                # ── Tenta obter URL direta da imagem via snapshot_url ──
+                # Algumas vezes o snapshot_url contém a imagem real
+                snap_url_field = ad.get("ad_snapshot_url", "") or ""
+ 
+                # ── Aplica proxy (sem modificar o original) ────────────
+                images_proxied = [img_proxy(u) for u in images if u]
+                # Mantém também as URLs originais como fallback
+                images_original = [u for u in images if u]
  
                 plats     = ad.get("publisher_platforms", []) or []
                 has_video = bool(videos) or ad.get("media_type", "").upper() == "VIDEO"
@@ -2898,7 +2903,7 @@ elif st.session_state.pagina == "ads":
  
                 imp = ad.get("impressions", {}) or {}
                 if isinstance(imp, dict):
-                    lo, hi = imp.get("lower_bound", ""), imp.get("upper_bound", "")
+                    lo, hi  = imp.get("lower_bound", ""), imp.get("upper_bound", "")
                     imp_str = f"{lo}–{hi}" if (lo or hi) else ""
                 else:
                     imp_str = str(imp) if imp else ""
@@ -2912,20 +2917,21 @@ elif st.session_state.pagina == "ads":
                 )
  
                 resultado.append({
-                    "id":           ad_id,
-                    "page_name":    ad.get("page_name", ""),
-                    "page_id":      str(ad.get("page_id", "") or ""),
-                    "body":         body,
-                    "title":        title,
-                    "description":  desc,
-                    "images":       images,
-                    "videos":       videos,
-                    "cards":        snapshot.get("cards", []),
-                    "snapshot_url": snap_url,
-                    "data_inicio":  start_str,
-                    "impressoes":   imp_str,
-                    "plataformas":  plats,
-                    "formato":      fmt,
+                    "id":               ad_id,
+                    "page_name":        ad.get("page_name", ""),
+                    "page_id":          str(ad.get("page_id", "") or ""),
+                    "body":             body,
+                    "title":            title,
+                    "description":      desc,
+                    "images":           images_proxied,
+                    "images_original":  images_original,
+                    "videos":           videos,
+                    "cards":            snapshot.get("cards", []),
+                    "snapshot_url":     snap_url,
+                    "data_inicio":      start_str,
+                    "impressoes":       imp_str,
+                    "plataformas":      plats,
+                    "formato":          fmt,
                 })
  
             return resultado, None
@@ -2970,7 +2976,7 @@ html, body { background: transparent; overflow: hidden; }
  
     # ── Pré-preenche query com dados do banco se ainda não foi definida
     for e in todas_empresas:
-        sk = safe_key(e["nome"])
+        sk    = safe_key(e["nome"])
         chave = f"_query_saved_{sk}"
         if not st.session_state.get(chave, "").strip():
             if e["tipo"] == "minha":
@@ -2986,7 +2992,7 @@ html, body { background: transparent; overflow: hidden; }
             if fonte:
                 st.session_state[chave] = fonte.strip()
  
-    # ── INPUTS — nome/page ID de cada empresa
+    # ── INPUTS
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
         "letter-spacing:1px;margin-bottom:4px'>Confirme o Page ID ou nome de cada empresa</div>",
@@ -3066,7 +3072,7 @@ html, body { background: transparent; overflow: hidden; }
                     st.write(f"Buscando **{ck}** ({query})...")
  
                     page_id_encontrado = query if query.isdigit() else None
-                    aviso_page_id = None
+                    aviso_page_id      = None
  
                     if not query.isdigit():
                         st.write(f"🔍 Procurando Page ID de **{ck}**...")
@@ -3149,9 +3155,9 @@ html, body { background: transparent; overflow: hidden; }
             st.info("Sem dados. Informe o Page ID ou nome e clique em Buscar.")
             return
  
-        ads_list = cache_entry["data"]
-        ts       = cache_entry["ts"]
-        query    = cache_entry.get("query", "")
+        ads_list      = cache_entry["data"]
+        ts            = cache_entry["ts"]
+        query         = cache_entry.get("query", "")
         page_id_usado = cache_entry.get("page_id_usado", "")
  
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
@@ -3215,7 +3221,7 @@ html, body { background: transparent; overflow: hidden; }
  
         ads_f = ads_list
         if busca_texto:
-            q = busca_texto.lower()
+            q     = busca_texto.lower()
             ads_f = [a for a in ads_f if q in (a.get("body") or "").lower() or q in (a.get("title") or "").lower()]
         if filtro_fmt != "Todos":
             ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
@@ -3251,60 +3257,123 @@ html, body { background: transparent; overflow: hidden; }
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
                 fmt = ad["formato"]
-                if   "Vídeo"  in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff","#1d4ed8","#bfdbfe"
-                elif "Imagem" in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7","#92400e","#fcd34d"
-                else:                 fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff","#5b21b6","#c4b5fd"
+                if   "Vídeo"    in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#eff6ff", "#1d4ed8", "#bfdbfe"
+                elif "Imagem"   in fmt: fmt_bg, fmt_txt_c, fmt_brd = "#fef3c7", "#92400e", "#fcd34d"
+                else:                   fmt_bg, fmt_txt_c, fmt_brd = "#f5f3ff", "#5b21b6", "#c4b5fd"
  
-                plat_txt = _plat_icons(ad["plataformas"])
+                plat_txt      = _plat_icons(ad["plataformas"])
+                primeira_img  = ad["images"][0] if ad["images"] else ""
+                # Fallback para URL original caso proxy falhe
+                primeira_img_orig = ad.get("images_original", [None])[0] or "" if ad.get("images_original") else ""
+                primeiro_vid  = ad["videos"][0] if ad["videos"] else ""
+                snap_url      = ad.get("snapshot_url", "") or ""
  
-                primeira_img = ad["images"][0] if ad["images"] else ""
-                primeiro_vid = ad["videos"][0] if ad["videos"] else ""
- 
-                if primeira_img:
-                    # Imagem via proxy — sem onerror problemático, usa elemento alternativo no próprio DOM
-                    img_html = f"""
+                # ── Monta bloco de imagem/mídia ──────────────────────────
+                if primeiro_vid:
+                    # VÍDEO — exibe placeholder clicável para abrir no Ad Library
+                    if snap_url:
+                        media_html = f"""
 <div style="width:100%;height:180px;overflow:hidden;
             border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
-            background:#f9fafb;position:relative;" id="img_wrap_{j}">
-  <img
-    id="img_{j}"
+            background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);
+            display:flex;align-items:center;justify-content:center;
+            flex-direction:column;gap:8px;cursor:pointer;"
+     onclick="window.open('{snap_url}','_blank')">
+  <svg width="54" height="54" viewBox="0 0 54 54" fill="none">
+    <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.12)"/>
+    <circle cx="27" cy="27" r="20" fill="rgba(255,255,255,0.18)"/>
+    <polygon points="22,18 40,27 22,36" fill="white"/>
+  </svg>
+  <span style="font-size:11px;color:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;letter-spacing:0.5px">Clique para ver o vídeo</span>
+</div>"""
+                    else:
+                        media_html = """
+<div style="width:100%;height:180px;overflow:hidden;
+            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
+            background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);
+            display:flex;align-items:center;justify-content:center;
+            flex-direction:column;gap:8px;">
+  <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
+    <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.1)"/>
+    <polygon points="22,18 40,27 22,36" fill="white"/>
+  </svg>
+  <span style="font-size:11px;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif">Vídeo</span>
+</div>"""
+ 
+                elif primeira_img:
+                    # IMAGEM — tenta proxy, fallback para original, fallback para placeholder
+                    uid = f"img_{safe_key(ck)}_{j}"
+                    media_html = f"""
+<div style="width:100%;height:180px;overflow:hidden;
+            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
+            background:#f9fafb;position:relative;" id="wrap_{uid}">
+ 
+  <img id="proxy_{uid}"
     src="{primeira_img}"
     style="width:100%;height:100%;object-fit:cover;display:block;"
     loading="lazy"
+    onerror="proxyFail('{uid}','{primeira_img_orig.replace(chr(39), chr(39))}','{snap_url.replace(chr(39), chr(39))}')"
   />
-  <div id="img_err_{j}" style="display:none;width:100%;height:100%;position:absolute;top:0;left:0;
-       align-items:center;justify-content:center;flex-direction:column;gap:6px;background:#f9fafb;">
-    <span style="font-size:32px;">🖼️</span>
-    <span style="font-size:11px;color:#9ca3af;">Imagem não disponível</span>
+ 
+  <div id="orig_{uid}" style="display:none;width:100%;height:100%;position:absolute;top:0;left:0;">
+    <img src=""
+      style="width:100%;height:100%;object-fit:cover;display:block;"
+      onerror="origFail('{uid}','{snap_url.replace(chr(39), chr(39))}')"
+    />
+  </div>
+ 
+  <div id="err_{uid}" style="display:none;width:100%;height:100%;position:absolute;top:0;left:0;
+       background:#f9fafb;align-items:center;justify-content:center;flex-direction:column;gap:6px;">
+    <span style="font-size:28px;">🖼️</span>
+    <span style="font-size:11px;color:#9ca3af;font-family:'DM Sans',sans-serif;">
+      {'<a href=' + chr(34) + snap_url + chr(34) + ' target=_blank style=' + chr(34) + 'color:#3a9fd6;text-decoration:none;font-size:12px' + chr(34) + '>Ver no Ad Library →</a>' if snap_url else 'Imagem não disponível'}
+    </span>
   </div>
 </div>
+ 
 <script>
-(function(){{
-  var img = document.getElementById('img_{j}');
-  var err = document.getElementById('img_err_{j}');
-  if (!img || !err) return;
-  img.onerror = function() {{
-    img.style.display = 'none';
-    err.style.display = 'flex';
-  }};
-}})();
+function proxyFail(uid, origUrl, snapUrl) {{
+  var proxyEl = document.getElementById('proxy_' + uid);
+  if (proxyEl) proxyEl.style.display = 'none';
+  if (origUrl && origUrl.length > 0) {{
+    var origDiv = document.getElementById('orig_' + uid);
+    if (origDiv) {{
+      var origImg = origDiv.querySelector('img');
+      if (origImg) {{ origImg.src = origUrl; }}
+      origDiv.style.display = 'block';
+    }}
+  }} else {{
+    origFail(uid, snapUrl);
+  }}
+}}
+function origFail(uid, snapUrl) {{
+  var origDiv = document.getElementById('orig_' + uid);
+  if (origDiv) origDiv.style.display = 'none';
+  var errDiv = document.getElementById('err_' + uid);
+  if (errDiv) errDiv.style.display = 'flex';
+}}
 </script>"""
-                elif primeiro_vid:
-                    img_html = """
-<div style="width:100%;height:180px;overflow:hidden;
-            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
-            background:#111;display:flex;align-items:center;justify-content:center;
-            flex-direction:column;gap:6px;">
-  <span style="font-size:48px;">🎬</span>
-  <span style="font-size:11px;color:#9ca3af;">Vídeo</span>
-</div>"""
+ 
                 else:
-                    img_html = """
+                    # SEM MÍDIA — placeholder com link para Ad Library
+                    if snap_url:
+                        media_html = f"""
+<div style="width:100%;height:110px;
+            border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
+            background:#f9fafb;display:flex;align-items:center;
+            justify-content:center;flex-direction:column;gap:6px;cursor:pointer;"
+     onclick="window.open('{snap_url}','_blank')">
+  <span style="font-size:26px;">📋</span>
+  <span style="font-size:11px;color:#9ca3af;font-family:'DM Sans',sans-serif;">Ver criativo →</span>
+</div>"""
+                    else:
+                        media_html = """
 <div style="width:100%;height:100px;
             border-bottom:1px solid #f3f4f6;border-radius:12px 12px 0 0;
             background:#f9fafb;display:flex;align-items:center;
-            justify-content:center;font-size:32px;">📄</div>"""
+            justify-content:center;font-size:28px;">📄</div>"""
  
+                # ── Copy ─────────────────────────────────────────────────
                 copy_parts = []
                 if ad["title"]:
                     copy_parts.append(
@@ -3333,8 +3402,7 @@ html, body { background: transparent; overflow: hidden; }
                     if ad["impressoes"] else ""
                 )
  
-                snap_url = ad.get("snapshot_url", "") or ""
-                ver_btn  = (
+                ver_btn = (
                     f'<a href="{snap_url}" target="_blank" style="'
                     f'display:block;width:100%;padding:10px 0;text-align:center;'
                     f'border:1px solid #e5e7eb;border-radius:8px;'
@@ -3346,6 +3414,7 @@ html, body { background: transparent; overflow: hidden; }
                     f'🔗 Ver criativo</a>'
                 ) if snap_url else ""
  
+                # ── HTML completo do card ─────────────────────────────────
                 card_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -3401,7 +3470,7 @@ body {{ padding-bottom: 4px; }}
 </head>
 <body>
 <div class="card">
-    {img_html}
+    {media_html}
     <div class="meta">
         <div class="meta-row">
             <span class="badge">{fmt}</span>
@@ -3446,7 +3515,7 @@ document.querySelectorAll('img').forEach(function(img) {{
                 components.html(card_html, height=480, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
-        # ── ANÁLISE DE IA
+        # ── ANÁLISE DE IA ─────────────────────────────────────────────
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
         chave_ia = f"ia_ads_{safe_key(ck)}"
@@ -3528,7 +3597,7 @@ O que esta empresa está fazendo que pode ser uma ameaça?
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
-            
+             
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
 # ---------------------------------------------------
