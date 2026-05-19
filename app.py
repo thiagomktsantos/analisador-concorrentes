@@ -2684,11 +2684,15 @@ elif st.session_state.pagina == "ads":
     import datetime as _dt
     import json as _json
     import base64 as _b64
+    import time as _time
  
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
  
     CACHE_TTL_HORAS = 24
+    APIFY_ACTOR_ID  = "JHGi3kAzHO1t3Fxrb"
+ 
+    # ── helpers de cache no Supabase (idênticos ao original) ──────────
  
     def salvar_cache_ads(dados: dict):
         try:
@@ -2722,10 +2726,9 @@ elif st.session_state.pagina == "ads":
         except Exception:
             return False
  
-    # ── MELHORIA 1: converte URL de imagem em base64 durante a coleta
-    # Resolve o problema de URLs da Meta que expiram em minutos.
+    # ── helpers de imagem (idênticos ao original) ─────────────────────
+ 
     def _url_para_base64(url: str) -> str:
-        """Baixa a imagem e retorna string data:image/... pronta para <img src>."""
         if not url or not url.startswith("http"):
             return ""
         try:
@@ -2744,18 +2747,14 @@ elif st.session_state.pagina == "ads":
         except Exception:
             return ""
  
-    # ── MELHORIA 2: gera URL do Microlink para screenshot do criativo
     def _microlink_screenshot(snap_url: str) -> str:
-        """Retorna URL do Microlink que tira screenshot da página do Ad Library."""
         if not snap_url:
             return ""
         import urllib.parse
         encoded = urllib.parse.quote(snap_url, safe="")
         return f"https://api.microlink.io/?url={encoded}&screenshot=true&meta=false&embed=screenshot.url"
  
-    # ── MELHORIA 4: extrai thumbnail de vídeo
     def _extract_video_thumbnail(ad: dict) -> str:
-        """Tenta extrair thumbnail do vídeo de vários campos da API."""
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
         for k in ("thumbnail_url", "preview_image_url", "image_url", "original_image_url"):
@@ -2763,34 +2762,30 @@ elif st.session_state.pagina == "ads":
             if v and v.startswith("http"):
                 return v
         for card in cards:
-            if not isinstance(card, dict): continue
+            if not isinstance(card, dict):
+                continue
             for k in ("thumbnail_url", "preview_image_url", "image_url"):
                 v = card.get(k, "")
                 if v and v.startswith("http"):
                     return v
         return ""
  
-    if "ads_cache" not in st.session_state:
-        st.session_state.ads_cache = carregar_cache_ads()
-    if "ads_erro" not in st.session_state:
-        st.session_state.ads_erro = {}
-    if "ads_raw_debug" not in st.session_state:
-        st.session_state.ads_raw_debug = {}
- 
-    def safe_key(s):
-        return re.sub(r"[^a-zA-Z0-9_]", "_", s)
+    # ── helpers de extração de campos (idênticos ao original) ─────────
  
     def _truncar(txt, n=160):
-        if not txt: return ""
+        if not txt:
+            return ""
         txt = str(txt).strip()
         return txt[:n] + "…" if len(txt) > n else txt
  
     def _is_dynamic(txt):
-        if not txt: return False
+        if not txt:
+            return False
         return bool(re.search(r'\{\{[^}]+\}\}', txt))
  
     def _clean_dynamic(txt):
-        if not txt: return ""
+        if not txt:
+            return ""
         cleaned = re.sub(r'\{\{[^}]+\}\}', '', txt).strip()
         lines = [l.strip() for l in cleaned.split('\n') if l.strip()]
         return ' '.join(lines)
@@ -2814,26 +2809,30 @@ elif st.session_state.pagina == "ads":
                 seen.add(url); imgs.append(url)
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
-        for k in ("image_url","original_image_url","resized_image_url","thumbnail_url","preview_image_url","full_picture"):
+        for k in ("image_url","original_image_url","resized_image_url",
+                  "thumbnail_url","preview_image_url","full_picture"):
             add(ad.get(k))
-        for k in ("image_url","original_image_url","resized_image_url","thumbnail_url","background_image"):
+        for k in ("image_url","original_image_url","resized_image_url",
+                  "thumbnail_url","background_image"):
             add(snapshot.get(k))
         for card in cards:
-            if not isinstance(card, dict): continue
-            for k in ("original_image_url","image_url","resized_image_url","thumbnail_url","picture"):
+            if not isinstance(card, dict):
+                continue
+            for k in ("original_image_url","image_url","resized_image_url",
+                      "thumbnail_url","picture"):
                 add(card.get(k))
         for obj in (ad.get("creative_images") or []):
             if isinstance(obj, dict):
-                for k in ("original_image_url","image_url","url"): add(obj.get(k))
-            elif isinstance(obj, str): add(obj)
+                for k in ("original_image_url","image_url","url"):
+                    add(obj.get(k))
+            elif isinstance(obj, str):
+                add(obj)
         for obj in (ad.get("images") or []):
             if isinstance(obj, dict):
-                for k in ("original_image_url","image_url","url","src"): add(obj.get(k))
-            elif isinstance(obj, str): add(obj)
-        for obj in (ad.get("ad_creative_images") or []):
-            if isinstance(obj, dict):
-                for k in ("original_image_url","image_url","url"): add(obj.get(k))
-            elif isinstance(obj, str): add(obj)
+                for k in ("original_image_url","image_url","url","src"):
+                    add(obj.get(k))
+            elif isinstance(obj, str):
+                add(obj)
         return imgs
  
     def _extract_copy(ad: dict) -> dict:
@@ -2842,23 +2841,38 @@ elif st.session_state.pagina == "ads":
         def first_str(val):
             if isinstance(val, list):
                 for v in val:
-                    if v and isinstance(v, str) and v.strip(): return v.strip()
-            if isinstance(val, str) and val.strip(): return val.strip()
+                    if v and isinstance(v, str) and v.strip():
+                        return v.strip()
+            if isinstance(val, str) and val.strip():
+                return val.strip()
             return ""
-        body = (first_str(ad.get("ad_creative_bodies")) or first_str(snapshot.get("body"))
-                or first_str(ad.get("body")) or first_str(ad.get("message")) or first_str(snapshot.get("message")))
-        title = (first_str(ad.get("ad_creative_link_titles")) or first_str(snapshot.get("title"))
-                 or first_str(ad.get("title")) or first_str(snapshot.get("link_title")))
-        desc = (first_str(ad.get("ad_creative_link_descriptions")) or first_str(snapshot.get("link_description"))
-                or first_str(ad.get("description")) or first_str(snapshot.get("description")))
-        cta = (first_str(ad.get("cta_type")) or first_str(snapshot.get("cta_type"))
-               or first_str(ad.get("call_to_action_type")))
-        caption = first_str(snapshot.get("caption")) or first_str(ad.get("caption"))
+        body  = (first_str(ad.get("ad_creative_bodies"))
+                 or first_str(snapshot.get("body"))
+                 or first_str(ad.get("body"))
+                 or first_str(ad.get("message"))
+                 or first_str(snapshot.get("message")))
+        title = (first_str(ad.get("ad_creative_link_titles"))
+                 or first_str(snapshot.get("title"))
+                 or first_str(ad.get("title"))
+                 or first_str(snapshot.get("link_title")))
+        desc  = (first_str(ad.get("ad_creative_link_descriptions"))
+                 or first_str(snapshot.get("link_description"))
+                 or first_str(ad.get("description"))
+                 or first_str(snapshot.get("description")))
+        cta   = (first_str(ad.get("cta_type"))
+                 or first_str(snapshot.get("cta_type"))
+                 or first_str(ad.get("call_to_action_type")))
+        caption = (first_str(snapshot.get("caption"))
+                   or first_str(ad.get("caption")))
         if not body and cards:
             for card in cards:
                 if isinstance(card, dict):
-                    v = first_str(card.get("body") or card.get("message") or card.get("title") or "")
-                    if v: body = v; break
+                    v = first_str(
+                        card.get("body") or card.get("message") or card.get("title") or ""
+                    )
+                    if v:
+                        body = v
+                        break
         return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
  
     def _extract_videos(ad: dict) -> list:
@@ -2874,124 +2888,200 @@ elif st.session_state.pagina == "ads":
             add(ad.get(k)); add(snapshot.get(k))
         for card in cards:
             if isinstance(card, dict):
-                for k in ("video_hd_url","video_sd_url","video_url"): add(card.get(k))
+                for k in ("video_hd_url","video_sd_url","video_url"):
+                    add(card.get(k))
         return vids
  
-    def buscar_page_id(query: str):
-        api_key = st.secrets.get("SEARCHAPI_KEY", "")
-        if not api_key: return None, "SEARCHAPI_KEY não configurada"
+    # ── Normaliza um item bruto do Apify para o formato interno ───────
+    # O actor retorna campos como: adArchiveID, pageID, pageName,
+    # snapshot (body/title/images/videos), startDate, impressionsWithIndex, etc.
+ 
+    def _normalizar_item_apify(item: dict) -> dict:
+        """Converte um item bruto do Apify para o formato interno usado pelo layout."""
+        snapshot = item.get("snapshot") or {}
+        cards    = snapshot.get("cards") or []
+ 
+        # ── IDs e página
+        ad_id   = str(item.get("adArchiveID") or item.get("ad_archive_id") or item.get("id") or "")
+        page_id = str(item.get("pageID") or item.get("page_id") or "")
+        page_name = (item.get("pageName") or item.get("page_name") or snapshot.get("page_name") or "")
+ 
+        # ── Imagens e vídeos
+        images = _extract_images(item)
+        videos = _extract_videos(item)
+ 
+        # ── Copy
+        copy = _extract_copy(item)
+ 
+        # ── Plataformas
+        plats = (item.get("publisherPlatform")
+                 or item.get("publisher_platforms")
+                 or snapshot.get("publisher_platforms")
+                 or [])
+        if isinstance(plats, str):
+            plats = [plats]
+        if not plats:
+            plats = ["facebook", "instagram"]
+ 
+        # ── Formato
+        has_video   = bool(videos) or (item.get("mediaType") or item.get("media_type") or "").upper() == "VIDEO"
+        has_cards   = len(cards) > 1
+        if has_video:   fmt = "Vídeo 🎬"
+        elif has_cards: fmt = "Carrossel 🎠"
+        elif images:    fmt = "Imagem 🖼️"
+        else:           fmt = "Texto 📝"
+ 
+        # ── Dinâmico
+        is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"])
+                   or _is_dynamic(copy["desc"]))
+        body_c  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
+        title_c = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
+        desc_c  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
+ 
+        # ── Impressões
+        imp = item.get("impressionsWithIndex") or item.get("impressions") or {}
+        if isinstance(imp, dict):
+            lo, hi  = imp.get("lowerBound") or imp.get("lower_bound") or "", \
+                      imp.get("upperBound") or imp.get("upper_bound") or ""
+            imp_str = f"{lo}–{hi}" if (lo or hi) else ""
+        else:
+            imp_str = str(imp) if imp else ""
+ 
+        # ── Data de início
+        start_raw = str(item.get("startDate") or item.get("ad_delivery_start_time") or "")[:10]
+        if start_raw and len(start_raw) == 10:
+            try:
+                dto = _dt.datetime.strptime(start_raw, "%Y-%m-%d")
+                meses = ['jan','fev','mar','abr','mai','jun',
+                         'jul','ago','set','out','nov','dez']
+                start_fmt = f"{dto.day} de {meses[dto.month-1]} de {dto.year}"
+            except Exception:
+                start_fmt = start_raw
+        else:
+            start_fmt = ""
+ 
+        snap_url = (item.get("adSnapshotURL")
+                    or item.get("ad_snapshot_url")
+                    or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""))
+ 
+        # ── Converte 1ª imagem para base64
+        images_b64 = []
+        if images:
+            b64 = _url_para_base64(images[0])
+            images_b64.append(b64 if b64 else images[0])
+            images_b64.extend(images[1:3])
+ 
+        # ── Thumbnail de vídeo
+        video_thumb_url = _extract_video_thumbnail(item) if has_video else ""
+        video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
+ 
+        return {
+            "id":           ad_id,
+            "page_name":    page_name,
+            "page_id":      page_id,
+            "body":         body_c,
+            "body_raw":     copy["body"],
+            "title":        title_c,
+            "description":  desc_c,
+            "cta":          copy["cta"],
+            "caption":      copy["caption"],
+            "images":       images,
+            "images_b64":   images_b64,
+            "videos":       videos,
+            "video_thumb":  video_thumb_b64 or video_thumb_url,
+            "snapshot_url": snap_url,
+            "data_inicio":  start_fmt,
+            "data_raw":     start_raw,
+            "impressoes":   imp_str,
+            "plataformas":  plats,
+            "formato":      fmt,
+            "is_dynamic":   is_dyn,
+        }
+ 
+    # ── Integração com Apify ──────────────────────────────────────────
+ 
+    def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
+        """
+        Executa o actor no Apify de forma síncrona (polling).
+        Retorna (ads_normalizados, raw_debug[:3], erro_str_ou_None).
+        """
+        api_token = st.secrets.get("APIFY_TOKEN", "")
+        if not api_token:
+            return [], [], "APIFY_TOKEN não configurada nos secrets."
+ 
+        # ── 1. Inicia o run
+        run_url = (
+            f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
+            f"?token={api_token}"
+        )
+        payload = {
+            "searchTerms":   [search_term.strip()],
+            "countries":     ["BR"],
+            "adType":        "ALL",
+            "activeStatus":  "ALL",
+            "count":         limit,
+        }
         try:
-            r = requests.get(
-                "https://www.searchapi.io/api/v1/search",
-                params={"engine":"meta_ad_library","api_key":api_key,"ad_type":"ALL",
-                        "ad_reached_countries":"BR","q":query,"active_status":"active"},
-                timeout=20,
-            )
-            data = r.json()
-            ads  = data.get("ads", [])
-            if not ads: return None, "Nenhum anúncio encontrado"
-            seen = {}
-            for ad in ads:
-                pid = str(ad.get("page_id") or "").strip()
-                pname = (ad.get("page_name") or "").strip()
-                if pid and pid not in seen: seen[pid] = pname
-            ql = query.lower().strip()
-            for pid, pname in seen.items():
-                if pname.lower() == ql: return pid, None
-            for pid, pname in seen.items():
-                if ql in pname.lower(): return pid, None
-            for pid, pname in seen.items():
-                if pname.lower() in ql: return pid, None
-            first_pid, first_name = next(iter(seen.items()))
-            return first_pid, f"⚠️ Match aproximado: **'{first_name}'** (ID `{first_pid}`). Se incorreto, use o Page ID numérico."
+            r_start = requests.post(run_url, json=payload, timeout=30)
+            r_start.raise_for_status()
+            run_data = r_start.json()
         except Exception as e:
-            return None, str(e)
+            return [], [], f"Erro ao iniciar run Apify: {e}"
  
-    def buscar_ads_searchapi(query: str, limit: int = 30) -> tuple:
-        api_key = st.secrets.get("SEARCHAPI_KEY", "")
-        if not api_key: return [], [], "SEARCHAPI_KEY não configurada nos secrets."
+        run_id     = run_data.get("data", {}).get("id") or run_data.get("id")
+        dataset_id = run_data.get("data", {}).get("defaultDatasetId") or run_data.get("defaultDatasetId")
+ 
+        if not run_id:
+            return [], [], f"Apify não retornou run ID. Resposta: {run_data}"
+ 
+        # ── 2. Polling até STATUS == SUCCEEDED (timeout 90 s)
+        status_url  = f"https://api.apify.com/v2/actor-runs/{run_id}?token={api_token}"
+        deadline    = _time.time() + 120
+        status      = "RUNNING"
+        while _time.time() < deadline:
+            try:
+                r_st = requests.get(status_url, timeout=15)
+                status = r_st.json().get("data", {}).get("status", "RUNNING")
+                if not dataset_id:
+                    dataset_id = (
+                        r_st.json().get("data", {}).get("defaultDatasetId") or dataset_id
+                    )
+            except Exception:
+                pass
+            if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
+                break
+            _time.sleep(4)
+ 
+        if status != "SUCCEEDED":
+            return [], [], f"Run Apify terminou com status: {status}"
+ 
+        if not dataset_id:
+            return [], [], "Apify não retornou dataset ID."
+ 
+        # ── 3. Lê os itens do dataset
+        items_url = (
+            f"https://api.apify.com/v2/datasets/{dataset_id}/items"
+            f"?token={api_token}&limit={limit}&clean=true"
+        )
         try:
-            params = {"engine":"meta_ad_library","api_key":api_key,"ad_type":"ALL",
-                      "ad_reached_countries":"BR","media_type":"all","active_status":"all"}
-            query = query.strip()
-            if query.isdigit(): params["page_id"] = query
-            else:               params["q"]       = query
-            r    = requests.get("https://www.searchapi.io/api/v1/search", params=params, timeout=20)
-            data = r.json()
-            if "error" in data: return [], [], data["error"]
-            ads_raw = data.get("ads", [])
-            if not query.isdigit() and ads_raw:
-                ql       = query.lower()
-                filtrado = [a for a in ads_raw if ql in (a.get("page_name") or "").lower()]
-                if filtrado: ads_raw = filtrado
-            resultado = []
-            for ad in ads_raw[:limit]:
-                snapshot = ad.get("snapshot") or {}
-                cards    = snapshot.get("cards") or []
-                images   = _extract_images(ad)
-                videos   = _extract_videos(ad)
-                copy     = _extract_copy(ad)
-                plats    = ad.get("publisher_platforms") or []
-                if not plats: plats = ["facebook", "instagram"]
-                has_video = bool(videos) or (ad.get("media_type") or "").upper() == "VIDEO"
-                has_cards = len(cards) > 1
-                if has_video:   fmt = "Vídeo 🎬"
-                elif has_cards: fmt = "Carrossel 🎠"
-                elif images:    fmt = "Imagem 🖼️"
-                else:           fmt = "Texto 📝"
-                is_dyn     = _is_dynamic(copy["body"]) or _is_dynamic(copy["title"]) or _is_dynamic(copy["desc"])
-                body_c     = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
-                title_c    = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
-                desc_c     = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
-                imp = ad.get("impressions") or {}
-                if isinstance(imp, dict):
-                    lo, hi  = imp.get("lower_bound",""), imp.get("upper_bound","")
-                    imp_str = f"{lo}–{hi}" if (lo or hi) else ""
-                else: imp_str = str(imp) if imp else ""
-                start_raw = (ad.get("ad_delivery_start_time") or "")[:10]
-                if start_raw and len(start_raw) == 10:
-                    try:
-                        dto = _dt.datetime.strptime(start_raw, "%Y-%m-%d")
-                        start_fmt = f"{dto.day} de {['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][dto.month-1]} de {dto.year}"
-                    except: start_fmt = start_raw
-                else: start_fmt = ""
-                ad_id    = str(ad.get("id") or ad.get("ad_archive_id") or "")
-                snap_url = f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else (ad.get("ad_snapshot_url") or "")
- 
-                # ── MELHORIA 1: converte imagens para base64 na coleta
-                # Tenta apenas a primeira imagem para não travar muito a coleta.
-                # As demais ficam como URL de fallback.
-                images_b64 = []
-                if images:
-                    b64 = _url_para_base64(images[0])
-                    images_b64.append(b64 if b64 else images[0])
-                    images_b64.extend(images[1:3])  # restantes como URL normal
- 
-                # ── MELHORIA 4: extrai thumbnail de vídeo
-                video_thumb_url = _extract_video_thumbnail(ad) if has_video else ""
-                video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
- 
-                resultado.append({
-                    "id": ad_id,
-                    "page_name": ad.get("page_name") or "",
-                    "page_id": str(ad.get("page_id") or ""),
-                    "body": body_c, "body_raw": copy["body"],
-                    "title": title_c, "description": desc_c,
-                    "cta": copy["cta"], "caption": copy["caption"],
-                    "images": images,           # URLs originais (fallback)
-                    "images_b64": images_b64,   # base64 persistente
-                    "videos": videos,
-                    "video_thumb": video_thumb_b64 or video_thumb_url,
-                    "snapshot_url": snap_url,
-                    "data_inicio": start_fmt, "data_raw": start_raw,
-                    "impressoes": imp_str,
-                    "plataformas": plats,
-                    "formato": fmt,
-                    "is_dynamic": is_dyn,
-                })
-            return resultado, ads_raw[:3], None
+            r_items = requests.get(items_url, timeout=30)
+            r_items.raise_for_status()
+            raw_items = r_items.json()
         except Exception as e:
-            return [], [], str(e)
+            return [], [], f"Erro ao ler dataset Apify: {e}"
+ 
+        if not isinstance(raw_items, list):
+            raw_items = raw_items.get("items", []) if isinstance(raw_items, dict) else []
+ 
+        if not raw_items:
+            return [], [], None  # sucesso, mas sem anúncios
+ 
+        ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
+        return ads_normalizados, raw_items[:3], None
+ 
+    def buscar_ads_apify(query: str, limit: int = 30) -> tuple:
+        """Wrapper público — retorna (ads, raw_debug, erro)."""
+        return _apify_run_sync(query.strip(), limit=limit)
  
     def executar_busca(empresas: list, query_values: dict):
         erros  = {}
@@ -3001,18 +3091,10 @@ elif st.session_state.pagina == "ads":
             for e in empresas:
                 ck    = e["nome"]
                 query = query_values.get(ck, "").strip()
-                if not query: continue
+                if not query:
+                    continue
                 st.write(f"Buscando **{ck}** ({query})...")
-                page_id = query if query.isdigit() else None
-                if not query.isdigit():
-                    st.write(f"🔍 Resolvendo Page ID de **{ck}**...")
-                    page_id, aviso = buscar_page_id(query)
-                    if page_id:
-                        st.write(f"📌 Page ID encontrado: **{page_id}**")
-                        if aviso: st.warning(aviso)
-                    else:
-                        st.write("⚠️ Page ID não encontrado, buscando por nome...")
-                ads, raw, erro = buscar_ads_searchapi(page_id or query)
+                ads, raw, erro = buscar_ads_apify(query)
                 debugs[ck] = raw
                 if erro:
                     erros[ck] = erro
@@ -3023,10 +3105,11 @@ elif st.session_state.pagina == "ads":
                         "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
                         "nome":          ck,
                         "query":         query,
-                        "page_id_usado": page_id or query,
+                        "page_id_usado": query,
                     }
                     st.write(f"✅ {len(ads)} anúncios encontrados")
             status.update(label="✅ Busca concluída!", state="complete")
+ 
         cache_atual = dict(st.session_state.ads_cache or {})
         cache_atual.update(novos)
         st.session_state.ads_cache     = cache_atual
@@ -3034,6 +3117,20 @@ elif st.session_state.pagina == "ads":
         st.session_state.ads_raw_debug = debugs
         salvar_cache_ads(cache_atual)
         st.rerun()
+ 
+    # ── session state ─────────────────────────────────────────────────
+ 
+    if "ads_cache" not in st.session_state:
+        st.session_state.ads_cache = carregar_cache_ads()
+    if "ads_erro" not in st.session_state:
+        st.session_state.ads_erro = {}
+    if "ads_raw_debug" not in st.session_state:
+        st.session_state.ads_raw_debug = {}
+ 
+    # ── helpers de UI ─────────────────────────────────────────────────
+ 
+    def safe_key(s):
+        return re.sub(r"[^a-zA-Z0-9_]", "_", s)
  
     todas_empresas = []
     if emp.get("nome"):
@@ -3051,11 +3148,19 @@ elif st.session_state.pagina == "ads":
                 st.session_state[chave] = cached_entry["query"]
             else:
                 if e["tipo"] == "minha":
-                    fonte = emp.get("fb_page") or emp.get("instagram","").lstrip("@") or emp.get("nome","")
+                    fonte = (emp.get("fb_page")
+                             or emp.get("instagram", "").lstrip("@")
+                             or emp.get("nome", ""))
                 else:
                     cd    = concs[e["idx"]]
-                    fonte = cd.get("ads_id") or cd.get("fb_page") or cd.get("instagram","").lstrip("@") or cd.get("nome","")
-                if fonte: st.session_state[chave] = fonte.strip()
+                    fonte = (cd.get("ads_id")
+                             or cd.get("fb_page")
+                             or cd.get("instagram", "").lstrip("@")
+                             or cd.get("nome", ""))
+                if fonte:
+                    st.session_state[chave] = fonte.strip()
+ 
+    # ── Cabeçalho (idêntico ao original) ──────────────────────────────
  
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3078,19 +3183,22 @@ html, body { background:transparent; overflow:hidden; }
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
         st.stop()
  
-    if not st.secrets.get("SEARCHAPI_KEY", ""):
-        st.warning("Configure `SEARCHAPI_KEY` no secrets.toml para usar esta funcionalidade.")
+    if not st.secrets.get("APIFY_TOKEN", ""):
+        st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
+ 
+    # ── Banner de cache ───────────────────────────────────────────────
  
     empresas_com_cache = [e for e in todas_empresas if e["nome"] in st.session_state.ads_cache]
     if empresas_com_cache:
-        tss         = [st.session_state.ads_cache[e["nome"]].get("ts","") for e in empresas_com_cache]
+        tss         = [st.session_state.ads_cache[e["nome"]].get("ts", "") for e in empresas_com_cache]
         ts_antigo   = min(tss, key=lambda t: t or "")
         fresco_glob = cache_esta_fresco(ts_antigo)
         cor_b  = "#f0fdf4" if fresco_glob else "#fffbeb"
         brd_b  = "#86efac" if fresco_glob else "#fcd34d"
         txt_b  = "#15803d" if fresco_glob else "#92400e"
         ico_b  = "✅"      if fresco_glob else "🕐"
-        msg_b  = f"Cache atualizado em {ts_antigo}" if fresco_glob else f"Cache de {ts_antigo} — considere atualizar"
+        msg_b  = (f"Cache atualizado em {ts_antigo}" if fresco_glob
+                  else f"Cache de {ts_antigo} — considere atualizar")
         st.markdown(
             f"<div style='display:flex;align-items:center;gap:10px;padding:10px 16px;"
             f"background:{cor_b};border:1px solid {brd_b};border-radius:8px;margin-bottom:16px;"
@@ -3099,14 +3207,16 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
+    # ── Inputs de query ───────────────────────────────────────────────
+ 
     st.markdown(
         "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
-        "letter-spacing:1px;margin-bottom:4px'>Confirme o Page ID ou nome de cada empresa</div>",
+        "letter-spacing:1px;margin-bottom:4px'>Confirme o nome ou termo de busca de cada empresa</div>",
         unsafe_allow_html=True,
     )
     st.info(
-        "💡 **Dica:** Para resultados mais precisos, use o **Page ID numérico** da página do Facebook. "
-        "Encontre em: facebook.com/ads/library → pesquise a empresa → copie o ID da URL.",
+        "💡 **Dica:** Use o nome exato da página do Facebook para melhores resultados. "
+        "O actor buscará automaticamente os anúncios ativos e inativos no Brasil.",
     )
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
@@ -3131,8 +3241,9 @@ html, body { background:transparent; overflow:hidden; }
             )
         with col_inp:
             query_values[ck] = st.text_input(
-                f"{ck} ({badge})", value=saved_q,
-                placeholder="Page ID numérico (ex: 123456789) ou nome da página",
+                f"{ck} ({badge})",
+                value=saved_q,
+                placeholder="Nome da página do Facebook ou termo de busca",
                 key=f"query_input_{sk}",
             )
         with col_tip:
@@ -3146,14 +3257,7 @@ html, body { background:transparent; overflow:hidden; }
                     f"<div style='margin-top:28px;font-size:12px;color:{cor_t};"
                     f"background:{bg_t};border:1px solid {brd_t};border-radius:6px;padding:6px 10px'>"
                     f"{ico_t} Cache: <b>{cached['ts']}</b><br>"
-                    f"<span style='font-size:11px'>Page ID: {cached.get('page_id_usado','—')}</span></div>",
-                    unsafe_allow_html=True,
-                )
-            elif saved_q and not saved_q.isdigit():
-                st.markdown(
-                    "<div style='margin-top:28px;font-size:12px;color:#92400e;"
-                    "background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:6px 10px'>"
-                    "⚠️ Use o Page ID numérico para resultados precisos</div>",
+                    f"<span style='font-size:11px'>Busca: {cached.get('query','—')}</span></div>",
                     unsafe_allow_html=True,
                 )
  
@@ -3177,9 +3281,10 @@ html, body { background:transparent; overflow:hidden; }
         for e in todas_empresas:
             sk = safe_key(e["nome"])
             v  = query_values.get(e["nome"], "").strip()
-            if v: st.session_state[f"_query_saved_{sk}"] = v
+            if v:
+                st.session_state[f"_query_saved_{sk}"] = v
         if not any(query_values.get(e["nome"], "").strip() for e in todas_empresas):
-            st.warning("Informe pelo menos um Page ID ou nome de página.")
+            st.warning("Informe pelo menos um nome de página.")
         else:
             executar_busca(todas_empresas, query_values)
  
@@ -3194,7 +3299,7 @@ html, body { background:transparent; overflow:hidden; }
                     padding:48px 32px;text-align:center;margin-top:8px'>
             <div style='font-size:32px;margin-bottom:12px'>📢</div>
             <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
-            <div style='font-size:14px;color:#9ca3af'>Informe o Page ID e clique em <b>Buscar / Atualizar Anúncios</b>.</div>
+            <div style='font-size:14px;color:#9ca3af'>Informe o nome da página e clique em <b>Buscar / Atualizar Anúncios</b>.</div>
         </div>
         """, unsafe_allow_html=True)
         st.stop()
@@ -3202,9 +3307,7 @@ html, body { background:transparent; overflow:hidden; }
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
-    # ------------------------------------------------------------------
-    # RENDER DE CADA EMPRESA
-    # ------------------------------------------------------------------
+    # ── Render de cada empresa (layout 100% idêntico ao original) ─────
  
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3219,7 +3322,7 @@ html, body { background:transparent; overflow:hidden; }
  
         cache_entry = st.session_state.ads_cache.get(ck)
         if not cache_entry:
-            st.info("Sem dados. Informe o Page ID e clique em Buscar.")
+            st.info("Sem dados. Informe o nome da página e clique em Buscar.")
             return
  
         ads_list      = cache_entry["data"]
@@ -3233,7 +3336,8 @@ html, body { background:transparent; overflow:hidden; }
             if raw:
                 with st.expander("🔍 JSON bruto (debug)", expanded=True):
                     st.json(raw[0])
-                    if len(raw) > 1: st.json(raw[1])
+                    if len(raw) > 1:
+                        st.json(raw[1])
  
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
@@ -3244,8 +3348,11 @@ html, body { background:transparent; overflow:hidden; }
         brd_ts    = "#86efac" if fresco_aba else "#fcd34d"
         ico_ts    = "✅"      if fresco_aba else "🕐"
  
-        # ── MELHORIA 3: botão Ver no Ad Library bem visível no cabeçalho
-        lib_url = f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&view_all_page_id={page_id_usado}" if page_id_usado else ""
+        lib_url = (
+            f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all"
+            f"&country=BR&q={requests.utils.quote(query)}"
+            if query else ""
+        )
  
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
@@ -3262,7 +3369,6 @@ html, body { background:transparent; overflow:hidden; }
                                  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
                         {ico_ts} Cache: {ts}
                     </span>
-                    {f"<span style='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>Page ID: {page_id_usado}</span>" if page_id_usado and page_id_usado != query else ""}
                 </div>
             </div>
             <div style='display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0'>
@@ -3275,24 +3381,30 @@ html, body { background:transparent; overflow:hidden; }
         </div>""", unsafe_allow_html=True)
  
         if not ads_list:
-            st.info("Nenhum anúncio encontrado. Verifique o Page ID ou nome da página.")
+            st.info("Nenhum anúncio encontrado. Verifique o nome da página.")
             if lib_url:
                 st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
  
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
         with fcol1:
-            busca_texto = st.text_input("Filtrar", placeholder="Pesquisar no copy…",
-                key=f"ads_busca_{safe_key(ck)}", label_visibility="collapsed")
+            busca_texto = st.text_input(
+                "Filtrar", placeholder="Pesquisar no copy…",
+                key=f"ads_busca_{safe_key(ck)}", label_visibility="collapsed",
+            )
         with fcol2:
-            filtro_fmt = st.selectbox("Formato",
+            filtro_fmt = st.selectbox(
+                "Formato",
                 ["Todos"] + sorted(set(a["formato"] for a in ads_list)),
-                key=f"ads_fmt_{safe_key(ck)}", label_visibility="collapsed")
+                key=f"ads_fmt_{safe_key(ck)}", label_visibility="collapsed",
+            )
         with fcol3:
             plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-            filtro_plat = st.selectbox("Plataforma",
+            filtro_plat = st.selectbox(
+                "Plataforma",
                 ["Todas"] + [p.capitalize() for p in plats_todas],
-                key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed")
+                key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed",
+            )
  
         ads_f = ads_list
         if busca_texto:
@@ -3333,34 +3445,32 @@ html, body { background:transparent; overflow:hidden; }
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
  
-        # ── Cards
+        # ── Cards de anúncios ─────────────────────────────────────────
+ 
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
-                snap_url     = ad.get("snapshot_url") or ""
-                images       = ad.get("images") or []
-                images_b64   = ad.get("images_b64") or []
-                videos       = ad.get("videos") or []
-                video_thumb  = ad.get("video_thumb") or ""
-                is_dyn       = ad.get("is_dynamic", False)
-                ad_id        = ad.get("id", "")
-                ad_id_short  = ad_id[:15] + "…" if len(ad_id) > 15 else ad_id
-                plats        = ad.get("plataformas") or []
-                plat_js      = _json.dumps(_plat_icons(plats))
-                data_inicio  = ad.get("data_inicio","")
-                impressoes   = ad.get("impressoes","")
-                body         = ad.get("body")        or ""
-                title        = ad.get("title")       or ""
-                desc         = ad.get("description") or ""
-                cta          = ad.get("cta")         or ""
-                uid          = f"{safe_key(ck)}_{j}"
+                snap_url    = ad.get("snapshot_url") or ""
+                images      = ad.get("images") or []
+                images_b64  = ad.get("images_b64") or []
+                videos      = ad.get("videos") or []
+                video_thumb = ad.get("video_thumb") or ""
+                is_dyn      = ad.get("is_dynamic", False)
+                ad_id       = ad.get("id", "")
+                ad_id_short = ad_id[:15] + "…" if len(ad_id) > 15 else ad_id
+                plats       = ad.get("plataformas") or []
+                plat_js     = _json.dumps(_plat_icons(plats))
+                data_inicio = ad.get("data_inicio", "")
+                impressoes  = ad.get("impressoes", "")
+                body        = ad.get("body")        or ""
+                title       = ad.get("title")       or ""
+                desc        = ad.get("description") or ""
+                cta         = ad.get("cta")         or ""
+                uid         = f"{safe_key(ck)}_{j}"
  
-                # ── MELHORIA 2: Microlink screenshot como fallback final
                 microlink_url = _microlink_screenshot(snap_url)
  
-                # Fonte primária da imagem: base64 (persistente) > URL original > Microlink
                 img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
-                # Fallbacks adicionais para o JS tentar em sequência
                 img_fallbacks = []
                 if images_b64 and len(images_b64) > 1:
                     img_fallbacks.extend(images_b64[1:])
@@ -3369,7 +3479,6 @@ html, body { background:transparent; overflow:hidden; }
                     img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
-                # ── Pre-compute onclick/style (sem backslash em f-string)
                 if snap_url:
                     _snap_safe      = snap_url.replace("'", "\\'")
                     video_onclick   = f"onclick=\"window.open('{_snap_safe}','_blank')\""
@@ -3377,15 +3486,10 @@ html, body { background:transparent; overflow:hidden; }
                     nomedia_onclick = f"onclick=\"window.open('{_snap_safe}','_blank')\""
                     nomedia_style   = "cursor:pointer;"
                 else:
-                    video_onclick   = ""
-                    video_style     = ""
-                    nomedia_onclick = ""
-                    nomedia_style   = ""
+                    video_onclick = video_style = nomedia_onclick = nomedia_style = ""
  
-                # ── MELHORIA 4: bloco de vídeo mostra thumbnail real
                 if videos:
                     if video_thumb:
-                        # Tem thumbnail: mostra a imagem com ícone de play sobreposto
                         media_block = f"""
 <div class="media-block video-thumb-block" {video_onclick} style="{video_style}position:relative;">
     <img src="{video_thumb}" loading="lazy"
@@ -3399,7 +3503,6 @@ html, body { background:transparent; overflow:hidden; }
             <polygon points="22,18 40,27 22,36" fill="white"/>
         </svg>
     </div>
-    <!-- Play overlay -->
     <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
         <div style="width:52px;height:52px;border-radius:50%;
                     background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);
@@ -3412,7 +3515,6 @@ html, body { background:transparent; overflow:hidden; }
     {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:DM Sans,sans-serif;">▶ VER VÍDEO</div>' if snap_url else ''}
 </div>"""
                     else:
-                        # Sem thumbnail: fundo escuro + play
                         media_block = f"""
 <div class="media-block video-block" {video_onclick} style="{video_style}">
     <div class="video-play-icon">
@@ -3426,7 +3528,6 @@ html, body { background:transparent; overflow:hidden; }
 </div>"""
  
                 elif img_primary:
-                    # ── Imagem: base64 primário + fallbacks em sequência
                     if snap_url:
                         fallback_link_open  = f'<a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">'
                         fallback_link_close = '</a>'
@@ -3469,8 +3570,8 @@ function imgFallback_{uid}(img){{
     }}
 }}
 </script>"""
+ 
                 else:
-                    # ── Sem mídia: Microlink screenshot ou placeholder
                     if microlink_url:
                         media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;">
@@ -3513,14 +3614,13 @@ function imgFallback_{uid}(img){{
                 }
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
-                h_base      = 44 + 60 + 50 + 32 + 44  # +44 para o botão Ad Library
+                h_base      = 44 + 60 + 50 + 32 + 44
                 h_copy      = 130 if (body or title or desc) else 80
                 h_copy     += 30  if body and len(body) > 200 else 0
                 h_media     = 230 if (img_primary or microlink_url) else (210 if videos else 120)
                 h_imp       = 32  if impressoes else 0
                 card_height = h_base + h_copy + h_media + h_imp + 40
  
-                # ── MELHORIA 3: botão "Ver no Ad Library" dentro do card
                 lib_btn_html = ""
                 if snap_url:
                     lib_btn_html = f"""
@@ -3667,6 +3767,8 @@ setTimeout(ajustarAltura,1400);
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
+        # ── Análise com IA (idêntica ao original) ────────────────────
+ 
         chave_ia = f"ia_ads_{safe_key(ck)}"
         if chave_ia not in st.session_state:
             st.session_state[chave_ia] = ""
@@ -3680,7 +3782,7 @@ setTimeout(ajustarAltura,1400);
             for a in ads_f[:15]
         ])
  
-        ia_html_content = st.session_state.get(chave_ia,"").replace("\n","<br>")
+        ia_html_content = st.session_state.get(chave_ia, "").replace("\n", "<br>")
  
         if ia_html_content:
             st.markdown(f"""
@@ -3699,7 +3801,8 @@ setTimeout(ajustarAltura,1400);
             gerar_ia = st.button(
                 "🔄 Nova Análise" if ia_html_content else "🤖 Analisar com IA",
                 key=f"btn_ia_ads_{safe_key(ck)}",
-                use_container_width=True, type="primary",
+                use_container_width=True,
+                type="primary",
             )
  
         if gerar_ia:
