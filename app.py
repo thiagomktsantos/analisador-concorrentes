@@ -3277,7 +3277,7 @@ html, body { background:transparent; overflow:hidden; }
             "letter-spacing:0.8px;margin-bottom:10px'>✅ Páginas configuradas</div>",
             unsafe_allow_html=True,
         )
- 
+
         cfg_cols = st.columns(2)
         for ci, e in enumerate(empresas_configuradas):
             ck       = e["nome"]
@@ -3290,57 +3290,137 @@ html, body { background:transparent; overflow:hidden; }
             ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             is_editing = (st.session_state.ads_editando_empresa == ck)
 
-            # Avatar com foto do banco
             avatar_html = _avatar_html_empresa(e, size=42)
- 
+
             with cfg_cols[ci % 2]:
-                col_info, col_btn = st.columns([4, 1])
-                with col_info:
-                    # Card padrão branco — mesmo estilo do restante do site
-                    st.markdown(f"""
-                    <div style='background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;
-                                padding:14px 18px;display:flex;align-items:center;gap:12px;min-height:72px'>
-                        {avatar_html}
-                        <div style='flex:1;min-width:0'>
-                            <div style='font-size:15px;font-weight:700;color:#111827;
-                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>{ck}</div>
-                            <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px'>
-                                <span style='background:{badge_bg};color:{badge_txt};
-                                             border:1px solid {badge_brd};padding:2px 8px;
-                                             border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                                <span style='background:#dcfce7;color:#15803d;border:1px solid #86efac;
-                                             padding:2px 8px;border-radius:20px;font-size:11px;
-                                             font-weight:600'>✅ {ads_id_atual}</span>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with col_btn:
-                    st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-                    if st.button("✏️ Editar", key=f"btn_editar_cfg_{sk}", use_container_width=True):
-                        st.session_state.ads_editando_empresa = ck
-                        st.session_state.ads_onboarding_empresa = None
-                        st.session_state.ads_onboarding_paginas = []
-                        st.rerun()
- 
+                # ── Ghost button oculto para o "Editar" ──────────────
+                st.markdown(f"""
+                <style>
+                .st-key-btn_editar_cfg_ghost_{sk} {{
+                    position: fixed !important; top: -9999px !important;
+                    left: -9999px !important; width: 1px !important;
+                    height: 1px !important; overflow: hidden !important;
+                    opacity: 0 !important; pointer-events: none !important;
+                    visibility: hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+                ghost_editar = st.button(
+                    f"__editar_cfg_{sk}__",
+                    key=f"btn_editar_cfg_ghost_{sk}",
+                )
+                if ghost_editar:
+                    st.session_state.ads_editando_empresa = ck
+                    st.session_state.ads_onboarding_empresa = None
+                    st.session_state.ads_onboarding_paginas = []
+                    st.rerun()
+
+                # ── Card HTML com botão Editar embutido ───────────────
+                components.html(f"""
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif;
+              -webkit-font-smoothing:antialiased; overflow:hidden; }}
+body {{ padding-bottom:4px; }}
+.card {{
+    background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:14px 18px; display:flex; align-items:center; gap:12px; min-height:72px;
+}}
+.info {{ flex:1; min-width:0; }}
+.nome {{ font-size:15px; font-weight:700; color:#111827;
+         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }}
+.badge {{
+    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+    display:inline-block;
+}}
+.btn-edit {{
+    flex-shrink:0; padding:8px 14px; border-radius:8px;
+    border:1px solid #d1d5db; background:#fff;
+    font-size:13px; font-weight:700; color:#374151;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:all 0.12s; white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+}}
+.btn-edit:hover {{ background:#f9fafb; border-color:#9ca3af; color:#111827; }}
+</style>
+</head>
+<body>
+<div class="card">
+    {avatar_html}
+    <div class="info">
+        <div class="nome">{ck}</div>
+        <div class="badges">
+            <span class="badge" style="background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd}">{badge_lbl}</span>
+            <span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac">✅ {ads_id_atual}</span>
+        </div>
+    </div>
+    <button class="btn-edit" onclick="acionar()">
+        ✏️ Editar
+    </button>
+</div>
+<script>
+function acionar() {{
+    var target = '__editar_cfg_{sk}__';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+        if (btns[i].innerText.trim() === target) {{ btns[i].click(); return; }}
+    }}
+}}
+function ajustar() {{
+    var h = document.body.scrollHeight;
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = (h + 8) + 'px'; break;
+            }}
+        }} catch(e) {{}}
+    }}
+}}
+document.addEventListener('DOMContentLoaded', ajustar);
+window.addEventListener('load', ajustar);
+setTimeout(ajustar, 100); setTimeout(ajustar, 400);
+</script>
+</body>
+</html>
+                """, height=90, scrolling=False)
+
                 # ── Formulário de edição ──────────────────────────────
                 if is_editing:
                     with st.container():
+                        st.markdown("""
+                        <style>
+                        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ads-edit-form) {
+                            background: #fffbeb !important;
+                            border: 1px solid #fcd34d !important;
+                            border-radius: 10px !important;
+                            padding: 4px !important;
+                        }
+                        </style>
+                        <div class="ads-edit-form"></div>
+                        """, unsafe_allow_html=True)
+
                         st.markdown(
                             "<div style='background:#fffbeb;border:1px solid #fcd34d;"
-                            "border-radius:10px;padding:16px;margin-top:4px;margin-bottom:4px'>",
+                            "border-radius:10px;padding:16px 18px;margin-top:4px'>",
                             unsafe_allow_html=True,
                         )
                         st.markdown(
-                            "<div style='font-size:12px;color:#92400e;font-weight:600;margin-bottom:10px'>"
+                            "<div style='font-size:12px;color:#92400e;font-weight:700;margin-bottom:10px'>"
                             "🔍 Buscar nova página ou informar ID numérico / nome</div>",
                             unsafe_allow_html=True,
                         )
                         termo_edit = st.text_input(
                             "Nome ou ID numérico da página",
                             value=ads_id_atual,
-                            placeholder="Ex: Isaac  ou  102803918240129",
+                            placeholder="Ex: Kedu Educação  ou  106563541907639",
                             key=f"_termo_edit_{sk}",
+                            label_visibility="visible",
                         )
                         col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
                         with col_b1:
@@ -3368,11 +3448,11 @@ html, body { background:transparent; overflow:hidden; }
                                 st.session_state.ads_onboarding_paginas = []
                                 st.rerun()
                         st.markdown("</div>", unsafe_allow_html=True)
- 
+
                     if (st.session_state.ads_onboarding_empresa == ck
                             and st.session_state.ads_onboarding_paginas is not None):
                         _render_paginas_resultado(e, sk, ck)
- 
+
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
     # ── Empresas sem configuração ─────────────────────────────────────
