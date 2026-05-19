@@ -3032,7 +3032,7 @@ elif st.session_state.pagina == "ads":
         r_start.raise_for_status()
         run_data = r_start.json()
     except Exception as e:
-            return [], [], f"Erro ao iniciar run Apify: {e}"
+        return [], [], f"Erro ao iniciar run Apify: {e}"
 
     run_id     = run_data.get("data", {}).get("id") or run_data.get("id")
     dataset_id = run_data.get("data", {}).get("defaultDatasetId") or run_data.get("defaultDatasetId")
