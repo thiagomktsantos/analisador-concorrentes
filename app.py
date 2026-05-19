@@ -3816,11 +3816,15 @@ function imgFallback_{uid}(img){{
                 ) if baixo_vol else ""
  
                 h_media = 230 if (img_primary or microlink_url) else (210 if videos else 120)
-                h_copy  = 130 if (body or title or desc) else 80
-                h_copy += 30 if body and len(body) > 200 else 0
+                # Altura do copy: 16px por linha ~65 chars + overhead
+                body_lines = max(1, len(body) // 55) if body else 0
+                h_copy  = 80 + (body_lines * 22) if (body or title or desc) else 60
+                h_copy += 40 if title else 0
+                h_copy += 30 if desc else 0
                 h_data  = 22 if data_inicio else 0
                 h_imp   = 22 if impressoes else 0
-                card_height = 44 + 60 + 50 + 32 + 44 + h_copy + h_media + h_data + h_imp + 40
+                # Margem generosa para evitar corte — o ResizeObserver vai ajustar depois
+                card_height = 60 + 80 + 50 + 44 + h_copy + h_media + h_data + h_imp + 80
  
                 if page_pic and page_pic.startswith("http"):
                     page_avatar_html = (
@@ -3851,7 +3855,7 @@ function imgFallback_{uid}(img){{
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:20px;}}
+body{{padding-bottom:24px;}}
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
@@ -3939,25 +3943,43 @@ function toggleBody(uid){{
     s.style.display=exp?'':'none';
     f.style.display=exp?'none':'';
     if(btn)btn.textContent=exp?'Ver mais':'Ver menos';
-    setTimeout(ajustarAltura,50);
+    // Re-ajusta após toggle com delay para o DOM atualizar
+    setTimeout(ajustarAltura, 30);
+    setTimeout(ajustarAltura, 150);
 }}
 function ajustarAltura(){{
-    var card=document.querySelector('.card');
-    if(!card)return;
-    var h=card.getBoundingClientRect().height;
-    window.parent.document.querySelectorAll('iframe').forEach(function(f){{
-        try{{if(f.contentWindow===window)f.style.height=(h+24)+'px';}}catch(e){{}}
+    // Usa scrollHeight do documento para pegar altura real sem depender do iframe já cortado
+    var h = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight
+    );
+    window.parent.document.querySelectorAll('iframe').forEach(function(fr){{
+        try{{
+            if(fr.contentWindow===window){{
+                fr.style.height=(h+24)+'px';
+                fr.style.minHeight=(h+24)+'px';
+            }}
+        }}catch(e){{}}
     }});
 }}
-document.addEventListener('DOMContentLoaded',ajustarAltura);
-window.addEventListener('load',ajustarAltura);
+// ResizeObserver garante re-ajuste quando conteúdo muda (imagens carregando, toggles etc)
+if(window.ResizeObserver){{
+    var _ro = new ResizeObserver(function(){{ ajustarAltura(); }});
+    _ro.observe(document.body);
+}}
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
 document.querySelectorAll('img').forEach(function(img){{
-    img.addEventListener('load',ajustarAltura);
-    img.addEventListener('error',ajustarAltura);
+    img.addEventListener('load', ajustarAltura);
+    img.addEventListener('error', ajustarAltura);
 }});
-setTimeout(ajustarAltura,200);
-setTimeout(ajustarAltura,700);
-setTimeout(ajustarAltura,1400);
+// Múltiplos timeouts para cobrir renderização lazy e fontes web
+setTimeout(ajustarAltura, 100);
+setTimeout(ajustarAltura, 400);
+setTimeout(ajustarAltura, 900);
+setTimeout(ajustarAltura, 2000);
 </script>
 </body></html>"""
  
