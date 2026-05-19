@@ -1605,7 +1605,15 @@ function ajustarAltura() {{
     var card = document.querySelector('.card');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
-    window.parent.postMessage({{ type: 'resize_conc_{i}', height: h + 4 }}, '*');
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var j = 0; j < iframes.length; j++) {{
+        try {{
+            if (iframes[j].contentWindow === window) {{
+                iframes[j].style.height = (h + 8) + 'px';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
 }}
 document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
