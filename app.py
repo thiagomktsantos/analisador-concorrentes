@@ -1646,7 +1646,7 @@ setTimeout(ajustarAltura, 800);
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "cad":
-
+ 
     st.markdown("""
     <style>
     div[data-testid="stForm"] {
@@ -1657,7 +1657,6 @@ elif st.session_state.pagina == "cad":
         margin-bottom: 28px !important;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
     }
-    /* Oculta o campo ads_id no formulário de concorrentes */
     .st-key-ads_id_hidden {
         display: none !important;
         height: 0 !important;
@@ -1667,7 +1666,7 @@ elif st.session_state.pagina == "cad":
     }
     </style>
     """, unsafe_allow_html=True)
-
+ 
     top1, top2 = st.columns([7, 3])
     with top1:
         components.html("""
@@ -1681,54 +1680,44 @@ elif st.session_state.pagina == "cad":
 html, body { background: transparent; overflow: hidden; }
 .titulo {
     font-family: 'Animo', 'DM Sans', sans-serif;
-    font-size: 32px;
-    font-weight: 700;
-    color: #1a2e4a;
-    text-transform: uppercase;
-    margin: 0 0 6px 0;
-    letter-spacing: 0.5px;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
 }
-.sub {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    color: #6b7280;
-}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
 </style>
 <div class="titulo">Concorrentes</div>
 <div class="sub">Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</div>
 """, height=70)
-
+ 
     with top2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
         if st.button("＋ Adicionar", use_container_width=True, type="primary"):
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
             st.rerun()
-
+ 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 24px 0'/>", unsafe_allow_html=True)
-
+ 
     if st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None:
         concorrente_edit = None
         if st.session_state.editando_concorrente is not None:
             concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
-
+ 
         titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
         st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
-
+ 
         with st.form("cad_concorrente", clear_on_submit=False):
             st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Identificação</div>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
             u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
-
+ 
             st.markdown("<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
             st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Redes Sociais</div>", unsafe_allow_html=True)
             c3, c4 = st.columns(2)
             insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
             fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
-
-            # ── Campo ads_id oculto via CSS (key único para esconder) ──
-            # O valor é preservado do registro existente mas não exibido ao usuário.
+ 
             ads_manual = st.text_input(
                 "ads_id_hidden",
                 value=(concorrente_edit.get("ads_id", "") if concorrente_edit else ""),
@@ -1736,27 +1725,27 @@ html, body { background: transparent; overflow: hidden; }
                 label_visibility="hidden",
                 autocomplete="off",
             )
-
+ 
             col1, col2 = st.columns(2)
-            salvar = col1.form_submit_button("Salvar", use_container_width=True)
+            salvar   = col1.form_submit_button("Salvar",   use_container_width=True)
             cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
-
+ 
             if cancelar:
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
                 st.rerun()
-
+ 
             if salvar:
                 clean_handle = obter_instagram_handle(insta_handle)
-                fb_clean = obter_facebook_handle(fb_p)
-                site_clean = limpar_site(u)
-                # ads_id: mantém valor existente ou usa facebook/instagram/nome como fallback
+                fb_clean     = obter_facebook_handle(fb_p)
+                site_clean   = limpar_site(u)
                 existing_ads_id = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
-                search_term = existing_ads_id or fb_clean or clean_handle.lstrip("@") or n
                 dados_novos = {
-                    "nome": n, "url": site_clean,
-                    "instagram": clean_handle, "fb_page": fb_clean,
-                    "ads_id": existing_ads_id  # preserva ads_id configurado na página de Ads
+                    "nome":     n,
+                    "url":      site_clean,
+                    "instagram": clean_handle,
+                    "fb_page":  fb_clean,
+                    "ads_id":   existing_ads_id,
                 }
                 if st.session_state.editando_concorrente is not None:
                     st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
@@ -1766,16 +1755,17 @@ html, body { background: transparent; overflow: hidden; }
                 st.session_state.editando_concorrente = None
                 salvar_dados_usuario(st.session_state.user.id)
                 st.rerun()
-
+ 
     concorrentes = st.session_state.dados["concorrentes"]
-
+ 
     if concorrentes:
         cols = st.columns(2)
         for i, c in enumerate(concorrentes):
             with cols[i % 2]:
-                avatar = gerar_avatar(c["nome"])
+                avatar     = gerar_avatar(c["nome"])
                 cor_avatar = get_concorrente_color(i)
-
+                uid        = f"conc_{i}"
+ 
                 card_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -1786,6 +1776,7 @@ html, body {{
     background: transparent;
     font-family: 'DM Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
+    overflow: hidden;
 }}
 body {{ padding-bottom: 4px; }}
 .card {{
@@ -1796,55 +1787,33 @@ body {{ padding-bottom: 4px; }}
 }}
 .card-body {{ padding: 24px 24px 20px 24px; }}
 .header {{
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    display: flex; align-items: center; gap: 16px;
     padding-bottom: 18px;
     border-bottom: 1px solid #f3f4f6;
     margin-bottom: 18px;
 }}
 .avatar {{
-    width: 52px; height: 52px;
-    border-radius: 50%;
+    width: 52px; height: 52px; border-radius: 50%;
     background: {cor_avatar};
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 700; color: #fff;
-    flex-shrink: 0;
+    font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
 }}
-.name {{
-    font-size: 17px; font-weight: 700; color: #111827;
-    flex: 1; letter-spacing: -0.3px;
-}}
-.row {{
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 14px;
-}}
+.name {{ font-size: 17px; font-weight: 700; color: #111827; flex: 1; letter-spacing: -0.3px; }}
+.row {{ display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }}
 .row:last-child {{ margin-bottom: 0; }}
 .ico {{
-    width: 38px; height: 38px;
-    border-radius: 10px;
+    width: 38px; height: 38px; border-radius: 10px;
     background: #f3f4f6;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }}
 .ico svg {{ width: 20px; height: 20px; }}
 .info {{ flex: 1; min-width: 0; }}
-.lbl {{
-    font-size: 11px; color: #9ca3af;
-    display: block; margin-bottom: 1px; font-weight: 500;
-}}
-.val {{
-    font-size: 14px; color: #111827;
-    font-weight: 600;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    display: block;
-}}
+.lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 1px; font-weight: 500; }}
+.val {{ font-size: 14px; color: #111827; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }}
 </style>
 </head>
 <body>
-<div class="card">
+<div class="card" id="card_{uid}">
   <div class="card-body">
     <div class="header">
       <div class="avatar">{avatar}</div>
@@ -1867,7 +1836,7 @@ body {{ padding-bottom: 4px; }}
       <div class="ico" style="background:#fff0f6;">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="ig_{i}" x1="0%" y1="100%" x2="100%" y2="0%">
+            <linearGradient id="ig_{uid}" x1="0%" y1="100%" x2="100%" y2="0%">
               <stop offset="0%" stop-color="#f09433"/>
               <stop offset="25%" stop-color="#e6683c"/>
               <stop offset="50%" stop-color="#dc2743"/>
@@ -1875,7 +1844,7 @@ body {{ padding-bottom: 4px; }}
               <stop offset="100%" stop-color="#bc1888"/>
             </linearGradient>
           </defs>
-          <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_{i})"/>
+          <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_{uid})"/>
           <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
           <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
         </svg>
@@ -1898,11 +1867,31 @@ body {{ padding-bottom: 4px; }}
     </div>
   </div>
 </div>
+<script>
+function ajustarAltura() {{
+    var card = document.getElementById('card_{uid}');
+    if (!card) return;
+    var h = card.getBoundingClientRect().height;
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var j = 0; j < iframes.length; j++) {{
+        try {{
+            if (iframes[j].contentWindow === window) {{
+                iframes[j].style.height = (h + 8) + 'px';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
+}}
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 100);
+setTimeout(ajustarAltura, 400);
+</script>
 </body>
 </html>"""
-
-                components.html(card_html, height=280, scrolling=False)
-
+ 
+                components.html(card_html, height=260, scrolling=False)
+ 
                 b1, b2 = st.columns(2)
                 with b1:
                     if st.button("Editar Concorrente", key=f"editar_{i}", use_container_width=True):
@@ -1914,9 +1903,9 @@ body {{ padding-bottom: 4px; }}
                         st.session_state.dados["concorrentes"].pop(i)
                         salvar_dados_usuario(st.session_state.user.id)
                         st.rerun()
-
+ 
                 st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-
+ 
     else:
         st.markdown("""
         <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
@@ -1926,41 +1915,6 @@ body {{ padding-bottom: 4px; }}
             <div style='font-size:14px;color:#9ca3af'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
         </div>
         """, unsafe_allow_html=True)
-
-# ---------------------------------------------------
-# VISÃO GERAL
-# ---------------------------------------------------
-
-elif st.session_state.pagina == "geral":
-
-    periodo, data_inicio = cabecalho_analise("📊 Visão Geral", "Resumo dos concorrentes cadastrados")
-    concorrentes = st.session_state.dados["concorrentes"]
-    emp = st.session_state.dados["minha_empresa"]
-
-    if not concorrentes:
-        st.warning("Nenhum concorrente cadastrado ainda.")
-    else:
-        st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Minha Empresa</div>", unsafe_allow_html=True)
-        cor_emp = get_minha_empresa_color()
-        st.markdown(f"""
-        <div style='background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:24px'>
-            <div style='width:40px;height:40px;border-radius:50%;background:{cor_emp};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{gerar_avatar(emp['nome'])}</div>
-            <div>
-                <div style='font-size:16px;font-weight:600;color:#111827'>{emp['nome'] or '—'}</div>
-                <div style='font-size:13px;color:#6b7280'>{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''} · {emp['cidade'] or ''}{', ' + emp['estado'] if emp['estado'] else ''}</div>
-            </div>
-            <div style='margin-left:auto;display:flex;gap:24px'>
-                <div style='text-align:center'><div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>Instagram</div><div style='font-size:14px;font-weight:500;color:#111827'>{emp['instagram'] or '—'}</div></div>
-                <div style='text-align:center'><div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>Site</div><div style='font-size:14px;font-weight:500;color:#111827'>{emp['site'] or '—'}</div></div>
-                <div style='text-align:center'><div style='font-size:11px;color:#9ca3af;margin-bottom:2px'>Serviços</div><div style='font-size:14px;font-weight:500;color:#111827'>{len(emp['servicos'])}</div></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div style='font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px'>Concorrentes</div>", unsafe_allow_html=True)
-        df = pd.DataFrame(concorrentes)
-        df.columns = ["Nome", "Site", "Instagram", "Facebook", "Ads ID"]
-        st.dataframe(df[["Nome", "Site", "Instagram", "Facebook"]], use_container_width=True, height=min(400, 60 + len(concorrentes) * 55))
 
 # ---------------------------------------------------
 # PAGINA - CONFRONTO DE SITES
