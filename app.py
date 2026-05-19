@@ -2721,6 +2721,12 @@ elif st.session_state.pagina == "ads":
         ad_id   = str(item.get("adArchiveID") or item.get("ad_archive_id") or item.get("id") or "")
         page_id = str(item.get("pageID") or item.get("page_id") or "")
         page_name = (item.get("pageName") or item.get("page_name") or snapshot.get("page_name") or "")
+        page_profile_picture = (
+            item.get("pageProfilePicture")
+            or item.get("page_profile_picture")
+            or snapshot.get("page_profile_picture_url")
+            or ""
+        )
  
         images = _extract_images(item)
         videos = _extract_videos(item)
@@ -2782,38 +2788,39 @@ elif st.session_state.pagina == "ads":
         video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
  
         return {
-            "id":           ad_id,
-            "page_name":    page_name,
-            "page_id":      page_id,
-            "body":         body_c,
-            "body_raw":     copy["body"],
-            "title":        title_c,
-            "description":  desc_c,
-            "cta":          copy["cta"],
-            "caption":      copy["caption"],
-            "images":       images,
-            "images_b64":   images_b64,
-            "videos":       videos,
-            "video_thumb":  video_thumb_b64 or video_thumb_url,
-            "snapshot_url": snap_url,
-            "data_inicio":  start_fmt,
-            "data_raw":     start_raw,
-            "impressoes":   imp_str,
-            "plataformas":  plats,
-            "formato":      fmt,
-            "is_dynamic":   is_dyn,
+            "id":                  ad_id,
+            "page_name":           page_name,
+            "page_id":             page_id,
+            "page_profile_picture": page_profile_picture,
+            "body":                body_c,
+            "body_raw":            copy["body"],
+            "title":               title_c,
+            "description":         desc_c,
+            "cta":                 copy["cta"],
+            "caption":             copy["caption"],
+            "images":              images,
+            "images_b64":          images_b64,
+            "videos":              videos,
+            "video_thumb":         video_thumb_b64 or video_thumb_url,
+            "snapshot_url":        snap_url,
+            "data_inicio":         start_fmt,
+            "data_raw":            start_raw,
+            "impressoes":          imp_str,
+            "plataformas":         plats,
+            "formato":             fmt,
+            "is_dynamic":          is_dyn,
         }
  
     def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
         api_token = st.secrets.get("APIFY_TOKEN", "")
         if not api_token:
             return [], [], "APIFY_TOKEN não configurada nos secrets."
-
+ 
         run_url = (
             f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
             f"?token={api_token}"
         )
-
+ 
         import urllib.parse
         query_encoded = urllib.parse.quote(search_term.strip())
         ad_library_url = (
@@ -2821,7 +2828,7 @@ elif st.session_state.pagina == "ads":
             f"?active_status=all&ad_type=all&country=BR"
             f"&q={query_encoded}&search_type=keyword_unordered&media_type=all"
         )
-
+ 
         payload = {
             "urls": [{"url": ad_library_url}],
             "count": limit,
@@ -2830,20 +2837,20 @@ elif st.session_state.pagina == "ads":
             "scrapePageAds.countryCode": "BR",
             "scrapePageAds.sortBy": "impressions_desc",
         }
-
+ 
         try:
             r_start = requests.post(run_url, json=payload, timeout=30)
             r_start.raise_for_status()
             run_data = r_start.json()
         except Exception as e:
             return [], [], f"Erro ao iniciar run Apify: {e}"
-
+ 
         run_id     = run_data.get("data", {}).get("id") or run_data.get("id")
         dataset_id = run_data.get("data", {}).get("defaultDatasetId") or run_data.get("defaultDatasetId")
-
+ 
         if not run_id:
             return [], [], f"Apify não retornou run ID. Resposta: {run_data}"
-
+ 
         status_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={api_token}"
         deadline   = _time.time() + 180
         status     = "RUNNING"
@@ -2859,13 +2866,13 @@ elif st.session_state.pagina == "ads":
             if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
                 break
             _time.sleep(5)
-
+ 
         if status != "SUCCEEDED":
             return [], [], f"Run Apify terminou com status: {status}"
-
+ 
         if not dataset_id:
             return [], [], "Apify não retornou dataset ID."
-
+ 
         items_url = (
             f"https://api.apify.com/v2/datasets/{dataset_id}/items"
             f"?token={api_token}&limit={limit}&clean=true"
@@ -2876,13 +2883,13 @@ elif st.session_state.pagina == "ads":
             raw_items = r_items.json()
         except Exception as e:
             return [], [], f"Erro ao ler dataset Apify: {e}"
-
+ 
         if not isinstance(raw_items, list):
             raw_items = raw_items.get("items", []) if isinstance(raw_items, dict) else []
-
+ 
         if not raw_items:
             return [], [], None
-
+ 
         ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
         return ads_normalizados, raw_items[:3], None
  
@@ -2933,7 +2940,7 @@ elif st.session_state.pagina == "ads":
  
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
-
+ 
     # ── Lista TODAS as empresas (minha empresa + concorrentes) ────────
     todas_empresas = []
     if emp.get("nome"):
@@ -2950,8 +2957,53 @@ elif st.session_state.pagina == "ads":
             if cached_entry.get("query"):
                 st.session_state[chave] = cached_entry["query"]
             else:
-                # ── CORREÇÃO 2: termo padrão = nome da empresa ──
                 st.session_state[chave] = e["nome"]
+ 
+    # ── helpers de ads_id ─────────────────────────────────────────────
+ 
+    def empresa_tem_ads_id(e: dict) -> bool:
+        if e["tipo"] == "minha":
+            return bool(emp.get("ads_id", "").strip())
+        else:
+            cd = concs[e["idx"]]
+            return bool(cd.get("ads_id", "").strip())
+ 
+    def salvar_ads_id(e: dict, ads_id: str):
+        if e["tipo"] == "minha":
+            st.session_state.dados["minha_empresa"]["ads_id"] = ads_id
+        else:
+            st.session_state.dados["concorrentes"][e["idx"]]["ads_id"] = ads_id
+        salvar_dados_usuario(st.session_state.user.id)
+ 
+    def buscar_paginas_facebook(termo: str) -> list:
+        ads, _, erro = _apify_run_sync(termo, limit=20)
+        if erro or not ads:
+            return []
+        paginas = {}
+        for ad in ads:
+            pid  = ad.get("page_id", "") or ""
+            nome = ad.get("page_name", "") or ""
+            pic  = ad.get("page_profile_picture", "") or ""
+            if nome and nome not in paginas:
+                paginas[nome] = {"nome": nome, "page_id": pid, "total_ads": 0, "profile_picture": pic}
+            if nome in paginas:
+                paginas[nome]["total_ads"] += 1
+                # Atualiza foto se ainda não tem
+                if not paginas[nome]["profile_picture"] and pic:
+                    paginas[nome]["profile_picture"] = pic
+        return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
+ 
+    if "ads_onboarding_empresa" not in st.session_state:
+        st.session_state.ads_onboarding_empresa = None
+    if "ads_onboarding_paginas" not in st.session_state:
+        st.session_state.ads_onboarding_paginas = []
+    if "ads_onboarding_termo" not in st.session_state:
+        st.session_state.ads_onboarding_termo = ""
+ 
+    empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
+    empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
+ 
+    # ── CABEÇALHO DA PÁGINA ──────────────────────────────────────────
  
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2995,62 +3047,15 @@ html, body { background:transparent; overflow:hidden; }
             f"{ico_b} {msg_b} &nbsp;·&nbsp; {len(empresas_com_cache)} empresa(s) em cache</div>",
             unsafe_allow_html=True,
         )
-
-    # ── helpers de ads_id ─────────────────────────────────────────────
-
-    def empresa_tem_ads_id(e: dict) -> bool:
-        if e["tipo"] == "minha":
-            return bool(emp.get("ads_id", "").strip())
-        else:
-            cd = concs[e["idx"]]
-            return bool(cd.get("ads_id", "").strip())
-
-    def salvar_ads_id(e: dict, ads_id: str):
-        if e["tipo"] == "minha":
-            st.session_state.dados["minha_empresa"]["ads_id"] = ads_id
-        else:
-            st.session_state.dados["concorrentes"][e["idx"]]["ads_id"] = ads_id
-        salvar_dados_usuario(st.session_state.user.id)
-
-    def buscar_paginas_facebook(termo: str) -> list:
-        ads, _, erro = _apify_run_sync(termo, limit=20)
-        if erro or not ads:
-            return []
-        paginas = {}
-        for ad in ads:
-            pid  = ad.get("page_id", "") or ""
-            nome = ad.get("page_name", "") or ""
-            if nome and nome not in paginas:
-                paginas[nome] = {"nome": nome, "page_id": pid, "total_ads": 0}
-            if nome in paginas:
-                paginas[nome]["total_ads"] += 1
-        return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
-
-    if "ads_onboarding_empresa" not in st.session_state:
-        st.session_state.ads_onboarding_empresa = None
-    if "ads_onboarding_paginas" not in st.session_state:
-        st.session_state.ads_onboarding_paginas = []
-    if "ads_onboarding_termo" not in st.session_state:
-        st.session_state.ads_onboarding_termo = ""
-
-    # ── CORREÇÃO 1: TODAS as empresas aparecem na tela de confirmação ──
-    # Sempre mostramos o painel de configuração para todas as empresas,
-    # separando visualmente as já configuradas das pendentes.
-    empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
-    empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
-
-    # Mostra painel unificado com TODAS as empresas
+ 
+    # ── PAINEL DE CONFIGURAÇÃO ────────────────────────────────────────
+ 
     st.markdown(
-        "<div style='background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;"
-        "padding:16px 20px;margin-bottom:20px'>"
-        "<div style='font-size:14px;font-weight:700;color:#1a2e4a;margin-bottom:4px'>"
-        "⚙️ Configuração de páginas do Facebook</div>"
-        "<div style='font-size:13px;color:#6b7280'>"
-        "Confirme ou configure a página do Facebook de cada empresa para buscar anúncios.</div>"
-        "</div>",
+        "<div style='font-size:15px;font-weight:700;color:#1a2e4a;margin-bottom:16px'>"
+        "⚙️ Configuração de páginas do Facebook</div>",
         unsafe_allow_html=True,
     )
-
+ 
     for e in todas_empresas:
         ck       = e["nome"]
         sk       = safe_key(ck)
@@ -3059,52 +3064,54 @@ html, body { background:transparent; overflow:hidden; }
         av       = gerar_avatar(ck)
         badge    = "Minha Empresa" if is_minha else "Concorrente"
         ja_config = empresa_tem_ads_id(e)
-
-        # ── CORREÇÃO 2: sugestão padrão = nome da empresa ──
+ 
         if is_minha:
             sugestao = emp.get("ads_id") or emp.get("nome", "")
         else:
             cd = concs[e["idx"]]
             sugestao = cd.get("ads_id") or cd.get("nome", "")
-
-        borda_cor = "#86efac" if ja_config else "#e5e7eb"
+ 
+        # Cores do card: verde se configurado, neutro se não
+        borda_cor = "#86efac" if ja_config else "#e2e8f0"
         bg_cor    = "#f0fdf4" if ja_config else "#ffffff"
-
-        with st.container(border=True):
-            st.markdown(
-                f"<style>[data-testid='stVerticalBlockBorderWrapper']:has(.ads-card-{sk}) "
-                f"{{border-color: {borda_cor} !important; background: {bg_cor} !important;}}</style>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(f"<div class='ads-card-{sk}'></div>", unsafe_allow_html=True)
-
-            c_av, c_info, c_status = st.columns([1, 8, 3])
-            with c_av:
-                st.markdown(
-                    f"<div style='width:40px;height:40px;border-radius:50%;background:{cor};"
-                    f"display:flex;align-items:center;justify-content:center;"
-                    f"font-size:14px;font-weight:700;color:#fff;margin-top:4px'>{av}</div>",
-                    unsafe_allow_html=True,
-                )
-            with c_info:
-                st.markdown(
-                    f"<div style='font-size:15px;font-weight:700;color:#111827'>{ck}</div>"
-                    f"<div style='font-size:12px;color:#6b7280'>{badge}</div>",
-                    unsafe_allow_html=True,
-                )
-            with c_status:
-                if ja_config:
-                    ads_id_atual = emp.get("ads_id") if is_minha else concs[e["idx"]].get("ads_id", "")
-                    st.markdown(
-                        f"<div style='text-align:right;padding-top:2px'>"
-                        f"<span style='background:#f0fdf4;color:#15803d;border:1px solid #86efac;"
-                        f"padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700'>"
-                        f"✅ Configurado</span>"
-                        f"<div style='font-size:11px;color:#6b7280;margin-top:4px'>{ads_id_atual}</div>"
-                        f"</div>",
-                        unsafe_allow_html=True,
-                    )
-
+ 
+        # Badge tipo (Minha Empresa / Concorrente)
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+ 
+        # ads_id atual (para exibição)
+        if is_minha:
+            ads_id_atual = emp.get("ads_id", "")
+        else:
+            ads_id_atual = concs[e["idx"]].get("ads_id", "")
+ 
+        st.markdown(f"""
+        <div style='background:{bg_cor};border:1.5px solid {borda_cor};border-radius:14px;
+                    padding:16px 20px;margin-bottom:12px;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.04)'>
+            <div style='display:flex;align-items:center;gap:14px;margin-bottom:{"0" if not ja_config else "0"}'>
+                <!-- Avatar -->
+                <div style='width:44px;height:44px;border-radius:50%;background:{cor};
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:15px;font-weight:700;color:#fff;flex-shrink:0'>{av}</div>
+                <!-- Info empresa -->
+                <div style='flex:1;min-width:0'>
+                    <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap'>
+                        <span style='font-size:15px;font-weight:700;color:#111827'>{ck}</span>
+                        <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                                     padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>
+                            {badge}
+                        </span>
+                        {"<span style='background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700'>✅ Configurado: " + ads_id_atual + "</span>" if ja_config else "<span style='background:#fef9c3;color:#854d0e;border:1px solid #fde68a;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600'>⚠️ Não configurado</span>"}
+                    </div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+ 
+        # Formulário de busca (fora do markdown para ser interativo)
+        with st.container():
             col_termo, col_btn_buscar = st.columns([4, 2])
             with col_termo:
                 termo_input = st.text_input(
@@ -3113,110 +3120,171 @@ html, body { background:transparent; overflow:hidden; }
                     placeholder="Ex: Kedu Educação",
                     key=f"onboarding_termo_{sk}",
                     help="Digite o nome da página como aparece no Facebook",
+                    label_visibility="collapsed",
                 )
             with col_btn_buscar:
-                st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
                 btn_procurar = st.button(
                     "🔍 Buscar Páginas",
                     key=f"btn_procurar_{sk}",
                     use_container_width=True,
                 )
-
-            if btn_procurar and termo_input.strip():
-                st.session_state.ads_onboarding_empresa = ck
-                st.session_state.ads_onboarding_termo   = termo_input.strip()
-                with st.spinner(f"Buscando páginas para «{termo_input}»…"):
-                    paginas = buscar_paginas_facebook(termo_input.strip())
-                st.session_state.ads_onboarding_paginas = paginas
-                st.rerun()
-
-            if (st.session_state.ads_onboarding_empresa == ck
-                    and st.session_state.ads_onboarding_paginas is not None):
-
-                paginas = st.session_state.ads_onboarding_paginas
-                termo_buscado = st.session_state.ads_onboarding_termo
-
-                if not paginas:
-                    st.warning(
-                        f"Nenhuma página encontrada para «{termo_buscado}». "
-                        "Tente um nome diferente ou verifique no "
-                        "[Meta Ad Library](https://www.facebook.com/ads/library/)."
-                    )
-                else:
-                    st.markdown(
-                        f"<div style='font-size:13px;font-weight:600;color:#374151;"
-                        f"margin:12px 0 8px 0'>Páginas encontradas para «{termo_buscado}» "
-                        f"— selecione a correta:</div>",
-                        unsafe_allow_html=True,
-                    )
-
-                    cols_pag = st.columns(min(len(paginas), 3))
-                    for ip, pag in enumerate(paginas[:6]):
-                        with cols_pag[ip % 3]:
-                            # ── CORREÇÃO 3: avatar nas páginas encontradas ──
-                            pag_av  = gerar_avatar(pag["nome"])
-                            pag_cor = AVATAR_COLORS[ip % len(AVATAR_COLORS)]
-                            st.markdown(
-                                f"<div style='background:#f9fafb;border:1px solid #e5e7eb;"
-                                f"border-radius:10px;padding:12px 14px;margin-bottom:8px;"
-                                f"display:flex;align-items:center;gap:12px'>"
-                                f"<div style='width:36px;height:36px;border-radius:50%;"
-                                f"background:{pag_cor};display:flex;align-items:center;"
-                                f"justify-content:center;font-size:13px;font-weight:700;"
-                                f"color:#fff;flex-shrink:0'>{pag_av}</div>"
-                                f"<div style='min-width:0'>"
-                                f"<div style='font-size:14px;font-weight:700;color:#111827;"
-                                f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"
-                                f"{pag['nome']}</div>"
-                                f"<div style='font-size:12px;color:#6b7280'>"
-                                f"📢 {pag['total_ads']} anúncio(s) encontrado(s)</div>"
-                                f"</div>"
-                                f"</div>",
-                                unsafe_allow_html=True,
-                            )
-                            if st.button(
-                                f"✅ Usar esta página",
-                                key=f"sel_pag_{sk}_{ip}",
-                                use_container_width=True,
-                                type="primary",
-                            ):
-                                salvar_ads_id(e, pag["nome"])
-                                st.session_state[f"_query_saved_{sk}"] = pag["nome"]
+ 
+        if btn_procurar and termo_input.strip():
+            st.session_state.ads_onboarding_empresa = ck
+            st.session_state.ads_onboarding_termo   = termo_input.strip()
+            with st.spinner(f"Buscando páginas para «{termo_input}»…"):
+                paginas = buscar_paginas_facebook(termo_input.strip())
+            st.session_state.ads_onboarding_paginas = paginas
+            st.rerun()
+ 
+        if (st.session_state.ads_onboarding_empresa == ck
+                and st.session_state.ads_onboarding_paginas is not None):
+ 
+            paginas = st.session_state.ads_onboarding_paginas
+            termo_buscado = st.session_state.ads_onboarding_termo
+ 
+            if not paginas:
+                st.warning(
+                    f"Nenhuma página encontrada para «{termo_buscado}». "
+                    "Tente um nome diferente ou verifique no "
+                    "[Meta Ad Library](https://www.facebook.com/ads/library/)."
+                )
+            else:
+                st.markdown(
+                    f"<div style='font-size:13px;font-weight:600;color:#374151;"
+                    f"margin:12px 0 10px 0'>Páginas encontradas para «{termo_buscado}» "
+                    f"— selecione a correta:</div>",
+                    unsafe_allow_html=True,
+                )
+ 
+                # ── Cards de páginas encontradas com foto de perfil ──
+                paginas_html_cards = ""
+                for ip, pag in enumerate(paginas[:6]):
+                    pag_av   = gerar_avatar(pag["nome"])
+                    pag_cor  = AVATAR_COLORS[ip % len(AVATAR_COLORS)]
+                    pag_pic  = pag.get("profile_picture", "")
+                    pag_nome = pag["nome"]
+                    pag_ads  = pag["total_ads"]
+ 
+                    # Avatar: foto real se disponível, fallback para iniciais
+                    if pag_pic and pag_pic.startswith("http"):
+                        avatar_html = (
+                            f'<div style="width:44px;height:44px;border-radius:50%;'
+                            f'overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb">'
+                            f'<img src="{pag_pic}" '
+                            f'style="width:100%;height:100%;object-fit:cover;display:block" '
+                            f'onerror="this.parentElement.innerHTML=\'<div style=&quot;width:44px;height:44px;border-radius:50%;background:{pag_cor};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff&quot;>{pag_av}</div>\'" />'
+                            f'</div>'
+                        )
+                    else:
+                        avatar_html = (
+                            f'<div style="width:44px;height:44px;border-radius:50%;'
+                            f'background:{pag_cor};display:flex;align-items:center;'
+                            f'justify-content:center;font-size:15px;font-weight:700;'
+                            f'color:#fff;flex-shrink:0">{pag_av}</div>'
+                        )
+ 
+                    paginas_html_cards += f"""
+                    <div style='background:#f9fafb;border:1.5px solid #e2e8f0;border-radius:12px;
+                                padding:14px 16px;margin-bottom:0;display:flex;
+                                align-items:center;gap:12px'>
+                        {avatar_html}
+                        <div style='flex:1;min-width:0'>
+                            <div style='font-size:14px;font-weight:700;color:#111827;
+                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>
+                                {pag_nome}
+                            </div>
+                            <div style='font-size:12px;color:#6b7280;margin-top:2px'>
+                                📢 {pag_ads} anúncio(s) encontrado(s)
+                            </div>
+                        </div>
+                    </div>
+                    """
+ 
+                # Grid de até 3 colunas
+                n_pags = min(len(paginas), 6)
+                cols_pag = st.columns(min(n_pags, 3))
+                for ip, pag in enumerate(paginas[:6]):
+                    with cols_pag[ip % 3]:
+                        pag_av   = gerar_avatar(pag["nome"])
+                        pag_cor  = AVATAR_COLORS[ip % len(AVATAR_COLORS)]
+                        pag_pic  = pag.get("profile_picture", "")
+ 
+                        if pag_pic and pag_pic.startswith("http"):
+                            avatar_cell = f"""
+                            <div style='width:44px;height:44px;border-radius:50%;overflow:hidden;
+                                        flex-shrink:0;border:2px solid #e5e7eb'>
+                                <img src='{pag_pic}'
+                                    style='width:100%;height:100%;object-fit:cover;display:block'
+                                    onerror="this.parentElement.style.background='{pag_cor}';this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;color:#fff\\'>{pag_av}</div>'" />
+                            </div>"""
+                        else:
+                            avatar_cell = f"""
+                            <div style='width:44px;height:44px;border-radius:50%;background:{pag_cor};
+                                        display:flex;align-items:center;justify-content:center;
+                                        font-size:15px;font-weight:700;color:#fff;flex-shrink:0'>
+                                {pag_av}
+                            </div>"""
+ 
+                        st.markdown(
+                            f"<div style='background:#f9fafb;border:1.5px solid #e2e8f0;"
+                            f"border-radius:12px;padding:14px 16px;margin-bottom:8px;"
+                            f"display:flex;align-items:center;gap:12px'>"
+                            f"{avatar_cell}"
+                            f"<div style='flex:1;min-width:0'>"
+                            f"<div style='font-size:14px;font-weight:700;color:#111827;"
+                            f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"
+                            f"{pag['nome']}</div>"
+                            f"<div style='font-size:12px;color:#6b7280;margin-top:2px'>"
+                            f"📢 {pag['total_ads']} anúncio(s)</div>"
+                            f"</div></div>",
+                            unsafe_allow_html=True,
+                        )
+                        if st.button(
+                            f"✅ Usar esta página",
+                            key=f"sel_pag_{sk}_{ip}",
+                            use_container_width=True,
+                            type="primary",
+                        ):
+                            salvar_ads_id(e, pag["nome"])
+                            st.session_state[f"_query_saved_{sk}"] = pag["nome"]
+                            st.session_state.ads_onboarding_empresa = None
+                            st.session_state.ads_onboarding_paginas = []
+                            st.toast(f"✅ Página «{pag['nome']}» configurada!", icon="✅")
+                            st.rerun()
+ 
+                with st.expander("Não encontrou? Digite manualmente"):
+                    col_m1, col_m2 = st.columns([4, 2])
+                    with col_m1:
+                        manual = st.text_input(
+                            "Nome exato da página",
+                            placeholder="Cole o nome como está no Facebook",
+                            key=f"manual_{sk}",
+                        )
+                    with col_m2:
+                        st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
+                        if st.button("💾 Salvar", key=f"btn_manual_{sk}", use_container_width=True):
+                            if manual.strip():
+                                salvar_ads_id(e, manual.strip())
+                                st.session_state[f"_query_saved_{sk}"] = manual.strip()
                                 st.session_state.ads_onboarding_empresa = None
                                 st.session_state.ads_onboarding_paginas = []
-                                st.toast(f"✅ Página «{pag['nome']}» configurada!", icon="✅")
+                                st.toast(f"✅ «{manual.strip()}» salvo!", icon="✅")
                                 st.rerun()
-
-                    with st.expander("Não encontrou? Digite manualmente"):
-                        col_m1, col_m2 = st.columns([4, 2])
-                        with col_m1:
-                            manual = st.text_input(
-                                "Nome exato da página",
-                                placeholder="Cole o nome como está no Facebook",
-                                key=f"manual_{sk}",
-                            )
-                        with col_m2:
-                            st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
-                            if st.button("💾 Salvar", key=f"btn_manual_{sk}", use_container_width=True):
-                                if manual.strip():
-                                    salvar_ads_id(e, manual.strip())
-                                    st.session_state[f"_query_saved_{sk}"] = manual.strip()
-                                    st.session_state.ads_onboarding_empresa = None
-                                    st.session_state.ads_onboarding_paginas = []
-                                    st.toast(f"✅ «{manual.strip()}» salvo!", icon="✅")
-                                    st.rerun()
-
+ 
+        st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+ 
     if not empresas_configuradas:
         st.info("Configure pelo menos uma empresa acima para buscar anúncios.")
         st.stop()
-
+ 
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
         unsafe_allow_html=True,
     )
-
+ 
     # ── MODO NORMAL: busca e exibição de ads ─────────────────────────
-
+ 
     query_values = {}
     for e in empresas_configuradas:
         ck = e["nome"]
@@ -3227,7 +3295,7 @@ html, body { background:transparent; overflow:hidden; }
             ads_id_salvo = concs[e["idx"]].get("ads_id", "")
         st.session_state[f"_query_saved_{sk}"] = ads_id_salvo
         query_values[ck] = ads_id_salvo
-
+ 
     bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
     with bcol1:
         buscar = st.button("🔍 Buscar / Atualizar Anúncios", use_container_width=True, type="primary")
@@ -3235,7 +3303,7 @@ html, body { background:transparent; overflow:hidden; }
         limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True)
     with bcol3:
         debug_mode = st.toggle("🔍 Debug JSON", value=False)
-
+ 
     if limpar_cache:
         st.session_state.ads_cache     = {}
         st.session_state.ads_erro      = {}
@@ -3243,7 +3311,7 @@ html, body { background:transparent; overflow:hidden; }
         salvar_cache_ads({})
         st.toast("Cache limpo!", icon="🗑️")
         st.rerun()
-
+ 
     if buscar:
         if not query_values:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
@@ -3429,6 +3497,9 @@ html, body { background:transparent; overflow:hidden; }
                 cta         = ad.get("cta")         or ""
                 uid         = f"{safe_key(ck)}_{j}"
  
+                # Foto de perfil da página no card do anúncio
+                page_pic    = ad.get("page_profile_picture") or ""
+ 
                 microlink_url = _microlink_screenshot(snap_url)
  
                 img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
@@ -3582,6 +3653,17 @@ function imgFallback_{uid}(img){{
                 h_imp       = 32  if impressoes else 0
                 card_height = h_base + h_copy + h_media + h_imp + 40
  
+                # Avatar do page no card: foto real se disponível
+                if page_pic and page_pic.startswith("http"):
+                    page_avatar_html = (
+                        f'<div class="page-avatar" style="overflow:hidden;padding:0">'
+                        f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
+                        f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
+                        f'</div>'
+                    )
+                else:
+                    page_avatar_html = f'<div class="page-avatar">{avatar}</div>'
+ 
                 lib_btn_html = ""
                 if snap_url:
                     lib_btn_html = f"""
@@ -3659,7 +3741,7 @@ body{{padding-bottom:20px;}}
     </div>
     <div class="copy-section">
         <div class="page-header">
-            <div class="page-avatar">{avatar}</div>
+            {page_avatar_html}
             <div>
                 <div class="page-name">{ad.get("page_name") or nome}{' <span class="dynamic-badge">⚡ Dinâmico</span>' if is_dyn else ''}</div>
                 <div class="page-sponsored">Patrocinado</div>
