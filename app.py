@@ -3049,6 +3049,10 @@ def executar_busca(empresas: list, query_values: dict):
 
 # ── Página ADS ────────────────────────────────────────────────────────
 
+elif st.session_state.pagina == "geral":
+    cabecalho_simples("Visão Geral", "Comparativo geral entre sua empresa e concorrentes.")
+    st.info("Em construção.")
+
 elif st.session_state.pagina == "ads":
 
     emp   = st.session_state.dados["minha_empresa"]
