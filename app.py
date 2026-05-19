@@ -208,7 +208,7 @@ def carregar_dados_usuario(user_id: str) -> dict:
             "nome": "", "setor": "Marketing", "tipo": "",
             "estado": "", "cidade": "",
             "instagram": "@", "fb_page": "", "site": "",
-            "servicos": [], "ads_id": ""
+            "servicos": [], "ads_id": "", "ads_page_pic": ""
         },
         "concorrentes": [],
         "metricas_redes": {},
@@ -242,7 +242,7 @@ if "dados" not in st.session_state:
             "nome": "", "setor": "Marketing", "tipo": "",
             "estado": "", "cidade": "",
             "instagram": "@", "fb_page": "", "site": "",
-            "servicos": [], "ads_id": ""
+            "servicos": [], "ads_id": "", "ads_page_pic": ""
         },
         "concorrentes": []
     }
@@ -266,7 +266,7 @@ if "analises_salvas" not in st.session_state:
 empresa = st.session_state.dados["minha_empresa"]
 campos_padrao = {
     "estado": "", "cidade": "", "instagram": "@",
-    "fb_page": "", "site": "", "servicos": [], "ads_id": ""
+    "fb_page": "", "site": "", "servicos": [], "ads_id": "", "ads_page_pic": ""
 }
 for campo, valor in campos_padrao.items():
     if campo not in empresa:
@@ -813,10 +813,12 @@ if not st.session_state.logado:
                             "nome": "", "setor": "Marketing", "tipo": "",
                             "estado": "", "cidade": "",
                             "instagram": "@", "fb_page": "", "site": "",
-                            "servicos": [], "ads_id": ""
+                            "servicos": [], "ads_id": "", "ads_page_pic": ""
                         }
                         if "ads_id" not in minha_emp:
                             minha_emp["ads_id"] = ""
+                        if "ads_page_pic" not in minha_emp:
+                            minha_emp["ads_page_pic"] = ""
                         st.session_state.dados = {
                             "minha_empresa": minha_emp,
                             "concorrentes": dados_db.get("concorrentes", []),
@@ -1747,13 +1749,15 @@ html, body { background: transparent; overflow: hidden; }
                 clean_handle = obter_instagram_handle(insta_handle)
                 fb_clean     = obter_facebook_handle(fb_p)
                 site_clean   = limpar_site(u)
-                existing_ads_id = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
+                existing_ads_id  = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
+                existing_page_pic = (concorrente_edit.get("ads_page_pic", "") if concorrente_edit else "")
                 dados_novos = {
-                    "nome":      n,
-                    "url":       site_clean,
-                    "instagram": clean_handle,
-                    "fb_page":   fb_clean,
-                    "ads_id":    existing_ads_id,
+                    "nome":         n,
+                    "url":          site_clean,
+                    "instagram":    clean_handle,
+                    "fb_page":      fb_clean,
+                    "ads_id":       existing_ads_id,
+                    "ads_page_pic": existing_page_pic,
                 }
                 if st.session_state.editando_concorrente is not None:
                     st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
@@ -1767,7 +1771,6 @@ html, body { background: transparent; overflow: hidden; }
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
-        # CSS para ocultar botões Streamlit nativos
         hide_btns_css = "\n".join([
             f".st-key-editar_{i} button, .st-key-remove_{i} button {{ display: none !important; }}"
             for i in range(len(concorrentes))
@@ -1997,7 +2000,6 @@ setTimeout(ajustarAltura, 400);
 
                 components.html(card_html, height=260, scrolling=False)
 
-                # Botões Streamlit ocultos (acionados pelo card via JS)
                 b1, b2 = st.columns(2)
                 with b1:
                     if st.button("Editar Concorrente", key=f"editar_{i}", use_container_width=True):
@@ -3062,14 +3064,19 @@ elif st.session_state.pagina == "ads":
         else:
             cd = concs[e["idx"]]
             return bool(cd.get("ads_id", "").strip())
- 
-    def salvar_ads_id(e: dict, ads_id: str):
+
+    # ── salvar_ads_id: agora também persiste a foto de perfil da página ──
+    def salvar_ads_id(e: dict, ads_id: str, page_pic: str = ""):
         if e["tipo"] == "minha":
             st.session_state.dados["minha_empresa"]["ads_id"] = ads_id
+            if page_pic:
+                st.session_state.dados["minha_empresa"]["ads_page_pic"] = page_pic
         else:
             st.session_state.dados["concorrentes"][e["idx"]]["ads_id"] = ads_id
+            if page_pic:
+                st.session_state.dados["concorrentes"][e["idx"]]["ads_page_pic"] = page_pic
         salvar_dados_usuario(st.session_state.user.id)
- 
+
     # ── Busca página no Facebook e extrai foto de perfil ─────────────
     def buscar_paginas_facebook(termo: str) -> list:
         ads, _, erro = _apify_run_sync(termo, limit=20)
@@ -3088,25 +3095,30 @@ elif st.session_state.pagina == "ads":
                     paginas[nome]["profile_picture"] = pic
         return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
  
-    # ── Helpers de avatar para cards de empresa ───────────────────────
+    # ── _avatar_html_empresa: lê ads_page_pic do banco primeiro ──────
     def _avatar_html_empresa(e: dict, size: int = 42) -> str:
-        """Retorna HTML do avatar: foto da página salva ou avatar colorido."""
+        """Retorna HTML do avatar: foto da página salva no banco ou avatar colorido."""
         is_minha = e["tipo"] == "minha"
         cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
         nome = e["nome"]
         av = gerar_avatar(nome)
- 
-        # Tenta obter foto de perfil salva no cache
-        pic = ""
-        cache_entry = st.session_state.ads_cache.get(nome, {})
-        ads_data = cache_entry.get("data", [])
-        if ads_data:
+
+        # 1) Foto salva diretamente no dado da empresa/concorrente (banco)
+        if is_minha:
+            pic = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
+        else:
+            pic = st.session_state.dados["concorrentes"][e["idx"]].get("ads_page_pic", "") or ""
+
+        # 2) Fallback: tenta obter do cache de anúncios
+        if not pic:
+            cache_entry = st.session_state.ads_cache.get(nome, {})
+            ads_data = cache_entry.get("data", [])
             for ad in ads_data:
                 p = ad.get("page_profile_picture", "") or ""
                 if p and p.startswith("http"):
                     pic = p
                     break
- 
+
         if pic:
             return (
                 f'<div style="width:{size}px;height:{size}px;border-radius:50%;overflow:hidden;'
@@ -3123,8 +3135,8 @@ elif st.session_state.pagina == "ads":
             f'display:flex;align-items:center;justify-content:center;'
             f'font-size:{int(size*0.35)}px;font-weight:700;color:#fff;flex-shrink:0">{av}</div>'
         )
- 
-    # ── Cabeçalho ────────────────────────────────────────────────────
+
+    # ── Cabeçalho — padrão igual às outras páginas ───────────────────
     h1_col, h2_col = st.columns([7, 3])
     with h1_col:
         components.html("""
@@ -3142,7 +3154,7 @@ html, body { background:transparent; overflow:hidden; }
 <div class="titulo">Biblioteca de Ads</div>
 <div class="sub">Criativos, copies e formatos dos anúncios dos seus concorrentes.</div>
 """, height=65)
- 
+
     with h2_col:
         gerar_btn_ads = st.button(
             "🔍 Buscar / Atualizar Anúncios",
@@ -3150,32 +3162,19 @@ html, body { background:transparent; overflow:hidden; }
             use_container_width=True,
             key="ads_buscar_topo",
         )
- 
+        # Timestamp — mesmo padrão de Redes Sociais e Confronto de Sites
+        if st.session_state.ads_cache:
+            _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
+            if _tss:
+                _ts_antigo = min(_tss)
+                st.markdown(
+                    f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
+                    f"🕒 Última busca: <b>{_ts_antigo}</b></div>",
+                    unsafe_allow_html=True,
+                )
+
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 16px 0'/>", unsafe_allow_html=True)
- 
-    # ── Banner de cache — mesmo padrão das outras páginas ────────────
-    if st.session_state.ads_cache:
-        tss_all = [v.get("ts","") for v in st.session_state.ads_cache.values() if v.get("ts")]
-        if tss_all:
-            ts_antigo = min(tss_all)
-            fresco_glob = cache_esta_fresco(ts_antigo)
-            cor_b  = "#f0fdf4" if fresco_glob else "#fffbeb"
-            brd_b  = "#86efac" if fresco_glob else "#fcd34d"
-            txt_b  = "#15803d" if fresco_glob else "#92400e"
-            ico_b  = "✅"      if fresco_glob else "🕐"
-            n_emp  = len(st.session_state.ads_cache)
-            msg_b  = (
-                f"Cache atualizado em {ts_antigo}" if fresco_glob
-                else f"Cache de {ts_antigo} — considere atualizar"
-            )
-            st.markdown(
-                f"<div style='display:flex;align-items:center;gap:10px;padding:10px 16px;"
-                f"background:{cor_b};border:1px solid {brd_b};border-radius:8px;margin-bottom:16px;"
-                f"font-size:13px;color:{txt_b};font-weight:600'>"
-                f"{ico_b} {msg_b} &nbsp;·&nbsp; {n_emp} empresa(s) em cache</div>",
-                unsafe_allow_html=True,
-            )
- 
+
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
         st.stop()
@@ -3207,7 +3206,6 @@ html, body { background:transparent; overflow:hidden; }
                 pag_pic = pag.get("profile_picture", "")
                 page_id_display = f" · ID: {pag['page_id']}" if pag.get("page_id") else ""
  
-                # Avatar com foto de perfil real
                 if pag_pic and pag_pic.startswith("http"):
                     avatar_cell = (
                         f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;'
@@ -3237,18 +3235,22 @@ html, body { background:transparent; overflow:hidden; }
                     unsafe_allow_html=True,
                 )
                 id_para_salvar = pag.get("page_id") or pag["nome"]
+                pic_para_salvar = pag.get("profile_picture", "")
+
                 if st.button(
                     f"✅ Usar esta",
                     key=f"direct_sel_{sk}_{ip}",
                     use_container_width=True,
                     type="primary",
                 ):
-                    salvar_ads_id(e, id_para_salvar)
+                    # Salva ads_id E a foto de perfil no banco
+                    salvar_ads_id(e, id_para_salvar, page_pic=pic_para_salvar)
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.session_state.ads_editando_empresa = None
                     st.toast(f"✅ Página «{pag['nome']}» configurada! ID: {id_para_salvar}", icon="✅")
                     st.rerun()
+
         with st.expander("Não encontrou? Digite manualmente (nome ou ID numérico)"):
             col_m1, col_m2 = st.columns([4, 2])
             with col_m1:
@@ -3276,7 +3278,6 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
-        # Grid de 2 colunas para os cards configurados
         cfg_cols = st.columns(2)
         for ci, e in enumerate(empresas_configuradas):
             ck       = e["nome"]
@@ -3288,15 +3289,16 @@ html, body { background:transparent; overflow:hidden; }
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             is_editing = (st.session_state.ads_editando_empresa == ck)
- 
-            # Avatar HTML (foto da página ou colorido)
+
+            # Avatar com foto do banco
             avatar_html = _avatar_html_empresa(e, size=42)
  
             with cfg_cols[ci % 2]:
                 col_info, col_btn = st.columns([4, 1])
                 with col_info:
+                    # Card padrão branco — mesmo estilo do restante do site
                     st.markdown(f"""
-                    <div style='background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;
+                    <div style='background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;
                                 padding:14px 18px;display:flex;align-items:center;gap:12px;min-height:72px'>
                         {avatar_html}
                         <div style='flex:1;min-width:0'>
@@ -3392,7 +3394,7 @@ html, body { background:transparent; overflow:hidden; }
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
  
             st.markdown(f"""
-            <div style='background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;
+            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:14px;
                         padding:14px 18px;display:flex;align-items:center;gap:12px;
                         margin-bottom:10px'>
                 <div style='width:42px;height:42px;border-radius:50%;background:{cor};
@@ -3463,7 +3465,6 @@ html, body { background:transparent; overflow:hidden; }
  
     bcol1, bcol2 = st.columns([3, 2])
     with bcol1:
-        # Botão principal (duplicado no topo foi capturado em gerar_btn_ads)
         buscar_inline = st.button("🔍 Buscar / Atualizar Anúncios", use_container_width=True, type="primary", key="ads_buscar_inline")
     with bcol2:
         limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True)
@@ -3475,7 +3476,6 @@ html, body { background:transparent; overflow:hidden; }
         st.toast("Cache limpo!", icon="🗑️")
         st.rerun()
  
-    # Dispara busca pelo botão do topo ou pelo inline
     if gerar_btn_ads or buscar_inline:
         if not query_values:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
@@ -3555,7 +3555,6 @@ html, body { background:transparent; overflow:hidden; }
         query        = cache_entry.get("query","")
         fresco_aba   = cache_esta_fresco(ts)
  
-        # ── Filtra por page_id numérico ou nome ──────────────────────
         if configured_page:
             if configured_page.isdigit():
                 filtered = [a for a in ads_list_raw if str(a.get("page_id","")).strip() == configured_page]
@@ -3572,14 +3571,19 @@ html, body { background:transparent; overflow:hidden; }
                     ads_list = partial if partial else ads_list_raw
         else:
             ads_list = ads_list_raw
- 
-        # Avatar com foto real da página (primeiro anúncio do cache)
-        page_pic_empresa = ""
-        for ad in ads_list:
-            p = ad.get("page_profile_picture", "") or ""
-            if p and p.startswith("http"):
-                page_pic_empresa = p
-                break
+
+        # Avatar: foto salva no banco (ads_page_pic) ou fallback do cache
+        if emp_item["tipo"] == "minha":
+            page_pic_empresa = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
+        else:
+            page_pic_empresa = st.session_state.dados["concorrentes"][emp_item["idx"]].get("ads_page_pic", "") or ""
+
+        if not page_pic_empresa:
+            for ad in ads_list:
+                p = ad.get("page_profile_picture", "") or ""
+                if p and p.startswith("http"):
+                    page_pic_empresa = p
+                    break
  
         if page_pic_empresa:
             avatar_empresa_html = (
@@ -3719,9 +3723,6 @@ html, body { background:transparent; overflow:hidden; }
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
  
-        # ── Grid de cards de anúncios ─────────────────────────────────
-        # Renderiza todos os cards em um único bloco HTML para evitar
-        # que abas diferentes interfiram entre si.
         cta_labels = {
             "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
             "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
@@ -3753,7 +3754,6 @@ html, body { background:transparent; overflow:hidden; }
                 title       = ad.get("title")       or ""
                 desc        = ad.get("description") or ""
                 cta         = ad.get("cta")         or ""
-                # UID único por aba + índice para evitar colisões entre abas
                 uid         = f"{safe_key(ck)}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
                 microlink_url = _microlink_screenshot(snap_url)
@@ -3884,14 +3884,12 @@ function imgFallback_{uid}(img){{
                 ) if baixo_vol else ""
  
                 h_media = 230 if (img_primary or microlink_url) else (210 if videos else 120)
-                # Altura do copy: 16px por linha ~65 chars + overhead
                 body_lines = max(1, len(body) // 55) if body else 0
                 h_copy  = 80 + (body_lines * 22) if (body or title or desc) else 60
                 h_copy += 40 if title else 0
                 h_copy += 30 if desc else 0
                 h_data  = 22 if data_inicio else 0
                 h_imp   = 22 if impressoes else 0
-                # Margem generosa para evitar corte — o ResizeObserver vai ajustar depois
                 card_height = 60 + 80 + 50 + 44 + h_copy + h_media + h_data + h_imp + 80
  
                 if page_pic and page_pic.startswith("http"):
@@ -4011,12 +4009,10 @@ function toggleBody(uid){{
     s.style.display=exp?'':'none';
     f.style.display=exp?'none':'';
     if(btn)btn.textContent=exp?'Ver mais':'Ver menos';
-    // Re-ajusta após toggle com delay para o DOM atualizar
     setTimeout(ajustarAltura, 30);
     setTimeout(ajustarAltura, 150);
 }}
 function ajustarAltura(){{
-    // Usa scrollHeight do documento para pegar altura real sem depender do iframe já cortado
     var h = Math.max(
         document.body.scrollHeight,
         document.documentElement.scrollHeight,
@@ -4032,7 +4028,6 @@ function ajustarAltura(){{
         }}catch(e){{}}
     }});
 }}
-// ResizeObserver garante re-ajuste quando conteúdo muda (imagens carregando, toggles etc)
 if(window.ResizeObserver){{
     var _ro = new ResizeObserver(function(){{ ajustarAltura(); }});
     _ro.observe(document.body);
@@ -4043,7 +4038,6 @@ document.querySelectorAll('img').forEach(function(img){{
     img.addEventListener('load', ajustarAltura);
     img.addEventListener('error', ajustarAltura);
 }});
-// Múltiplos timeouts para cobrir renderização lazy e fontes web
 setTimeout(ajustarAltura, 100);
 setTimeout(ajustarAltura, 400);
 setTimeout(ajustarAltura, 900);
@@ -4056,7 +4050,6 @@ setTimeout(ajustarAltura, 2000);
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
-        # ── Análise IA ────────────────────────────────────────────────
         chave_ia = f"ia_ads_{safe_key(ck)}"
         if chave_ia not in st.session_state:
             st.session_state[chave_ia] = ""
