@@ -2714,6 +2714,26 @@ elif st.session_state.pagina == "ads":
                     add(card.get(k))
         return vids
  
+    def _dias_ativo(start_raw: str) -> str:
+        """Retorna string com data formatada + dias ativo."""
+        if not start_raw or len(start_raw) < 10:
+            return ""
+        try:
+            dto = _dt.datetime.strptime(start_raw[:10], "%Y-%m-%d")
+            meses = ['jan','fev','mar','abr','mai','jun',
+                     'jul','ago','set','out','nov','dez']
+            data_fmt = f"{dto.day} de {meses[dto.month-1]} de {dto.year}"
+            dias = (_dt.datetime.now() - dto).days
+            if dias == 0:
+                dias_str = "hoje"
+            elif dias == 1:
+                dias_str = "1 dia ativo"
+            else:
+                dias_str = f"{dias} dias ativo"
+            return f"{data_fmt} · {dias_str}"
+        except Exception:
+            return start_raw[:10]
+ 
     def _normalizar_item_apify(item: dict) -> dict:
         snapshot = item.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -2762,17 +2782,15 @@ elif st.session_state.pagina == "ads":
         else:
             imp_str = str(imp) if imp else ""
  
-        start_raw = str(item.get("startDate") or item.get("ad_delivery_start_time") or "")[:10]
-        if start_raw and len(start_raw) == 10:
-            try:
-                dto = _dt.datetime.strptime(start_raw, "%Y-%m-%d")
-                meses = ['jan','fev','mar','abr','mai','jun',
-                         'jul','ago','set','out','nov','dez']
-                start_fmt = f"{dto.day} de {meses[dto.month-1]} de {dto.year}"
-            except Exception:
-                start_fmt = start_raw
-        else:
-            start_fmt = ""
+        # start_date — tenta múltiplos campos
+        start_raw = str(
+            item.get("startDate")
+            or item.get("ad_delivery_start_time")
+            or item.get("start_date")
+            or ""
+        )[:10]
+ 
+        start_fmt = _dias_ativo(start_raw)
  
         snap_url = (item.get("adSnapshotURL")
                     or item.get("ad_snapshot_url")
@@ -3057,378 +3075,9 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
-    # ── PAINEL DE CONFIGURAÇÃO ────────────────────────────────────────
- 
-    st.markdown(
-        "<div style='font-size:15px;font-weight:700;color:#1a2e4a;margin-bottom:16px'>"
-        "⚙️ Configuração de páginas do Facebook</div>",
-        unsafe_allow_html=True,
-    )
- 
-    # ── Ghost buttons for onboarding triggers ──────────────────────────
-    ghost_btn_keys = []
-    for e in todas_empresas:
-        sk = safe_key(e["nome"])
-        ghost_btn_keys.append(f"btn_procurar_{sk}")
-        ghost_btn_keys.append(f"btn_editar_config_{sk}")
-        for ip in range(6):
-            ghost_btn_keys.append(f"sel_pag_{sk}_{ip}")
-        ghost_btn_keys.append(f"btn_manual_{sk}")
- 
-    # Render hidden ghost buttons for each empresa (non-config cards will use these)
-    _ghost_triggers = {}
-    for e in todas_empresas:
-        sk = safe_key(e["nome"])
-        _ghost_triggers[f"procurar_{sk}"] = st.button(
-            f"_procurar_{sk}_", key=f"btn_procurar_{sk}", use_container_width=False
-        )
-        _ghost_triggers[f"editar_{sk}"] = st.button(
-            f"_editar_config_{sk}_", key=f"btn_editar_config_{sk}", use_container_width=False
-        )
-        for ip in range(6):
-            _ghost_triggers[f"sel_{sk}_{ip}"] = st.button(
-                f"_sel_pag_{sk}_{ip}_", key=f"sel_pag_{sk}_{ip}", use_container_width=False
-            )
-        _ghost_triggers[f"manual_{sk}"] = st.button(
-            f"_manual_{sk}_", key=f"btn_manual_{sk}", use_container_width=False
-        )
- 
-    # CSS to hide all ghost trigger buttons
-    ghost_css_rules = []
-    for e in todas_empresas:
-        sk = safe_key(e["nome"])
-        ghost_css_rules.append(f".st-key-btn_procurar_{sk}")
-        ghost_css_rules.append(f".st-key-btn_editar_config_{sk}")
-        for ip in range(6):
-            ghost_css_rules.append(f".st-key-sel_pag_{sk}_{ip}")
-        ghost_css_rules.append(f".st-key-btn_manual_{sk}")
-    ghost_css = "\n".join([f"{sel} {{ display: none !important; }}" for sel in ghost_css_rules])
-    st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
- 
-    # Handle ghost button triggers
-    for e in todas_empresas:
-        sk = safe_key(e["nome"])
- 
-        # Handle "procurar" trigger
-        if _ghost_triggers.get(f"procurar_{sk}"):
-            termo_val = st.session_state.get(f"_termo_input_{sk}", e["nome"])
-            st.session_state.ads_onboarding_empresa = e["nome"]
-            st.session_state.ads_onboarding_termo   = termo_val
-            st.session_state.ads_editando_empresa   = None
-            with st.spinner(f"Buscando páginas para «{termo_val}»…"):
-                paginas = buscar_paginas_facebook(termo_val.strip())
-            st.session_state.ads_onboarding_paginas = paginas
-            st.rerun()
- 
-        # Handle "editar" trigger (clear ads_id to re-enter config mode)
-        if _ghost_triggers.get(f"editar_{sk}"):
-            st.session_state.ads_editando_empresa = e["nome"]
-            st.session_state.ads_onboarding_empresa = None
-            st.session_state.ads_onboarding_paginas = []
-            st.rerun()
- 
-        # Handle page selection triggers
-        for ip in range(6):
-            if _ghost_triggers.get(f"sel_{sk}_{ip}"):
-                cached_paginas = st.session_state.get(f"_paginas_cache_{sk}", [])
-                if ip < len(cached_paginas):
-                    pag = cached_paginas[ip]
-                    salvar_ads_id(e, pag["nome"])
-                    st.session_state[f"_query_saved_{sk}"] = pag["nome"]
-                    st.session_state.ads_onboarding_empresa = None
-                    st.session_state.ads_onboarding_paginas = []
-                    st.session_state.ads_editando_empresa = None
-                    st.toast(f"✅ Página «{pag['nome']}» configurada!", icon="✅")
-                    st.rerun()
- 
-        # Handle manual save trigger
-        if _ghost_triggers.get(f"manual_{sk}"):
-            manual_val = st.session_state.get(f"_manual_input_{sk}", "").strip()
-            if manual_val:
-                salvar_ads_id(e, manual_val)
-                st.session_state[f"_query_saved_{sk}"] = manual_val
-                st.session_state.ads_onboarding_empresa = None
-                st.session_state.ads_onboarding_paginas = []
-                st.session_state.ads_editando_empresa = None
-                st.toast(f"✅ «{manual_val}» salvo!", icon="✅")
-                st.rerun()
- 
-    # Store paginas in session for selection
-    if st.session_state.ads_onboarding_empresa:
-        ck_ob = st.session_state.ads_onboarding_empresa
-        sk_ob = safe_key(ck_ob)
-        st.session_state[f"_paginas_cache_{sk_ob}"] = st.session_state.ads_onboarding_paginas
- 
-    # ── Render config cards ───────────────────────────────────────────
-    # Two columns for configured empresas; full width for unconfigured
- 
-    # First render configured companies in a 2-col grid
-    if empresas_configuradas:
-        st.markdown(
-            "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
-            "letter-spacing:0.8px;margin-bottom:10px'>✅ Páginas configuradas</div>",
-            unsafe_allow_html=True,
-        )
-        cfg_cols = st.columns(2)
-        for ci, e in enumerate(empresas_configuradas):
-            ck       = e["nome"]
-            sk       = safe_key(ck)
-            is_minha = e["tipo"] == "minha"
-            cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-            av       = gerar_avatar(ck)
-            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
- 
-            if is_minha:
-                ads_id_atual = emp.get("ads_id", "")
-            else:
-                ads_id_atual = concs[e["idx"]].get("ads_id", "")
- 
-            is_editing = (st.session_state.ads_editando_empresa == ck)
- 
-            with cfg_cols[ci % 2]:
-                components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-body {{ padding-bottom:4px; }}
-.card {{
-    background:#f0fdf4; border:1.5px solid #86efac; border-radius:14px;
-    padding:16px 18px; display:flex; align-items:center; gap:14px;
-}}
-.avatar {{
-    width:42px; height:42px; border-radius:50%; background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:15px; font-weight:700; color:#111827;
-         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }}
-.badge {{
-    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.badge-ok {{
-    background:#dcfce7; color:#15803d; border:1px solid #86efac;
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.btn-edit {{
-    background:#fff; border:1px solid #d1d5db; border-radius:8px;
-    padding:7px 14px; font-size:13px; font-weight:600; color:#374151;
-    cursor:pointer; white-space:nowrap; flex-shrink:0;
-    font-family:'DM Sans',sans-serif; transition:all 0.15s;
-}}
-.btn-edit:hover {{ background:#f9fafb; border-color:#9ca3af; }}
-</style>
-<div class="card">
-    <div class="avatar">{av}</div>
-    <div class="info">
-        <div class="nome">{ck}</div>
-        <div class="badges">
-            <span class="badge">{badge_lbl}</span>
-            <span class="badge-ok">✅ {ads_id_atual}</span>
-        </div>
-    </div>
-    <button class="btn-edit" onclick="
-        const btns = window.parent.document.querySelectorAll('button');
-        for (const b of btns) {{
-            if (b.innerText.trim() === '_editar_config_{sk}_') {{ b.click(); break; }}
-        }}
-    ">✏️ Editar</button>
-</div>
-""", height=90, scrolling=False)
- 
-                # If this empresa is being edited, show the search form below the card
-                if is_editing:
-                    st.markdown(
-                        f"<div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;"
-                        f"padding:14px 16px;margin-top:4px;margin-bottom:4px'>",
-                        unsafe_allow_html=True,
-                    )
-                    termo_edit = st.text_input(
-                        "Nome da página no Facebook",
-                        value=ads_id_atual,
-                        placeholder="Ex: Kedu Educação",
-                        key=f"_termo_input_{sk}",
-                        label_visibility="collapsed",
-                    )
-                    col_b1, col_b2 = st.columns(2)
-                    with col_b1:
-                        components.html(f"""
-<style>* {{margin:0;padding:0;box-sizing:border-box;}} html,body {{background:transparent;}}</style>
-<button onclick="
-    const btns = window.parent.document.querySelectorAll('button');
-    for (const b of btns) {{
-        if (b.innerText.trim() === '_procurar_{sk}_') {{ b.click(); break; }}
-    }}
-" style="width:100%;padding:9px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;
-    font-size:13px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;">
-    🔍 Buscar Páginas
-</button>
-""", height=42)
-                    with col_b2:
-                        if st.button("✕ Cancelar edição", key=f"btn_cancel_edit_{sk}", use_container_width=True):
-                            st.session_state.ads_editando_empresa = None
-                            st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
- 
-                    # Show search results if this empresa has results
-                    if (st.session_state.ads_onboarding_empresa == ck
-                            and st.session_state.ads_onboarding_paginas is not None):
-                        _render_paginas_resultado(e, sk, ck)
- 
-    # Then render unconfigured companies
-    if empresas_sem_config:
-        st.markdown(
-            "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
-            "letter-spacing:0.8px;margin:16px 0 10px 0'>⚠️ Páginas não configuradas</div>",
-            unsafe_allow_html=True,
-        )
-        for e in empresas_sem_config:
-            ck       = e["nome"]
-            sk       = safe_key(ck)
-            is_minha = e["tipo"] == "minha"
-            cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-            av       = gerar_avatar(ck)
-            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
- 
-            if is_minha:
-                sugestao = emp.get("nome", "")
-            else:
-                cd = concs[e["idx"]]
-                sugestao = cd.get("nome", "")
- 
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-body {{ padding-bottom:4px; }}
-.card {{
-    background:#fff; border:1.5px solid #e2e8f0; border-radius:14px;
-    overflow:hidden;
-}}
-.card-header {{
-    display:flex; align-items:center; gap:14px;
-    padding:14px 18px 12px; border-bottom:1px solid #f3f4f6;
-}}
-.avatar {{
-    width:42px; height:42px; border-radius:50%; background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.nome {{ font-size:15px; font-weight:700; color:#111827; }}
-.badges {{ display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap; }}
-.badge {{
-    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.badge-warn {{
-    background:#fef9c3; color:#854d0e; border:1px solid #fde68a;
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.card-body {{ padding:14px 18px 16px; }}
-.search-row {{ display:flex; gap:10px; align-items:center; }}
-.search-input {{
-    flex:1; border:1.5px solid #e5e7eb; border-radius:8px;
-    padding:9px 12px; font-size:14px; color:#111827;
-    font-family:'DM Sans',sans-serif; outline:none;
-    transition:border-color 0.15s;
-}}
-.search-input:focus {{ border-color:#3a9fd6; }}
-.btn-search {{
-    background:#0780c0; color:#fff; border:none; border-radius:8px;
-    padding:9px 18px; font-size:13px; font-weight:700;
-    cursor:pointer; white-space:nowrap; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s; display:flex; align-items:center; gap:6px;
-}}
-.btn-search:hover {{ background:#065f9e; }}
-</style>
-<div class="card" id="card_{sk}">
-    <div class="card-header">
-        <div class="avatar">{av}</div>
-        <div>
-            <div class="nome">{ck}</div>
-            <div class="badges">
-                <span class="badge">{badge_lbl}</span>
-                <span class="badge-warn">⚠️ Não configurado</span>
-            </div>
-        </div>
-    </div>
-    <div class="card-body">
-        <div style="font-size:12px;color:#6b7280;margin-bottom:8px;font-weight:500">
-            Digite o nome da página do Facebook para encontrar e vincular os anúncios:
-        </div>
-        <div class="search-row">
-            <input id="termo_{sk}" class="search-input"
-                type="text" value="{sugestao}"
-                placeholder="Ex: {ck}" />
-            <button class="btn-search" onclick="triggerSearch('{sk}')">
-                🔍 Buscar Páginas
-            </button>
-        </div>
-    </div>
-</div>
-<script>
-function triggerSearch(sk) {{
-    var val = document.getElementById('termo_' + sk).value;
-    // Store in hidden input accessible to Streamlit
-    try {{
-        var inputs = window.parent.document.querySelectorAll('input[data-key="_termo_input_' + sk + '"]');
-        if (inputs.length) {{
-            var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype, 'value').set;
-            nativeInputValueSetter.call(inputs[0], val);
-            inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
-        }}
-    }} catch(err) {{}}
-    // Click the ghost button
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-        if (btns[i].innerText.trim() === '_procurar_{sk}_') {{
-            // Store the value before click via URL hack
-            btns[i].click();
-            break;
-        }}
-    }}
-}}
-function ajustarAltura() {{
-    var card = document.getElementById('card_{sk}');
-    if (!card) return;
-    var h = card.getBoundingClientRect().height;
-    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 6) + 'px'; }} catch(e) {{}}
-    }});
-}}
-document.addEventListener('DOMContentLoaded', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
-</script>
-""", height=160, scrolling=False)
- 
-            # Hidden termo input that JS can write to
-            termo_input_hidden = st.text_input(
-                f"termo_hidden_{sk}",
-                value=sugestao,
-                key=f"_termo_input_{sk}",
-                label_visibility="hidden",
-            )
-            st.markdown(f"<style>.st-key-_termo_input_{sk} {{ display:none!important; }}</style>", unsafe_allow_html=True)
- 
-            # Show search results for this empresa if available
-            if (st.session_state.ads_onboarding_empresa == ck
-                    and st.session_state.ads_onboarding_paginas is not None):
-                _render_paginas_resultado_unconfigured(e, sk, ck)
- 
-            st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
- 
-    # ── Helper function to render paginas resultado ───────────────────
-    # (defined here as inner functions so they can be called above)
+    # ─────────────────────────────────────────────────────────────────
+    # HELPER FUNCTIONS — definidas ANTES de serem chamadas
+    # ─────────────────────────────────────────────────────────────────
  
     def _render_paginas_resultado(e, sk, ck):
         paginas = st.session_state.ads_onboarding_paginas
@@ -3592,14 +3241,322 @@ window.addEventListener('load', ajustarAltura);
  
         st.markdown("</div>", unsafe_allow_html=True)
  
-    # ── Call the helper functions NOW (after they're defined) ─────────
-    # Re-render paginas resultado for configured empresas that are editing
-    for e in empresas_configuradas:
-        ck = e["nome"]
-        sk = safe_key(ck)
-        is_editing = (st.session_state.ads_editando_empresa == ck)
-        if is_editing and st.session_state.ads_onboarding_empresa == ck:
-            _render_paginas_resultado(e, sk, ck)
+    # ─────────────────────────────────────────────────────────────────
+    # PAINEL DE CONFIGURAÇÃO
+    # ─────────────────────────────────────────────────────────────────
+ 
+    # Ghost buttons for onboarding triggers
+    _ghost_triggers = {}
+    for e in todas_empresas:
+        sk = safe_key(e["nome"])
+        _ghost_triggers[f"procurar_{sk}"] = st.button(
+            f"_procurar_{sk}_", key=f"btn_procurar_{sk}", use_container_width=False
+        )
+        _ghost_triggers[f"editar_{sk}"] = st.button(
+            f"_editar_config_{sk}_", key=f"btn_editar_config_{sk}", use_container_width=False
+        )
+ 
+    # CSS to hide all ghost trigger buttons
+    ghost_css_rules = []
+    for e in todas_empresas:
+        sk = safe_key(e["nome"])
+        ghost_css_rules.append(f".st-key-btn_procurar_{sk}")
+        ghost_css_rules.append(f".st-key-btn_editar_config_{sk}")
+    ghost_css = "\n".join([f"{sel} {{ display: none !important; }}" for sel in ghost_css_rules])
+    st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
+ 
+    # Handle ghost button triggers
+    for e in todas_empresas:
+        sk = safe_key(e["nome"])
+ 
+        # Handle "procurar" trigger
+        if _ghost_triggers.get(f"procurar_{sk}"):
+            termo_val = st.session_state.get(f"_termo_input_{sk}", e["nome"])
+            st.session_state.ads_onboarding_empresa = e["nome"]
+            st.session_state.ads_onboarding_termo   = termo_val
+            st.session_state.ads_editando_empresa   = e["nome"]
+            with st.spinner(f"Buscando páginas para «{termo_val}»…"):
+                paginas = buscar_paginas_facebook(termo_val.strip())
+            st.session_state.ads_onboarding_paginas = paginas
+            st.rerun()
+ 
+        # Handle "editar" trigger — just sets editing mode, clears onboarding search
+        if _ghost_triggers.get(f"editar_{sk}"):
+            st.session_state.ads_editando_empresa   = e["nome"]
+            st.session_state.ads_onboarding_empresa = None
+            st.session_state.ads_onboarding_paginas = []
+            st.rerun()
+ 
+    # Store paginas in session for selection
+    if st.session_state.ads_onboarding_empresa:
+        ck_ob = st.session_state.ads_onboarding_empresa
+        sk_ob = safe_key(ck_ob)
+        st.session_state[f"_paginas_cache_{sk_ob}"] = st.session_state.ads_onboarding_paginas
+ 
+    # ── Render configured companies ──────────────────────────────────
+    if empresas_configuradas:
+        st.markdown(
+            "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
+            "letter-spacing:0.8px;margin-bottom:10px'>✅ Páginas configuradas</div>",
+            unsafe_allow_html=True,
+        )
+        cfg_cols = st.columns(2)
+        for ci, e in enumerate(empresas_configuradas):
+            ck       = e["nome"]
+            sk       = safe_key(ck)
+            is_minha = e["tipo"] == "minha"
+            cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            av       = gerar_avatar(ck)
+            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+ 
+            if is_minha:
+                ads_id_atual = emp.get("ads_id", "")
+            else:
+                ads_id_atual = concs[e["idx"]].get("ads_id", "")
+ 
+            is_editing = (st.session_state.ads_editando_empresa == ck)
+ 
+            with cfg_cols[ci % 2]:
+                components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+body {{ padding-bottom:4px; }}
+.card {{
+    background:#f0fdf4; border:1.5px solid #86efac; border-radius:14px;
+    padding:16px 18px; display:flex; align-items:center; gap:14px;
+}}
+.avatar {{
+    width:42px; height:42px; border-radius:50%; background:{cor};
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.info {{ flex:1; min-width:0; }}
+.nome {{ font-size:15px; font-weight:700; color:#111827;
+         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }}
+.badge {{
+    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
+    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+}}
+.badge-ok {{
+    background:#dcfce7; color:#15803d; border:1px solid #86efac;
+    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+}}
+.btn-edit {{
+    background:#fff; border:1px solid #d1d5db; border-radius:8px;
+    padding:7px 14px; font-size:13px; font-weight:600; color:#374151;
+    cursor:pointer; white-space:nowrap; flex-shrink:0;
+    font-family:'DM Sans',sans-serif; transition:all 0.15s;
+}}
+.btn-edit:hover {{ background:#f9fafb; border-color:#9ca3af; }}
+</style>
+<div class="card">
+    <div class="avatar">{av}</div>
+    <div class="info">
+        <div class="nome">{ck}</div>
+        <div class="badges">
+            <span class="badge">{badge_lbl}</span>
+            <span class="badge-ok">✅ {ads_id_atual}</span>
+        </div>
+    </div>
+    <button class="btn-edit" onclick="
+        const btns = window.parent.document.querySelectorAll('button');
+        for (const b of btns) {{
+            if (b.innerText.trim() === '_editar_config_{sk}_') {{ b.click(); break; }}
+        }}
+    ">✏️ Editar</button>
+</div>
+""", height=90, scrolling=False)
+ 
+                # If this empresa is being edited, show the search form below the card
+                if is_editing:
+                    with st.container():
+                        st.markdown(
+                            "<div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;"
+                            "padding:14px 16px;margin-top:4px;margin-bottom:4px'>",
+                            unsafe_allow_html=True,
+                        )
+                        termo_edit = st.text_input(
+                            "Nome da página no Facebook",
+                            value=ads_id_atual,
+                            placeholder="Ex: Kedu Educação",
+                            key=f"_termo_input_{sk}",
+                            label_visibility="collapsed",
+                        )
+                        col_b1, col_b2 = st.columns(2)
+                        with col_b1:
+                            components.html(f"""
+<style>* {{margin:0;padding:0;box-sizing:border-box;}} html,body {{background:transparent;}}</style>
+<button onclick="
+    const btns = window.parent.document.querySelectorAll('button');
+    for (const b of btns) {{
+        if (b.innerText.trim() === '_procurar_{sk}_') {{ b.click(); break; }}
+    }}
+" style="width:100%;padding:9px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;
+    font-size:13px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;">
+    🔍 Buscar Páginas
+</button>
+""", height=42)
+                        with col_b2:
+                            if st.button("✕ Cancelar edição", key=f"btn_cancel_edit_{sk}", use_container_width=True):
+                                st.session_state.ads_editando_empresa = None
+                                st.session_state.ads_onboarding_empresa = None
+                                st.session_state.ads_onboarding_paginas = []
+                                st.rerun()
+                        st.markdown("</div>", unsafe_allow_html=True)
+ 
+                    # Show search results if this empresa has results
+                    if (st.session_state.ads_onboarding_empresa == ck
+                            and st.session_state.ads_onboarding_paginas is not None):
+                        _render_paginas_resultado(e, sk, ck)
+ 
+    # ── Render unconfigured companies ────────────────────────────────
+    if empresas_sem_config:
+        st.markdown(
+            "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
+            "letter-spacing:0.8px;margin:16px 0 10px 0'>⚠️ Páginas não configuradas</div>",
+            unsafe_allow_html=True,
+        )
+        for e in empresas_sem_config:
+            ck       = e["nome"]
+            sk       = safe_key(ck)
+            is_minha = e["tipo"] == "minha"
+            cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            av       = gerar_avatar(ck)
+            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+ 
+            if is_minha:
+                sugestao = emp.get("nome", "")
+            else:
+                cd = concs[e["idx"]]
+                sugestao = cd.get("nome", "")
+ 
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+body {{ padding-bottom:4px; }}
+.card {{ background:#fff; border:1.5px solid #e2e8f0; border-radius:14px; overflow:hidden; }}
+.card-header {{
+    display:flex; align-items:center; gap:14px;
+    padding:14px 18px 12px; border-bottom:1px solid #f3f4f6;
+}}
+.avatar {{
+    width:42px; height:42px; border-radius:50%; background:{cor};
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.nome {{ font-size:15px; font-weight:700; color:#111827; }}
+.badges {{ display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap; }}
+.badge {{
+    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
+    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+}}
+.badge-warn {{
+    background:#fef9c3; color:#854d0e; border:1px solid #fde68a;
+    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+}}
+.card-body {{ padding:14px 18px 16px; }}
+.search-row {{ display:flex; gap:10px; align-items:center; }}
+.search-input {{
+    flex:1; border:1.5px solid #e5e7eb; border-radius:8px;
+    padding:9px 12px; font-size:14px; color:#111827;
+    font-family:'DM Sans',sans-serif; outline:none;
+    transition:border-color 0.15s;
+}}
+.search-input:focus {{ border-color:#3a9fd6; }}
+.btn-search {{
+    background:#0780c0; color:#fff; border:none; border-radius:8px;
+    padding:9px 18px; font-size:13px; font-weight:700;
+    cursor:pointer; white-space:nowrap; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;
+}}
+.btn-search:hover {{ background:#065f9e; }}
+</style>
+<div class="card" id="card_{sk}">
+    <div class="card-header">
+        <div class="avatar">{av}</div>
+        <div>
+            <div class="nome">{ck}</div>
+            <div class="badges">
+                <span class="badge">{badge_lbl}</span>
+                <span class="badge-warn">⚠️ Não configurado</span>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:8px;font-weight:500">
+            Digite o nome da página do Facebook para encontrar e vincular os anúncios:
+        </div>
+        <div class="search-row">
+            <input id="termo_{sk}" class="search-input"
+                type="text" value="{sugestao}"
+                placeholder="Ex: {ck}" />
+            <button class="btn-search" onclick="triggerSearch('{sk}')">
+                🔍 Buscar Páginas
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+function triggerSearch(sk) {{
+    var val = document.getElementById('termo_' + sk).value;
+    try {{
+        var inputs = window.parent.document.querySelectorAll('input');
+        inputs.forEach(function(inp) {{
+            if (inp.getAttribute('aria-label') === 'termo_hidden_' + sk ||
+                (inp.placeholder && inp.placeholder.indexOf(sk) >= 0)) {{
+                var setter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype, 'value').set;
+                setter.call(inp, val);
+                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
+        }});
+    }} catch(err) {{}}
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+        if (btns[i].innerText.trim() === '_procurar_{sk}_') {{
+            btns[i].click();
+            break;
+        }}
+    }}
+}}
+function ajustarAltura() {{
+    var card = document.getElementById('card_{sk}');
+    if (!card) return;
+    var h = card.getBoundingClientRect().height;
+    window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
+        try {{ if (f.contentWindow === window) f.style.height = (h + 6) + 'px'; }} catch(e) {{}}
+    }});
+}}
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+</script>
+""", height=160, scrolling=False)
+ 
+            # Hidden termo input that JS can write to (also used directly from editing form)
+            termo_input_hidden = st.text_input(
+                f"termo_hidden_{sk}",
+                value=sugestao,
+                key=f"_termo_input_{sk}",
+                label_visibility="hidden",
+            )
+            st.markdown(f"<style>.st-key-_termo_input_{sk} {{ display:none!important; }}</style>", unsafe_allow_html=True)
+ 
+            # Show search results for this empresa if available
+            if (st.session_state.ads_onboarding_empresa == ck
+                    and st.session_state.ads_onboarding_paginas is not None):
+                _render_paginas_resultado_unconfigured(e, sk, ck)
+ 
+            st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
     if not empresas_configuradas:
         st.info("Configure pelo menos uma empresa acima para buscar anúncios.")
@@ -3610,7 +3567,9 @@ window.addEventListener('load', ajustarAltura);
         unsafe_allow_html=True,
     )
  
-    # ── MODO NORMAL: busca e exibição de ads ─────────────────────────
+    # ─────────────────────────────────────────────────────────────────
+    # MODO NORMAL: busca e exibição de ads
+    # ─────────────────────────────────────────────────────────────────
  
     query_values = {}
     for e in empresas_configuradas:
@@ -3648,8 +3607,6 @@ window.addEventListener('load', ajustarAltura);
                 query_values,
             )
  
-    # ── FILTRAR ads por page_name que corresponde ao ads_id configurado ──
-    # Only show ads from configured pages
     empresas_com_dados = [
         e for e in todas_empresas
         if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
@@ -3694,19 +3651,25 @@ window.addEventListener('load', ajustarAltura);
         ads_list_raw  = cache_entry["data"]
         ts            = cache_entry["ts"]
         query         = cache_entry.get("query", "")
-        page_id_usado = cache_entry.get("page_id_usado", "")
         fresco_aba    = cache_esta_fresco(ts)
  
-        # ── Filter ads to only show from the configured page ─────────
+        # ── Filter ads: flexible matching — includes partial matches ──
         if configured_page:
-            ads_list = [
+            # Try exact match first
+            exact = [
                 a for a in ads_list_raw
                 if (a.get("page_name") or "").strip().lower() == configured_page
-                or configured_page in (a.get("page_name") or "").strip().lower()
             ]
-            # Fallback: if no match with strict filter, show all (page name might differ slightly)
-            if not ads_list:
-                ads_list = ads_list_raw
+            if exact:
+                ads_list = exact
+            else:
+                # Fallback: partial match (page name contains configured_page or vice versa)
+                partial = [
+                    a for a in ads_list_raw
+                    if configured_page in (a.get("page_name") or "").strip().lower()
+                    or (a.get("page_name") or "").strip().lower() in configured_page
+                ]
+                ads_list = partial if partial else ads_list_raw
         else:
             ads_list = ads_list_raw
  
@@ -3727,9 +3690,10 @@ window.addEventListener('load', ajustarAltura);
         brd_ts    = "#86efac" if fresco_aba else "#fcd34d"
         ico_ts    = "✅"      if fresco_aba else "🕐"
  
+        import urllib.parse as _urlparse
         lib_url = (
             f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all"
-            f"&country=BR&q={requests.utils.quote(query)}"
+            f"&country=BR&q={_urlparse.quote(query)}"
             if query else ""
         )
  
@@ -3999,7 +3963,9 @@ function imgFallback_{uid}(img){{
                 h_copy     += 30  if body and len(body) > 200 else 0
                 h_media     = 230 if (img_primary or microlink_url) else (210 if videos else 120)
                 h_imp       = 32  if impressoes else 0
-                card_height = h_base + h_copy + h_media + h_imp + 40
+                # extra height for data_inicio (date + days active string)
+                h_data      = 24  if data_inicio else 0
+                card_height = h_base + h_copy + h_media + h_imp + h_data + 40
  
                 if page_pic and page_pic.startswith("http"):
                     page_avatar_html = (
@@ -4039,6 +4005,7 @@ body{{padding-bottom:20px;}}
 .meta-row{{display:flex;align-items:center;gap:6px;font-size:11px;color:#65676b;margin-bottom:4px;flex-wrap:wrap;}}
 .meta-row:last-child{{margin-bottom:0;}}
 .meta-label{{font-weight:700;color:#444950;flex-shrink:0;}}
+.dias-badge{{display:inline-flex;align-items:center;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:4px;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
 .plat-badge{{display:inline-flex;align-items:center;background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;}}
 .dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
