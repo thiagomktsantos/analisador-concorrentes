@@ -1601,18 +1601,16 @@ body {{
     </div>
 </div>
 <script>
-    function ajustarAltura() {{
-        const card = document.getElementById('card');
-        const h = card.getBoundingClientRect().height;
-        window.parent.document.querySelectorAll('iframe').forEach(function(iframe) {{
-            if (iframe.contentWindow === window) {{
-                iframe.style.height = (h + 4) + 'px';
-            }}
-        }});
-    }}
-    document.addEventListener('DOMContentLoaded', ajustarAltura);
-    window.addEventListener('load', ajustarAltura);
-    window.addEventListener('resize', ajustarAltura);
+function ajustarAltura() {{
+    var card = document.querySelector('.card');
+    if (!card) return;
+    var h = card.getBoundingClientRect().height;
+    window.parent.postMessage({{ type: 'resize_conc_{i}', height: h + 4 }}, '*');
+}}
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 300);
+setTimeout(ajustarAltura, 800);
 </script>
 </body>
 </html>
@@ -1903,7 +1901,7 @@ body {{ padding-bottom: 4px; }}
 </body>
 </html>"""
 
-                components.html(card_html, height=600, scrolling=False)
+                components.html(card_html, height=280, scrolling=False)
 
                 b1, b2 = st.columns(2)
                 with b1:
@@ -2183,17 +2181,11 @@ function ajustarAltura() {{
     var card = document.querySelector('.card');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(f) {{
-        try {{ 
-            if (f.contentWindow === window) {{
-                f.style.height = (h + 8) + 'px';
-            }}
-        }} catch(e) {{}}
-    }});
+    window.parent.postMessage({{ type: 'resize_sites_{idx_s}', height: h + 8 }}, '*');
 }}
 document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
+window.addEventListener('resize', ajustarAltura);
 setTimeout(ajustarAltura, 300);
 setTimeout(ajustarAltura, 800);
 </script>
@@ -3989,7 +3981,7 @@ setTimeout(ajustarAltura, 2000);
 </script>
 </body></html>"""
  
-                components.html(card_html, height=card_height, scrolling=False)
+                components.html(card_html, height=500, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
