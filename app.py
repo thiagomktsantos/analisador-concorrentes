@@ -3001,7 +3001,7 @@ elif st.session_state.pagina == "ads":
     # ── Integração com Apify ──────────────────────────────────────────
  
     def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
-    api_token = st.secrets.get("APIFY_TOKEN", "")
+        api_token = st.secrets.get("APIFY_TOKEN", "")
     if not api_token:
         return [], [], "APIFY_TOKEN não configurada nos secrets."
 
