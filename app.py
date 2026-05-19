@@ -1749,11 +1749,11 @@ html, body { background: transparent; overflow: hidden; }
                 site_clean   = limpar_site(u)
                 existing_ads_id = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
                 dados_novos = {
-                    "nome":     n,
-                    "url":      site_clean,
+                    "nome":      n,
+                    "url":       site_clean,
                     "instagram": clean_handle,
-                    "fb_page":  fb_clean,
-                    "ads_id":   existing_ads_id,
+                    "fb_page":   fb_clean,
+                    "ads_id":    existing_ads_id,
                 }
                 if st.session_state.editando_concorrente is not None:
                     st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
@@ -1767,6 +1767,13 @@ html, body { background: transparent; overflow: hidden; }
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
+        # CSS para ocultar botões Streamlit nativos
+        hide_btns_css = "\n".join([
+            f".st-key-editar_{i} button, .st-key-remove_{i} button {{ display: none !important; }}"
+            for i in range(len(concorrentes))
+        ])
+        st.markdown(f"<style>{hide_btns_css}</style>", unsafe_allow_html=True)
+
         cols = st.columns(2)
         for i, c in enumerate(concorrentes):
             with cols[i % 2]:
@@ -1790,92 +1797,183 @@ body {{ padding-bottom: 4px; }}
 .card {{
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
 }}
-.card-body {{ padding: 24px 24px 20px 24px; }}
-.header {{
-    display: flex; align-items: center; gap: 16px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid #f3f4f6;
-    margin-bottom: 18px;
+.card-header {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 16px;
 }}
 .avatar {{
-    width: 52px; height: 52px; border-radius: 50%;
+    width: 44px; height: 44px;
+    border-radius: 50%;
     background: {cor_avatar};
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
+    font-size: 16px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
 }}
-.name {{ font-size: 17px; font-weight: 700; color: #111827; flex: 1; letter-spacing: -0.3px; }}
-.row {{ display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }}
-.row:last-child {{ margin-bottom: 0; }}
-.ico {{
-    width: 38px; height: 38px; border-radius: 10px;
+.name {{
+    font-size: 16px; font-weight: 700; color: #111827;
+}}
+.divider {{
+    height: 1px; background: #f3f4f6; margin: 0 20px;
+}}
+.card-body {{
+    padding: 14px 20px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+}}
+.row {{
+    display: flex; align-items: center; gap: 12px;
+}}
+.icon-wrap {{
+    width: 34px; height: 34px;
+    border-radius: 8px;
     background: #f3f4f6;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }}
-.ico svg {{ width: 20px; height: 20px; }}
-.info {{ flex: 1; min-width: 0; }}
-.lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 1px; font-weight: 500; }}
-.val {{ font-size: 14px; color: #111827; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }}
+.row-info {{
+    display: flex; flex-direction: column; gap: 1px;
+    min-width: 0; flex: 1;
+}}
+.row-label {{
+    font-size: 11px; color: #9ca3af;
+}}
+.row-value {{
+    font-size: 13px; color: #111827; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}}
+.card-footer {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #f3f4f6;
+}}
+.footer-btn {{
+    padding: 11px 0;
+    text-align: center;
+    font-size: 13px; font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.12s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}}
+.footer-btn:hover {{
+    background: #f9fafb;
+    color: #111827;
+}}
+.footer-btn.danger {{
+    color: #dc2626;
+    border-left: 1px solid #f3f4f6;
+}}
+.footer-btn.danger:hover {{
+    background: #fef2f2;
+}}
 </style>
 </head>
 <body>
 <div class="card" id="card_{uid}">
-  <div class="card-body">
-    <div class="header">
-      <div class="avatar">{avatar}</div>
-      <div class="name">{c['nome']}</div>
+    <div class="card-header">
+        <div class="avatar">{avatar}</div>
+        <div class="name">{c['nome']}</div>
     </div>
-    <div class="row">
-      <div class="ico">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="2" y1="12" x2="22" y2="12"/>
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-        </svg>
-      </div>
-      <div class="info">
-        <span class="lbl">Site</span>
-        <span class="val">{c['url'] or '—'}</span>
-      </div>
+    <div class="divider"></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280"
+                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10
+                             15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+            </div>
+            <div class="row-info">
+                <span class="row-label">Site</span>
+                <span class="row-value">{c['url'] or '—'}</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="icon-wrap" style="background:#fff0f6;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="ig_{uid}" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%"   stop-color="#f09433"/>
+                            <stop offset="25%"  stop-color="#e6683c"/>
+                            <stop offset="50%"  stop-color="#dc2743"/>
+                            <stop offset="75%"  stop-color="#cc2366"/>
+                            <stop offset="100%" stop-color="#bc1888"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_{uid})"/>
+                    <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                    <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+                </svg>
+            </div>
+            <div class="row-info">
+                <span class="row-label">Instagram</span>
+                <span class="row-value">{c['instagram'] or '—'}</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="icon-wrap" style="background:#e8f0fe;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
+                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073
+                             C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047
+                             V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236
+                             2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268
+                             h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                </svg>
+            </div>
+            <div class="row-info">
+                <span class="row-label">Facebook</span>
+                <span class="row-value">{c['fb_page'] or '—'}</span>
+            </div>
+        </div>
     </div>
-    <div class="row">
-      <div class="ico" style="background:#fff0f6;">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ig_{uid}" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#f09433"/>
-              <stop offset="25%" stop-color="#e6683c"/>
-              <stop offset="50%" stop-color="#dc2743"/>
-              <stop offset="75%" stop-color="#cc2366"/>
-              <stop offset="100%" stop-color="#bc1888"/>
-            </linearGradient>
-          </defs>
-          <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_{uid})"/>
-          <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-          <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-        </svg>
-      </div>
-      <div class="info">
-        <span class="lbl">Instagram</span>
-        <span class="val">{c['instagram'] or '—'}</span>
-      </div>
+    <div class="card-footer">
+        <button class="footer-btn" onclick="acionar('editar_{i}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Editar
+        </button>
+        <button class="footer-btn danger" onclick="acionar('remove_{i}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+            Remover
+        </button>
     </div>
-    <div class="row">
-      <div class="ico" style="background:#e8f0fe;">
-        <svg viewBox="0 0 24 24" fill="#1877F2">
-          <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-        </svg>
-      </div>
-      <div class="info">
-        <span class="lbl">Facebook</span>
-        <span class="val">{c['fb_page'] or '—'}</span>
-      </div>
-    </div>
-  </div>
 </div>
 <script>
+function acionar(key) {{
+    var selector = '[data-testid="stButton"] button, button';
+    var btns = window.parent.document.querySelectorAll(selector);
+    var keyMap = {{
+        'editar_{i}':  'Editar Concorrente',
+        'remove_{i}':  'Remover Concorrente',
+    }};
+    var label = keyMap[key];
+    var found = [];
+    btns.forEach(function(b) {{
+        if (b.innerText.trim() === label) found.push(b);
+    }});
+    if (found[{i}]) {{ found[{i}].click(); return; }}
+    if (found[0])   {{ found[0].click(); }}
+}}
+
 function ajustarAltura() {{
     var card = document.getElementById('card_{uid}');
     if (!card) return;
@@ -1900,6 +1998,7 @@ setTimeout(ajustarAltura, 400);
 
                 components.html(card_html, height=260, scrolling=False)
 
+                # Botões Streamlit ocultos (acionados pelo card via JS)
                 b1, b2 = st.columns(2)
                 with b1:
                     if st.button("Editar Concorrente", key=f"editar_{i}", use_container_width=True):
