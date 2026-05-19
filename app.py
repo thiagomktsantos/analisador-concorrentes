@@ -2179,19 +2179,19 @@ function triggerAnalise(idx) {{
         }}
     }}
 }}
-function ajustarAltura() {
+function ajustarAltura() {{
     var card = document.querySelector('.card');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
     var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(f) {
-        try { 
-            if (f.contentWindow === window) {
+    iframes.forEach(function(f) {{
+        try {{ 
+            if (f.contentWindow === window) {{
                 f.style.height = (h + 8) + 'px';
-            }
-        } catch(e) {}
-    });
-}
+            }}
+        }} catch(e) {{}}
+    }});
+}}
 document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
 setTimeout(ajustarAltura, 300);
