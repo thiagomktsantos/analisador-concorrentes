@@ -1903,7 +1903,7 @@ body {{ padding-bottom: 4px; }}
 </body>
 </html>"""
 
-                components.html(card_html, height=360, scrolling=False)
+                components.html(card_html, height=400, scrolling=False)
 
                 b1, b2 = st.columns(2)
                 with b1:
