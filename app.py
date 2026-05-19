@@ -3295,6 +3295,31 @@ html, body { background:transparent; overflow:hidden; }
             with cfg_cols[ci % 2]:
                 avatar_html = _avatar_html_empresa(e, size=42)
 
+                st.markdown(f"""
+                <style>
+                .st-key-btn_editar_cfg_{sk} > div > button {{
+                    background: #ffffff !important;
+                    border: none !important;
+                    border-top: 1px solid #f3f4f6 !important;
+                    border-radius: 0 !important;
+                    color: #6b7280 !important;
+                    font-size: 15px !important;
+                    font-weight: 600 !important;
+                    padding: 11px 0 !important;
+                    margin-top: 0 !important;
+                    box-shadow: none !important;
+                }}
+                .st-key-btn_editar_cfg_{sk} > div > button:hover {{
+                    background: #f9fafb !important;
+                    color: #111827 !important;
+                }}
+                .st-key-btn_editar_cfg_{sk} {{
+                    margin-top: 0 !important;
+                    padding: 0 !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+
                 components.html(f"""
 <!DOCTYPE html>
 <html>
@@ -3306,28 +3331,81 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif;
               -webkit-font-smoothing:antialiased; overflow:hidden; }}
 body {{ padding-bottom:4px; }}
 .card {{
-    background:#ffffff; border:1px solid #e5e7eb; border-radius:14px 14px 0 0;
-    padding:14px 18px; display:flex; align-items:center; gap:12px; min-height:72px;
+    background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;
+    overflow:hidden;
+}}
+.card-header {{
+    display:flex; align-items:center; gap:12px;
+    padding:18px 20px 16px;
 }}
 .info {{ flex:1; min-width:0; }}
-.nome {{ font-size:15px; font-weight:700; color:#111827;
-         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.nome {{ font-size:16px; font-weight:700; color:#111827; }}
 .badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }}
-.badge {{ padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block; }}
+.badge {{ padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block; }}
+.card-footer {{
+    display:grid; grid-template-columns:1fr;
+    border-top:1px solid #f3f4f6;
+}}
+.footer-btn {{
+    padding:11px 0; text-align:center;
+    font-size:15px; font-weight:600; color:#6b7280;
+    cursor:pointer; background:transparent; border:none;
+    font-family:'DM Sans',sans-serif; transition:background 0.12s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+}}
+.footer-btn:hover {{ background:#f9fafb; color:#111827; }}
 </style>
 </head>
 <body>
 <div class="card">
-    {avatar_html}
-    <div class="info">
-        <div class="nome">{ck}</div>
-        <div class="badges">
-            <span class="badge" style="background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd}">{badge_lbl}</span>
-            <span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac">✅ {ads_id_atual}</span>
+    <div class="card-header">
+        {avatar_html}
+        <div class="info">
+            <div class="nome">{ck}</div>
+            <div class="badges">
+                <span class="badge" style="background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd}">{badge_lbl}</span>
+                <span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac">✅ {ads_id_atual}</span>
+            </div>
         </div>
+    </div>
+    <div class="card-footer">
+        <button class="footer-btn" onclick="acionar()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Editar
+        </button>
     </div>
 </div>
 <script>
+function acionar() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    var myIndex = -1;
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{ myIndex = i; break; }}
+        }} catch(e) {{}}
+    }}
+    var btns = window.parent.document.querySelectorAll(
+        '[data-testid="stButton"] button, button[kind]'
+    );
+    var target = 'editar_cfg_{sk}';
+    for (var j = 0; j < btns.length; j++) {{
+        var key = btns[j].closest('[data-testid]');
+        if (key && key.className && key.className.indexOf(target) >= 0) {{
+            btns[j].click(); return;
+        }}
+    }}
+    // fallback: procura pelo texto
+    var allBtns = window.parent.document.querySelectorAll('button');
+    for (var k = 0; k < allBtns.length; k++) {{
+        if (allBtns[k].innerText.trim() === '✏️ Editar_{sk}') {{
+            allBtns[k].click(); return;
+        }}
+    }}
+}}
 function ajustar() {{
     var h = document.body.scrollHeight;
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -3341,89 +3419,71 @@ function ajustar() {{
 }}
 document.addEventListener('DOMContentLoaded', ajustar);
 window.addEventListener('load', ajustar);
-setTimeout(ajustar, 100);
+setTimeout(ajustar, 100); setTimeout(ajustar, 400);
 </script>
 </body>
 </html>
-                """, height=82, scrolling=False)
+                """, height=130, scrolling=False)
 
+                # Ghost button oculto que o JS aciona
                 st.markdown(f"""
                 <style>
-                .st-key-btn_editar_cfg_{sk} > div > button {{
-                    background: #f9fafb !important;
-                    border: 1px solid #e5e7eb !important;
-                    border-top: none !important;
-                    border-radius: 0 0 14px 14px !important;
-                    color: #374151 !important;
-                    font-size: 13px !important;
-                    font-weight: 700 !important;
-                    width: 100% !important;
-                    padding: 10px !important;
-                    margin-top: 0 !important;
-                }}
-                .st-key-btn_editar_cfg_{sk} > div > button:hover {{
-                    background: #f3f4f6 !important;
-                    color: #111827 !important;
-                }}
-                .st-key-btn_editar_cfg_{sk} {{
-                    margin-top: -12px !important;
+                .st-key-ghost_editar_{sk} {{
+                    position:fixed !important; top:-9999px !important;
+                    left:-9999px !important; width:1px !important;
+                    height:1px !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important;
+                    visibility:hidden !important;
                 }}
                 </style>
                 """, unsafe_allow_html=True)
 
-                if st.button(
-                    "✏️ Editar página",
-                    key=f"btn_editar_cfg_{sk}",
-                    use_container_width=True,
-                ):
+                if st.button(f"✏️ Editar_{sk}", key=f"ghost_editar_{sk}"):
                     st.session_state.ads_editando_empresa = ck
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.rerun()
 
+                # Form de edição no padrão do site
                 if is_editing:
-                    st.markdown(
-                        "<div style='background:#fffbeb;border:1px solid #fcd34d;"
-                        "border-radius:10px;padding:16px 18px;margin-top:8px'>",
-                        unsafe_allow_html=True,
-                    )
-                    st.markdown(
-                        "<div style='font-size:12px;color:#92400e;font-weight:700;margin-bottom:10px'>"
-                        "🔍 Buscar nova página ou informar ID numérico / nome</div>",
-                        unsafe_allow_html=True,
-                    )
-                    termo_edit = st.text_input(
-                        "Nome ou ID numérico da página",
-                        value=ads_id_atual,
-                        placeholder="Ex: Kedu Educação  ou  106563541907639",
-                        key=f"_termo_edit_{sk}",
-                    )
-                    col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
-                    with col_b1:
-                        if st.button("🔍 Buscar Páginas", key=f"btn_buscar_edit_{sk}", use_container_width=True):
-                            if termo_edit.strip():
-                                st.session_state.ads_onboarding_empresa = ck
-                                st.session_state.ads_onboarding_termo   = termo_edit.strip()
-                                with st.spinner(f"Buscando páginas para «{termo_edit.strip()}»…"):
-                                    paginas = buscar_paginas_facebook(termo_edit.strip())
-                                st.session_state.ads_onboarding_paginas = paginas
-                                st.rerun()
-                    with col_b2:
-                        if st.button("💾 Salvar direto", key=f"btn_save_direct_{sk}", use_container_width=True):
-                            if termo_edit.strip():
-                                salvar_ads_id(e, termo_edit.strip())
+                    with st.container(border=True):
+                        st.markdown(
+                            "<div style='font-size:11px;font-weight:700;color:#9ca3af;"
+                            "text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>"
+                            "Editar Página</div>",
+                            unsafe_allow_html=True,
+                        )
+                        termo_edit = st.text_input(
+                            "Nome ou ID numérico da página",
+                            value=ads_id_atual,
+                            placeholder="Ex: Kedu Educação  ou  106563541907639",
+                            key=f"_termo_edit_{sk}",
+                        )
+                        col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
+                        with col_b1:
+                            if st.button("🔍 Buscar Páginas", key=f"btn_buscar_edit_{sk}", use_container_width=True):
+                                if termo_edit.strip():
+                                    st.session_state.ads_onboarding_empresa = ck
+                                    st.session_state.ads_onboarding_termo   = termo_edit.strip()
+                                    with st.spinner(f"Buscando «{termo_edit.strip()}»…"):
+                                        paginas = buscar_paginas_facebook(termo_edit.strip())
+                                    st.session_state.ads_onboarding_paginas = paginas
+                                    st.rerun()
+                        with col_b2:
+                            if st.button("💾 Salvar direto", key=f"btn_save_direct_{sk}", use_container_width=True):
+                                if termo_edit.strip():
+                                    salvar_ads_id(e, termo_edit.strip())
+                                    st.session_state.ads_editando_empresa = None
+                                    st.session_state.ads_onboarding_empresa = None
+                                    st.session_state.ads_onboarding_paginas = []
+                                    st.toast(f"✅ Salvo: {termo_edit.strip()}", icon="✅")
+                                    st.rerun()
+                        with col_b3:
+                            if st.button("✕ Cancelar", key=f"btn_cancel_edit_{sk}", use_container_width=True):
                                 st.session_state.ads_editando_empresa = None
                                 st.session_state.ads_onboarding_empresa = None
                                 st.session_state.ads_onboarding_paginas = []
-                                st.toast(f"✅ Salvo: {termo_edit.strip()}", icon="✅")
                                 st.rerun()
-                    with col_b3:
-                        if st.button("✕", key=f"btn_cancel_edit_{sk}", use_container_width=True):
-                            st.session_state.ads_editando_empresa = None
-                            st.session_state.ads_onboarding_empresa = None
-                            st.session_state.ads_onboarding_paginas = []
-                            st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
 
                     if (st.session_state.ads_onboarding_empresa == ck
                             and st.session_state.ads_onboarding_paginas is not None):
