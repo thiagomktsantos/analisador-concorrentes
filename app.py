@@ -2508,18 +2508,18 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
  
 elif st.session_state.pagina == "ads":
- 
+
     import datetime as _dt
     import json as _json
     import base64 as _b64
     import time as _time
- 
+
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
- 
+
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
- 
+
     def salvar_cache_ads(dados: dict):
         try:
             supabase.table("ci_dados").upsert(
@@ -2528,7 +2528,7 @@ elif st.session_state.pagina == "ads":
             ).execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
- 
+
     def carregar_cache_ads() -> dict:
         try:
             res = (
@@ -2542,7 +2542,7 @@ elif st.session_state.pagina == "ads":
         except Exception:
             pass
         return {}
- 
+
     def cache_esta_fresco(ts_str: str) -> bool:
         if not ts_str:
             return False
@@ -2551,7 +2551,7 @@ elif st.session_state.pagina == "ads":
             return (_dt.datetime.now() - ts).total_seconds() < CACHE_TTL_HORAS * 3600
         except Exception:
             return False
- 
+
     def _url_para_base64(url: str) -> str:
         if not url or not url.startswith("http"):
             return ""
@@ -2570,14 +2570,14 @@ elif st.session_state.pagina == "ads":
             return f"data:{ct};base64,{data}"
         except Exception:
             return ""
- 
+
     def _microlink_screenshot(snap_url: str) -> str:
         if not snap_url:
             return ""
         import urllib.parse
         encoded = urllib.parse.quote(snap_url, safe="")
         return f"https://api.microlink.io/?url={encoded}&screenshot=true&meta=false&embed=screenshot.url"
- 
+
     def _extract_video_thumbnail(ad: dict) -> str:
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -2593,35 +2593,60 @@ elif st.session_state.pagina == "ads":
                 if v and v.startswith("http"):
                     return v
         return ""
- 
+
     def _truncar(txt, n=160):
         if not txt:
             return ""
         txt = str(txt).strip()
         return txt[:n] + "…" if len(txt) > n else txt
- 
+
     def _is_dynamic(txt):
         if not txt:
             return False
         return bool(re.search(r'\{\{[^}]+\}\}', txt))
- 
+
     def _clean_dynamic(txt):
         if not txt:
             return ""
         cleaned = re.sub(r'\{\{[^}]+\}\}', '', txt).strip()
         lines = [l.strip() for l in cleaned.split('\n') if l.strip()]
         return ' '.join(lines)
- 
+
     def _plat_icons(plats):
-        mapa = {
-            "facebook":         "Facebook",
-            "instagram":        "Instagram",
-            "messenger":        "Messenger",
-            "audience_network": "Audience Network",
-            "whatsapp":         "WhatsApp",
-        }
-        return [mapa.get(p.lower(), p.capitalize()) for p in (plats or [])]
- 
+        return [p.lower() for p in (plats or [])]
+
+    # ── NOVA função de data/dias ──────────────────────────────────────
+    def _dias_ativo(start_raw: str) -> str:
+        """
+        Retorna string: "Veiculação iniciada: 9 de abr de 2026 (42 dias ativo)"
+        Aceita Unix timestamp (int/str) ou string ISO YYYY-MM-DD
+        """
+        if not start_raw:
+            return ""
+        meses = ['jan','fev','mar','abr','mai','jun',
+                 'jul','ago','set','out','nov','dez']
+        # Tenta Unix timestamp
+        try:
+            ts_int = int(str(start_raw).strip())
+            if ts_int > 10**9:           # plausível como timestamp Unix
+                dto = _dt.datetime.utcfromtimestamp(ts_int)
+            else:
+                raise ValueError
+        except (ValueError, OSError):
+            try:
+                dto = _dt.datetime.strptime(str(start_raw)[:10], "%Y-%m-%d")
+            except Exception:
+                return str(start_raw)[:10]
+        data_fmt = f"{dto.day} de {meses[dto.month-1]} de {dto.year}"
+        dias = (_dt.datetime.now() - dto).days
+        if dias == 0:
+            dias_str = "hoje"
+        elif dias == 1:
+            dias_str = "1 dia ativo"
+        else:
+            dias_str = f"{dias} dias ativo"
+        return f"Veiculação iniciada: {data_fmt} ({dias_str})"
+
     def _extract_images(ad: dict) -> list:
         imgs = []
         seen = set()
@@ -2638,8 +2663,7 @@ elif st.session_state.pagina == "ads":
                   "thumbnail_url","background_image"):
             add(snapshot.get(k))
         for card in cards:
-            if not isinstance(card, dict):
-                continue
+            if not isinstance(card, dict): continue
             for k in ("original_image_url","image_url","resized_image_url",
                       "thumbnail_url","picture"):
                 add(card.get(k))
@@ -2647,16 +2671,14 @@ elif st.session_state.pagina == "ads":
             if isinstance(obj, dict):
                 for k in ("original_image_url","image_url","url"):
                     add(obj.get(k))
-            elif isinstance(obj, str):
-                add(obj)
+            elif isinstance(obj, str): add(obj)
         for obj in (ad.get("images") or []):
             if isinstance(obj, dict):
                 for k in ("original_image_url","image_url","url","src"):
                     add(obj.get(k))
-            elif isinstance(obj, str):
-                add(obj)
+            elif isinstance(obj, str): add(obj)
         return imgs
- 
+
     def _extract_copy(ad: dict) -> dict:
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -2689,14 +2711,12 @@ elif st.session_state.pagina == "ads":
         if not body and cards:
             for card in cards:
                 if isinstance(card, dict):
-                    v = first_str(
-                        card.get("body") or card.get("message") or card.get("title") or ""
-                    )
+                    v = first_str(card.get("body") or card.get("message") or card.get("title") or "")
                     if v:
                         body = v
                         break
         return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
- 
+
     def _extract_videos(ad: dict) -> list:
         vids = []
         seen = set()
@@ -2713,31 +2733,11 @@ elif st.session_state.pagina == "ads":
                 for k in ("video_hd_url","video_sd_url","video_url"):
                     add(card.get(k))
         return vids
- 
-    def _dias_ativo(start_raw: str) -> str:
-        """Retorna string com data formatada + dias ativo."""
-        if not start_raw or len(start_raw) < 10:
-            return ""
-        try:
-            dto = _dt.datetime.strptime(start_raw[:10], "%Y-%m-%d")
-            meses = ['jan','fev','mar','abr','mai','jun',
-                     'jul','ago','set','out','nov','dez']
-            data_fmt = f"{dto.day} de {meses[dto.month-1]} de {dto.year}"
-            dias = (_dt.datetime.now() - dto).days
-            if dias == 0:
-                dias_str = "hoje"
-            elif dias == 1:
-                dias_str = "1 dia ativo"
-            else:
-                dias_str = f"{dias} dias ativo"
-            return f"{data_fmt} · {dias_str}"
-        except Exception:
-            return start_raw[:10]
- 
+
     def _normalizar_item_apify(item: dict) -> dict:
         snapshot = item.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
- 
+
         ad_id   = str(item.get("adArchiveID") or item.get("ad_archive_id") or item.get("id") or "")
         page_id = str(item.get("pageID") or item.get("page_id") or "")
         page_name = (item.get("pageName") or item.get("page_name") or snapshot.get("page_name") or "")
@@ -2747,64 +2747,69 @@ elif st.session_state.pagina == "ads":
             or snapshot.get("page_profile_picture_url")
             or ""
         )
- 
+
         images = _extract_images(item)
         videos = _extract_videos(item)
         copy = _extract_copy(item)
- 
+
         plats = (item.get("publisherPlatform")
                  or item.get("publisher_platforms")
                  or snapshot.get("publisher_platforms")
                  or [])
-        if isinstance(plats, str):
-            plats = [plats]
-        if not plats:
-            plats = ["facebook", "instagram"]
- 
+        if isinstance(plats, str): plats = [plats]
+        if not plats: plats = ["facebook", "instagram"]
+
         has_video   = bool(videos) or (item.get("mediaType") or item.get("media_type") or "").upper() == "VIDEO"
         has_cards   = len(cards) > 1
         if has_video:   fmt = "Vídeo 🎬"
         elif has_cards: fmt = "Carrossel 🎠"
         elif images:    fmt = "Imagem 🖼️"
         else:           fmt = "Texto 📝"
- 
-        is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"])
-                   or _is_dynamic(copy["desc"]))
+
+        is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"]) or _is_dynamic(copy["desc"]))
         body_c  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
         title_c = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
         desc_c  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
- 
+
         imp = item.get("impressionsWithIndex") or item.get("impressions") or {}
         if isinstance(imp, dict):
-            lo, hi  = imp.get("lowerBound") or imp.get("lower_bound") or "", \
-                      imp.get("upperBound") or imp.get("upper_bound") or ""
+            lo = imp.get("lowerBound") or imp.get("lower_bound") or ""
+            hi = imp.get("upperBound") or imp.get("upper_bound") or ""
             imp_str = f"{lo}–{hi}" if (lo or hi) else ""
         else:
             imp_str = str(imp) if imp else ""
- 
-        # start_date — tenta múltiplos campos
-        start_raw = str(
+
+        # Baixo volume de impressões
+        baixo_volume = bool(
+            item.get("isLowVolumeImpressions")
+            or item.get("low_volume")
+            or item.get("low_volume_impressions")
+            or (isinstance(imp, dict) and imp.get("lowerBound") == "<100")
+            or imp_str == "<100"
+        )
+
+        # start_date — tenta múltiplos campos incluindo Unix timestamp
+        start_raw = (
             item.get("startDate")
             or item.get("ad_delivery_start_time")
             or item.get("start_date")
             or ""
-        )[:10]
- 
-        start_fmt = _dias_ativo(start_raw)
- 
+        )
+        start_fmt = _dias_ativo(str(start_raw)) if start_raw else ""
+
         snap_url = (item.get("adSnapshotURL")
                     or item.get("ad_snapshot_url")
                     or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""))
- 
+
         images_b64 = []
         if images:
             b64 = _url_para_base64(images[0])
             images_b64.append(b64 if b64 else images[0])
             images_b64.extend(images[1:3])
- 
+
         video_thumb_url = _extract_video_thumbnail(item) if has_video else ""
         video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
- 
+
         return {
             "id":                  ad_id,
             "page_name":           page_name,
@@ -2822,31 +2827,45 @@ elif st.session_state.pagina == "ads":
             "video_thumb":         video_thumb_b64 or video_thumb_url,
             "snapshot_url":        snap_url,
             "data_inicio":         start_fmt,
-            "data_raw":            start_raw,
+            "data_raw":            str(start_raw),
             "impressoes":          imp_str,
+            "baixo_volume":        baixo_volume,
             "plataformas":         plats,
             "formato":             fmt,
             "is_dynamic":          is_dyn,
         }
- 
+
     def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
         api_token = st.secrets.get("APIFY_TOKEN", "")
         if not api_token:
             return [], [], "APIFY_TOKEN não configurada nos secrets."
- 
+
         run_url = (
             f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
             f"?token={api_token}"
         )
- 
+
         import urllib.parse
-        query_encoded = urllib.parse.quote(search_term.strip())
-        ad_library_url = (
-            f"https://www.facebook.com/ads/library/"
-            f"?active_status=all&ad_type=all&country=BR"
-            f"&q={query_encoded}&search_type=keyword_unordered&media_type=all"
-        )
- 
+        search_term_stripped = search_term.strip()
+
+        # Se for ID numérico → URL de página (busca exata por page_id)
+        if search_term_stripped.isdigit():
+            ad_library_url = (
+                f"https://www.facebook.com/ads/library/"
+                f"?active_status=active&ad_type=all&country=BR"
+                f"&is_targeted_country=false&media_type=all"
+                f"&search_type=page&sort_data[direction]=desc"
+                f"&sort_data[mode]=total_impressions"
+                f"&view_all_page_id={search_term_stripped}"
+            )
+        else:
+            query_encoded = urllib.parse.quote(search_term_stripped)
+            ad_library_url = (
+                f"https://www.facebook.com/ads/library/"
+                f"?active_status=all&ad_type=all&country=BR"
+                f"&q={query_encoded}&search_type=keyword_unordered&media_type=all"
+            )
+
         payload = {
             "urls": [{"url": ad_library_url}],
             "count": limit,
@@ -2855,20 +2874,20 @@ elif st.session_state.pagina == "ads":
             "scrapePageAds.countryCode": "BR",
             "scrapePageAds.sortBy": "impressions_desc",
         }
- 
+
         try:
             r_start = requests.post(run_url, json=payload, timeout=30)
             r_start.raise_for_status()
             run_data = r_start.json()
         except Exception as e:
             return [], [], f"Erro ao iniciar run Apify: {e}"
- 
+
         run_id     = run_data.get("data", {}).get("id") or run_data.get("id")
         dataset_id = run_data.get("data", {}).get("defaultDatasetId") or run_data.get("defaultDatasetId")
- 
+
         if not run_id:
             return [], [], f"Apify não retornou run ID. Resposta: {run_data}"
- 
+
         status_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={api_token}"
         deadline   = _time.time() + 180
         status     = "RUNNING"
@@ -2884,13 +2903,13 @@ elif st.session_state.pagina == "ads":
             if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
                 break
             _time.sleep(5)
- 
+
         if status != "SUCCEEDED":
             return [], [], f"Run Apify terminou com status: {status}"
- 
+
         if not dataset_id:
             return [], [], "Apify não retornou dataset ID."
- 
+
         items_url = (
             f"https://api.apify.com/v2/datasets/{dataset_id}/items"
             f"?token={api_token}&limit={limit}&clean=true"
@@ -2901,23 +2920,22 @@ elif st.session_state.pagina == "ads":
             raw_items = r_items.json()
         except Exception as e:
             return [], [], f"Erro ao ler dataset Apify: {e}"
- 
+
         if not isinstance(raw_items, list):
             raw_items = raw_items.get("items", []) if isinstance(raw_items, dict) else []
- 
+
         if not raw_items:
             return [], [], None
- 
+
         ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
         return ads_normalizados, raw_items[:3], None
- 
+
     def buscar_ads_apify(query: str, limit: int = 30) -> tuple:
         return _apify_run_sync(query.strip(), limit=limit)
- 
+
     def executar_busca(empresas: list, query_values: dict):
         erros  = {}
         novos  = {}
-        debugs = {}
         with st.status("Buscando anúncios...", expanded=True) as status:
             for e in empresas:
                 ck    = e["nome"]
@@ -2926,47 +2944,50 @@ elif st.session_state.pagina == "ads":
                     continue
                 st.write(f"Buscando **{ck}** ({query})...")
                 ads, raw, erro = buscar_ads_apify(query)
-                debugs[ck] = raw
                 if erro:
                     erros[ck] = erro
                     st.write(f"❌ {erro}")
                 else:
                     novos[ck] = {
-                        "data":          ads,
-                        "ts":            _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "nome":          ck,
-                        "query":         query,
-                        "page_id_usado": query,
+                        "data":  ads,
+                        "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "nome":  ck,
+                        "query": query,
                     }
                     st.write(f"✅ {len(ads)} anúncios encontrados")
             status.update(label="✅ Busca concluída!", state="complete")
- 
+
         cache_atual = dict(st.session_state.ads_cache or {})
         cache_atual.update(novos)
-        st.session_state.ads_cache     = cache_atual
-        st.session_state.ads_erro      = erros
-        st.session_state.ads_raw_debug = debugs
+        st.session_state.ads_cache = cache_atual
+        st.session_state.ads_erro  = erros
         salvar_cache_ads(cache_atual)
         st.rerun()
- 
+
+    # ── Session state ─────────────────────────────────────────────────
     if "ads_cache" not in st.session_state:
         st.session_state.ads_cache = carregar_cache_ads()
     if "ads_erro" not in st.session_state:
         st.session_state.ads_erro = {}
-    if "ads_raw_debug" not in st.session_state:
-        st.session_state.ads_raw_debug = {}
- 
+    if "ads_onboarding_empresa" not in st.session_state:
+        st.session_state.ads_onboarding_empresa = None
+    if "ads_onboarding_paginas" not in st.session_state:
+        st.session_state.ads_onboarding_paginas = []
+    if "ads_onboarding_termo" not in st.session_state:
+        st.session_state.ads_onboarding_termo = ""
+    if "ads_editando_empresa" not in st.session_state:
+        st.session_state.ads_editando_empresa = None
+
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
- 
-    # ── Lista TODAS as empresas (minha empresa + concorrentes) ────────
+
     todas_empresas = []
     if emp.get("nome"):
         todas_empresas.append({"nome": emp["nome"], "tipo": "minha", "idx": 0})
     for i, c in enumerate(concs):
         if c.get("nome"):
             todas_empresas.append({"nome": c["nome"], "tipo": "concorrente", "idx": i})
- 
+
     for e in todas_empresas:
         sk    = safe_key(e["nome"])
         chave = f"_query_saved_{sk}"
@@ -2976,30 +2997,21 @@ elif st.session_state.pagina == "ads":
                 st.session_state[chave] = cached_entry["query"]
             else:
                 st.session_state[chave] = e["nome"]
- 
-    # ── helpers de ads_id ─────────────────────────────────────────────
- 
+
     def empresa_tem_ads_id(e: dict) -> bool:
         if e["tipo"] == "minha":
             return bool(emp.get("ads_id", "").strip())
         else:
             cd = concs[e["idx"]]
             return bool(cd.get("ads_id", "").strip())
- 
+
     def salvar_ads_id(e: dict, ads_id: str):
         if e["tipo"] == "minha":
             st.session_state.dados["minha_empresa"]["ads_id"] = ads_id
         else:
             st.session_state.dados["concorrentes"][e["idx"]]["ads_id"] = ads_id
         salvar_dados_usuario(st.session_state.user.id)
- 
-    def limpar_ads_id(e: dict):
-        if e["tipo"] == "minha":
-            st.session_state.dados["minha_empresa"]["ads_id"] = ""
-        else:
-            st.session_state.dados["concorrentes"][e["idx"]]["ads_id"] = ""
-        salvar_dados_usuario(st.session_state.user.id)
- 
+
     def buscar_paginas_facebook(termo: str) -> list:
         ads, _, erro = _apify_run_sync(termo, limit=20)
         if erro or not ads:
@@ -3016,22 +3028,8 @@ elif st.session_state.pagina == "ads":
                 if not paginas[nome]["profile_picture"] and pic:
                     paginas[nome]["profile_picture"] = pic
         return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
- 
-    # ── Session state para onboarding / edição ────────────────────────
-    if "ads_onboarding_empresa" not in st.session_state:
-        st.session_state.ads_onboarding_empresa = None
-    if "ads_onboarding_paginas" not in st.session_state:
-        st.session_state.ads_onboarding_paginas = []
-    if "ads_onboarding_termo" not in st.session_state:
-        st.session_state.ads_onboarding_termo = ""
-    if "ads_editando_empresa" not in st.session_state:
-        st.session_state.ads_editando_empresa = None
- 
-    empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
-    empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
- 
-    # ── CABEÇALHO DA PÁGINA ──────────────────────────────────────────
- 
+
+    # ── Cabeçalho da página ──────────────────────────────────────────
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3047,55 +3045,53 @@ html, body { background:transparent; overflow:hidden; }
 <div class="titulo">Biblioteca de Ads</div>
 <div class="sub">Criativos, copies e formatos dos anúncios dos seus concorrentes.</div>
 """, height=65)
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
- 
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 16px 0'/>", unsafe_allow_html=True)
+
+    # ── Badge de cache (logo após o cabeçalho) ───────────────────────
+    if st.session_state.ads_cache:
+        tss_all = [v.get("ts","") for v in st.session_state.ads_cache.values() if v.get("ts")]
+        if tss_all:
+            ts_antigo = min(tss_all)
+            fresco_glob = cache_esta_fresco(ts_antigo)
+            cor_b  = "#f0fdf4" if fresco_glob else "#fffbeb"
+            brd_b  = "#86efac" if fresco_glob else "#fcd34d"
+            txt_b  = "#15803d" if fresco_glob else "#92400e"
+            ico_b  = "✅"      if fresco_glob else "🕐"
+            n_emp  = len(st.session_state.ads_cache)
+            msg_b  = (
+                f"Cache atualizado em {ts_antigo}" if fresco_glob
+                else f"Cache de {ts_antigo} — considere atualizar"
+            )
+            st.markdown(
+                f"<div style='display:flex;align-items:center;gap:10px;padding:10px 16px;"
+                f"background:{cor_b};border:1px solid {brd_b};border-radius:8px;margin-bottom:16px;"
+                f"font-size:13px;color:{txt_b};font-weight:600'>"
+                f"{ico_b} {msg_b} &nbsp;·&nbsp; {n_emp} empresa(s) em cache</div>",
+                unsafe_allow_html=True,
+            )
+
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
         st.stop()
- 
+
     if not st.secrets.get("APIFY_TOKEN", ""):
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
- 
-    empresas_com_cache = [e for e in todas_empresas if e["nome"] in st.session_state.ads_cache]
-    if empresas_com_cache:
-        tss         = [st.session_state.ads_cache[e["nome"]].get("ts", "") for e in empresas_com_cache]
-        ts_antigo   = min(tss, key=lambda t: t or "")
-        fresco_glob = cache_esta_fresco(ts_antigo)
-        cor_b  = "#f0fdf4" if fresco_glob else "#fffbeb"
-        brd_b  = "#86efac" if fresco_glob else "#fcd34d"
-        txt_b  = "#15803d" if fresco_glob else "#92400e"
-        ico_b  = "✅"      if fresco_glob else "🕐"
-        msg_b  = (f"Cache atualizado em {ts_antigo}" if fresco_glob
-                  else f"Cache de {ts_antigo} — considere atualizar")
-        st.markdown(
-            f"<div style='display:flex;align-items:center;gap:10px;padding:10px 16px;"
-            f"background:{cor_b};border:1px solid {brd_b};border-radius:8px;margin-bottom:16px;"
-            f"font-size:13px;color:{txt_b};font-weight:600'>"
-            f"{ico_b} {msg_b} &nbsp;·&nbsp; {len(empresas_com_cache)} empresa(s) em cache</div>",
-            unsafe_allow_html=True,
-        )
- 
-    # ─────────────────────────────────────────────────────────────────
-    # HELPER FUNCTIONS — definidas ANTES de serem chamadas
-    # ─────────────────────────────────────────────────────────────────
- 
+
+    empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
+    empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
+
+    # ── helper: render seleção de páginas ────────────────────────────
     def _render_paginas_resultado(e, sk, ck):
         paginas = st.session_state.ads_onboarding_paginas
         termo_buscado = st.session_state.ads_onboarding_termo
- 
         if not paginas:
-            st.warning(
-                f"Nenhuma página encontrada para «{termo_buscado}». "
-                "Tente um nome diferente."
-            )
+            st.warning(f"Nenhuma página encontrada para «{termo_buscado}». Tente um nome diferente.")
             return
- 
         st.markdown(
-            f"<div style='font-size:13px;font-weight:600;color:#374151;"
-            f"margin:8px 0 10px 0'>Páginas encontradas — selecione a correta:</div>",
+            f"<div style='font-size:13px;font-weight:600;color:#374151;margin:8px 0 10px 0'>"
+            f"Páginas encontradas — selecione a correta:</div>",
             unsafe_allow_html=True,
         )
- 
         n_pags = min(len(paginas), 6)
         cols_pag = st.columns(min(n_pags, 3))
         for ip, pag in enumerate(paginas[:6]):
@@ -3103,46 +3099,41 @@ html, body { background:transparent; overflow:hidden; }
                 pag_av  = gerar_avatar(pag["nome"])
                 pag_cor = AVATAR_COLORS[ip % len(AVATAR_COLORS)]
                 pag_pic = pag.get("profile_picture", "")
- 
+                page_id_display = f" · ID: {pag['page_id']}" if pag.get("page_id") else ""
                 if pag_pic and pag_pic.startswith("http"):
                     avatar_cell = f"""<div style='width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb'><img src='{pag_pic}' style='width:100%;height:100%;object-fit:cover;display:block' onerror="this.parentElement.style.background='{pag_cor}';this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;color:#fff\\'>{pag_av}</div>'" /></div>"""
                 else:
                     avatar_cell = f"""<div style='width:44px;height:44px;border-radius:50%;background:{pag_cor};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0'>{pag_av}</div>"""
- 
                 st.markdown(
-                    f"<div style='background:#f9fafb;border:1.5px solid #e2e8f0;"
-                    f"border-radius:12px;padding:14px 16px;margin-bottom:8px;"
-                    f"display:flex;align-items:center;gap:12px'>"
+                    f"<div style='background:#f9fafb;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px'>"
                     f"{avatar_cell}"
                     f"<div style='flex:1;min-width:0'>"
-                    f"<div style='font-size:14px;font-weight:700;color:#111827;"
-                    f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"
-                    f"{pag['nome']}</div>"
-                    f"<div style='font-size:12px;color:#6b7280;margin-top:2px'>"
-                    f"📢 {pag['total_ads']} anúncio(s)</div>"
+                    f"<div style='font-size:14px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>{pag['nome']}</div>"
+                    f"<div style='font-size:12px;color:#6b7280;margin-top:2px'>📢 {pag['total_ads']} anúncio(s){page_id_display}</div>"
                     f"</div></div>",
                     unsafe_allow_html=True,
                 )
+                # Salva o page_id numérico se disponível, senão o nome
+                id_para_salvar = pag.get("page_id") or pag["nome"]
                 if st.button(
                     f"✅ Usar esta",
                     key=f"direct_sel_{sk}_{ip}",
                     use_container_width=True,
                     type="primary",
                 ):
-                    salvar_ads_id(e, pag["nome"])
-                    st.session_state[f"_query_saved_{sk}"] = pag["nome"]
+                    salvar_ads_id(e, id_para_salvar)
+                    st.session_state[f"_query_saved_{sk}"] = id_para_salvar
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.session_state.ads_editando_empresa = None
                     st.toast(f"✅ Página «{pag['nome']}» configurada!", icon="✅")
                     st.rerun()
- 
-        with st.expander("Não encontrou? Digite manualmente"):
+        with st.expander("Não encontrou? Digite manualmente (nome ou ID numérico)"):
             col_m1, col_m2 = st.columns([4, 2])
             with col_m1:
                 manual = st.text_input(
-                    "Nome exato da página",
-                    placeholder="Cole o nome como está no Facebook",
+                    "Nome exato ou ID numérico",
+                    placeholder="Ex: Kedu Educação  ou  102803918240129",
                     key=f"_manual_direct_{sk}",
                 )
             with col_m2:
@@ -3156,122 +3147,21 @@ html, body { background:transparent; overflow:hidden; }
                         st.session_state.ads_editando_empresa = None
                         st.toast(f"✅ «{manual.strip()}» salvo!", icon="✅")
                         st.rerun()
- 
-    def _render_paginas_resultado_unconfigured(e, sk, ck):
-        paginas = st.session_state.ads_onboarding_paginas
-        termo_buscado = st.session_state.ads_onboarding_termo
- 
-        if not paginas:
-            st.warning(
-                f"Nenhuma página encontrada para «{termo_buscado}». "
-                "Tente um nome diferente ou verifique no "
-                "[Meta Ad Library](https://www.facebook.com/ads/library/)."
-            )
-            return
- 
-        st.markdown(
-            f"<div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;"
-            f"padding:16px;margin-top:4px'>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"<div style='font-size:13px;font-weight:600;color:#374151;"
-            f"margin-bottom:12px'>Páginas encontradas para «{termo_buscado}» — selecione:</div>",
-            unsafe_allow_html=True,
-        )
- 
-        n_pags = min(len(paginas), 6)
-        cols_pag = st.columns(min(n_pags, 3))
-        for ip, pag in enumerate(paginas[:6]):
-            with cols_pag[ip % 3]:
-                pag_av  = gerar_avatar(pag["nome"])
-                pag_cor = AVATAR_COLORS[ip % len(AVATAR_COLORS)]
-                pag_pic = pag.get("profile_picture", "")
- 
-                if pag_pic and pag_pic.startswith("http"):
-                    avatar_cell = f"""<div style='width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb'><img src='{pag_pic}' style='width:100%;height:100%;object-fit:cover;display:block' onerror="this.parentElement.style.background='{pag_cor}';this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:14px;font-weight:700;color:#fff\\'>{pag_av}</div>'" /></div>"""
-                else:
-                    avatar_cell = f"""<div style='width:40px;height:40px;border-radius:50%;background:{pag_cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{pag_av}</div>"""
- 
-                st.markdown(
-                    f"<div style='background:#f9fafb;border:1.5px solid #e2e8f0;"
-                    f"border-radius:12px;padding:12px 14px;margin-bottom:8px;"
-                    f"display:flex;align-items:center;gap:10px'>"
-                    f"{avatar_cell}"
-                    f"<div style='flex:1;min-width:0'>"
-                    f"<div style='font-size:13px;font-weight:700;color:#111827;"
-                    f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"
-                    f"{pag['nome']}</div>"
-                    f"<div style='font-size:11px;color:#6b7280;margin-top:2px'>"
-                    f"📢 {pag['total_ads']} anúncio(s)</div>"
-                    f"</div></div>",
-                    unsafe_allow_html=True,
-                )
-                if st.button(
-                    f"✅ Usar esta",
-                    key=f"uncfg_sel_{sk}_{ip}",
-                    use_container_width=True,
-                    type="primary",
-                ):
-                    salvar_ads_id(e, pag["nome"])
-                    st.session_state[f"_query_saved_{sk}"] = pag["nome"]
-                    st.session_state.ads_onboarding_empresa = None
-                    st.session_state.ads_onboarding_paginas = []
-                    st.toast(f"✅ Página «{pag['nome']}» configurada!", icon="✅")
-                    st.rerun()
- 
-        with st.expander("Não encontrou? Digite manualmente"):
-            col_m1, col_m2 = st.columns([4, 2])
-            with col_m1:
-                manual = st.text_input(
-                    "Nome exato da página",
-                    placeholder="Cole o nome como está no Facebook",
-                    key=f"_manual_input_{sk}",
-                )
-            with col_m2:
-                st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
-                if st.button("💾 Salvar", key=f"btn_manual_save_{sk}", use_container_width=True):
-                    if manual.strip():
-                        salvar_ads_id(e, manual.strip())
-                        st.session_state[f"_query_saved_{sk}"] = manual.strip()
-                        st.session_state.ads_onboarding_empresa = None
-                        st.session_state.ads_onboarding_paginas = []
-                        st.toast(f"✅ «{manual.strip()}» salvo!", icon="✅")
-                        st.rerun()
- 
-        st.markdown("</div>", unsafe_allow_html=True)
- 
-    # ─────────────────────────────────────────────────────────────────
-    # PAINEL DE CONFIGURAÇÃO
-    # ─────────────────────────────────────────────────────────────────
- 
-    # Ghost buttons for onboarding triggers
+
+    # ── Ghost buttons para procurar ───────────────────────────────────
     _ghost_triggers = {}
     for e in todas_empresas:
         sk = safe_key(e["nome"])
         _ghost_triggers[f"procurar_{sk}"] = st.button(
             f"_procurar_{sk}_", key=f"btn_procurar_{sk}", use_container_width=False
         )
-        _ghost_triggers[f"editar_{sk}"] = st.button(
-            f"_editar_config_{sk}_", key=f"btn_editar_config_{sk}", use_container_width=False
-        )
- 
-    # CSS to hide all ghost trigger buttons
-    ghost_css_rules = []
+    ghost_css_rules = [f".st-key-btn_procurar_{safe_key(e['nome'])}" for e in todas_empresas]
+    st.markdown(f"<style>{''.join([r+'{display:none!important}' for r in ghost_css_rules])}</style>", unsafe_allow_html=True)
+
     for e in todas_empresas:
         sk = safe_key(e["nome"])
-        ghost_css_rules.append(f".st-key-btn_procurar_{sk}")
-        ghost_css_rules.append(f".st-key-btn_editar_config_{sk}")
-    ghost_css = "\n".join([f"{sel} {{ display: none !important; }}" for sel in ghost_css_rules])
-    st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
- 
-    # Handle ghost button triggers
-    for e in todas_empresas:
-        sk = safe_key(e["nome"])
- 
-        # Handle "procurar" trigger
         if _ghost_triggers.get(f"procurar_{sk}"):
-            termo_val = st.session_state.get(f"_termo_input_{sk}", e["nome"])
+            termo_val = st.session_state.get(f"_termo_edit_{sk}") or st.session_state.get(f"_termo_input_{sk}", e["nome"])
             st.session_state.ads_onboarding_empresa = e["nome"]
             st.session_state.ads_onboarding_termo   = termo_val
             st.session_state.ads_editando_empresa   = e["nome"]
@@ -3279,21 +3169,8 @@ html, body { background:transparent; overflow:hidden; }
                 paginas = buscar_paginas_facebook(termo_val.strip())
             st.session_state.ads_onboarding_paginas = paginas
             st.rerun()
- 
-        # Handle "editar" trigger — just sets editing mode, clears onboarding search
-        if _ghost_triggers.get(f"editar_{sk}"):
-            st.session_state.ads_editando_empresa   = e["nome"]
-            st.session_state.ads_onboarding_empresa = None
-            st.session_state.ads_onboarding_paginas = []
-            st.rerun()
- 
-    # Store paginas in session for selection
-    if st.session_state.ads_onboarding_empresa:
-        ck_ob = st.session_state.ads_onboarding_empresa
-        sk_ob = safe_key(ck_ob)
-        st.session_state[f"_paginas_cache_{sk_ob}"] = st.session_state.ads_onboarding_paginas
- 
-    # ── Render configured companies ──────────────────────────────────
+
+    # ── Empresas configuradas ─────────────────────────────────────────
     if empresas_configuradas:
         st.markdown(
             "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
@@ -3311,49 +3188,26 @@ html, body { background:transparent; overflow:hidden; }
             badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
             badge_txt = "#1d4ed8" if is_minha else "#6b7280"
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
- 
-            if is_minha:
-                ads_id_atual = emp.get("ads_id", "")
-            else:
-                ads_id_atual = concs[e["idx"]].get("ads_id", "")
- 
+            ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             is_editing = (st.session_state.ads_editando_empresa == ck)
- 
+
             with cfg_cols[ci % 2]:
+                # Card verde de confirmação
                 components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-body {{ padding-bottom:4px; }}
-.card {{
-    background:#f0fdf4; border:1.5px solid #86efac; border-radius:14px;
-    padding:16px 18px; display:flex; align-items:center; gap:14px;
-}}
-.avatar {{
-    width:42px; height:42px; border-radius:50%; background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:15px; font-weight:700; color:#111827;
-         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }}
-.badge {{
-    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.badge-ok {{
-    background:#dcfce7; color:#15803d; border:1px solid #86efac;
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.btn-edit {{
-    background:#fff; border:1px solid #d1d5db; border-radius:8px;
-    padding:7px 14px; font-size:13px; font-weight:600; color:#374151;
-    cursor:pointer; white-space:nowrap; flex-shrink:0;
-    font-family:'DM Sans',sans-serif; transition:all 0.15s;
-}}
-.btn-edit:hover {{ background:#f9fafb; border-color:#9ca3af; }}
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
+body{{padding-bottom:4px;}}
+.card{{background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;}}
+.avatar{{width:42px;height:42px;border-radius:50%;background:{cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;}}
+.info{{flex:1;min-width:0;}}
+.nome{{font-size:15px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+.badges{{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;}}
+.badge{{background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}}
+.badge-ok{{background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}}
+.btn-edit{{background:#fff;border:1px solid #d1d5db;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:'DM Sans',sans-serif;transition:all 0.15s;}}
+.btn-edit:hover{{background:#f9fafb;border-color:#9ca3af;}}
 </style>
 <div class="card">
     <div class="avatar">{av}</div>
@@ -3365,57 +3219,79 @@ body {{ padding-bottom:4px; }}
         </div>
     </div>
     <button class="btn-edit" onclick="
-        const btns = window.parent.document.querySelectorAll('button');
-        for (const b of btns) {{
-            if (b.innerText.trim() === '_editar_config_{sk}_') {{ b.click(); break; }}
-        }}
+        const btns=window.parent.document.querySelectorAll('button');
+        for(const b of btns){{if(b.innerText.trim()==='_editar_cfg_{sk}_'){{b.click();break;}}}}
     ">✏️ Editar</button>
 </div>
 """, height=90, scrolling=False)
- 
-                # If this empresa is being edited, show the search form below the card
+
+                # ghost button para editar
+                _ed = st.button(f"_editar_cfg_{sk}_", key=f"btn_editar_cfg_{sk}")
+                st.markdown(f"<style>.st-key-btn_editar_cfg_{sk}{{display:none!important}}</style>", unsafe_allow_html=True)
+                if _ed:
+                    st.session_state.ads_editando_empresa = ck
+                    st.session_state.ads_onboarding_empresa = None
+                    st.session_state.ads_onboarding_paginas = []
+                    st.rerun()
+
+                # Formulário de edição (inline, nativo Streamlit)
                 if is_editing:
                     with st.container():
                         st.markdown(
-                            "<div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;"
-                            "padding:14px 16px;margin-top:4px;margin-bottom:4px'>",
+                            "<div style='background:#fffbeb;border:1px solid #fcd34d;"
+                            "border-radius:10px;padding:14px 16px;margin-top:4px'>",
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(
+                            "<div style='font-size:12px;color:#92400e;font-weight:600;margin-bottom:8px'>"
+                            "🔍 Buscar nova página ou informar ID numérico / nome</div>",
                             unsafe_allow_html=True,
                         )
                         termo_edit = st.text_input(
-                            "Nome da página no Facebook",
+                            "Nome ou ID numérico",
                             value=ads_id_atual,
-                            placeholder="Ex: Kedu Educação",
-                            key=f"_termo_input_{sk}",
+                            placeholder="Ex: Kedu Educação  ou  102803918240129",
+                            key=f"_termo_edit_{sk}",
                             label_visibility="collapsed",
                         )
-                        col_b1, col_b2 = st.columns(2)
+                        col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
                         with col_b1:
                             components.html(f"""
-<style>* {{margin:0;padding:0;box-sizing:border-box;}} html,body {{background:transparent;}}</style>
+<style>*{{margin:0;padding:0;box-sizing:border-box;}}html,body{{background:transparent;}}</style>
 <button onclick="
-    const btns = window.parent.document.querySelectorAll('button');
-    for (const b of btns) {{
-        if (b.innerText.trim() === '_procurar_{sk}_') {{ b.click(); break; }}
-    }}
-" style="width:100%;padding:9px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;
-    font-size:13px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;">
+    var inp=window.parent.document.querySelectorAll('input');
+    inp.forEach(function(i){{if(i.value==='{ads_id_atual}'||i.getAttribute('aria-label')==='Nome ou ID numérico'){{
+        var setter=Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype,'value').set;
+        setter.call(i,document.getElementById('te_{sk}')&&document.getElementById('te_{sk}').value||'{ads_id_atual}');
+        i.dispatchEvent(new Event('input',{{bubbles:true}}));
+    }}}});
+    var btns=window.parent.document.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){{if(btns[i].innerText.trim()==='_procurar_{sk}_'){{btns[i].click();break;}}}}
+" style="width:100%;padding:9px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:13px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;">
     🔍 Buscar Páginas
 </button>
 """, height=42)
                         with col_b2:
-                            if st.button("✕ Cancelar edição", key=f"btn_cancel_edit_{sk}", use_container_width=True):
+                            if st.button("💾 Salvar direto", key=f"btn_save_direct_{sk}", use_container_width=True):
+                                if termo_edit.strip():
+                                    salvar_ads_id(e, termo_edit.strip())
+                                    st.session_state[f"_query_saved_{sk}"] = termo_edit.strip()
+                                    st.session_state.ads_editando_empresa = None
+                                    st.toast(f"✅ Salvo: {termo_edit.strip()}", icon="✅")
+                                    st.rerun()
+                        with col_b3:
+                            if st.button("✕", key=f"btn_cancel_edit_{sk}", use_container_width=True):
                                 st.session_state.ads_editando_empresa = None
                                 st.session_state.ads_onboarding_empresa = None
                                 st.session_state.ads_onboarding_paginas = []
                                 st.rerun()
                         st.markdown("</div>", unsafe_allow_html=True)
- 
-                    # Show search results if this empresa has results
+
                     if (st.session_state.ads_onboarding_empresa == ck
                             and st.session_state.ads_onboarding_paginas is not None):
                         _render_paginas_resultado(e, sk, ck)
- 
-    # ── Render unconfigured companies ────────────────────────────────
+
+    # ── Empresas sem configuração ─────────────────────────────────────
     if empresas_sem_config:
         st.markdown(
             "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
@@ -3432,55 +3308,27 @@ body {{ padding-bottom:4px; }}
             badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
             badge_txt = "#1d4ed8" if is_minha else "#6b7280"
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
- 
-            if is_minha:
-                sugestao = emp.get("nome", "")
-            else:
-                cd = concs[e["idx"]]
-                sugestao = cd.get("nome", "")
- 
+            sugestao  = e["nome"]
+
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-body {{ padding-bottom:4px; }}
-.card {{ background:#fff; border:1.5px solid #e2e8f0; border-radius:14px; overflow:hidden; }}
-.card-header {{
-    display:flex; align-items:center; gap:14px;
-    padding:14px 18px 12px; border-bottom:1px solid #f3f4f6;
-}}
-.avatar {{
-    width:42px; height:42px; border-radius:50%; background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.nome {{ font-size:15px; font-weight:700; color:#111827; }}
-.badges {{ display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap; }}
-.badge {{
-    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.badge-warn {{
-    background:#fef9c3; color:#854d0e; border:1px solid #fde68a;
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
-}}
-.card-body {{ padding:14px 18px 16px; }}
-.search-row {{ display:flex; gap:10px; align-items:center; }}
-.search-input {{
-    flex:1; border:1.5px solid #e5e7eb; border-radius:8px;
-    padding:9px 12px; font-size:14px; color:#111827;
-    font-family:'DM Sans',sans-serif; outline:none;
-    transition:border-color 0.15s;
-}}
-.search-input:focus {{ border-color:#3a9fd6; }}
-.btn-search {{
-    background:#0780c0; color:#fff; border:none; border-radius:8px;
-    padding:9px 18px; font-size:13px; font-weight:700;
-    cursor:pointer; white-space:nowrap; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s;
-}}
-.btn-search:hover {{ background:#065f9e; }}
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
+body{{padding-bottom:4px;}}
+.card{{background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;}}
+.card-header{{display:flex;align-items:center;gap:14px;padding:14px 18px 12px;border-bottom:1px solid #f3f4f6;}}
+.avatar{{width:42px;height:42px;border-radius:50%;background:{cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;}}
+.nome{{font-size:15px;font-weight:700;color:#111827;}}
+.badges{{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;}}
+.badge{{background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}}
+.badge-warn{{background:#fef9c3;color:#854d0e;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}}
+.card-body{{padding:14px 18px 16px;}}
+.search-row{{display:flex;gap:10px;align-items:center;}}
+.search-input{{flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px 12px;font-size:14px;color:#111827;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.15s;}}
+.search-input:focus{{border-color:#3a9fd6;}}
+.btn-search{{background:#0780c0;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
+.btn-search:hover{{background:#065f9e;}}
 </style>
 <div class="card" id="card_{sk}">
     <div class="card-header">
@@ -3495,109 +3343,128 @@ body {{ padding-bottom:4px; }}
     </div>
     <div class="card-body">
         <div style="font-size:12px;color:#6b7280;margin-bottom:8px;font-weight:500">
-            Digite o nome da página do Facebook para encontrar e vincular os anúncios:
+            Digite o nome da página ou ID numérico do Facebook:
         </div>
         <div class="search-row">
-            <input id="termo_{sk}" class="search-input"
-                type="text" value="{sugestao}"
-                placeholder="Ex: {ck}" />
-            <button class="btn-search" onclick="triggerSearch('{sk}')">
-                🔍 Buscar Páginas
-            </button>
+            <input id="termo_{sk}" class="search-input" type="text" value="{sugestao}" placeholder="Ex: {ck}  ou  102803918240129" />
+            <button class="btn-search" onclick="triggerSearch('{sk}')">🔍 Buscar</button>
         </div>
     </div>
 </div>
 <script>
 function triggerSearch(sk) {{
     var val = document.getElementById('termo_' + sk).value;
-    try {{
-        var inputs = window.parent.document.querySelectorAll('input');
-        inputs.forEach(function(inp) {{
-            if (inp.getAttribute('aria-label') === 'termo_hidden_' + sk ||
-                (inp.placeholder && inp.placeholder.indexOf(sk) >= 0)) {{
-                var setter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype, 'value').set;
+    var inputs = window.parent.document.querySelectorAll('input');
+    inputs.forEach(function(inp) {{
+        try {{
+            var lbl = inp.closest('[data-testid]');
+            if (inp.value === '{sugestao}' || (inp.placeholder && inp.placeholder.indexOf('{ck}') >= 0)) {{
+                var setter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype,'value').set;
                 setter.call(inp, val);
-                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                inp.dispatchEvent(new Event('input', {{bubbles:true}}));
             }}
-        }});
-    }} catch(err) {{}}
+        }} catch(err) {{}}
+    }});
     var btns = window.parent.document.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {{
-        if (btns[i].innerText.trim() === '_procurar_{sk}_') {{
-            btns[i].click();
-            break;
-        }}
+        if (btns[i].innerText.trim() === '_procurar_{sk}_') {{ btns[i].click(); break; }}
     }}
 }}
-function ajustarAltura() {{
+function ajustar() {{
     var card = document.getElementById('card_{sk}');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
     window.parent.document.querySelectorAll('iframe').forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 6) + 'px'; }} catch(e) {{}}
+        try {{ if (f.contentWindow === window) f.style.height = (h+6)+'px'; }} catch(e) {{}}
     }});
 }}
-document.addEventListener('DOMContentLoaded', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
+document.addEventListener('DOMContentLoaded', ajustar);
+window.addEventListener('load', ajustar);
 </script>
 """, height=160, scrolling=False)
- 
-            # Hidden termo input that JS can write to (also used directly from editing form)
+
             termo_input_hidden = st.text_input(
                 f"termo_hidden_{sk}",
                 value=sugestao,
                 key=f"_termo_input_{sk}",
                 label_visibility="hidden",
             )
-            st.markdown(f"<style>.st-key-_termo_input_{sk} {{ display:none!important; }}</style>", unsafe_allow_html=True)
- 
-            # Show search results for this empresa if available
+            st.markdown(f"<style>.st-key-_termo_input_{sk}{{display:none!important}}</style>", unsafe_allow_html=True)
+
             if (st.session_state.ads_onboarding_empresa == ck
                     and st.session_state.ads_onboarding_paginas is not None):
-                _render_paginas_resultado_unconfigured(e, sk, ck)
- 
+                def _render_paginas_uncfg(e2, sk2, ck2):
+                    paginas2 = st.session_state.ads_onboarding_paginas
+                    if not paginas2:
+                        st.warning("Nenhuma página encontrada. Tente outro nome ou ID.")
+                        return
+                    cols_pg2 = st.columns(min(len(paginas2[:6]), 3))
+                    for ip2, pag2 in enumerate(paginas2[:6]):
+                        with cols_pg2[ip2 % 3]:
+                            pag_av2  = gerar_avatar(pag2["nome"])
+                            pag_cor2 = AVATAR_COLORS[ip2 % len(AVATAR_COLORS)]
+                            page_id_display2 = f" · ID: {pag2['page_id']}" if pag2.get("page_id") else ""
+                            st.markdown(
+                                f"<div style='background:#f9fafb;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin-bottom:8px'>"
+                                f"<div style='font-size:13px;font-weight:700;color:#111827'>{pag2['nome']}</div>"
+                                f"<div style='font-size:12px;color:#6b7280'>📢 {pag2['total_ads']} ad(s){page_id_display2}</div>"
+                                f"</div>",
+                                unsafe_allow_html=True,
+                            )
+                            id2 = pag2.get("page_id") or pag2["nome"]
+                            if st.button(f"✅ Usar", key=f"uncfg_sel_{sk2}_{ip2}", use_container_width=True, type="primary"):
+                                salvar_ads_id(e2, id2)
+                                st.session_state[f"_query_saved_{sk2}"] = id2
+                                st.session_state.ads_onboarding_empresa = None
+                                st.session_state.ads_onboarding_paginas = []
+                                st.toast(f"✅ «{pag2['nome']}» configurada!", icon="✅")
+                                st.rerun()
+                    with st.expander("Digitar manualmente"):
+                        col_mm1, col_mm2 = st.columns([4, 2])
+                        with col_mm1:
+                            manual2 = st.text_input("Nome ou ID", key=f"_manual_input_{sk2}")
+                        with col_mm2:
+                            st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
+                            if st.button("💾", key=f"btn_manual_save_{sk2}", use_container_width=True):
+                                if manual2.strip():
+                                    salvar_ads_id(e2, manual2.strip())
+                                    st.session_state.ads_onboarding_empresa = None
+                                    st.session_state.ads_onboarding_paginas = []
+                                    st.toast(f"✅ Salvo!", icon="✅")
+                                    st.rerun()
+
+                _render_paginas_uncfg(e, sk, ck)
+
             st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
- 
+
     if not empresas_configuradas:
         st.info("Configure pelo menos uma empresa acima para buscar anúncios.")
         st.stop()
- 
-    st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
-        unsafe_allow_html=True,
-    )
- 
-    # ─────────────────────────────────────────────────────────────────
-    # MODO NORMAL: busca e exibição de ads
-    # ─────────────────────────────────────────────────────────────────
- 
+
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>", unsafe_allow_html=True)
+
+    # ── Controles de busca ────────────────────────────────────────────
     query_values = {}
     for e in empresas_configuradas:
         ck = e["nome"]
         sk = safe_key(ck)
-        if e["tipo"] == "minha":
-            ads_id_salvo = emp.get("ads_id", "")
-        else:
-            ads_id_salvo = concs[e["idx"]].get("ads_id", "")
+        ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
         st.session_state[f"_query_saved_{sk}"] = ads_id_salvo
         query_values[ck] = ads_id_salvo
- 
-    bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
+
+    bcol1, bcol2 = st.columns([3, 2])
     with bcol1:
         buscar = st.button("🔍 Buscar / Atualizar Anúncios", use_container_width=True, type="primary")
     with bcol2:
         limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True)
-    with bcol3:
-        debug_mode = st.toggle("🔍 Debug JSON", value=False)
- 
+
     if limpar_cache:
-        st.session_state.ads_cache     = {}
-        st.session_state.ads_erro      = {}
-        st.session_state.ads_raw_debug = {}
+        st.session_state.ads_cache = {}
+        st.session_state.ads_erro  = {}
         salvar_cache_ads({})
         st.toast("Cache limpo!", icon="🗑️")
         st.rerun()
- 
+
     if buscar:
         if not query_values:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
@@ -3606,81 +3473,96 @@ window.addEventListener('load', ajustarAltura);
                 [e for e in todas_empresas if empresa_tem_ads_id(e)],
                 query_values,
             )
- 
+
     empresas_com_dados = [
         e for e in todas_empresas
         if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
     ]
- 
+
     if not empresas_com_dados:
         st.markdown("""
         <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
                     padding:48px 32px;text-align:center;margin-top:8px'>
             <div style='font-size:32px;margin-bottom:12px'>📢</div>
             <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
-            <div style='font-size:14px;color:#9ca3af'>Configure as páginas acima e clique em <b>Buscar / Atualizar Anúncios</b>.</div>
+            <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar Anúncios</b>.</div>
         </div>
         """, unsafe_allow_html=True)
         st.stop()
- 
+
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
- 
+
+    # ── SVG de plataformas (função Python → injetada no JS) ──────────
+    def _plat_svg_js(uid: str) -> str:
+        """Retorna o bloco JS que renderiza os ícones de plataforma estilo Meta."""
+        return f"""
+(function(){{
+    var plats={{}};
+    try {{ plats = __PLATS_{uid}__; }} catch(e) {{ return; }}
+    var SVGS = {{
+        "facebook": '<svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
+        "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_{uid}" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_{uid})"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
+        "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="#0099FF"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
+        "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
+        "audience_network": '<svg width="16" height="16" viewBox="0 0 24 24" fill="#6b7280"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
+        "threads": '<svg width="16" height="16" viewBox="0 0 192 192" fill="#000"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
+    }};
+    var el = document.getElementById('plat_icons_{uid}');
+    if (!el) return;
+    if (!plats || plats.length === 0) {{ el.innerHTML='<span style="color:#9ca3af;font-size:12px">—</span>'; return; }}
+    el.innerHTML = plats.map(function(p) {{
+        var key = p.toLowerCase().replace(' ','_').replace('-','_');
+        var svg = SVGS[key] || '';
+        return '<span class="plat-badge" title="'+p+'" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:#f3f4f6;">'+(svg||('<span style="font-size:10px;color:#6b7280">'+p[0].toUpperCase()+'</span>'))+'</span>';
+    }}).join('');
+}})();
+"""
+
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
         nome     = emp_item["nome"]
         is_minha = emp_item["tipo"] == "minha"
         cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(emp_item["idx"])
         avatar   = gerar_avatar(nome)
- 
-        # Get the configured ads_id (page name) for filtering
+
         if emp_item["tipo"] == "minha":
-            configured_page = emp.get("ads_id", "").strip().lower()
+            configured_page = emp.get("ads_id","").strip()
         else:
-            configured_page = concs[emp_item["idx"]].get("ads_id", "").strip().lower()
- 
+            configured_page = concs[emp_item["idx"]].get("ads_id","").strip()
+
         if ck in st.session_state.ads_erro:
             st.error(f"Erro: {st.session_state.ads_erro[ck]}")
             return
- 
+
         cache_entry = st.session_state.ads_cache.get(ck)
         if not cache_entry:
             st.info("Sem dados. Configure a página e clique em Buscar.")
             return
- 
-        ads_list_raw  = cache_entry["data"]
-        ts            = cache_entry["ts"]
-        query         = cache_entry.get("query", "")
-        fresco_aba    = cache_esta_fresco(ts)
- 
-        # ── Filter ads: flexible matching — includes partial matches ──
+
+        ads_list_raw = cache_entry["data"]
+        ts           = cache_entry["ts"]
+        query        = cache_entry.get("query","")
+        fresco_aba   = cache_esta_fresco(ts)
+
+        # ── Filtro por page_id numérico ou nome ─────────────────────
         if configured_page:
-            # Try exact match first
-            exact = [
-                a for a in ads_list_raw
-                if (a.get("page_name") or "").strip().lower() == configured_page
-            ]
-            if exact:
-                ads_list = exact
+            if configured_page.isdigit():
+                filtered = [a for a in ads_list_raw if str(a.get("page_id","")).strip() == configured_page]
+                ads_list = filtered if filtered else ads_list_raw
             else:
-                # Fallback: partial match (page name contains configured_page or vice versa)
-                partial = [
-                    a for a in ads_list_raw
-                    if configured_page in (a.get("page_name") or "").strip().lower()
-                    or (a.get("page_name") or "").strip().lower() in configured_page
-                ]
-                ads_list = partial if partial else ads_list_raw
+                configured_lower = configured_page.lower()
+                exact = [a for a in ads_list_raw if (a.get("page_name") or "").strip().lower() == configured_lower]
+                if exact:
+                    ads_list = exact
+                else:
+                    partial = [a for a in ads_list_raw
+                               if configured_lower in (a.get("page_name") or "").strip().lower()
+                               or (a.get("page_name") or "").strip().lower() in configured_lower]
+                    ads_list = partial if partial else ads_list_raw
         else:
             ads_list = ads_list_raw
- 
-        if debug_mode:
-            raw = st.session_state.ads_raw_debug.get(ck, [])
-            if raw:
-                with st.expander("🔍 JSON bruto (debug)", expanded=True):
-                    st.json(raw[0])
-                    if len(raw) > 1:
-                        st.json(raw[1])
- 
+
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
@@ -3689,14 +3571,27 @@ window.addEventListener('load', ajustarAltura);
         bg_ts     = "#f0fdf4" if fresco_aba else "#fffbeb"
         brd_ts    = "#86efac" if fresco_aba else "#fcd34d"
         ico_ts    = "✅"      if fresco_aba else "🕐"
- 
+
         import urllib.parse as _urlparse
-        lib_url = (
-            f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all"
-            f"&country=BR&q={_urlparse.quote(query)}"
-            if query else ""
-        )
- 
+        if configured_page and configured_page.isdigit():
+            lib_url = (
+                f"https://www.facebook.com/ads/library/"
+                f"?active_status=active&ad_type=all&country=BR"
+                f"&is_targeted_country=false&media_type=all"
+                f"&search_type=page&sort_data[direction]=desc"
+                f"&sort_data[mode]=total_impressions"
+                f"&view_all_page_id={configured_page}"
+            )
+        elif query:
+            lib_url = (
+                f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all"
+                f"&country=BR&q={_urlparse.quote(query)}"
+            )
+        else:
+            lib_url = ""
+
+        page_display = configured_page if configured_page else "—"
+
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3712,7 +3607,10 @@ window.addEventListener('load', ajustarAltura);
                                  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
                         {ico_ts} Cache: {ts}
                     </span>
-                    {f'<span style="background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600">📄 Página: {configured_page}</span>' if configured_page else ''}
+                    <span style='background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;
+                                 padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
+                        📄 {page_display}
+                    </span>
                 </div>
             </div>
             <div style='display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0'>
@@ -3723,13 +3621,13 @@ window.addEventListener('load', ajustarAltura);
                 {f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">🔗 Ver no Ad Library</a>' if lib_url else ''}
             </div>
         </div>""", unsafe_allow_html=True)
- 
+
         if not ads_list:
-            st.info("Nenhum anúncio encontrado. Verifique o nome da página.")
+            st.info("Nenhum anúncio encontrado. Verifique o ID/nome da página.")
             if lib_url:
                 st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
- 
+
         fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
@@ -3749,29 +3647,28 @@ window.addEventListener('load', ajustarAltura);
                 ["Todas"] + [p.capitalize() for p in plats_todas],
                 key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed",
             )
- 
+
         ads_f = ads_list
         if busca_texto:
             q     = busca_texto.lower()
             ads_f = [a for a in ads_f if
                      q in (a.get("body") or "").lower() or
                      q in (a.get("title") or "").lower() or
-                     q in (a.get("caption") or "").lower() or
                      q in (a.get("body_raw") or "").lower()]
         if filtro_fmt != "Todos":
             ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
         if filtro_plat != "Todas":
             ads_f = [a for a in ads_f if filtro_plat.lower() in (a["plataformas"] or [])]
- 
+
         if not ads_f:
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
- 
+
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
         n_dynamic   = sum(1 for a in ads_f if a.get("is_dynamic"))
- 
+
         st.markdown(f"""
         <div style='display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap'>
             <div style='flex:1;min-width:80px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
@@ -3788,7 +3685,7 @@ window.addEventListener('load', ajustarAltura);
                 <div style='font-size:12px;color:#6d28d9;font-weight:600'>Carrossel</div></div>
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
- 
+
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
@@ -3798,22 +3695,21 @@ window.addEventListener('load', ajustarAltura);
                 videos      = ad.get("videos") or []
                 video_thumb = ad.get("video_thumb") or ""
                 is_dyn      = ad.get("is_dynamic", False)
-                ad_id       = ad.get("id", "")
+                baixo_vol   = ad.get("baixo_volume", False)
+                ad_id       = ad.get("id","")
                 ad_id_short = ad_id[:15] + "…" if len(ad_id) > 15 else ad_id
                 plats       = ad.get("plataformas") or []
-                plat_js     = _json.dumps(_plat_icons(plats))
-                data_inicio = ad.get("data_inicio", "")
-                impressoes  = ad.get("impressoes", "")
+                plat_js     = _json.dumps([p.lower() for p in plats])
+                data_inicio = ad.get("data_inicio","")   # já formatado pela nova função
+                impressoes  = ad.get("impressoes","")
                 body        = ad.get("body")        or ""
                 title       = ad.get("title")       or ""
                 desc        = ad.get("description") or ""
                 cta         = ad.get("cta")         or ""
                 uid         = f"{safe_key(ck)}_{j}"
- 
                 page_pic    = ad.get("page_profile_picture") or ""
- 
                 microlink_url = _microlink_screenshot(snap_url)
- 
+
                 img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
                 img_fallbacks = []
                 if images_b64 and len(images_b64) > 1:
@@ -3822,7 +3718,7 @@ window.addEventListener('load', ajustarAltura);
                 if microlink_url:
                     img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
- 
+
                 if snap_url:
                     _snap_safe      = snap_url.replace("'", "\\'")
                     video_onclick   = f"onclick=\"window.open('{_snap_safe}','_blank')\""
@@ -3831,29 +3727,25 @@ window.addEventListener('load', ajustarAltura);
                     nomedia_style   = "cursor:pointer;"
                 else:
                     video_onclick = video_style = nomedia_onclick = nomedia_style = ""
- 
+
+                # ── Bloco de mídia ────────────────────────────────────
                 if videos:
                     if video_thumb:
                         media_block = f"""
 <div class="media-block video-thumb-block" {video_onclick} style="{video_style}position:relative;">
-    <img src="{video_thumb}" loading="lazy"
-         style="width:100%;height:100%;object-fit:cover;display:block;"
+    <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
          onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
     <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;
-         background:linear-gradient(135deg,#0f1f35,#1a3a5c);
-         align-items:center;justify-content:center;flex-direction:column;gap:8px">
+         background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;flex-direction:column;gap:8px">
         <svg width="36" height="36" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
             <polygon points="22,18 40,27 22,36" fill="white"/>
         </svg>
     </div>
     <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="width:52px;height:52px;border-radius:50%;
-                    background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);
                     display:flex;align-items:center;justify-content:center;">
-            <svg width="22" height="22" viewBox="0 0 54 54" fill="none">
-                <polygon points="18,14 42,27 18,40" fill="white"/>
-            </svg>
+            <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
         </div>
     </div>
     {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:DM Sans,sans-serif;">▶ VER VÍDEO</div>' if snap_url else ''}
@@ -3870,7 +3762,6 @@ window.addEventListener('load', ajustarAltura);
     </div>
     <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
- 
                 elif img_primary:
                     if snap_url:
                         fallback_link_open  = f'<a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">'
@@ -3882,15 +3773,13 @@ window.addEventListener('load', ajustarAltura);
                         fallback_link_close = '</div>'
                         fallback_color      = '#9ca3af'
                         fallback_label      = 'Sem imagem'
- 
                     media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
-    <div id="merr_{uid}" style="display:none;width:100%;height:100%;
-         align-items:center;justify-content:center;flex-direction:column;gap:8px;
-         background:#f9fafb;position:absolute;top:0;left:0;">
+    <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;
+         flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
         {fallback_link_open}
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
@@ -3905,16 +3794,10 @@ var _srcs_{uid}={srcs_js};
 var _idx_{uid}=0;
 function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if(_idx_{uid}<_srcs_{uid}.length){{
-        img.src=_srcs_{uid}[_idx_{uid}];
-    }} else {{
-        img.style.display='none';
-        var e=document.getElementById('merr_{uid}');
-        if(e) e.style.display='flex';
-    }}
+    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
+    else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
- 
                 else:
                     if microlink_url:
                         media_block = f"""
@@ -3922,9 +3805,8 @@ function imgFallback_{uid}(img){{
     <img id="mimg_{uid}" src="{microlink_url}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="this.style.display='none';document.getElementById('mnomedia_{uid}').style.display='flex'" />
-    <div id="mnomedia_{uid}" style="display:none;width:100%;height:100%;
-         align-items:center;justify-content:center;flex-direction:column;gap:8px;
-         background:#f9fafb;position:absolute;top:0;left:0;">
+    <div id="mnomedia_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;
+         flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
         <a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
@@ -3945,7 +3827,7 @@ function imgFallback_{uid}(img){{
     </svg>
     <span style="font-size:12px;color:{nomedia_color};font-weight:600;margin-top:8px;font-family:DM Sans,sans-serif;">{nomedia_label}</span>
 </div>"""
- 
+
                 cta_labels = {
                     "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
                     "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
@@ -3957,16 +3839,21 @@ function imgFallback_{uid}(img){{
                     "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
                 }
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
- 
-                h_base      = 44 + 60 + 50 + 32 + 44
-                h_copy      = 130 if (body or title or desc) else 80
-                h_copy     += 30  if body and len(body) > 200 else 0
-                h_media     = 230 if (img_primary or microlink_url) else (210 if videos else 120)
-                h_imp       = 32  if impressoes else 0
-                # extra height for data_inicio (date + days active string)
-                h_data      = 24  if data_inicio else 0
-                card_height = h_base + h_copy + h_media + h_imp + h_data + 40
- 
+
+                # Badge de baixo volume
+                baixo_vol_badge = (
+                    '<span style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;'
+                    'padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:6px;">'
+                    '⚠️ Baixo volume</span>'
+                ) if baixo_vol else ""
+
+                h_media = 230 if (img_primary or microlink_url) else (210 if videos else 120)
+                h_copy  = 130 if (body or title or desc) else 80
+                h_copy += 30 if body and len(body) > 200 else 0
+                h_data  = 22 if data_inicio else 0
+                h_imp   = 22 if impressoes else 0
+                card_height = 44 + 60 + 50 + 32 + 44 + h_copy + h_media + h_data + h_imp + 40
+
                 if page_pic and page_pic.startswith("http"):
                     page_avatar_html = (
                         f'<div class="page-avatar" style="overflow:hidden;padding:0">'
@@ -3976,19 +3863,20 @@ function imgFallback_{uid}(img){{
                     )
                 else:
                     page_avatar_html = f'<div class="page-avatar">{avatar}</div>'
- 
+
                 lib_btn_html = ""
                 if snap_url:
                     lib_btn_html = f"""
 <a href="{snap_url}" target="_blank" class="lib-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
         <polyline points="15 3 21 3 21 9"/>
         <line x1="10" y1="14" x2="21" y2="3"/>
     </svg>
     Ver criativo no Ad Library
 </a>"""
- 
+
                 card_html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3997,17 +3885,15 @@ function imgFallback_{uid}(img){{
 html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:20px;}}
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
-.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
+.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
 .status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
 .ad-id{{font-size:10px;color:#8a8d91;font-family:monospace;}}
 .meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
-.meta-row{{display:flex;align-items:center;gap:6px;font-size:11px;color:#65676b;margin-bottom:4px;flex-wrap:wrap;}}
+.meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
 .meta-row:last-child{{margin-bottom:0;}}
-.meta-label{{font-weight:700;color:#444950;flex-shrink:0;}}
-.dias-badge{{display:inline-flex;align-items:center;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:4px;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
-.plat-badge{{display:inline-flex;align-items:center;background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;}}
+.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:#f3f4f6;}}
 .dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;flex:1;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
@@ -4026,32 +3912,29 @@ body{{padding-bottom:20px;}}
 .video-block{{height:200px;background:linear-gradient(135deg,#0f1f35 0%,#1a3a5c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
 .video-play-icon{{display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}}
 .video-block:hover .video-play-icon{{transform:scale(1.1);}}
-.video-thumb-block:hover img{{opacity:0.92;}}
 .no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;border-top:1px solid #f0f2f5;border-bottom:1px solid #f0f2f5;gap:8px;}}
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:10px;min-height:50px;}}
 .cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;letter-spacing:0.3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-block;transition:background 0.15s;flex-shrink:0;}}
 .cta-btn:hover{{background:#d8dadf;}}
-.imp-bar{{padding:7px 14px;font-size:11px;color:#15803d;font-weight:600;background:#f0fdf4;border-top:1px solid #dcfce7;}}
-.lib-btn{{display:flex;align-items:center;justify-content:center;gap:7px;
-          width:100%;padding:10px;background:#1877F2;color:#fff;
-          border:none;border-radius:0 0 10px 10px;
-          font-size:13px;font-weight:700;text-decoration:none;
-          font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
+.lib-btn{{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px;background:#1877F2;color:#fff;border:none;border-radius:0 0 10px 10px;font-size:13px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
 .lib-btn:hover{{background:#166fe5;}}
 </style></head><body>
 <div class="card">
     <div class="status-bar">
-        <div class="status-dot">Ativo</div>
+        <div style="display:flex;align-items:center;gap:6px">
+            <div class="status-dot">Ativo</div>
+            {baixo_vol_badge}
+        </div>
         {f'<span class="ad-id">ID: {ad_id_short}</span>' if ad_id_short else ''}
     </div>
     <div class="meta-info">
-        {f'<div class="meta-row"><span class="meta-label">Início:&nbsp;</span>{data_inicio}</div>' if data_inicio else ''}
+        {f'<div class="meta-row" style="color:#6b7280;font-size:12px">{data_inicio}</div>' if data_inicio else ''}
         <div class="meta-row">
-            <span class="meta-label">Plataformas:&nbsp;</span>
-            <span id="plat_icons_{uid}" class="plat-icons">—</span>
+            <span style="font-size:11px;color:#9ca3af;font-weight:600;margin-right:2px">Plataformas:</span>
+            <span id="plat_icons_{uid}" class="plat-icons"></span>
         </div>
-        {f'<div class="meta-row"><span class="meta-label">Impressões:&nbsp;</span>{impressoes}</div>' if impressoes else ''}
+        {f'<div class="meta-row"><span style="font-size:11px;color:#9ca3af;font-weight:600">Impressões:</span>&nbsp;{impressoes}</div>' if impressoes else ''}
     </div>
     <div class="copy-section">
         <div class="page-header">
@@ -4073,21 +3956,13 @@ body{{padding-bottom:20px;}}
             {cta_display or "Ver detalhes"}
         </a>
     </div>
-    {f'<div class="imp-bar">👁 {impressoes} impressões estimadas</div>' if impressoes else ''}
     {lib_btn_html}
 </div>
 <script>
-(function(){{
-    var plats={plat_js};
-    var platColors={{"Facebook":"#1877F2","Instagram":"#E1306C","Messenger":"#0099FF","WhatsApp":"#25D366","Audience Network":"#6b7280"}};
-    var el=document.getElementById('plat_icons_{uid}');
-    if(!el)return;
-    if(!plats||plats.length===0){{el.textContent='—';return;}}
-    el.innerHTML=plats.map(function(p){{
-        var c=platColors[p]||'#6b7280';
-        return '<span class="plat-badge" style="color:'+c+'">'+p+'</span>';
-    }}).join('');
-}})();
+// Plataformas: injeta plats como variável global antes de chamar a função
+var __PLATS_{uid}__ = {plat_js};
+{_plat_svg_js(uid)}
+
 function toggleBody(uid){{
     var s=document.getElementById('body_short_'+uid);
     var f=document.getElementById('body_full_'+uid);
@@ -4118,27 +3993,26 @@ setTimeout(ajustarAltura,700);
 setTimeout(ajustarAltura,1400);
 </script>
 </body></html>"""
- 
+
                 components.html(card_html, height=card_height, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
- 
+
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
- 
+
+        # ── Análise IA ────────────────────────────────────────────────
         chave_ia = f"ia_ads_{safe_key(ck)}"
         if chave_ia not in st.session_state:
             st.session_state[chave_ia] = ""
- 
+
         resumo_ads = "\n".join([
             f"- [{a['formato']}{'(dinâmico)' if a.get('is_dynamic') else ''}] "
             f"Título: {_truncar(a.get('title',''),60) or '—'} | "
             f"Copy: {_truncar(a.get('body',''),100) or '—'} | "
-            f"Impressões: {a['impressoes'] or '—'} | "
-            f"Plat: {', '.join(a['plataformas'] or [])}"
+            f"Impressões: {a['impressoes'] or '—'}"
             for a in ads_f[:15]
         ])
- 
-        ia_html_content = st.session_state.get(chave_ia, "").replace("\n", "<br>")
- 
+
+        ia_html_content = st.session_state.get(chave_ia,"").replace("\n","<br>")
         if ia_html_content:
             st.markdown(f"""
             <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px'>
@@ -4150,7 +4024,7 @@ setTimeout(ajustarAltura,1400);
                     {ia_html_content}
                 </div>
             </div>""", unsafe_allow_html=True)
- 
+
         col_ia, _ = st.columns([2, 5])
         with col_ia:
             gerar_ia = st.button(
@@ -4159,7 +4033,7 @@ setTimeout(ajustarAltura,1400);
                 use_container_width=True,
                 type="primary",
             )
- 
+
         if gerar_ia:
             if gemini_model is None:
                 st.session_state[chave_ia] = "Configure GEMINI_API_KEY nos secrets."
@@ -4171,12 +4045,12 @@ setTimeout(ajustarAltura,1400);
                         n_img = sum(1 for a in ads_f if "Imagem" in a["formato"])
                         prompt_ads = f"""Você é especialista em mídia paga e marketing digital.
 Analise os anúncios de "{nome}" e gere um relatório estratégico completo em português.
- 
-Empresa: {nome} | Total: {len(ads_f)} | {n_img} imagens | {n_vid} vídeos | {n_dyn} anúncios dinâmicos
- 
+
+Empresa: {nome} | Total: {len(ads_f)} | {n_img} imagens | {n_vid} vídeos | {n_dyn} dinâmicos
+
 Amostra:
 {resumo_ads}
- 
+
 ---
 ### 🎯 Estratégia de Mídia
 ### 📝 Padrões de Copy e Mensagem
@@ -4191,7 +4065,7 @@ Amostra:
                     except Exception as ex:
                         st.session_state[chave_ia] = f"Erro: {ex}"
                         st.rerun()
- 
+
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
