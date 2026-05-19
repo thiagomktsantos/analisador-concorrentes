@@ -2079,7 +2079,7 @@ html, body { background: transparent; overflow: hidden; }
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 .card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;overflow: hidden;
     overflow:hidden; padding:0;
 }}
 .card-header {{
