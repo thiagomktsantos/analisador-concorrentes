@@ -1646,7 +1646,7 @@ setTimeout(ajustarAltura, 800);
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "cad":
- 
+
     st.markdown("""
     <style>
     div[data-testid="stForm"] {
@@ -1666,7 +1666,7 @@ elif st.session_state.pagina == "cad":
     }
     </style>
     """, unsafe_allow_html=True)
- 
+
     top1, top2 = st.columns([7, 3])
     with top1:
         components.html("""
@@ -1688,36 +1688,36 @@ html, body { background: transparent; overflow: hidden; }
 <div class="titulo">Concorrentes</div>
 <div class="sub">Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</div>
 """, height=70)
- 
+
     with top2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
         if st.button("＋ Adicionar", use_container_width=True, type="primary"):
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
             st.rerun()
- 
+
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 24px 0'/>", unsafe_allow_html=True)
- 
+
     if st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None:
         concorrente_edit = None
         if st.session_state.editando_concorrente is not None:
             concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
- 
+
         titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
         st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
- 
+
         with st.form("cad_concorrente", clear_on_submit=False):
             st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Identificação</div>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
             u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
- 
+
             st.markdown("<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
             st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Redes Sociais</div>", unsafe_allow_html=True)
             c3, c4 = st.columns(2)
             insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
             fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
- 
+
             ads_manual = st.text_input(
                 "ads_id_hidden",
                 value=(concorrente_edit.get("ads_id", "") if concorrente_edit else ""),
@@ -1725,16 +1725,16 @@ html, body { background: transparent; overflow: hidden; }
                 label_visibility="hidden",
                 autocomplete="off",
             )
- 
+
             col1, col2 = st.columns(2)
             salvar   = col1.form_submit_button("Salvar",   use_container_width=True)
             cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
- 
+
             if cancelar:
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
                 st.rerun()
- 
+
             if salvar:
                 clean_handle = obter_instagram_handle(insta_handle)
                 fb_clean     = obter_facebook_handle(fb_p)
@@ -1755,9 +1755,9 @@ html, body { background: transparent; overflow: hidden; }
                 st.session_state.editando_concorrente = None
                 salvar_dados_usuario(st.session_state.user.id)
                 st.rerun()
- 
+
     concorrentes = st.session_state.dados["concorrentes"]
- 
+
     if concorrentes:
         cols = st.columns(2)
         for i, c in enumerate(concorrentes):
@@ -1765,7 +1765,7 @@ html, body { background: transparent; overflow: hidden; }
                 avatar     = gerar_avatar(c["nome"])
                 cor_avatar = get_concorrente_color(i)
                 uid        = f"conc_{i}"
- 
+
                 card_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -1889,9 +1889,9 @@ setTimeout(ajustarAltura, 400);
 </script>
 </body>
 </html>"""
- 
+
                 components.html(card_html, height=260, scrolling=False)
- 
+
                 b1, b2 = st.columns(2)
                 with b1:
                     if st.button("Editar Concorrente", key=f"editar_{i}", use_container_width=True):
@@ -1903,9 +1903,9 @@ setTimeout(ajustarAltura, 400);
                         st.session_state.dados["concorrentes"].pop(i)
                         salvar_dados_usuario(st.session_state.user.id)
                         st.rerun()
- 
+
                 st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
- 
+
     else:
         st.markdown("""
         <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
