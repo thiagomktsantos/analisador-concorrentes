@@ -2580,16 +2580,15 @@ setTimeout(ajustarAltura, 600);
 elif st.session_state.pagina == "ads":
 
     import datetime as _dt
-    import datetime as _dt
     import json as _json
     import base64 as _b64
     import time as _time
- 
-emp   = st.session_state.dados["minha_empresa"]
-concs = st.session_state.dados["concorrentes"]
- 
-CACHE_TTL_HORAS = 24
-APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
+
+    emp   = st.session_state.dados["minha_empresa"]   # ← com 4 espaços
+    concs = st.session_state.dados["concorrentes"]     # ← com 4 espaços
+
+    CACHE_TTL_HORAS = 24
+    APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
  
 def salvar_cache_ads(dados: dict):
     try:
