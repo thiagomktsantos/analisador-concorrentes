@@ -1903,7 +1903,7 @@ body {{ padding-bottom: 4px; }}
 </body>
 </html>"""
 
-                components.html(card_html, height=320, scrolling=False)
+                components.html(card_html, height=360, scrolling=False)
 
                 b1, b2 = st.columns(2)
                 with b1:
@@ -2122,11 +2122,11 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     margin: 8px 12px 0 12px;
     border-radius: 8px; overflow: hidden;
     border: 1px solid #e5e7eb; background: #f9fafb;
-    height: 130px;          /* ← altura fixa */
-    max-height: 130px;      /* ← limita o preview */
+    height: 180px;
+    max-height: 180px;
 }}
 .preview-wrap img {{
-    width: 100%; height: 130px; display: block;
+    width: 100%; height: 180px; display: block;
     border-radius: 8px; object-fit: cover; object-position: top;
 }}
 .btn-wrap {{
