@@ -3002,8 +3002,8 @@ elif st.session_state.pagina == "ads":
  
     def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
         api_token = st.secrets.get("APIFY_TOKEN", "")
-    if not api_token:
-        return [], [], "APIFY_TOKEN não configurada nos secrets."
+        if not api_token:
+            return [], [], "APIFY_TOKEN não configurada nos secrets."
 
     run_url = (
         f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
