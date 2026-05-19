@@ -1853,7 +1853,7 @@ body {{ padding-bottom: 4px; }}
 .footer-btn {{
     padding: 11px 0;
     text-align: center;
-    font-size: 13px; font-weight: 600;
+    font-size: 15px; font-weight: 600;
     color: #6b7280;
     cursor: pointer;
     background: transparent;
@@ -1867,7 +1867,6 @@ body {{ padding-bottom: 4px; }}
     color: #111827;
 }}
 .footer-btn.danger {{
-    color: #dc2626;
     border-left: 1px solid #f3f4f6;
 }}
 .footer-btn.danger:hover {{
