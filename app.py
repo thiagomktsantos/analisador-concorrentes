@@ -1,7 +1,4 @@
-import instaloader
 import plotly.graph_objects as go
-import plotly.express as px
-from playwright.sync_api import sync_playwright
 import streamlit as st
 import streamlit.components.v1 as components
 import google.generativeai as genai
@@ -128,7 +125,10 @@ def gerar_avatar(nome):
     nome = nome.strip().upper()
     if not nome:
         return "?"
-    partes = nome.split()
+    # fallback se nome tiver só caracteres não-alfa
+    partes = [p for p in nome.split() if any(c.isalpha() for c in p)]
+    if not partes:
+        return nome[0] if nome else "?"
     if len(partes) == 1:
         return partes[0][0]
     return partes[0][0] + partes[1][0]
@@ -215,12 +215,19 @@ def carregar_dados_usuario(user_id: str) -> dict:
     }
 
 def salvar_dados_usuario(user_id: str):
+    """Salva apenas dados da empresa e concorrentes — não sobrescreve metricas_redes."""
     try:
+        # Busca metricas_redes já salvas para não sobrescrever
+        res = supabase.table("ci_dados").select("metricas_redes").eq("user_id", user_id).execute()
+        metricas_existentes = {}
+        if res.data and res.data[0].get("metricas_redes"):
+            metricas_existentes = res.data[0]["metricas_redes"]
+
         payload = {
             "user_id": user_id,
             "minha_empresa": st.session_state.dados["minha_empresa"],
             "concorrentes": st.session_state.dados["concorrentes"],
-            "metricas_redes": st.session_state.metricas_redes,
+            "metricas_redes": metricas_existentes,
         }
         supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
     except Exception as e:
@@ -627,10 +634,6 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
 
 [data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect) {
     background-color: #ffffff !important;
-}
-
-button[data-testid="baseButton-secondary"][kind="secondary"]:has(~ *) {
-    display: none !important;
 }
 
 /* ── OCULTAR campo ads_id no formulário de concorrentes ── */
@@ -1749,7 +1752,7 @@ html, body { background: transparent; overflow: hidden; }
                 clean_handle = obter_instagram_handle(insta_handle)
                 fb_clean     = obter_facebook_handle(fb_p)
                 site_clean   = limpar_site(u)
-                existing_ads_id  = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
+                existing_ads_id   = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
                 existing_page_pic = (concorrente_edit.get("ads_page_pic", "") if concorrente_edit else "")
                 dados_novos = {
                     "nome":         n,
@@ -1960,20 +1963,19 @@ body {{ padding-bottom: 4px; }}
     </div>
 </div>
 <script>
+// Busca o botão pelo data-key exato gerado pelo Streamlit, evitando conflito de índice
 function acionar(key) {{
-    var selector = '[data-testid="stButton"] button, button';
-    var btns = window.parent.document.querySelectorAll(selector);
     var keyMap = {{
-        'editar_{i}':  'Editar Concorrente',
-        'remove_{i}':  'Remover Concorrente',
+        'editar_{i}': 'st-key-editar_{i}',
+        'remove_{i}': 'st-key-remove_{i}',
     }};
-    var label = keyMap[key];
-    var found = [];
-    btns.forEach(function(b) {{
-        if (b.innerText.trim() === label) found.push(b);
-    }});
-    if (found[{i}]) {{ found[{i}].click(); return; }}
-    if (found[0])   {{ found[0].click(); }}
+    var stKey = keyMap[key];
+    if (!stKey) return;
+    var containers = window.parent.document.querySelectorAll('.' + stKey);
+    for (var k = 0; k < containers.length; k++) {{
+        var btn = containers[k].querySelector('button');
+        if (btn) {{ btn.click(); return; }}
+    }}
 }}
 
 function ajustarAltura() {{
@@ -2023,6 +2025,14 @@ setTimeout(ajustarAltura, 400);
             <div style='font-size:14px;color:#9ca3af'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
         </div>
         """, unsafe_allow_html=True)
+
+# ---------------------------------------------------
+# PAGINA - VISÃO GERAL
+# ---------------------------------------------------
+
+elif st.session_state.pagina == "geral":
+    cabecalho_simples("Visão Geral", "Comparativo geral entre sua empresa e concorrentes.")
+    st.info("Em construção.")
 
 # ---------------------------------------------------
 # PAGINA - CONFRONTO DE SITES
@@ -2574,7 +2584,7 @@ setTimeout(ajustarAltura, 600);
     components.html(analises_html, height=60, scrolling=False)
 
 # ---------------------------------------------------
-# PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
+# PAGINA - ADS (Biblioteca de Anúncios com Apify)
 # ---------------------------------------------------
 
 import datetime as _dt
@@ -2622,6 +2632,7 @@ def cache_esta_fresco(ts_str: str) -> bool:
 
 
 def _url_para_base64(url: str) -> str:
+    """Converte URL de imagem para base64. Retorna string vazia se falhar."""
     if not url or not url.startswith("http"):
         return ""
     try:
@@ -2635,7 +2646,13 @@ def _url_para_base64(url: str) -> str:
         ct = r.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
         if not ct.startswith("image/"):
             ct = "image/jpeg"
-        data = _b64.b64encode(r.content).decode("utf-8")
+        # Limita a 500KB para evitar payloads gigantes
+        content = b""
+        for chunk in r.iter_content(chunk_size=8192):
+            content += chunk
+            if len(content) > 500 * 1024:
+                return url  # retorna a URL original se imagem for muito grande
+        data = _b64.b64encode(content).decode("utf-8")
         return f"data:{ct};base64,{data}"
     except Exception:
         return ""
@@ -2869,6 +2886,7 @@ def _normalizar_item_apify(item: dict) -> dict:
                 or item.get("ad_snapshot_url")
                 or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""))
 
+    # Converte apenas a primeira imagem para base64; demais ficam como URL
     images_b64 = []
     if images:
         b64 = _url_para_base64(images[0])
@@ -3046,11 +3064,8 @@ def executar_busca(empresas: list, query_values: dict):
     salvar_cache_ads(cache_atual)
     st.rerun()
 
-# ── Página ADS ────────────────────────────────────────────────────────
 
-elif st.session_state.pagina == "geral":
-    cabecalho_simples("Visão Geral", "Comparativo geral entre sua empresa e concorrentes.")
-    st.info("Em construção.")
+# ── Página ADS ────────────────────────────────────────────────────────
 
 elif st.session_state.pagina == "ads":
 
@@ -3249,7 +3264,7 @@ html, body { background:transparent; overflow:hidden; }
                     f"</div></div>",
                     unsafe_allow_html=True,
                 )
-                id_para_salvar = pag.get("page_id") or pag["nome"]
+                id_para_salvar  = pag.get("page_id") or pag["nome"]
                 pic_para_salvar = pag.get("profile_picture", "")
 
                 if st.button(
@@ -3634,6 +3649,7 @@ setTimeout(ajustar, 100);
         query        = cache_entry.get("query","")
         fresco_aba   = cache_esta_fresco(ts)
 
+        # Filtra ads pela página configurada (page_id ou nome)
         if configured_page:
             if configured_page.isdigit():
                 filtered = [a for a in ads_list_raw if str(a.get("page_id","")).strip() == configured_page]
