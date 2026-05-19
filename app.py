@@ -95,15 +95,12 @@ SUBNICHOS = {
 AVATAR_COLORS = ["#27ae60", "#3a9fd6", "#2ecc71", "#5bc4f5", "#1a7abf", "#1a2e4a"]
 
 def get_avatar_color(index: int) -> str:
-    """Retorna a cor do avatar de acordo com o índice, sempre respeitando a paleta global."""
     return AVATAR_COLORS[index % len(AVATAR_COLORS)]
 
 def get_minha_empresa_color() -> str:
-    """Cor fixa para 'Minha Empresa' (sempre a primeira da paleta)."""
     return AVATAR_COLORS[0]
 
 def get_concorrente_color(concorrente_index: int) -> str:
-    """Cor para concorrente, começando do índice 1 da paleta (após 'Minha Empresa')."""
     return AVATAR_COLORS[(concorrente_index + 1) % len(AVATAR_COLORS)]
 
 # ---------------------------------------------------
@@ -159,7 +156,6 @@ def empresa_tem_dados(emp):
     return bool(emp.get("nome", "").strip())
 
 def formatar_url(url):
-    """Garante que a URL tenha schema HTTP para Trafilatura."""
     if not url:
         return ""
     url = url.strip()
@@ -196,7 +192,6 @@ def logout_supabase():
 # ---------------------------------------------------
 
 def carregar_dados_usuario(user_id: str) -> dict:
-    """Carrega empresa e concorrentes salvos no Supabase."""
     try:
         res = supabase.table("ci_dados").select("*").eq("user_id", user_id).execute()
         if res.data:
@@ -213,14 +208,13 @@ def carregar_dados_usuario(user_id: str) -> dict:
             "nome": "", "setor": "Marketing", "tipo": "",
             "estado": "", "cidade": "",
             "instagram": "@", "fb_page": "", "site": "",
-            "servicos": []
+            "servicos": [], "ads_id": ""
         },
         "concorrentes": [],
         "metricas_redes": {},
     }
 
 def salvar_dados_usuario(user_id: str):
-    """Upsert dos dados no Supabase."""
     try:
         payload = {
             "user_id": user_id,
@@ -241,14 +235,14 @@ if "logado" not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 if "auth_tab" not in st.session_state:
-    st.session_state.auth_tab = "login"   # "login" | "cadastro"
+    st.session_state.auth_tab = "login"
 if "dados" not in st.session_state:
     st.session_state.dados = {
         "minha_empresa": {
             "nome": "", "setor": "Marketing", "tipo": "",
             "estado": "", "cidade": "",
             "instagram": "@", "fb_page": "", "site": "",
-            "servicos": []
+            "servicos": [], "ads_id": ""
         },
         "concorrentes": []
     }
@@ -263,16 +257,16 @@ if "editando_concorrente" not in st.session_state:
 if "editar_empresa" not in st.session_state:
     st.session_state.editar_empresa = False
 if "relatorio_sites" not in st.session_state:
-    st.session_state.relatorio_sites = {}   # cache: {url: conteudo_extraido}
+    st.session_state.relatorio_sites = {}
 if "relatorio_gemini" not in st.session_state:
     st.session_state.relatorio_gemini = ""
 if "analises_salvas" not in st.session_state:
     st.session_state.analises_salvas = []
-    
+
 empresa = st.session_state.dados["minha_empresa"]
 campos_padrao = {
     "estado": "", "cidade": "", "instagram": "@",
-    "fb_page": "", "site": "", "servicos": []
+    "fb_page": "", "site": "", "servicos": [], "ads_id": ""
 }
 for campo, valor in campos_padrao.items():
     if campo not in empresa:
@@ -325,7 +319,6 @@ def extrair_conteudo_site(url: str) -> str:
         resp.encoding = resp.apparent_encoding
         html = resp.text
 
-        # Tenta trafilatura primeiro
         texto = trafilatura.extract(
             html,
             include_tables=True,
@@ -337,7 +330,6 @@ def extrair_conteudo_site(url: str) -> str:
         if texto and len(texto) > 100:
             return texto
 
-        # Fallback: extrai texto bruto removendo tags
         import re as _re
         texto_bruto = _re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=_re.DOTALL)
         texto_bruto = _re.sub(r"<style[^>]*>.*?</style>", " ", texto_bruto, flags=_re.DOTALL)
@@ -352,11 +344,9 @@ def extrair_conteudo_site(url: str) -> str:
 # ---------------------------------------------------
 
 def gerar_relatorio_posicionamento(empresa_principal: dict, concorrentes_data: list) -> str:
-    """Gera relatório comparativo de posicionamento usando Gemini."""
     if gemini_model is None:
         return "Erro: Chave API Gemini não configurada."
 
-    # Monta contexto de cada site
     secoes = []
     if empresa_principal.get("conteudo"):
         secoes.append(f"""
@@ -450,7 +440,6 @@ section.main { background: #f0f4f8 !important; }
 .page-title { font-size: 28px; font-weight: 600; color: #111827; letter-spacing: -0.5px; margin: 0; font-family: 'Animo', 'DM Sans', sans-serif; }
 .page-subtitle { font-size: 16px; color: #6b7280; margin-top: 3px; }
 
-/* ── BOTÕES PADRÃO (secundário) ── */
 section.main div.stButton > button {
     border-radius: 8px !important;
     font-size: 14px !important;
@@ -470,7 +459,6 @@ section.main div.stButton > button:hover {
     color: #111827 !important;
 }
 
-/* ── BOTÃO PRIMARY ── */
 section.main div.stButton > button[kind="primary"],
 [data-testid="stMainBlockContainer"] button[kind="primary"],
 button[data-testid="baseButton-primary"] {
@@ -485,7 +473,6 @@ button[data-testid="baseButton-primary"]:hover {
     color: #ffffff !important;
 }
 
-/* ── BOTÕES DE FORMULÁRIO ── */
 section.main div.stFormSubmitButton > button {
     background: #111827 !important;
     color: #ffffff !important;
@@ -576,7 +563,6 @@ section.main div[data-testid="stTextArea"] textarea {
     color: #111827 !important; resize: vertical !important;
 }
 
-/* ── Tabs ── */
 div[data-testid="stTabs"] > div:first-child {
     justify-content: center !important; border-bottom: 2px solid #e5e7eb !important; gap: 0 !important;
 }
@@ -591,11 +577,9 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
 
-/* ── Logo do sidebar ── */
 .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
 .sb-logo-sub { font-size:8.4px; color:#3a9fd6; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-align:center; font-family:'DM Sans',sans-serif; }
 
-/* ── Botões invisíveis do sidebar ── */
 [data-testid="stSidebar"] div.stButton > button {
     position: fixed !important;
     top: -9999px !important;
@@ -617,7 +601,6 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     display: none !important;
 }
 
-/* ── Containers com borda — fundo branco forçado ── */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background-color: #ffffff !important;
     border: 1px solid #e5e7eb !important;
@@ -642,14 +625,21 @@ div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; 
     background: transparent !important;
 }
 
-/* ── Garante branco em todas as camadas internas do container ── */
 [data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect) {
     background-color: #ffffff !important;
 }
 
-/* ── Botões fantasma da página Sites — esconde via atributo data-testid + key ── */
 button[data-testid="baseButton-secondary"][kind="secondary"]:has(~ *) {
     display: none !important;
+}
+
+/* ── OCULTAR campo ads_id no formulário de concorrentes ── */
+.st-key-ads_id_hidden {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -690,8 +680,7 @@ def get_logo_white_base64():
         with open(logo_path, "rb") as f:
             return base64.b64encode(f.read()).decode()
     return ""
-    
-# No bloco if not st.session_state.logado:
+
 if not st.session_state.logado:
     logo_b64 = get_logo_base64()
     logo_src = f"data:image/jpeg;base64,{logo_b64}" if logo_b64 else ""
@@ -820,13 +809,16 @@ if not st.session_state.logado:
                         st.session_state.logado = True
                         st.session_state.user = user
                         dados_db = carregar_dados_usuario(user.id)
+                        minha_emp = dados_db["minha_empresa"] or {
+                            "nome": "", "setor": "Marketing", "tipo": "",
+                            "estado": "", "cidade": "",
+                            "instagram": "@", "fb_page": "", "site": "",
+                            "servicos": [], "ads_id": ""
+                        }
+                        if "ads_id" not in minha_emp:
+                            minha_emp["ads_id"] = ""
                         st.session_state.dados = {
-                            "minha_empresa": dados_db["minha_empresa"] or {
-                                "nome": "", "setor": "Marketing", "tipo": "",
-                                "estado": "", "cidade": "",
-                                "instagram": "@", "fb_page": "", "site": "",
-                                "servicos": []
-                            },
+                            "minha_empresa": minha_emp,
                             "concorrentes": dados_db.get("concorrentes", []),
                         }
                         st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
@@ -877,7 +869,6 @@ with st.sidebar:
     logo_white_b64 = get_logo_white_base64()
     logo_white_src = f"data:image/png;base64,{logo_white_b64}" if logo_white_b64 else ""
 
-    # ── Botões invisíveis — acionados pelo JS do components.html
     paginas = ["home", "cad", "geral", "redes", "sites", "ads", "insights", "sair"]
     for p in paginas:
         if st.button(p, key=f"_hidden_{p}"):
@@ -892,32 +883,8 @@ with st.sidebar:
                 trocar_pagina(p)
             st.rerun()
 
-    # ── Menu HTML
     pagina_atual = st.session_state.pagina
     user_email = st.session_state.user.email if st.session_state.user else ""
-
-    def item_html(icon, label, key):
-        ativo = "background:#1e2a3a;color:#e5e7eb;" if pagina_atual == key else "color:#8a95a3;"
-        return f"""
-        <a onclick="nav('{key}')" style="
-            display:flex;align-items:center;gap:11px;
-            padding:9px 14px;margin:1px 4px;border-radius:7px;
-            text-decoration:none;font-size:15px;font-weight:600;
-            font-family:'DM Sans',sans-serif;cursor:pointer;
-            {ativo}transition:background 0.15s,color 0.15s;
-        "
-        onmouseover="this.style.background='#1e2a3a';this.style.color='#e5e7eb'"
-        onmouseout="this.style.background='{'#1e2a3a' if pagina_atual == key else 'transparent'}';this.style.color='{'#e5e7eb' if pagina_atual == key else '#8a95a3'}'">
-            <i class="{icon}" style="width:18px;text-align:center;font-size:15px;flex-shrink:0"></i>
-            <span>{label}</span>
-        </a>"""
-
-    sep = lambda label: f"""
-        <div style="padding:5px 8px;font-size:11px;font-weight:700;text-transform:uppercase;
-                    letter-spacing:1.6px;color:#008fcc;font-family:'DM Sans',sans-serif;
-                    margin:12px 4px 2px;background:#052f46;border-radius:5px">
-            {label}
-        </div>"""
 
     menu_html = f"""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -933,8 +900,6 @@ body {{
     display: flex;
     flex-direction: column;
 }}
- 
-/* ── Logo ── */
 .logo-wrap {{
     text-align: center;
     padding: 28px 20px 20px;
@@ -945,8 +910,6 @@ body {{
     text-transform: uppercase; color: #3a9fd6;
     font-family: 'DM Sans', sans-serif;
 }}
- 
-/* ── Section separator ── */
 .sec {{
     display: flex; align-items: center; gap: 10px;
     padding: 15px 14px 8px;
@@ -961,10 +924,7 @@ body {{
     text-transform: uppercase; color: #3a9fd6;
     white-space: nowrap;
 }}
- 
-/* ── Nav items ── */
 .nav-list {{ padding: 4px 10px; flex: 1; }}
- 
 .nav-item {{
     display: flex; align-items: center; gap: 14px;
     padding: 6px 16px;
@@ -986,27 +946,22 @@ body {{
     border-color: #1e5a8a;
     border-left: 4px solid #00a7e3;
 }}
- 
 .nav-icon {{
     width: 26px; text-align: center; flex-shrink: 0;
     font-size: 18px; color: #8a9bb0;
 }}
 .nav-item.active .nav-icon {{ color: #e2eaf5; }}
- 
 .nav-label {{
     font-size: 14px; font-weight: 600;
     color: #8a9bb0; flex: 1;
     letter-spacing: 0.1px;
 }}
 .nav-item.active .nav-label {{ color: #e2eaf5; }}
- 
 .nav-arrow {{
     font-size: 13px; color: #3a4f6a;
     flex-shrink: 0;
 }}
 .nav-item.active .nav-arrow {{ color: #3a9fd6; }}
- 
-/* ── Footer ── */
 .footer {{
     border-top: 1px solid #1e2a3a;
     padding: 16px 14px 12px;
@@ -1039,76 +994,57 @@ body {{
 </style>
  
 <body>
- 
-<!-- Logo -->
 <div class="logo-wrap">
     {'<img src="' + logo_white_src + '" />' if logo_white_src else '<div style="font-size:20px;font-weight:700;color:#fff">Marketylics</div>'}
     <div class="logo-sub">Competitive Intelligence</div>
 </div>
- 
-<!-- ── DADOS PRINCIPAIS ── -->
 <div class="sec">
     <span class="sec-dot"></span>
     <span class="sec-label">Dados Principais</span>
     <span class="sec-line"></span>
 </div>
- 
 <div class="nav-list">
- 
     <a class="nav-item {'active' if pagina_atual == 'home' else ''}" onclick="nav('home')">
         <span class="nav-icon"><i class="fa-solid fa-building-columns"></i></span>
         <span class="nav-label">Minha Empresa</span>
     </a>
- 
     <a class="nav-item {'active' if pagina_atual == 'cad' else ''}" onclick="nav('cad')">
         <span class="nav-icon"><i class="fa-solid fa-crosshairs"></i></span>
         <span class="nav-label">Concorrentes</span>
     </a>
- 
 </div>
- 
-<!-- ── ANÁLISE COMPETITIVA ── -->
 <div class="sec">
     <span class="sec-dot"></span>
     <span class="sec-label">Análise Competitiva</span>
     <span class="sec-line"></span>
 </div>
- 
 <div class="nav-list">
- 
     <a class="nav-item {'active' if pagina_atual == 'geral' else ''}" onclick="nav('geral')">
         <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>
         <span class="nav-label">Visão Geral</span>
         <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
     </a>
- 
     <a class="nav-item {'active' if pagina_atual == 'redes' else ''}" onclick="nav('redes')">
         <span class="nav-icon"><i class="fa-brands fa-instagram"></i></span>
         <span class="nav-label">Redes Sociais</span>
         <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
     </a>
- 
     <a class="nav-item {'active' if pagina_atual == 'sites' else ''}" onclick="nav('sites')">
         <span class="nav-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
         <span class="nav-label">Confronto de Sites</span>
         <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
     </a>
- 
     <a class="nav-item {'active' if pagina_atual == 'ads' else ''}" onclick="nav('ads')">
         <span class="nav-icon"><i class="fa-solid fa-rectangle-ad"></i></span>
         <span class="nav-label">Biblioteca de Ads</span>
         <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
     </a>
- 
     <a class="nav-item {'active' if pagina_atual == 'insights' else ''}" onclick="nav('insights')">
         <span class="nav-icon"><i class="fa-solid fa-lightbulb"></i></span>
         <span class="nav-label">Insights</span>
         <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
     </a>
- 
 </div>
- 
-<!-- Footer -->
 <div class="footer">
     <div class="footer-email">
         <i class="fa-solid fa-circle-user"></i>
@@ -1119,9 +1055,7 @@ body {{
         Sair
     </button>
 </div>
- 
 </body>
- 
 <script>
 function nav(page) {{
     const buttons = window.parent.document.querySelectorAll('[data-testid="stSidebar"] button');
@@ -1136,7 +1070,7 @@ function nav(page) {{
 """
 
     components.html(menu_html, height=620, scrolling=False)
-        
+
 # ---------------------------------------------------
 # HELPER — CABEÇALHO COM PERÍODO
 # ---------------------------------------------------
@@ -1398,9 +1332,6 @@ if st.session_state.pagina == "home":
                 else:
                     st.error("Informe pelo menos o nome da empresa.")
  
-    # ----------------------------------------------------------
-    # MODO VISUALIZAÇÃO
-    # ----------------------------------------------------------
     else:
  
         st.markdown("""
@@ -1570,7 +1501,6 @@ body {{
 </head>
 <body>
 <div class="empresa-card" id="card">
- 
     <svg class="empresa-card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
         <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
         <circle cx="170" cy="50" r="3.5" fill="#60a5fa"/>
@@ -1581,7 +1511,6 @@ body {{
         <rect x="219" y="33" width="11" height="63" rx="3" fill="#3b82f6" opacity="0.68"/>
         <rect x="236" y="20" width="11" height="76" rx="3" fill="#2563eb" opacity="0.75"/>
     </svg>
- 
     <div class="empresa-card-body">
         <div class="empresa-top">
             <div class="empresa-avatar">{avatar}</div>
@@ -1590,14 +1519,9 @@ body {{
                 <div class="empresa-sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
             </div>
         </div>
- 
         <div class="empresa-grid">
- 
-            <!-- PRESENÇA DIGITAL -->
             <div class="empresa-col">
                 <div class="empresa-sec-title">Presença Digital</div>
-
-                <!-- Site -->
                 <div class="empresa-row">
                     <span class="empresa-ico" style="background:#f3f4f6;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"
@@ -1613,8 +1537,6 @@ body {{
                         <span class="empresa-val">{emp['site'] or '—'}</span>
                     </div>
                 </div>
-
-                <!-- Instagram -->
                 <div class="empresa-row">
                     <span class="empresa-ico" style="background:#fff0f6;">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1637,8 +1559,6 @@ body {{
                         <span class="empresa-val">{emp['instagram'] or '—'}</span>
                     </div>
                 </div>
-
-                <!-- Facebook -->
                 <div class="empresa-row">
                     <span class="empresa-ico" style="background:#e8f0fe;">
                         <svg viewBox="0 0 24 24" fill="#1877F2">
@@ -1655,10 +1575,7 @@ body {{
                     </div>
                 </div>
             </div>
- 
             <div class="empresa-divider"></div>
- 
-            <!-- LOCALIZAÇÃO -->
             <div class="empresa-col">
                 <div class="empresa-sec-title">Localização</div>
                 <div class="empresa-row">
@@ -1675,19 +1592,14 @@ body {{
                     </div>
                 </div>
             </div>
- 
             <div class="empresa-divider"></div>
- 
-            <!-- SERVIÇOS -->
             <div class="empresa-col">
                 <div class="empresa-sec-title">Serviços</div>
                 <div class="empresa-tags-wrap">{servicos_html}</div>
             </div>
- 
         </div>
     </div>
 </div>
- 
 <script>
     function ajustarAltura() {{
         const card = document.getElementById('card');
@@ -1746,6 +1658,14 @@ elif st.session_state.pagina == "cad":
         padding: 28px 32px !important;
         margin-bottom: 28px !important;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    }
+    /* Oculta o campo ads_id no formulário de concorrentes */
+    .st-key-ads_id_hidden {
+        display: none !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -1808,7 +1728,16 @@ html, body { background: transparent; overflow: hidden; }
             c3, c4 = st.columns(2)
             insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
             fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
-            ads_manual = st.text_input("ID Manual Ads (Opcional)", value=(concorrente_edit["ads_id"] if concorrente_edit else ""))
+
+            # ── Campo ads_id oculto via CSS (key único para esconder) ──
+            # O valor é preservado do registro existente mas não exibido ao usuário.
+            ads_manual = st.text_input(
+                "ads_id_hidden",
+                value=(concorrente_edit.get("ads_id", "") if concorrente_edit else ""),
+                key="ads_id_hidden",
+                label_visibility="hidden",
+                autocomplete="off",
+            )
 
             col1, col2 = st.columns(2)
             salvar = col1.form_submit_button("Salvar", use_container_width=True)
@@ -1823,11 +1752,13 @@ html, body { background: transparent; overflow: hidden; }
                 clean_handle = obter_instagram_handle(insta_handle)
                 fb_clean = obter_facebook_handle(fb_p)
                 site_clean = limpar_site(u)
-                search_term = ads_manual or fb_clean or clean_handle.lstrip("@") or n
+                # ads_id: mantém valor existente ou usa facebook/instagram/nome como fallback
+                existing_ads_id = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
+                search_term = existing_ads_id or fb_clean or clean_handle.lstrip("@") or n
                 dados_novos = {
                     "nome": n, "url": site_clean,
                     "instagram": clean_handle, "fb_page": fb_clean,
-                    "ads_id": search_term
+                    "ads_id": existing_ads_id  # preserva ads_id configurado na página de Ads
                 }
                 if st.session_state.editando_concorrente is not None:
                     st.session_state.dados["concorrentes"][st.session_state.editando_concorrente] = dados_novos
@@ -1845,7 +1776,6 @@ html, body { background: transparent; overflow: hidden; }
         for i, c in enumerate(concorrentes):
             with cols[i % 2]:
                 avatar = gerar_avatar(c["nome"])
-                # ← USANDO a função global de cor para concorrentes
                 cor_avatar = get_concorrente_color(i)
 
                 card_html = f"""<!DOCTYPE html>
@@ -1922,7 +1852,6 @@ body {{ padding-bottom: 4px; }}
       <div class="avatar">{avatar}</div>
       <div class="name">{c['nome']}</div>
     </div>
-
     <div class="row">
       <div class="ico">
         <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -1936,7 +1865,6 @@ body {{ padding-bottom: 4px; }}
         <span class="val">{c['url'] or '—'}</span>
       </div>
     </div>
-
     <div class="row">
       <div class="ico" style="background:#fff0f6;">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1959,7 +1887,6 @@ body {{ padding-bottom: 4px; }}
         <span class="val">{c['instagram'] or '—'}</span>
       </div>
     </div>
-
     <div class="row">
       <div class="ico" style="background:#e8f0fe;">
         <svg viewBox="0 0 24 24" fill="#1877F2">
@@ -1971,7 +1898,6 @@ body {{ padding-bottom: 4px; }}
         <span class="val">{c['fb_page'] or '—'}</span>
       </div>
     </div>
-
   </div>
 </div>
 </body>
@@ -2052,7 +1978,6 @@ elif st.session_state.pagina == "sites":
     st.markdown("""
     <style>
     @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
- 
     </style>
     """, unsafe_allow_html=True)
  
@@ -2105,7 +2030,6 @@ html, body { background: transparent; overflow: hidden; }
         unsafe_allow_html=True,
     )
  
-    # ── Monta lista de sites
     sites_disponiveis = []
     if emp.get("site"):
         sites_disponiveis.append({"nome": emp["nome"], "url": emp["site"], "tipo": "minha", "instagram": emp.get("instagram", "")})
@@ -2119,20 +2043,17 @@ html, body { background: transparent; overflow: hidden; }
  
     cols_sites = st.columns(min(len(sites_disponiveis), 4))
  
-    # Inicializa estados de análise individual
     for idx_s, s in enumerate(sites_disponiveis):
         chave = f"sites_analise_{idx_s}"
         if chave not in st.session_state:
             st.session_state[chave] = ""
 
-    # ── CSS estático para esconder botões fantasma pelo key do Streamlit
     ghost_css = "\n".join([
         f".st-key-btn_site_ia_{i} {{ display: none !important; }}"
         for i in range(len(sites_disponiveis))
     ])
     st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
 
-    # ── Botões fantasma — criados ANTES dos cards
     site_ia_triggers = {}
     for idx_s in range(len(sites_disponiveis)):
         triggered = st.button(
@@ -2142,7 +2063,6 @@ html, body { background: transparent; overflow: hidden; }
         )
         site_ia_triggers[idx_s] = triggered
 
-    # ── Cards
     for idx_s, s in enumerate(sites_disponiveis):
         with cols_sites[idx_s % 4]:
             is_minha  = s["tipo"] == "minha"
@@ -2273,7 +2193,6 @@ setTimeout(ajustarAltura, 800);
 </script>
 """, height=380, scrolling=False)
 
-            # ── Processa clique do botão fantasma
             if site_ia_triggers[idx_s]:
                 if gemini_model is None:
                     st.session_state[f"sites_analise_{idx_s}"] = "Configure GEMINI_API_KEY nos secrets."
@@ -2325,7 +2244,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                         except Exception as e:
                             st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
 
-            # ── Exibe análise individual
             analise_ind = st.session_state.get(f"sites_analise_{idx_s}", "")
             if analise_ind:
                 st.markdown(f"""
@@ -2336,7 +2254,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                 </div>
                 """, unsafe_allow_html=True)
 
-    # ── Gerar relatório geral
     if gerar_btn:
         st.session_state.relatorio_gemini = ""
         st.session_state.relatorio_sites = {}
@@ -2378,7 +2295,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
             st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
             status.update(label="✅ Relatório gerado!", state="complete")
  
-    # ── Exibe relatório geral
     if st.session_state.relatorio_gemini:
         st.markdown(
             "<div style='font-size:20px;font-weight:700;color:#111827;"
@@ -2427,7 +2343,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     st.warning("Nenhum conteúdo extraído.")
                 st.markdown("---")
 
-    # ── Separador antes das análises salvas
     st.markdown(
         "<div style='margin:16px 0 0 0;border-top:1px solid #e5e7eb'/>",
         unsafe_allow_html=True,
@@ -2437,25 +2352,21 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
     analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
     analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
 
-    # ── Botões fantasma para remover análises salvas
     acoes_salvas = {}
     for i, a in enumerate(analises):
         acoes_salvas[f"rm_{i}"] = st.button(f"_rm_analise_{i}_", key=f"btn_rm_analise_{i}")
 
-    # CSS para esconder botões fantasma de remoção
     rm_css = "\n".join([
         f".st-key-btn_rm_analise_{i} {{ display: none !important; }}"
         for i in range(len(analises))
     ])
     st.markdown(f"<style>{rm_css}</style>", unsafe_allow_html=True)
 
-    # Processa remoções
     for i in range(len(analises) - 1, -1, -1):
         if acoes_salvas.get(f"rm_{i}"):
             st.session_state.analises_salvas.pop(i)
             st.rerun()
 
-    # ── Monta HTML dos itens para cada aba
     def _card_analise(idx_real, analise, tipo):
         titulo   = analise.get("titulo", "—")
         data     = analise.get("data", "—")
@@ -2510,118 +2421,40 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
 body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
-
-.wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    overflow:hidden;
-}}
-.wrap-header {{
-    padding:14px 18px;
-    font-size:14px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.3px;
-    border-bottom:1px solid #e5e7eb;
-    background:#fff;
-}}
-.tabs {{
-    display:flex;
-    border-bottom:1px solid #e5e7eb;
-    background:#f9fafb;
-}}
-.tab {{
-    flex:1; padding:11px 0; text-align:center;
-    font-size:14px; font-weight:600; color:#9ca3af;
-    cursor:pointer; border:none; background:transparent;
-    border-bottom:2px solid transparent; margin-bottom:-1px;
-    font-family:'DM Sans',sans-serif; transition:color 0.15s;
-}}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }}
+.wrap-header {{ padding:14px 18px; font-size:14px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; }}
+.tabs {{ display:flex; border-bottom:1px solid #e5e7eb; background:#f9fafb; }}
+.tab {{ flex:1; padding:11px 0; text-align:center; font-size:14px; font-weight:600; color:#9ca3af; cursor:pointer; border:none; background:transparent; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:'DM Sans',sans-serif; transition:color 0.15s; }}
 .tab:hover {{ color:#374151; background:#f3f4f6; }}
-.tab.active {{
-    color:#1a2e4a;
-    border-bottom:2px solid #3a9fd6;
-    background:#fff;
-}}
+.tab.active {{ color:#1a2e4a; border-bottom:2px solid #3a9fd6; background:#fff; }}
 .panel {{ display:none; padding:12px 14px; }}
 .panel.active {{ display:block; }}
-
-.item {{
-    border:1px solid #e5e7eb;
-    border-radius:10px;
-    margin-bottom:10px;
-    overflow:hidden;
-    background:#fff;
-}}
-.item-header {{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 16px; cursor:pointer;
-    background:#f9fafb;
-    transition:background 0.12s;
-}}
+.item {{ border:1px solid #e5e7eb; border-radius:10px; margin-bottom:10px; overflow:hidden; background:#fff; }}
+.item-header {{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; cursor:pointer; background:#f9fafb; transition:background 0.12s; }}
 .item-header:hover {{ background:#f3f4f6; }}
-.item-left {{
-    display:flex; align-items:center; gap:12px; flex:1; min-width:0;
-}}
+.item-left {{ display:flex; align-items:center; gap:12px; flex:1; min-width:0; }}
 .item-icon {{ font-size:18px; flex-shrink:0; }}
-.item-titulo {{
-    font-size:14px; font-weight:700; color:#111827;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}}
-.item-meta {{
-    font-size:12px; color:#9ca3af; margin-top:2px;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}}
-.item-chevron {{
-    font-size:11px; color:#9ca3af; flex-shrink:0; margin-left:10px;
-    transition:transform 0.2s;
-}}
+.item-titulo {{ font-size:14px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.item-meta {{ font-size:12px; color:#9ca3af; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.item-chevron {{ font-size:11px; color:#9ca3af; flex-shrink:0; margin-left:10px; transition:transform 0.2s; }}
 .item-chevron.open {{ transform:rotate(180deg); }}
-.item-body {{
-    padding:16px;
-    border-top:1px solid #f3f4f6;
-}}
-.item-relatorio {{
-    font-size:13px; color:#374151; line-height:1.75;
-    max-height:320px; overflow-y:auto;
-    padding-right:4px; margin-bottom:14px;
-}}
-.item-acoes {{
-    display:flex; gap:10px; padding-top:12px;
-    border-top:1px solid #f3f4f6;
-}}
-.btn-dl {{
-    flex:1; padding:9px; border-radius:8px;
-    border:1px solid #3a9fd6; background:#eff6ff;
-    font-size:13px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s;
-}}
+.item-body {{ padding:16px; border-top:1px solid #f3f4f6; }}
+.item-relatorio {{ font-size:13px; color:#374151; line-height:1.75; max-height:320px; overflow-y:auto; padding-right:4px; margin-bottom:14px; }}
+.item-acoes {{ display:flex; gap:10px; padding-top:12px; border-top:1px solid #f3f4f6; }}
+.btn-dl {{ flex:1; padding:9px; border-radius:8px; border:1px solid #3a9fd6; background:#eff6ff; font-size:13px; font-weight:700; color:#1d4ed8; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
 .btn-dl:hover {{ background:#dbeafe; }}
-.btn-rm {{
-    padding:9px 16px; border-radius:8px;
-    border:1px solid #fca5a5; background:#fef2f2;
-    font-size:13px; font-weight:700; color:#dc2626;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s;
-    white-space:nowrap;
-}}
+.btn-rm {{ padding:9px 16px; border-radius:8px; border:1px solid #fca5a5; background:#fef2f2; font-size:13px; font-weight:700; color:#dc2626; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; white-space:nowrap; }}
 .btn-rm:hover {{ background:#fee2e2; }}
 </style>
-
 <div class="wrap">
     <div class="wrap-header">Análises Salvas</div>
     <div class="tabs">
         <button class="tab active" onclick="showTab('geral', this)">Análise Geral 📊</button>
         <button class="tab"        onclick="showTab('individual', this)">Análise por Site 🔍</button>
     </div>
-    <div id="panel-geral" class="panel active">
-        {itens_geral}
-    </div>
-    <div id="panel-individual" class="panel">
-        {itens_individual}
-    </div>
+    <div id="panel-geral" class="panel active">{itens_geral}</div>
+    <div id="panel-individual" class="panel">{itens_individual}</div>
 </div>
-
 <script>
 function showTab(name, el) {{
     document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
@@ -2630,7 +2463,6 @@ function showTab(name, el) {{
     el.classList.add('active');
     ajustarAltura();
 }}
-
 function toggleItem(idx) {{
     var body = document.getElementById('body_' + idx);
     var chev = document.getElementById('chev_' + idx);
@@ -2639,7 +2471,6 @@ function toggleItem(idx) {{
     chev.classList.toggle('open', !aberto);
     setTimeout(ajustarAltura, 50);
 }}
-
 function remover(idx) {{
     var targetText = '_rm_analise_' + idx + '_';
     var btns = window.parent.document.querySelectorAll('button');
@@ -2647,7 +2478,6 @@ function remover(idx) {{
         if (btns[i].innerText.trim() === targetText) {{ btns[i].click(); return; }}
     }}
 }}
-
 function baixar(idx, conteudo, nome) {{
     var blob = new Blob([conteudo], {{type: 'text/plain;charset=utf-8'}});
     var a = document.createElement('a');
@@ -2655,7 +2485,6 @@ function baixar(idx, conteudo, nome) {{
     a.download = nome + '.txt';
     a.click();
 }}
-
 function ajustarAltura() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -2663,7 +2492,6 @@ function ajustarAltura() {{
         try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
     }});
 }}
-
 var ro = new ResizeObserver(ajustarAltura);
 ro.observe(document.body);
 document.addEventListener('DOMContentLoaded', ajustarAltura);
@@ -2691,8 +2519,6 @@ elif st.session_state.pagina == "ads":
  
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
- 
-    # ── helpers de cache no Supabase (idênticos ao original) ──────────
  
     def salvar_cache_ads(dados: dict):
         try:
@@ -2725,8 +2551,6 @@ elif st.session_state.pagina == "ads":
             return (_dt.datetime.now() - ts).total_seconds() < CACHE_TTL_HORAS * 3600
         except Exception:
             return False
- 
-    # ── helpers de imagem (idênticos ao original) ─────────────────────
  
     def _url_para_base64(url: str) -> str:
         if not url or not url.startswith("http"):
@@ -2769,8 +2593,6 @@ elif st.session_state.pagina == "ads":
                 if v and v.startswith("http"):
                     return v
         return ""
- 
-    # ── helpers de extração de campos (idênticos ao original) ─────────
  
     def _truncar(txt, n=160):
         if not txt:
@@ -2892,28 +2714,18 @@ elif st.session_state.pagina == "ads":
                     add(card.get(k))
         return vids
  
-    # ── Normaliza um item bruto do Apify para o formato interno ───────
-    # O actor retorna campos como: adArchiveID, pageID, pageName,
-    # snapshot (body/title/images/videos), startDate, impressionsWithIndex, etc.
- 
     def _normalizar_item_apify(item: dict) -> dict:
-        """Converte um item bruto do Apify para o formato interno usado pelo layout."""
         snapshot = item.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
  
-        # ── IDs e página
         ad_id   = str(item.get("adArchiveID") or item.get("ad_archive_id") or item.get("id") or "")
         page_id = str(item.get("pageID") or item.get("page_id") or "")
         page_name = (item.get("pageName") or item.get("page_name") or snapshot.get("page_name") or "")
  
-        # ── Imagens e vídeos
         images = _extract_images(item)
         videos = _extract_videos(item)
- 
-        # ── Copy
         copy = _extract_copy(item)
  
-        # ── Plataformas
         plats = (item.get("publisherPlatform")
                  or item.get("publisher_platforms")
                  or snapshot.get("publisher_platforms")
@@ -2923,7 +2735,6 @@ elif st.session_state.pagina == "ads":
         if not plats:
             plats = ["facebook", "instagram"]
  
-        # ── Formato
         has_video   = bool(videos) or (item.get("mediaType") or item.get("media_type") or "").upper() == "VIDEO"
         has_cards   = len(cards) > 1
         if has_video:   fmt = "Vídeo 🎬"
@@ -2931,14 +2742,12 @@ elif st.session_state.pagina == "ads":
         elif images:    fmt = "Imagem 🖼️"
         else:           fmt = "Texto 📝"
  
-        # ── Dinâmico
         is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"])
                    or _is_dynamic(copy["desc"]))
         body_c  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
         title_c = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
         desc_c  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
  
-        # ── Impressões
         imp = item.get("impressionsWithIndex") or item.get("impressions") or {}
         if isinstance(imp, dict):
             lo, hi  = imp.get("lowerBound") or imp.get("lower_bound") or "", \
@@ -2947,7 +2756,6 @@ elif st.session_state.pagina == "ads":
         else:
             imp_str = str(imp) if imp else ""
  
-        # ── Data de início
         start_raw = str(item.get("startDate") or item.get("ad_delivery_start_time") or "")[:10]
         if start_raw and len(start_raw) == 10:
             try:
@@ -2964,14 +2772,12 @@ elif st.session_state.pagina == "ads":
                     or item.get("ad_snapshot_url")
                     or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""))
  
-        # ── Converte 1ª imagem para base64
         images_b64 = []
         if images:
             b64 = _url_para_base64(images[0])
             images_b64.append(b64 if b64 else images[0])
             images_b64.extend(images[1:3])
  
-        # ── Thumbnail de vídeo
         video_thumb_url = _extract_video_thumbnail(item) if has_video else ""
         video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
  
@@ -2997,8 +2803,6 @@ elif st.session_state.pagina == "ads":
             "formato":      fmt,
             "is_dynamic":   is_dyn,
         }
- 
-    # ── Integração com Apify ──────────────────────────────────────────
  
     def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
         api_token = st.secrets.get("APIFY_TOKEN", "")
@@ -3083,7 +2887,6 @@ elif st.session_state.pagina == "ads":
         return ads_normalizados, raw_items[:3], None
  
     def buscar_ads_apify(query: str, limit: int = 30) -> tuple:
-        """Wrapper público — retorna (ads, raw_debug, erro)."""
         return _apify_run_sync(query.strip(), limit=limit)
  
     def executar_busca(empresas: list, query_values: dict):
@@ -3121,8 +2924,6 @@ elif st.session_state.pagina == "ads":
         salvar_cache_ads(cache_atual)
         st.rerun()
  
-    # ── session state ─────────────────────────────────────────────────
- 
     if "ads_cache" not in st.session_state:
         st.session_state.ads_cache = carregar_cache_ads()
     if "ads_erro" not in st.session_state:
@@ -3130,11 +2931,10 @@ elif st.session_state.pagina == "ads":
     if "ads_raw_debug" not in st.session_state:
         st.session_state.ads_raw_debug = {}
  
-    # ── helpers de UI ─────────────────────────────────────────────────
- 
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
- 
+
+    # ── Lista TODAS as empresas (minha empresa + concorrentes) ────────
     todas_empresas = []
     if emp.get("nome"):
         todas_empresas.append({"nome": emp["nome"], "tipo": "minha", "idx": 0})
@@ -3151,19 +2951,18 @@ elif st.session_state.pagina == "ads":
                 st.session_state[chave] = cached_entry["query"]
             else:
                 if e["tipo"] == "minha":
-                    fonte = (emp.get("fb_page")
+                    fonte = (emp.get("ads_id", "")
+                             or emp.get("fb_page")
                              or emp.get("instagram", "").lstrip("@")
                              or emp.get("nome", ""))
                 else:
                     cd    = concs[e["idx"]]
-                    fonte = (cd.get("ads_id")
+                    fonte = (cd.get("ads_id", "")
                              or cd.get("fb_page")
                              or cd.get("instagram", "").lstrip("@")
                              or cd.get("nome", ""))
                 if fonte:
                     st.session_state[chave] = fonte.strip()
- 
-    # ── Cabeçalho (idêntico ao original) ──────────────────────────────
  
     components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3189,8 +2988,6 @@ html, body { background:transparent; overflow:hidden; }
     if not st.secrets.get("APIFY_TOKEN", ""):
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
  
-    # ── Banner de cache ───────────────────────────────────────────────
- 
     empresas_com_cache = [e for e in todas_empresas if e["nome"] in st.session_state.ads_cache]
     if empresas_com_cache:
         tss         = [st.session_state.ads_cache[e["nome"]].get("ts", "") for e in empresas_com_cache]
@@ -3209,11 +3006,11 @@ html, body { background:transparent; overflow:hidden; }
             f"{ico_b} {msg_b} &nbsp;·&nbsp; {len(empresas_com_cache)} empresa(s) em cache</div>",
             unsafe_allow_html=True,
         )
- 
-# ── Helpers de onboarding ─────────────────────────────────────────
+
+    # ── helpers de ads_id ─────────────────────────────────────────────
 
     def empresa_tem_ads_id(e: dict) -> bool:
-        """Verifica se a empresa já tem ads_id confirmado."""
+        """Verifica se a empresa já tem ads_id confirmado — vale para minha empresa E concorrentes."""
         if e["tipo"] == "minha":
             return bool(emp.get("ads_id", "").strip())
         else:
@@ -3229,7 +3026,6 @@ html, body { background:transparent; overflow:hidden; }
         salvar_dados_usuario(st.session_state.user.id)
 
     def buscar_paginas_facebook(termo: str) -> list:
-        """Busca páginas no Ad Library via Apify e retorna lista de páginas únicas encontradas."""
         ads, _, erro = _apify_run_sync(termo, limit=20)
         if erro or not ads:
             return []
@@ -3243,21 +3039,16 @@ html, body { background:transparent; overflow:hidden; }
                 paginas[nome]["total_ads"] += 1
         return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
 
-    # ── Inicializa session state do onboarding ────────────────────────
-
     if "ads_onboarding_empresa" not in st.session_state:
-        st.session_state.ads_onboarding_empresa = None   # qual empresa está em onboarding
+        st.session_state.ads_onboarding_empresa = None
     if "ads_onboarding_paginas" not in st.session_state:
-        st.session_state.ads_onboarding_paginas = []     # páginas encontradas
+        st.session_state.ads_onboarding_paginas = []
     if "ads_onboarding_termo" not in st.session_state:
-        st.session_state.ads_onboarding_termo = ""       # termo buscado
+        st.session_state.ads_onboarding_termo = ""
 
-    # ── Verifica quais empresas precisam de configuração ─────────────
-
-    empresas_sem_config = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
+    # ── Todas as empresas passam pelo onboarding (minha empresa + concorrentes) ──
+    empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
     empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
-
-    # ── ONBOARDING: empresas sem ads_id ──────────────────────────────
 
     if empresas_sem_config:
         st.markdown(
@@ -3328,7 +3119,6 @@ html, body { background:transparent; overflow:hidden; }
                     st.session_state.ads_onboarding_paginas = paginas
                     st.rerun()
 
-                # ── Mostra resultados de páginas encontradas ──────────
                 if (st.session_state.ads_onboarding_empresa == ck
                         and st.session_state.ads_onboarding_paginas is not None):
 
@@ -3369,14 +3159,12 @@ html, body { background:transparent; overflow:hidden; }
                                     type="primary",
                                 ):
                                     salvar_ads_id(e, pag["nome"])
-                                    # Salva também na query cache
                                     st.session_state[f"_query_saved_{sk}"] = pag["nome"]
                                     st.session_state.ads_onboarding_empresa = None
                                     st.session_state.ads_onboarding_paginas = []
                                     st.toast(f"✅ Página «{pag['nome']}» configurada!", icon="✅")
                                     st.rerun()
 
-                        # Opção de digitar manualmente
                         with st.expander("Não encontrou? Digite manualmente"):
                             col_m1, col_m2 = st.columns([4, 2])
                             with col_m1:
@@ -3406,7 +3194,6 @@ html, body { background:transparent; overflow:hidden; }
 
     # ── MODO NORMAL: empresas já configuradas ─────────────────────────
 
-    # Monta query_values a partir do ads_id salvo
     query_values = {}
     for e in empresas_configuradas:
         ck = e["nome"]
@@ -3418,7 +3205,6 @@ html, body { background:transparent; overflow:hidden; }
         st.session_state[f"_query_saved_{sk}"] = ads_id_salvo
         query_values[ck] = ads_id_salvo
 
-    # Mostra resumo das configurações com opção de alterar
     with st.expander("⚙️ Configurações de busca", expanded=False):
         st.markdown(
             "<div style='font-size:13px;color:#6b7280;margin-bottom:12px'>"
@@ -3501,8 +3287,6 @@ html, body { background:transparent; overflow:hidden; }
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
- 
-    # ── Render de cada empresa (layout 100% idêntico ao original) ─────
  
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3639,8 +3423,6 @@ html, body { background:transparent; overflow:hidden; }
                 <div style='font-size:12px;color:#6d28d9;font-weight:600'>Carrossel</div></div>
             {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
         </div>""", unsafe_allow_html=True)
- 
-        # ── Cards de anúncios ─────────────────────────────────────────
  
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
@@ -3962,8 +3744,6 @@ setTimeout(ajustarAltura,1400);
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
-        # ── Análise com IA (idêntica ao original) ────────────────────
- 
         chave_ia = f"ia_ads_{safe_key(ck)}"
         if chave_ia not in st.session_state:
             st.session_state[chave_ia] = ""
@@ -4035,7 +3815,7 @@ Amostra:
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
-              
+
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
 # ---------------------------------------------------
