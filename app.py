@@ -3381,28 +3381,24 @@ body {{ padding-bottom:4px; }}
 </div>
 <script>
 function acionar() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    var myIndex = -1;
-    for (var i = 0; i < iframes.length; i++) {{
+    var myIframe = null;
+    var allIframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < allIframes.length; i++) {{
         try {{
-            if (iframes[i].contentWindow === window) {{ myIndex = i; break; }}
+            if (allIframes[i].contentWindow === window) {{
+                myIframe = allIframes[i];
+                break;
+            }}
         }} catch(e) {{}}
     }}
-    var btns = window.parent.document.querySelectorAll(
-        '[data-testid="stButton"] button, button[kind]'
-    );
-    var target = 'editar_cfg_{sk}';
-    for (var j = 0; j < btns.length; j++) {{
-        var key = btns[j].closest('[data-testid]');
-        if (key && key.className && key.className.indexOf(target) >= 0) {{
-            btns[j].click(); return;
-        }}
-    }}
-    // fallback: procura pelo texto
+    if (!myIframe) return;
+    var iRect = myIframe.getBoundingClientRect();
     var allBtns = window.parent.document.querySelectorAll('button');
-    for (var k = 0; k < allBtns.length; k++) {{
-        if (allBtns[k].innerText.trim() === '✏️ Editar_{sk}') {{
-            allBtns[k].click(); return;
+    for (var j = 0; j < allBtns.length; j++) {{
+        var bRect = allBtns[j].getBoundingClientRect();
+        if (bRect.top > iRect.bottom && bRect.top < iRect.bottom + 300) {{
+            allBtns[j].click();
+            return;
         }}
     }}
 }}
