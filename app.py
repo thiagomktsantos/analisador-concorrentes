@@ -2576,11 +2576,14 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
- 
-import datetime as _dt
-import json as _json
-import base64 as _b64
-import time as _time
+
+elif st.session_state.pagina == "ads":
+
+    import datetime as _dt
+    import datetime as _dt
+    import json as _json
+    import base64 as _b64
+    import time as _time
  
 emp   = st.session_state.dados["minha_empresa"]
 concs = st.session_state.dados["concorrentes"]
