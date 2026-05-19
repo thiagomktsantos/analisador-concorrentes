@@ -3000,87 +3000,87 @@ elif st.session_state.pagina == "ads":
  
     # ── Integração com Apify ──────────────────────────────────────────
  
-    def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
+def _apify_run_sync(search_term: str, limit: int = 30) -> tuple:
         api_token = st.secrets.get("APIFY_TOKEN", "")
         if not api_token:
             return [], [], "APIFY_TOKEN não configurada nos secrets."
 
-    run_url = (
-        f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
-        f"?token={api_token}"
-    )
+        run_url = (
+            f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
+            f"?token={api_token}"
+        )
 
-    import urllib.parse
-    query_encoded = urllib.parse.quote(search_term.strip())
-    ad_library_url = (
-        f"https://www.facebook.com/ads/library/"
-        f"?active_status=all&ad_type=all&country=BR"
-        f"&q={query_encoded}&search_type=keyword_unordered&media_type=all"
-    )
+        import urllib.parse
+        query_encoded = urllib.parse.quote(search_term.strip())
+        ad_library_url = (
+            f"https://www.facebook.com/ads/library/"
+            f"?active_status=all&ad_type=all&country=BR"
+            f"&q={query_encoded}&search_type=keyword_unordered&media_type=all"
+        )
 
-    payload = {
-        "urls": [{"url": ad_library_url}],
-        "count": limit,
-        "scrapeAdDetails": False,
-        "scrapePageAds.activeStatus": "all",
-        "scrapePageAds.countryCode": "BR",
-        "scrapePageAds.sortBy": "impressions_desc",
-    }
+        payload = {
+            "urls": [{"url": ad_library_url}],
+            "count": limit,
+            "scrapeAdDetails": False,
+            "scrapePageAds.activeStatus": "all",
+            "scrapePageAds.countryCode": "BR",
+            "scrapePageAds.sortBy": "impressions_desc",
+        }
 
-    try:
-        r_start = requests.post(run_url, json=payload, timeout=30)
-        r_start.raise_for_status()
-        run_data = r_start.json()
-    except Exception as e:
-        return [], [], f"Erro ao iniciar run Apify: {e}"
-
-    run_id     = run_data.get("data", {}).get("id") or run_data.get("id")
-    dataset_id = run_data.get("data", {}).get("defaultDatasetId") or run_data.get("defaultDatasetId")
-
-    if not run_id:
-        return [], [], f"Apify não retornou run ID. Resposta: {run_data}"
-
-    status_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={api_token}"
-    deadline   = _time.time() + 180
-    status     = "RUNNING"
-    while _time.time() < deadline:
         try:
-            r_st   = requests.get(status_url, timeout=15)
-            jdata  = r_st.json().get("data", {})
-            status = jdata.get("status", "RUNNING")
-            if not dataset_id:
-                dataset_id = jdata.get("defaultDatasetId") or dataset_id
-        except Exception:
-            pass
-        if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
-            break
-        _time.sleep(5)
+            r_start = requests.post(run_url, json=payload, timeout=30)
+            r_start.raise_for_status()
+            run_data = r_start.json()
+        except Exception as e:
+            return [], [], f"Erro ao iniciar run Apify: {e}"
 
-    if status != "SUCCEEDED":
-        return [], [], f"Run Apify terminou com status: {status}"
+        run_id     = run_data.get("data", {}).get("id") or run_data.get("id")
+        dataset_id = run_data.get("data", {}).get("defaultDatasetId") or run_data.get("defaultDatasetId")
 
-    if not dataset_id:
-        return [], [], "Apify não retornou dataset ID."
+        if not run_id:
+            return [], [], f"Apify não retornou run ID. Resposta: {run_data}"
 
-    items_url = (
-        f"https://api.apify.com/v2/datasets/{dataset_id}/items"
-        f"?token={api_token}&limit={limit}&clean=true"
-    )
-    try:
-        r_items = requests.get(items_url, timeout=30)
-        r_items.raise_for_status()
-        raw_items = r_items.json()
-    except Exception as e:
-        return [], [], f"Erro ao ler dataset Apify: {e}"
+        status_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={api_token}"
+        deadline   = _time.time() + 180
+        status     = "RUNNING"
+        while _time.time() < deadline:
+            try:
+                r_st   = requests.get(status_url, timeout=15)
+                jdata  = r_st.json().get("data", {})
+                status = jdata.get("status", "RUNNING")
+                if not dataset_id:
+                    dataset_id = jdata.get("defaultDatasetId") or dataset_id
+            except Exception:
+                pass
+            if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
+                break
+            _time.sleep(5)
 
-    if not isinstance(raw_items, list):
-        raw_items = raw_items.get("items", []) if isinstance(raw_items, dict) else []
+        if status != "SUCCEEDED":
+            return [], [], f"Run Apify terminou com status: {status}"
 
-    if not raw_items:
-        return [], [], None
+        if not dataset_id:
+            return [], [], "Apify não retornou dataset ID."
 
-    ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
-    return ads_normalizados, raw_items[:3], None
+        items_url = (
+            f"https://api.apify.com/v2/datasets/{dataset_id}/items"
+            f"?token={api_token}&limit={limit}&clean=true"
+        )
+        try:
+            r_items = requests.get(items_url, timeout=30)
+            r_items.raise_for_status()
+            raw_items = r_items.json()
+        except Exception as e:
+            return [], [], f"Erro ao ler dataset Apify: {e}"
+
+        if not isinstance(raw_items, list):
+            raw_items = raw_items.get("items", []) if isinstance(raw_items, dict) else []
+
+        if not raw_items:
+            return [], [], None
+
+        ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
+        return ads_normalizados, raw_items[:3], None
  
     def buscar_ads_apify(query: str, limit: int = 30) -> tuple:
         """Wrapper público — retorna (ads, raw_debug, erro)."""
