@@ -3046,7 +3046,6 @@ def executar_busca(empresas: list, query_values: dict):
     salvar_cache_ads(cache_atual)
     st.rerun()
 
-
 # ── Página ADS ────────────────────────────────────────────────────────
 
 elif st.session_state.pagina == "geral":
