@@ -3210,60 +3210,254 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
-    # ── Inputs de query ───────────────────────────────────────────────
- 
-    st.markdown(
-        "<div style='font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;"
-        "letter-spacing:1px;margin-bottom:4px'>Confirme o nome ou termo de busca de cada empresa</div>",
-        unsafe_allow_html=True,
-    )
-    st.info(
-        "💡 **Dica:** Use o nome exato da página do Facebook para melhores resultados. "
-        "O actor buscará automaticamente os anúncios ativos e inativos no Brasil.",
-    )
-    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
- 
+# ── Helpers de onboarding ─────────────────────────────────────────
+
+    def empresa_tem_ads_id(e: dict) -> bool:
+        """Verifica se a empresa já tem ads_id confirmado."""
+        if e["tipo"] == "minha":
+            return bool(emp.get("ads_id", "").strip())
+        else:
+            cd = concs[e["idx"]]
+            return bool(cd.get("ads_id", "").strip())
+
+    def salvar_ads_id(e: dict, ads_id: str):
+        """Salva o ads_id confirmado na empresa ou concorrente."""
+        if e["tipo"] == "minha":
+            st.session_state.dados["minha_empresa"]["ads_id"] = ads_id
+        else:
+            st.session_state.dados["concorrentes"][e["idx"]]["ads_id"] = ads_id
+        salvar_dados_usuario(st.session_state.user.id)
+
+    def buscar_paginas_facebook(termo: str) -> list:
+        """Busca páginas no Ad Library via Apify e retorna lista de páginas únicas encontradas."""
+        ads, _, erro = _apify_run_sync(termo, limit=20)
+        if erro or not ads:
+            return []
+        paginas = {}
+        for ad in ads:
+            pid  = ad.get("page_id", "") or ""
+            nome = ad.get("page_name", "") or ""
+            if nome and nome not in paginas:
+                paginas[nome] = {"nome": nome, "page_id": pid, "total_ads": 0}
+            if nome in paginas:
+                paginas[nome]["total_ads"] += 1
+        return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
+
+    # ── Inicializa session state do onboarding ────────────────────────
+
+    if "ads_onboarding_empresa" not in st.session_state:
+        st.session_state.ads_onboarding_empresa = None   # qual empresa está em onboarding
+    if "ads_onboarding_paginas" not in st.session_state:
+        st.session_state.ads_onboarding_paginas = []     # páginas encontradas
+    if "ads_onboarding_termo" not in st.session_state:
+        st.session_state.ads_onboarding_termo = ""       # termo buscado
+
+    # ── Verifica quais empresas precisam de configuração ─────────────
+
+    empresas_sem_config = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
+    empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
+
+    # ── ONBOARDING: empresas sem ads_id ──────────────────────────────
+
+    if empresas_sem_config:
+        st.markdown(
+            "<div style='background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;"
+            "padding:16px 20px;margin-bottom:20px'>"
+            "<div style='font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px'>"
+            "⚙️ Configure a busca de anúncios</div>"
+            "<div style='font-size:13px;color:#92400e'>"
+            "As empresas abaixo ainda não têm uma página do Facebook confirmada. "
+            "Configure uma vez e nunca mais será pedido.</div>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        for e in empresas_sem_config:
+            ck       = e["nome"]
+            sk       = safe_key(ck)
+            is_minha = e["tipo"] == "minha"
+            cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            av       = gerar_avatar(ck)
+            badge    = "Minha Empresa" if is_minha else "Concorrente"
+
+            # Valor sugerido dos dados cadastrados
+            if is_minha:
+                sugestao = emp.get("fb_page") or emp.get("nome", "")
+            else:
+                cd = concs[e["idx"]]
+                sugestao = cd.get("fb_page") or cd.get("nome", "")
+
+            with st.container(border=True):
+                c_av, c_info = st.columns([1, 10])
+                with c_av:
+                    st.markdown(
+                        f"<div style='width:40px;height:40px;border-radius:50%;background:{cor};"
+                        f"display:flex;align-items:center;justify-content:center;"
+                        f"font-size:14px;font-weight:700;color:#fff;margin-top:4px'>{av}</div>",
+                        unsafe_allow_html=True,
+                    )
+                with c_info:
+                    st.markdown(
+                        f"<div style='font-size:15px;font-weight:700;color:#111827'>{ck}</div>"
+                        f"<div style='font-size:12px;color:#6b7280'>{badge}</div>",
+                        unsafe_allow_html=True,
+                    )
+
+                col_termo, col_btn_buscar = st.columns([4, 2])
+                with col_termo:
+                    termo_input = st.text_input(
+                        "Nome da página no Facebook",
+                        value=sugestao,
+                        placeholder="Ex: Kedu Educação",
+                        key=f"onboarding_termo_{sk}",
+                        help="Digite o nome da página como aparece no Facebook",
+                    )
+                with col_btn_buscar:
+                    st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
+                    btn_procurar = st.button(
+                        "🔍 Buscar Páginas",
+                        key=f"btn_procurar_{sk}",
+                        use_container_width=True,
+                    )
+
+                if btn_procurar and termo_input.strip():
+                    st.session_state.ads_onboarding_empresa = ck
+                    st.session_state.ads_onboarding_termo   = termo_input.strip()
+                    with st.spinner(f"Buscando páginas para «{termo_input}»…"):
+                        paginas = buscar_paginas_facebook(termo_input.strip())
+                    st.session_state.ads_onboarding_paginas = paginas
+                    st.rerun()
+
+                # ── Mostra resultados de páginas encontradas ──────────
+                if (st.session_state.ads_onboarding_empresa == ck
+                        and st.session_state.ads_onboarding_paginas is not None):
+
+                    paginas = st.session_state.ads_onboarding_paginas
+                    termo_buscado = st.session_state.ads_onboarding_termo
+
+                    if not paginas:
+                        st.warning(
+                            f"Nenhuma página encontrada para «{termo_buscado}». "
+                            "Tente um nome diferente ou verifique no "
+                            "[Meta Ad Library](https://www.facebook.com/ads/library/)."
+                        )
+                    else:
+                        st.markdown(
+                            f"<div style='font-size:13px;font-weight:600;color:#374151;"
+                            f"margin:12px 0 8px 0'>Páginas encontradas para «{termo_buscado}» "
+                            f"— selecione a correta:</div>",
+                            unsafe_allow_html=True,
+                        )
+
+                        cols_pag = st.columns(min(len(paginas), 3))
+                        for ip, pag in enumerate(paginas[:6]):
+                            with cols_pag[ip % 3]:
+                                st.markdown(
+                                    f"<div style='background:#f9fafb;border:1px solid #e5e7eb;"
+                                    f"border-radius:10px;padding:12px 14px;margin-bottom:8px'>"
+                                    f"<div style='font-size:14px;font-weight:700;color:#111827;"
+                                    f"margin-bottom:4px'>{pag['nome']}</div>"
+                                    f"<div style='font-size:12px;color:#6b7280'>"
+                                    f"📢 {pag['total_ads']} anúncio(s) encontrado(s)</div>"
+                                    f"</div>",
+                                    unsafe_allow_html=True,
+                                )
+                                if st.button(
+                                    f"✅ Usar esta página",
+                                    key=f"sel_pag_{sk}_{ip}",
+                                    use_container_width=True,
+                                    type="primary",
+                                ):
+                                    salvar_ads_id(e, pag["nome"])
+                                    # Salva também na query cache
+                                    st.session_state[f"_query_saved_{sk}"] = pag["nome"]
+                                    st.session_state.ads_onboarding_empresa = None
+                                    st.session_state.ads_onboarding_paginas = []
+                                    st.toast(f"✅ Página «{pag['nome']}» configurada!", icon="✅")
+                                    st.rerun()
+
+                        # Opção de digitar manualmente
+                        with st.expander("Não encontrou? Digite manualmente"):
+                            col_m1, col_m2 = st.columns([4, 2])
+                            with col_m1:
+                                manual = st.text_input(
+                                    "Nome exato da página",
+                                    placeholder="Cole o nome como está no Facebook",
+                                    key=f"manual_{sk}",
+                                )
+                            with col_m2:
+                                st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
+                                if st.button("💾 Salvar", key=f"btn_manual_{sk}", use_container_width=True):
+                                    if manual.strip():
+                                        salvar_ads_id(e, manual.strip())
+                                        st.session_state[f"_query_saved_{sk}"] = manual.strip()
+                                        st.session_state.ads_onboarding_empresa = None
+                                        st.session_state.ads_onboarding_paginas = []
+                                        st.toast(f"✅ «{manual.strip()}» salvo!", icon="✅")
+                                        st.rerun()
+
+        if not empresas_configuradas:
+            st.stop()
+
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
+            unsafe_allow_html=True,
+        )
+
+    # ── MODO NORMAL: empresas já configuradas ─────────────────────────
+
+    # Monta query_values a partir do ads_id salvo
     query_values = {}
-    for e in todas_empresas:
-        ck       = e["nome"]
-        sk       = safe_key(ck)
-        is_minha = e["tipo"] == "minha"
-        cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-        av       = gerar_avatar(ck)
-        badge    = "Minha Empresa" if is_minha else "Concorrente"
-        saved_q  = st.session_state.get(f"_query_saved_{sk}", "")
-        cached   = st.session_state.ads_cache.get(ck, {})
- 
-        col_av, col_inp, col_tip = st.columns([1, 5, 3])
-        with col_av:
-            st.markdown(
-                f"<div style='width:38px;height:38px;border-radius:50%;background:{cor};"
-                f"display:flex;align-items:center;justify-content:center;"
-                f"font-size:13px;font-weight:700;color:#fff;margin-top:28px'>{av}</div>",
-                unsafe_allow_html=True,
-            )
-        with col_inp:
-            query_values[ck] = st.text_input(
-                f"{ck} ({badge})",
-                value=saved_q,
-                placeholder="Nome da página do Facebook ou termo de busca",
-                key=f"query_input_{sk}",
-            )
-        with col_tip:
-            if cached.get("ts"):
-                fresco_e = cache_esta_fresco(cached["ts"])
-                cor_t = "#059669" if fresco_e else "#92400e"
-                bg_t  = "#f0fdf4" if fresco_e else "#fffbeb"
-                brd_t = "#86efac" if fresco_e else "#fcd34d"
-                ico_t = "✅"      if fresco_e else "🕐"
+    for e in empresas_configuradas:
+        ck = e["nome"]
+        sk = safe_key(ck)
+        if e["tipo"] == "minha":
+            ads_id_salvo = emp.get("ads_id", "")
+        else:
+            ads_id_salvo = concs[e["idx"]].get("ads_id", "")
+        st.session_state[f"_query_saved_{sk}"] = ads_id_salvo
+        query_values[ck] = ads_id_salvo
+
+    # Mostra resumo das configurações com opção de alterar
+    with st.expander("⚙️ Configurações de busca", expanded=False):
+        st.markdown(
+            "<div style='font-size:13px;color:#6b7280;margin-bottom:12px'>"
+            "Páginas do Facebook configuradas para cada empresa. "
+            "Clique em <b>Redefinir</b> para escolher outra página.</div>",
+            unsafe_allow_html=True,
+        )
+        for e in empresas_configuradas:
+            ck       = e["nome"]
+            sk       = safe_key(ck)
+            is_minha = e["tipo"] == "minha"
+            cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            av       = gerar_avatar(ck)
+            ads_id_atual = query_values.get(ck, "")
+
+            col_av2, col_info2, col_red = st.columns([1, 6, 2])
+            with col_av2:
                 st.markdown(
-                    f"<div style='margin-top:28px;font-size:12px;color:{cor_t};"
-                    f"background:{bg_t};border:1px solid {brd_t};border-radius:6px;padding:6px 10px'>"
-                    f"{ico_t} Cache: <b>{cached['ts']}</b><br>"
-                    f"<span style='font-size:11px'>Busca: {cached.get('query','—')}</span></div>",
+                    f"<div style='width:32px;height:32px;border-radius:50%;background:{cor};"
+                    f"display:flex;align-items:center;justify-content:center;"
+                    f"font-size:12px;font-weight:700;color:#fff;margin-top:4px'>{av}</div>",
                     unsafe_allow_html=True,
                 )
- 
+            with col_info2:
+                st.markdown(
+                    f"<div style='font-size:14px;font-weight:600;color:#111827'>{ck}</div>"
+                    f"<div style='font-size:12px;color:#6b7280'>📌 {ads_id_atual}</div>",
+                    unsafe_allow_html=True,
+                )
+            with col_red:
+                if st.button("Redefinir", key=f"redef_{sk}", use_container_width=True):
+                    salvar_ads_id(e, "")
+                    st.session_state[f"_query_saved_{sk}"] = ""
+                    st.session_state.ads_onboarding_empresa = None
+                    st.session_state.ads_onboarding_paginas = []
+                    st.rerun()
+
+    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
     bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
     with bcol1:
         buscar = st.button("🔍 Buscar / Atualizar Anúncios", use_container_width=True, type="primary")
@@ -3271,7 +3465,7 @@ html, body { background:transparent; overflow:hidden; }
         limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True)
     with bcol3:
         debug_mode = st.toggle("🔍 Debug JSON", value=False)
- 
+
     if limpar_cache:
         st.session_state.ads_cache     = {}
         st.session_state.ads_erro      = {}
@@ -3279,17 +3473,15 @@ html, body { background:transparent; overflow:hidden; }
         salvar_cache_ads({})
         st.toast("Cache limpo!", icon="🗑️")
         st.rerun()
- 
+
     if buscar:
-        for e in todas_empresas:
-            sk = safe_key(e["nome"])
-            v  = query_values.get(e["nome"], "").strip()
-            if v:
-                st.session_state[f"_query_saved_{sk}"] = v
-        if not any(query_values.get(e["nome"], "").strip() for e in todas_empresas):
-            st.warning("Informe pelo menos um nome de página.")
+        if not query_values:
+            st.warning("Configure pelo menos uma empresa antes de buscar.")
         else:
-            executar_busca(todas_empresas, query_values)
+            executar_busca(
+                [e for e in todas_empresas if empresa_tem_ads_id(e)],
+                query_values,
+            )
  
     empresas_com_dados = [
         e for e in todas_empresas
