@@ -1992,29 +1992,17 @@ elif st.session_state.pagina == "sites":
 html, body { background: transparent; overflow: hidden; }
 .titulo {
     font-family: 'Animo', 'DM Sans', sans-serif;
-    font-size: 32px;
-    font-weight: 700;
-    color: #1a2e4a;
-    text-transform: uppercase;
-    margin: 0 0 6px 0;
-    letter-spacing: 0.5px;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
 }
-.sub {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    color: #6b7280;
-}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
 </style>
 <div class="titulo">Confronto de Sites</div>
 <div class="sub">Análise comparativa de posicionamento via IA.</div>
 """, height=65)
-
+ 
     with h2:
-        gerar_btn = st.button(
-            "Gerar Relatório",
-            type="primary",
-            use_container_width=True,
-        )
+        gerar_btn = st.button("Gerar Relatório", type="primary", use_container_width=True)
         ultimo_relatorio = st.session_state.get("sites_ultima_geracao", "")
         if ultimo_relatorio:
             st.markdown(
@@ -2022,11 +2010,8 @@ html, body { background: transparent; overflow: hidden; }
                 f"🕒 Última análise: <b>{ultimo_relatorio}</b></div>",
                 unsafe_allow_html=True,
             )
-
-    st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
-        unsafe_allow_html=True,
-    )
+ 
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
     sites_disponiveis = []
     if emp.get("site"):
@@ -2045,13 +2030,13 @@ html, body { background: transparent; overflow: hidden; }
         chave = f"sites_analise_{idx_s}"
         if chave not in st.session_state:
             st.session_state[chave] = ""
-
+ 
     ghost_css = "\n".join([
         f".st-key-btn_site_ia_{i} {{ display: none !important; }}"
         for i in range(len(sites_disponiveis))
     ])
     st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
-
+ 
     site_ia_triggers = {}
     for idx_s in range(len(sites_disponiveis)):
         triggered = st.button(
@@ -2060,87 +2045,93 @@ html, body { background: transparent; overflow: hidden; }
             use_container_width=False,
         )
         site_ia_triggers[idx_s] = triggered
-
+ 
     for idx_s, s in enumerate(sites_disponiveis):
         with cols_sites[idx_s % 4]:
-            is_minha  = s["tipo"] == "minha"
+            is_minha   = s["tipo"] == "minha"
             cor_avatar = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_s - 1)
-            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+            badge_bg   = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt  = "#1d4ed8" if is_minha else "#6b7280"
+            badge_brd  = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_lbl  = "Minha Empresa" if is_minha else "Concorrente"
             avatar_letras = gerar_avatar(s["nome"])
-
-            components.html(f"""
+            uid = f"site_{idx_s}"
+ 
+            card_html = f"""<!DOCTYPE html>
+<html>
+<head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+html, body {{
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+}}
 .card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px;overflow: hidden;
-    overflow:hidden; padding:0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
 }}
 .card-header {{
-    display:flex; align-items:center; gap:12px;
-    padding:16px 16px 14px 16px;
-    border-bottom:1px solid #f3f4f6;
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 16px 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
 }}
 .avatar {{
-    width:44px; height:44px; border-radius:50%;
-    background:{cor_avatar};
-    display:flex; align-items:center; justify-content:center;
-    font-size:16px; font-weight:700; color:#fff; flex-shrink:0;
-    letter-spacing:0.5px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: {cor_avatar};
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0;
 }}
-.nome-wrap {{ flex:1; min-width:0; }}
+.nome-wrap {{ flex: 1; min-width: 0; }}
 .nome {{
-    font-size:16px; font-weight:700; color:#111827;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    letter-spacing:-0.2px;
+    font-size: 16px; font-weight: 700; color: #111827;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }}
 .badge {{
-    display:inline-block;
-    background:{badge_bg}; color:{badge_txt};
-    border:1px solid {badge_brd};
-    padding:2px 10px; border-radius:20px;
-    font-size:11px; font-weight:600; margin-top:4px;
+    display: inline-block;
+    background: {badge_bg}; color: {badge_txt};
+    border: 1px solid {badge_brd};
+    padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; margin-top: 4px;
 }}
 .url-row {{
-    padding:10px 16px;
-    font-size:15px; color:#0d1117;
-    word-break:break-all;
-    border-bottom:1px solid #f3f4f6;
-    display:flex; align-items:center; gap:6px;
+    padding: 10px 16px;
+    font-size: 14px; color: #0d1117;
+    word-break: break-all;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex; align-items: center; gap: 6px;
 }}
-.url-label {{
-    font-size:15px; font-weight:700; color:#0d1117;
-    flex-shrink:0;
-}}
+.url-label {{ font-size: 14px; font-weight: 700; color: #0d1117; flex-shrink: 0; }}
 .preview-wrap {{
-    margin: 8px 12px 0 12px;
+    margin: 12px 12px 0 12px;
     border-radius: 8px; overflow: hidden;
     border: 1px solid #e5e7eb; background: #f9fafb;
-    aspect-ratio: 16 / 9;        /* ← proporção de monitor */
+    aspect-ratio: 16 / 9;
     width: calc(100% - 24px);
+    position: relative;
 }}
 .preview-wrap img {{
     width: 100%; height: 100%; display: block;
     border-radius: 8px; object-fit: cover; object-position: top;
 }}
-.btn-wrap {{
-    padding:12px 12px 14px 12px;
-}}
+.btn-wrap {{ padding: 12px 12px 14px 12px; }}
 .btn-analisar {{
-    width:100%; padding:10px 0;
-    border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s;
-    display:flex; align-items:center; justify-content:center; gap:6px;
+    width: 100%; padding: 10px 0;
+    border: 1px solid #3a9fd6; border-radius: 8px;
+    background: #eff6ff; font-size: 14px; font-weight: 700; color: #1d4ed8;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
 }}
-.btn-analisar:hover {{ background:#dbeafe; }}
+.btn-analisar:hover {{ background: #dbeafe; }}
 </style>
-<div class="card">
+</head>
+<body>
+<div class="card" id="card_{uid}">
     <div class="card-header">
         <div class="avatar">{avatar_letras}</div>
         <div class="nome-wrap">
@@ -2177,20 +2168,37 @@ function triggerAnalise(idx) {{
         }}
     }}
 }}
+ 
 function ajustarAltura() {{
-    var card = document.querySelector('.card');
+    var card = document.getElementById('card_{uid}');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
-    window.parent.postMessage({{ type: 'resize_sites_{idx_s}', height: h + 8 }}, '*');
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = (h + 12) + 'px';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
+}}
+ 
+if (window.ResizeObserver) {{
+    var ro = new ResizeObserver(ajustarAltura);
+    ro.observe(document.body);
 }}
 document.addEventListener('DOMContentLoaded', ajustarAltura);
 window.addEventListener('load', ajustarAltura);
-window.addEventListener('resize', ajustarAltura);
-setTimeout(ajustarAltura, 300);
-setTimeout(ajustarAltura, 800);
+setTimeout(ajustarAltura, 200);
+setTimeout(ajustarAltura, 600);
+setTimeout(ajustarAltura, 1200);
 </script>
-""", height=380, scrolling=False)
-
+</body>
+</html>"""
+ 
+            components.html(card_html, height=480, scrolling=False)
+ 
             if site_ia_triggers[idx_s]:
                 if gemini_model is None:
                     st.session_state[f"sites_analise_{idx_s}"] = "Configure GEMINI_API_KEY nos secrets."
@@ -2241,7 +2249,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                             st.rerun()
                         except Exception as e:
                             st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
-
+ 
             analise_ind = st.session_state.get(f"sites_analise_{idx_s}", "")
             if analise_ind:
                 st.markdown(f"""
@@ -2251,7 +2259,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     {analise_ind.replace(chr(10), "<br>")}
                 </div>
                 """, unsafe_allow_html=True)
-
+ 
     if gerar_btn:
         st.session_state.relatorio_gemini = ""
         st.session_state.relatorio_sites = {}
@@ -2340,38 +2348,35 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                 else:
                     st.warning("Nenhum conteúdo extraído.")
                 st.markdown("---")
-
-    st.markdown(
-        "<div style='margin:16px 0 0 0;border-top:1px solid #e5e7eb'/>",
-        unsafe_allow_html=True,
-    )
-
+ 
+    st.markdown("<div style='margin:16px 0 0 0;border-top:1px solid #e5e7eb'/>", unsafe_allow_html=True)
+ 
     analises = st.session_state.get("analises_salvas", [])
     analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo", "geral") == "geral"]
     analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
-
+ 
     acoes_salvas = {}
     for i, a in enumerate(analises):
         acoes_salvas[f"rm_{i}"] = st.button(f"_rm_analise_{i}_", key=f"btn_rm_analise_{i}")
-
+ 
     rm_css = "\n".join([
         f".st-key-btn_rm_analise_{i} {{ display: none !important; }}"
         for i in range(len(analises))
     ])
     st.markdown(f"<style>{rm_css}</style>", unsafe_allow_html=True)
-
+ 
     for i in range(len(analises) - 1, -1, -1):
         if acoes_salvas.get(f"rm_{i}"):
             st.session_state.analises_salvas.pop(i)
             st.rerun()
-
+ 
     def _card_analise(idx_real, analise, tipo):
-        titulo   = analise.get("titulo", "—")
-        data     = analise.get("data", "—")
+        titulo    = analise.get("titulo", "—")
+        data      = analise.get("data", "—")
         sites_str = ", ".join(analise.get("sites", []))
         relatorio = (analise.get("relatorio") or "").replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-        icone    = "📄" if tipo == "geral" else "🌐"
-
+        icone     = "📄" if tipo == "geral" else "🌐"
+ 
         return f"""
         <div class="item" id="item_{idx_real}">
             <div class="item-header" onclick="toggleItem({idx_real})">
@@ -2393,7 +2398,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
             </div>
         </div>
         """
-
+ 
     itens_geral = "".join(
         _card_analise(i, a, "geral")
         for i, a in reversed(analises_gerais)
@@ -2402,7 +2407,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     border:1px dashed #d1d5db;border-radius:10px;margin:16px 0'>
             Nenhuma análise geral salva ainda.<br>Gere um relatório e clique em <b>💾 Salvar Análise</b>.
         </div>"""
-
+ 
     itens_individual = "".join(
         _card_analise(i, a, "individual")
         for i, a in reversed(analises_individuais)
@@ -2412,7 +2417,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
             Nenhuma análise por site salva ainda.<br>
             Use o botão <b>Analisar este site 🤖</b> em cada card.
         </div>"""
-
+ 
     analises_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -2486,9 +2491,14 @@ function baixar(idx, conteudo, nome) {{
 function ajustarAltura() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
-    iframes.forEach(function(f) {{
-        try {{ if (f.contentWindow === window) f.style.height = (h + 8) + 'px'; }} catch(e) {{}}
-    }});
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = (h + 8) + 'px';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
 }}
 var ro = new ResizeObserver(ajustarAltura);
 ro.observe(document.body);
@@ -2498,7 +2508,7 @@ setTimeout(ajustarAltura, 200);
 setTimeout(ajustarAltura, 600);
 </script>
 """
-
+ 
     components.html(analises_html, height=60, scrolling=False)
 
 # ---------------------------------------------------
