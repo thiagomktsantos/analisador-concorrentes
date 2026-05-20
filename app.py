@@ -3811,11 +3811,12 @@ html, body { background:transparent; overflow:hidden; }
                     else:
                         _sv = snap_url.replace("'", "")
                         _no_media_color = "#3a9fd6" if snap_url else "#c4c4c4"
-                        _no_media_label = "Ver criativo →" if snap_url else "Sem criativo"
-                        if snap_url:
-                            _no_media_attrs = f'style="cursor:pointer" onclick="openModal_{uid}(\'\', \'{_sv}\', false)"'
-                        else:
-                            _no_media_attrs = ""
+                        _no_media_label = "Ver criativo \u2192" if snap_url else "Sem criativo"
+                        _no_media_attrs = (
+                            'style="cursor:pointer" onclick="openModal_' + uid +
+                            "('', '" + _sv + "', false)\""
+                            if snap_url else ""
+                        )
                         media_block = f"""
 <div class="media-block no-media-block" {_no_media_attrs}>
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
