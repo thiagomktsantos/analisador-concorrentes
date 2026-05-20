@@ -2903,7 +2903,7 @@ elif st.session_state.pagina == "ads":
             plats = normalized
 
         if not plats:
-        plats = ["facebook", "instagram"]
+            plats = ["facebook", "instagram"]
  
  
         raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
