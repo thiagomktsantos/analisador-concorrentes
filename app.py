@@ -2588,6 +2588,38 @@ setTimeout(ajustarAltura, 600);
     components.html(analises_html, height=60, scrolling=False)
 
 # ---------------------------------------------------
+# FUNÇÃO salvar_cache_ads 
+# ---------------------------------------------------
+ 
+def salvar_cache_ads(dados: dict):
+    try:
+        user_id = st.session_state.user.id
+ 
+        dados_limpos = {}
+        for empresa, entry in dados.items():
+            entry_limpa = dict(entry)
+            ads_limpos = []
+            for ad in entry.get("data", []):
+                ad_limpo = dict(ad)
+                ad_limpo.pop("images_b64", None)
+                ad_limpo.pop("video_thumb", None)
+                ads_limpos.append(ad_limpo)
+            entry_limpa["data"] = ads_limpos
+            dados_limpos[empresa] = entry_limpa
+ 
+        payload = {
+            "user_id": user_id,
+            "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
+            "concorrentes": st.session_state.dados.get("concorrentes", []),
+            "metricas_redes": st.session_state.get("metricas_redes", {}),
+            "ads_cache": dados_limpos,
+        }
+        supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
+    except Exception as e:
+        st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
+ 
+ 
+# ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
  
@@ -2603,34 +2635,6 @@ elif st.session_state.pagina == "ads":
  
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
- 
-def salvar_cache_ads(dados: dict):
-    try:
-        user_id = st.session_state.user.id
-
-        # Remove campos pesados (base64) antes de salvar no Supabase
-        dados_limpos = {}
-        for empresa, entry in dados.items():
-            entry_limpa = dict(entry)
-            ads_limpos = []
-            for ad in entry.get("data", []):
-                ad_limpo = dict(ad)
-                ad_limpo.pop("images_b64", None)   # remove base64
-                ad_limpo.pop("video_thumb", None)  # remove thumb pesado
-                ads_limpos.append(ad_limpo)
-            entry_limpa["data"] = ads_limpos
-            dados_limpos[empresa] = entry_limpa
-
-        payload = {
-            "user_id": user_id,
-            "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
-            "concorrentes": st.session_state.dados.get("concorrentes", []),
-            "metricas_redes": st.session_state.get("metricas_redes", {}),
-            "ads_cache": dados_limpos,
-        }
-        supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
-    except Exception as e:
-        st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
  
     def carregar_cache_ads() -> dict:
         if st.session_state.get("ads_cache"):
@@ -2746,8 +2750,6 @@ def salvar_cache_ads(dados: dict):
     def _dias_ativo(start_raw: str) -> str:
         if not start_raw:
             return ""
-        meses = ['jan','fev','mar','abr','mai','jun',
-                 'jul','ago','set','out','nov','dez']
         try:
             ts_int = int(str(start_raw).strip())
             if ts_int > 10**9:
@@ -2759,7 +2761,6 @@ def salvar_cache_ads(dados: dict):
                 dto = _dt.datetime.strptime(str(start_raw)[:10], "%Y-%m-%d")
             except Exception:
                 return str(start_raw)[:10]
-        # FIX: formato dd/mm/yyyy (211 dias ativo)
         data_fmt = f"{dto.day:02d}/{dto.month:02d}/{dto.year}"
         dias = (_dt.datetime.now() - dto).days
         if dias == 0:
@@ -3724,8 +3725,7 @@ setTimeout(ajustarAltura, 100);
     }}).join('');
 }})();
 """
-
-    # FIX: copy_block_html — mostra "... ver mais" inline para indicar que há mais texto
+ 
     def _copy_block_html(text: str, uid: str, max_chars: int = 80) -> str:
         if not text:
             return ""
@@ -3893,10 +3893,6 @@ setTimeout(ajustarAltura, 100);
                 st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
  
-        # FIX: Filtros sem labels visíveis e fundo branco garantido via components.html
-        filter_ghost_css = f".st-key-ads_busca_{safe_key(ck)}_wrap {{ display:none!important; }}"
-        st.markdown(f"<style>{filter_ghost_css}</style>", unsafe_allow_html=True)
-
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
@@ -4207,10 +4203,7 @@ function imgFallback_{uid}(img){{
                     '<div class="status-dot-inactive">Inativo</div>'
                 )
                 card_opacity = "1" if is_ativo else "0.72"
- 
                 dyn_badge_html = ' <span class="dynamic-badge">⚡ Dinâmico</span>' if is_dyn else ""
-
-                # FIX: "Veiculação iniciada:" em negrito + data sem negrito no formato dd/mm/yyyy
                 data_inicio_html = (
                     f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
                     if data_inicio else ""
@@ -4242,10 +4235,10 @@ body{{padding-bottom:2px;}}
 .page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
 .page-name{{font-size:13px;font-weight:700;color:#050505;line-height:1.2;}}
 .page-sponsored{{font-size:11px;color:#65676b;}}
-.copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;min-height: 46px;}}
+.copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;min-height:46px;}}
 .copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;line-height:1.4;}}
 .copy-desc{{font-size:12px;color:#65676b;margin-top:3px;line-height:1.4;}}
-.no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;min-height: 46px;}}
+.no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;min-height:46px;}}
 .media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:220px;}}
 .img-block{{height:220px;}}
 .video-thumb-block{{height:220px;}}
@@ -4405,7 +4398,6 @@ setTimeout(syncHeight_{uid}, 1400);
 </body></html>"""
  
                 components.html(card_html, height=610, scrolling=False)
-                # FIX: espaço vertical reduzido entre cards
                 st.markdown("<div style='height:1px'/>", unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
