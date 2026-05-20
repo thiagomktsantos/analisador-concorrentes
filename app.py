@@ -3872,7 +3872,6 @@ setTimeout(ajustarAltura, 100);
             border-radius: 0 0 12px 12px !important;
             padding: 10px 14px !important;
             margin-top: -20px !important;
-            margin-bottom: 20px !important;
             position: relative !important;
             z-index: 0 !important;
         }
