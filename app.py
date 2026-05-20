@@ -2623,7 +2623,7 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
  
 elif st.session_state.pagina == "ads":
-
+ 
     st.markdown("""
     <style>
     /* Bigger font for ads company tabs */
@@ -2890,7 +2890,7 @@ elif st.session_state.pagina == "ads":
                  or item.get("publisher_platforms")
                  or snapshot.get("publisher_platforms")
                  or [])
-
+ 
         if isinstance(plats, str):
             plats = [plats]
         elif isinstance(plats, list):
@@ -2901,7 +2901,7 @@ elif st.session_state.pagina == "ads":
                 elif isinstance(p, str):
                     normalized.append(p)
             plats = normalized
-
+ 
         if not plats:
             plats = ["facebook", "instagram"]
  
@@ -3252,7 +3252,7 @@ html, body { background:transparent; overflow:hidden; }
  
     with h2_col:
         gerar_btn_ads = st.button(
-            "🔍 Buscar / Atualizar Anúncios",
+            "Buscar / Atualizar Anúncios",
             type="primary",
             use_container_width=True,
             key="ads_buscar_topo_btn",
@@ -3623,7 +3623,7 @@ setTimeout(ajustarAltura, 100);
                     label_visibility="collapsed",
                 )
             with col_btn_b:
-                if st.button("🔍 Buscar", key=f"buscar_uncfg_{sk}", use_container_width=True, type="primary"):
+                if st.button("Buscar", key=f"buscar_uncfg_{sk}", use_container_width=True, type="primary"):
                     if termo_input.strip():
                         st.session_state.ads_onboarding_empresa = ck
                         st.session_state.ads_onboarding_termo   = termo_input.strip()
@@ -3632,7 +3632,7 @@ setTimeout(ajustarAltura, 100);
                         st.session_state.ads_onboarding_paginas = paginas
                         st.rerun()
             with col_btn_s:
-                if st.button("💾 Salvar ID", key=f"salvar_uncfg_{sk}", use_container_width=True):
+                if st.button("Salvar ID", key=f"salvar_uncfg_{sk}", use_container_width=True):
                     if termo_input.strip():
                         salvar_ads_id(e, termo_input.strip())
                         st.session_state.ads_onboarding_empresa = None
@@ -3686,6 +3686,154 @@ setTimeout(ajustarAltura, 100);
         </div>
         """, unsafe_allow_html=True)
         st.stop()
+ 
+    # ── Modal global (fora de qualquer iframe) ───────────────────────
+    components.html("""
+<style>
+#global-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    z-index: 2147483647;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+}
+#global-modal-overlay.open { display: flex; }
+#global-modal-box {
+    background: #1a1a2e;
+    border-radius: 16px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+#global-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+}
+#global-modal-close:hover { background: rgba(255,255,255,0.3); }
+#global-modal-img {
+    max-width: 80vw;
+    max-height: 78vh;
+    object-fit: contain;
+    border-radius: 10px;
+    display: block;
+}
+#global-modal-video-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 32px 24px;
+}
+#global-modal-video-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1877F2;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+}
+#global-modal-video-thumb {
+    max-width: 70vw;
+    max-height: 55vh;
+    object-fit: contain;
+    border-radius: 10px;
+    opacity: 0.85;
+}
+</style>
+ 
+<div id="global-modal-overlay" onclick="if(event.target===this)closeGlobalModal()">
+    <div id="global-modal-box">
+        <button id="global-modal-close" onclick="closeGlobalModal()">✕</button>
+        <div id="global-modal-content"></div>
+    </div>
+</div>
+ 
+<script>
+window.openGlobalModal = function(imgSrc, snapUrl, isVideo) {
+    var overlay = document.getElementById('global-modal-overlay');
+    var content = document.getElementById('global-modal-content');
+    content.innerHTML = '';
+ 
+    if (isVideo) {
+        var wrap = document.createElement('div');
+        wrap.id = 'global-modal-video-wrap';
+        if (imgSrc) {
+            var thumb = document.createElement('img');
+            thumb.src = imgSrc;
+            thumb.id = 'global-modal-video-thumb';
+            thumb.onerror = function() { this.style.display='none'; };
+            wrap.appendChild(thumb);
+        }
+        if (snapUrl) {
+            var btn = document.createElement('a');
+            btn.href = snapUrl;
+            btn.target = '_blank';
+            btn.id = 'global-modal-video-btn';
+            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
+            wrap.appendChild(btn);
+        } else {
+            var msg = document.createElement('div');
+            msg.style.cssText = 'color:#aaa;font-size:14px;padding:12px';
+            msg.textContent = 'Vídeo não disponível para visualização direta.';
+            wrap.appendChild(msg);
+        }
+        content.appendChild(wrap);
+    } else {
+        if (imgSrc) {
+            var img = document.createElement('img');
+            img.src = imgSrc;
+            img.id = 'global-modal-img';
+            img.onerror = function() {
+                this.style.display='none';
+                if (snapUrl) window.open(snapUrl, '_blank');
+            };
+            content.appendChild(img);
+        } else if (snapUrl) {
+            window.open(snapUrl, '_blank');
+            return;
+        }
+    }
+    overlay.classList.add('open');
+};
+ 
+window.closeGlobalModal = function() {
+    document.getElementById('global-modal-overlay').classList.remove('open');
+};
+ 
+// Listen for messages from child iframes
+window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'openGlobalModal') return;
+    window.openGlobalModal(e.data.imgSrc, e.data.snapUrl, e.data.isVideo);
+});
+</script>
+""", height=0, scrolling=False)
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
@@ -3846,7 +3994,7 @@ setTimeout(ajustarAltura, 100);
  
         lib_btn_top = ""
         if lib_url:
-            lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">🔗 Ver no Ad Library</a>'
+            lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Ad Library</a>'
  
         frescos_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
         st.markdown(f"""
@@ -3875,7 +4023,7 @@ setTimeout(ajustarAltura, 100);
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
-
+ 
         st.markdown("""
         <style>
         div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) {
@@ -3895,19 +4043,21 @@ setTimeout(ajustarAltura, 100);
         }
         </style>
         """, unsafe_allow_html=True)
-
+ 
+        # FIX 4: Remover emojis das opções do selectbox de formato
+        formatos_disponiveis = sorted(set(a["formato"] for a in ads_list))
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
                 "Pesquisar no copy",
-                placeholder="🔍 Pesquisar no copy…",
+                placeholder="Pesquisar no copy…",
                 key=f"ads_busca_{safe_key(ck)}",
                 label_visibility="collapsed",
             )
         with fcol2:
             filtro_fmt = st.selectbox(
                 "Tipo",
-                ["Tipo (todos)"] + sorted(set(a["formato"] for a in ads_list)),
+                ["Tipo (todos)"] + formatos_disponiveis,
                 key=f"ads_fmt_{safe_key(ck)}",
                 label_visibility="collapsed",
             )
@@ -4050,7 +4200,7 @@ setTimeout(ajustarAltura, 100);
                 is_dyn      = ad.get("is_dynamic", False)
                 baixo_vol   = ad.get("baixo_volume", False)
                 ad_id       = ad.get("id","")
-                ad_id_short = ad_id  # show full ID
+                ad_id_short = ad_id
                 plats       = ad.get("plataformas") or []
                 plat_js     = _json.dumps([p.lower() for p in plats])
                 data_inicio = ad.get("data_inicio","")
@@ -4072,10 +4222,22 @@ setTimeout(ajustarAltura, 100);
                     img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
+                # FIX 2: Modal via postMessage para o parent (fora do iframe)
+                open_modal_js = """
+function openModal_{uid}(imgSrc, snapUrl, isVideo) {{
+    window.parent.postMessage({{
+        type: 'openGlobalModal',
+        imgSrc: imgSrc,
+        snapUrl: snapUrl,
+        isVideo: isVideo
+    }}, '*');
+}}
+""".replace("{uid}", uid)
+ 
                 if videos:
                     if snap_url:
                         _snap_safe    = snap_url.replace("'", "\\'")
-                        video_onclick = f"onclick=\"window.open('{_snap_safe}','_blank')\""
+                        video_onclick = f"onclick=\"openModal_{uid}('{video_thumb.replace(chr(39), '')}', '{_snap_safe}', true)\""
                         video_style   = "cursor:pointer;"
                     else:
                         video_onclick = ""
@@ -4128,7 +4290,7 @@ setTimeout(ajustarAltura, 100);
         <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
-                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ampliar</div>
+                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
 </div>
 <script>
 var _srcs_{uid}={srcs_js};
@@ -4152,13 +4314,13 @@ function imgFallback_{uid}(img){{
         <span style="font-size:12px;color:#3a9fd6;font-weight:600;">Ver criativo →</span>
     </div>
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
-                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ampliar</div>
+                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
 </div>"""
                     else:
                         _sv = snap_url.replace("'", "")
                         _nm_attrs = ('style="cursor:pointer" onclick="openModal_' + uid + "('', '" + _sv + "', false)\"") if snap_url else ""
                         _nm_color = "#3a9fd6" if snap_url else "#c4c4c4"
-                        _nm_label = "Ver criativo \u2192" if snap_url else "Sem criativo"
+                        _nm_label = "Ver criativo →" if snap_url else "Sem criativo"
                         media_block = (
                             '<div class="media-block no-media-block" ' + _nm_attrs + '>'
                             '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
@@ -4172,10 +4334,17 @@ function imgFallback_{uid}(img){{
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
                 baixo_vol_badge = (
-                    '<span style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;'
-                    'padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:6px;">'
-                    '⚠️ Baixo volume</span>'
+                    '<span style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;'
+                    'padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;margin-left:6px;">'
+                    'Baixo volume</span>'
                 ) if baixo_vol else ""
+ 
+                # FIX 3: Badge "Dinâmico" alinhado à direita, cor neutra (cinza)
+                dyn_badge_html = (
+                    '<span style="margin-left:auto;background:#f3f4f6;color:#6b7280;'
+                    'border:1px solid #e5e7eb;padding:2px 8px;border-radius:20px;'
+                    'font-size:10px;font-weight:600;flex-shrink:0;">Dinâmico</span>'
+                ) if is_dyn else ""
  
                 if page_pic and page_pic.startswith("http"):
                     page_avatar_html = (
@@ -4206,11 +4375,21 @@ function imgFallback_{uid}(img){{
                     '<div class="status-dot-inactive">Inativo</div>'
                 )
                 card_opacity = "1" if is_ativo else "0.72"
-                dyn_badge_html = ' <span class="dynamic-badge">⚡ Dinâmico</span>' if is_dyn else ""
                 data_inicio_html = (
                     f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
                     if data_inicio else ""
                 )
+ 
+                # FIX 3: page-header com flexbox para alinhar badge à direita
+                page_header_html = f"""
+<div class="page-header">
+    {page_avatar_html}
+    <div style="flex:1;min-width:0">
+        <div class="page-name">{ad.get("page_name") or nome}</div>
+        <div class="page-sponsored">Patrocinado</div>
+    </div>
+    {dyn_badge_html}
+</div>"""
  
                 card_html = f"""<!DOCTYPE html>
 <html><head>
@@ -4232,7 +4411,6 @@ body{{padding-bottom:2px;}}
 .meta-label{{font-size:12px;color:#65676b;font-weight:700;flex-shrink:0;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
 .plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:transparent;}}
-.dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
 .page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
@@ -4258,15 +4436,6 @@ body{{padding-bottom:2px;}}
 .lib-btn:hover{{background:#166fe5;}}
 .ia-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#f0fdf4;color:#15803d;border:none;border-top:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;border-left:1px solid #e4e6ea;}}
 .ia-btn:hover{{background:#dcfce7;}}
-.modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(3px);}}
-.modal-overlay.open{{display:flex;}}
-.modal-box{{background:#1a1a2e;border-radius:16px;max-width:90vw;max-height:90vh;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;box-shadow:0 24px 80px rgba(0,0,0,0.6);}}
-.modal-close{{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:34px;height:34px;font-size:18px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
-.modal-close:hover{{background:rgba(255,255,255,0.3);}}
-.modal-img{{max-width:80vw;max-height:78vh;object-fit:contain;border-radius:10px;display:block;}}
-.modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 24px;}}
-.modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;}}
-.modal-video-thumb{{max-width:70vw;max-height:55vh;object-fit:contain;border-radius:10px;opacity:0.85;}}
 </style>
 </head><body>
 <div class="card">
@@ -4286,13 +4455,7 @@ body{{padding-bottom:2px;}}
         {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
     </div>
     <div class="copy-section">
-        <div class="page-header">
-            {page_avatar_html}
-            <div>
-                <div class="page-name">{ad.get("page_name") or nome}{dyn_badge_html}</div>
-                <div class="page-sponsored">Patrocinado</div>
-            </div>
-        </div>
+        {page_header_html}
         {_copy_block_html(body, uid)}
         {'<div class="copy-title">' + title + '</div>' if title else ''}
         {'<div class="copy-desc">' + _truncar(desc,120) + '</div>' if desc else ''}
@@ -4308,66 +4471,10 @@ body{{padding-bottom:2px;}}
     {lib_btn_html}
 </div>
  
-<div class="modal-overlay" id="modal_{uid}" onclick="if(event.target===this)closeModal_{uid}()">
-    <div class="modal-box" id="modalbox_{uid}">
-        <button class="modal-close" onclick="closeModal_{uid}()">✕</button>
-        <div id="modalcontent_{uid}"></div>
-    </div>
-</div>
- 
 <script>
 var __PLATS_{uid}__ = {plat_js};
 {_plat_svg_js(uid)}
- 
-function openModal_{uid}(imgSrc, snapUrl, isVideo) {{
-    var overlay = document.getElementById('modal_{uid}');
-    var content = document.getElementById('modalcontent_{uid}');
-    content.innerHTML = '';
-    if (isVideo) {{
-        var wrap = document.createElement('div');
-        wrap.className = 'modal-video-wrap';
-        if (imgSrc) {{
-            var thumb = document.createElement('img');
-            thumb.src = imgSrc;
-            thumb.className = 'modal-video-thumb';
-            thumb.onerror = function() {{ this.style.display='none'; }};
-            wrap.appendChild(thumb);
-        }}
-        if (snapUrl) {{
-            var btn = document.createElement('a');
-            btn.href = snapUrl;
-            btn.target = '_blank';
-            btn.className = 'modal-video-btn';
-            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
-            wrap.appendChild(btn);
-        }} else {{
-            var msg = document.createElement('div');
-            msg.style.cssText = 'color:#aaa;font-size:14px;padding:12px';
-            msg.textContent = 'Vídeo não disponível para visualização direta.';
-            wrap.appendChild(msg);
-        }}
-        content.appendChild(wrap);
-    }} else {{
-        if (imgSrc) {{
-            var img = document.createElement('img');
-            img.src = imgSrc;
-            img.className = 'modal-img';
-            img.onerror = function() {{
-                this.style.display='none';
-                if (snapUrl) window.open(snapUrl, '_blank');
-            }};
-            content.appendChild(img);
-        }} else if (snapUrl) {{
-            window.open(snapUrl, '_blank');
-            return;
-        }}
-    }}
-    overlay.classList.add('open');
-}}
- 
-function closeModal_{uid}() {{
-    document.getElementById('modal_{uid}').classList.remove('open');
-}}
+{open_modal_js}
  
 function syncHeight_{uid}() {{
     var h = Math.max(
@@ -4386,7 +4493,7 @@ function syncHeight_{uid}() {{
         }} catch(e) {{}}
     }}
 }}
-
+ 
 document.addEventListener('DOMContentLoaded', function() {{ setTimeout(syncHeight_{uid}, 50); }});
 window.addEventListener('load', function() {{ syncHeight_{uid}(); }});
 document.querySelectorAll('img').forEach(function(img) {{
@@ -4400,7 +4507,7 @@ if (window.ResizeObserver) {{
 setTimeout(syncHeight_{uid}, 50);
 setTimeout(syncHeight_{uid}, 300);
 setTimeout(syncHeight_{uid}, 800);
-
+ 
 function triggerIaAd_{uid}() {{
     var targetText = '__ia_ad_{uid}__';
     var btns = window.parent.document.querySelectorAll('button');
@@ -4409,16 +4516,17 @@ function triggerIaAd_{uid}() {{
     }}
 }}
 </script>
-
+ 
 </body></html>"""
  
-                components.html(card_html, height=580, scrolling=False)
-
+                # FIX 1: Reduzido de 580 para 560, e removido st.markdown height:1px
+                components.html(card_html, height=560, scrolling=False)
+ 
                 # Ghost button for per-ad IA analysis
                 chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
                 if chave_ia_ad not in st.session_state:
                     st.session_state[chave_ia_ad] = ""
-
+ 
                 st.markdown(f"<style>.st-key-btn_ia_ad_{safe_key(ck)}_{j} {{ display:none !important; }}</style>", unsafe_allow_html=True)
                 if st.button(f"__ia_ad_{uid}__", key=f"btn_ia_ad_{safe_key(ck)}_{j}"):
                     if gemini_model is None:
@@ -4434,7 +4542,7 @@ function triggerIaAd_{uid}() {{
                                 ad_inicio_txt = ad.get("data_inicio") or ""
                                 prompt_ad_ia = f"""Você é especialista em mídia paga e copywriting.
 Analise este anúncio específico e dê feedback estratégico em português.
-
+ 
 Empresa: {nome}
 Formato: {ad_fmt_txt}
 Plataformas: {ad_plat_txt}
@@ -4442,20 +4550,20 @@ Veiculação: {ad_inicio_txt}
 Título: {ad_title_txt}
 Copy principal: {ad_body_txt}
 Descrição: {ad_desc_txt}
-
+ 
 Responda com:
-### 🎯 Objetivo do Anúncio
+### Objetivo do Anúncio
 Qual é o objetivo provável deste anúncio?
-
-### 📝 Análise de Copy
+ 
+### Análise de Copy
 Pontos fortes e fracos do texto.
-
-### 🖼️ Análise de Formato
+ 
+### Análise de Formato
 O formato escolhido é adequado? Por quê?
-
-### 💡 Sugestões de Melhoria
+ 
+### Sugestões de Melhoria
 2 melhorias concretas que aumentariam a performance.
-
+ 
 Seja direto e objetivo."""
                                 resp = gemini_model.generate_content(prompt_ad_ia)
                                 st.session_state[chave_ia_ad] = resp.text
@@ -4463,18 +4571,16 @@ Seja direto e objetivo."""
                             except Exception as ex:
                                 st.session_state[chave_ia_ad] = f"Erro: {ex}"
                                 st.rerun()
-
+ 
                 if st.session_state.get(chave_ia_ad):
                     st.markdown(f"""
                     <div style='background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
                                 padding:14px 16px;font-size:13px;color:#374151;line-height:1.75;
-                                max-height:260px;overflow-y:auto;margin-top:4px;margin-bottom:8px'>
+                                max-height:260px;overflow-y:auto;margin-top:4px;margin-bottom:4px'>
                         {st.session_state[chave_ia_ad].replace(chr(10), "<br>")}
                     </div>
                     """, unsafe_allow_html=True)
-                
-                
-                st.markdown("<div style='height:1px'/>", unsafe_allow_html=True)
+                # FIX 1: Removido o st.markdown("<div style='height:1px'/>") que estava aqui
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
@@ -4496,7 +4602,7 @@ Seja direto e objetivo."""
             <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px'>
                 <div style='padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
                             text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb'>
-                    📊 Análise Estratégica com IA
+                    Análise Estratégica com IA
                 </div>
                 <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75'>
                     {ia_html_content}
@@ -4506,7 +4612,7 @@ Seja direto e objetivo."""
         col_ia, _ = st.columns([2, 5])
         with col_ia:
             gerar_ia = st.button(
-                "🔄 Nova Análise" if ia_html_content else "🤖 Analisar com IA",
+                "Nova Análise" if ia_html_content else "Analisar com IA",
                 key=f"btn_ia_ads_{safe_key(ck)}",
                 use_container_width=True,
                 type="primary",
@@ -4530,13 +4636,13 @@ Amostra:
 {resumo_ads}
  
 ---
-### 🎯 Estratégia de Mídia
-### 📝 Padrões de Copy e Mensagem
-### 🖼️ Análise de Formatos
-### ⚡ Uso de Anúncios Dinâmicos
-### 📊 Estimativa de Investimento e Alcance
-### ⚠️ Pontos de Atenção
-### 💡 Oportunidades Competitivas (3 ações concretas)"""
+### Estratégia de Mídia
+### Padrões de Copy e Mensagem
+### Análise de Formatos
+### Uso de Anúncios Dinâmicos
+### Estimativa de Investimento e Alcance
+### Pontos de Atenção
+### Oportunidades Competitivas (3 ações concretas)"""
                         resp = gemini_model.generate_content(prompt_ads)
                         st.session_state[chave_ia] = resp.text
                         st.rerun()
