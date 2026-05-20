@@ -3423,18 +3423,7 @@ setTimeout(ajustarAltura, 100);
                     st.markdown("""
                     <style>
                     [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]),
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) > div,
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) > div > div,
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stVerticalBlock"],
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stHorizontalBlock"],
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="column"],
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="column"] > div,
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) .stElementContainer,
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) .stElementContainer > div,
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stTextInput"],
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stTextInput"] > div,
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-baseweb="input"],
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-baseweb="input"] > div {
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) *:not(button):not(input):not(svg):not(path) {
                         background-color: #ffffff !important;
                         background: #ffffff !important;
                     }
