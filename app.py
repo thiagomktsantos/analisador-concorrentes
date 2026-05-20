@@ -3868,15 +3868,19 @@ function imgFallback_{uid}(img){{
                 padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ampliar</div>
 </div>"""
                     else:
-                        _sv = snap_url.replace("'","")
-                        media_block = f"""
-<div class="media-block no-media-block" {'style="cursor:pointer" onclick="openModal_'+uid+'(\\'\\', \\''+_sv+'\\', false)"' if snap_url else ''}>
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
-    </svg>
-    <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;">{'Ver criativo →' if snap_url else 'Sem criativo'}</span>
-</div>"""
+                        _sv = snap_url.replace("'", "")
+                        _nm_attrs = ('style="cursor:pointer" onclick="openModal_' + uid + "('', '" + _sv + "', false)\"") if snap_url else ""
+                        _nm_color = "#3a9fd6" if snap_url else "#c4c4c4"
+                        _nm_label = "Ver criativo \u2192" if snap_url else "Sem criativo"
+                        media_block = (
+                            '<div class="media-block no-media-block" ' + _nm_attrs + '>'
+                            '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
+                            '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
+                            '<polyline points="21 15 16 10 5 21"/>'
+                            '</svg>'
+                            '<span style="font-size:12px;color:' + _nm_color + ';font-weight:600;margin-top:8px;">' + _nm_label + '</span>'
+                            '</div>'
+                        )
  
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
  
