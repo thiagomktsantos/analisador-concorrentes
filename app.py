@@ -3648,31 +3648,7 @@ setTimeout(ajustarAltura, 100);
         ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
         query_values[ck] = ads_id_salvo
  
-    bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
-    with bcol1:
-        buscar_inline = st.button(
-            "🔍 Buscar / Atualizar",
-            use_container_width=True, type="primary",
-            key="ads_buscar_inline_btn",
-        )
-    with bcol2:
-        forcar_atualizacao = st.button(
-            "🔄 Forçar atualização",
-            use_container_width=True,
-            key="ads_forcar_btn",
-            help="Ignora o cache e busca tudo novamente na API",
-        )
-    with bcol3:
-        limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True, key="ads_limpar_cache_btn")
- 
-    if limpar_cache:
-        st.session_state.ads_cache = {}
-        st.session_state.ads_erro  = {}
-        salvar_cache_ads({})
-        st.toast("Cache limpo!", icon="🗑️")
-        st.rerun()
- 
-    if gerar_btn_ads or buscar_inline:
+    if gerar_btn_ads:
         if not query_values:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
         else:
@@ -3680,16 +3656,6 @@ setTimeout(ajustarAltura, 100);
                 [e for e in todas_empresas if empresa_tem_ads_id(e)],
                 query_values,
                 forcar=False,
-            )
- 
-    if forcar_atualizacao:
-        if not query_values:
-            st.warning("Configure pelo menos uma empresa antes de buscar.")
-        else:
-            executar_busca(
-                [e for e in todas_empresas if empresa_tem_ads_id(e)],
-                query_values,
-                forcar=True,
             )
  
     empresas_com_dados = [
