@@ -2994,7 +2994,6 @@ elif st.session_state.pagina == "ads":
     def buscar_ads_apify(query: str, limit: int = 100) -> tuple:
         return _apify_run_sync(query.strip(), limit=limit)
  
-    # FIX 2: verifica cache antes de buscar
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
         novos  = {}
@@ -3004,7 +3003,6 @@ elif st.session_state.pagina == "ads":
             for e in empresas:
                 ck = e["nome"]
  
-                # Se cache fresco e não forçado, pula
                 entrada_cache = cache_atual.get(ck, {})
                 if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
                     st.write(f"✅ **{ck}** — usando cache ({entrada_cache.get('ts','')}, {len(entrada_cache.get('data',[]))} anúncios)")
@@ -3158,7 +3156,6 @@ html, body { background:transparent; overflow:hidden; }
 """, height=65)
  
     with h2_col:
-        # FIX 1: botão de busca com key única que não colide com botões de editar
         gerar_btn_ads = st.button(
             "🔍 Buscar / Atualizar Anúncios",
             type="primary",
@@ -3279,6 +3276,13 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
+        # CSS para esconder todos os botões nativos de editar
+        edit_hide_css = "\n".join([
+            f".st-key-cfg_edit_native_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
+            for ci, e in enumerate(empresas_configuradas)
+        ])
+        st.markdown(f"<style>{edit_hide_css}</style>", unsafe_allow_html=True)
+ 
         cfg_cols = st.columns(2)
         for ci, e in enumerate(empresas_configuradas):
             ck       = e["nome"]
@@ -3291,75 +3295,125 @@ html, body { background:transparent; overflow:hidden; }
             ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             is_editing = (st.session_state.ads_editando_empresa == ck)
             avatar_html = _avatar_html_empresa(e, size=42)
- 
-            # FIX 1: key única para botão de editar, nunca colide com buscar
-            edit_btn_key = f"cfg_edit_btn_{sk}_{ci}"
+            edit_native_key = f"cfg_edit_native_{sk}_{ci}"
  
             with cfg_cols[ci % 2]:
-                st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;margin-bottom:8px'>
-                    <div style='display:flex;align-items:center;gap:12px;padding:18px 20px 16px'>
-                        {avatar_html}
-                        <div style='flex:1;min-width:0'>
-                            <div style='font-size:16px;font-weight:700;color:#111827'>{ck}</div>
-                            <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px'>
-                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
-                                             padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                                <span style='background:#dcfce7;color:#15803d;border:1px solid #86efac;
-                                             padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>✅ {ads_id_atual}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Card da empresa configurada
+                components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+body {{ padding-bottom:4px; }}
+.card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;
+}}
+.card-body {{
+    display:flex; align-items:center; gap:14px; padding:16px 20px;
+    border-bottom:1px solid #f3f4f6;
+}}
+.info {{ flex:1; min-width:0; }}
+.nome {{ font-size:16px; font-weight:700; color:#111827; margin-bottom:4px; }}
+.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
+.badge {{
+    padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
+}}
+.badge-id {{
+    background:#dcfce7; color:#15803d; border:1px solid #86efac;
+    padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;
+}}
+.edit-btn {{
+    width:100%; padding:10px 0; background:#fff;
+    border:none; border-top:1px solid #f3f4f6;
+    font-size:14px; font-weight:600; color:#6b7280;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:all 0.12s ease;
+}}
+.edit-btn:hover {{ background:#f9fafb; color:#111827; }}
+</style>
+<div class="card">
+    <div class="card-body">
+        {avatar_html}
+        <div class="info">
+            <div class="nome">{ck}</div>
+            <div class="badges">
+                <span class="badge">{badge_lbl}</span>
+                <span class="badge-id">✅ {ads_id_atual}</span>
+            </div>
+        </div>
+    </div>
+    <button class="edit-btn" onclick="
+        var btns = window.parent.document.querySelectorAll('button');
+        for (var b of btns) {{
+            if (b.innerText.trim() === '{edit_native_key}') {{ b.click(); break; }}
+        }}
+    ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar página
+    </button>
+</div>
+""", height=118, scrolling=False)
  
-                # Botão de editar Streamlit nativo (visível, sem conflito JS)
-                if st.button("✏️ Editar página", key=edit_btn_key, use_container_width=True):
+                # Botão nativo oculto
+                if st.button(edit_native_key, key=edit_native_key, use_container_width=True):
                     st.session_state.ads_editando_empresa = ck
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.rerun()
  
-                # Form de edição
+                # Form de edição no padrão do site
                 if is_editing:
-                    with st.container(border=True):
-                        st.markdown(
-                            "<div style='font-size:11px;font-weight:700;color:#9ca3af;"
-                            "text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>"
-                            "Editar Página</div>",
-                            unsafe_allow_html=True,
-                        )
-                        termo_edit = st.text_input(
-                            "Nome ou ID numérico da página",
-                            value=ads_id_atual,
-                            placeholder="Ex: Kedu Educação  ou  106563541907639",
-                            key=f"_termo_edit_{sk}",
-                        )
-                        col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
-                        with col_b1:
-                            if st.button("🔍 Buscar Páginas", key=f"buscar_edit_{sk}", use_container_width=True):
-                                if termo_edit.strip():
-                                    st.session_state.ads_onboarding_empresa = ck
-                                    st.session_state.ads_onboarding_termo   = termo_edit.strip()
-                                    with st.spinner(f"Buscando «{termo_edit.strip()}»…"):
-                                        paginas = buscar_paginas_facebook(termo_edit.strip())
-                                    st.session_state.ads_onboarding_paginas = paginas
-                                    st.rerun()
-                        with col_b2:
-                            if st.button("💾 Salvar direto", key=f"save_direct_{sk}", use_container_width=True):
-                                if termo_edit.strip():
-                                    salvar_ads_id(e, termo_edit.strip())
-                                    st.session_state.ads_editando_empresa = None
-                                    st.session_state.ads_onboarding_empresa = None
-                                    st.session_state.ads_onboarding_paginas = []
-                                    st.toast(f"✅ Salvo: {termo_edit.strip()}", icon="✅")
-                                    st.rerun()
-                        with col_b3:
-                            if st.button("✕", key=f"cancel_edit_{sk}", use_container_width=True):
+                    st.markdown(f"""
+                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+                                padding:18px 20px;margin-top:8px'>
+                        <div style='font-size:11px;font-weight:700;color:#9ca3af;
+                                    text-transform:uppercase;letter-spacing:1px;
+                                    margin-bottom:14px;padding-bottom:10px;
+                                    border-bottom:1px solid #f3f4f6'>
+                            Editar Página
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+ 
+                    termo_edit = st.text_input(
+                        "Nome ou ID numérico da página",
+                        value=ads_id_atual,
+                        placeholder="Ex: Kedu Educação  ou  106563541907639",
+                        key=f"_termo_edit_{sk}",
+                        label_visibility="collapsed",
+                    )
+                    col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
+                    with col_b1:
+                        if st.button("🔍 Buscar Páginas", key=f"buscar_edit_{sk}", use_container_width=True):
+                            if termo_edit.strip():
+                                st.session_state.ads_onboarding_empresa = ck
+                                st.session_state.ads_onboarding_termo   = termo_edit.strip()
+                                with st.spinner(f"Buscando «{termo_edit.strip()}»…"):
+                                    paginas = buscar_paginas_facebook(termo_edit.strip())
+                                st.session_state.ads_onboarding_paginas = paginas
+                                st.rerun()
+                    with col_b2:
+                        if st.button("💾 Salvar direto", key=f"save_direct_{sk}", use_container_windt=True):
+                            if termo_edit.strip():
+                                salvar_ads_id(e, termo_edit.strip())
                                 st.session_state.ads_editando_empresa = None
                                 st.session_state.ads_onboarding_empresa = None
                                 st.session_state.ads_onboarding_paginas = []
+                                st.toast(f"✅ Salvo: {termo_edit.strip()}", icon="✅")
                                 st.rerun()
+                    with col_b3:
+                        if st.button("✕", key=f"cancel_edit_{sk}", use_container_width=True):
+                            st.session_state.ads_editando_empresa = None
+                            st.session_state.ads_onboarding_empresa = None
+                            st.session_state.ads_onboarding_paginas = []
+                            st.rerun()
  
                     if (st.session_state.ads_onboarding_empresa == ck
                             and st.session_state.ads_onboarding_paginas is not None):
@@ -3479,7 +3533,6 @@ html, body { background:transparent; overflow:hidden; }
         st.toast("Cache limpo!", icon="🗑️")
         st.rerun()
  
-    # FIX 2: passa forcar=True apenas quando forçado
     if gerar_btn_ads or buscar_inline:
         if not query_values:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
@@ -3519,19 +3572,20 @@ html, body { background:transparent; overflow:hidden; }
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
-    # ── SVG de plataformas ────────────────────────────────────────────
+    # ── Ícones de plataformas em cinza ────────────────────────────────
     def _plat_svg_js(uid: str) -> str:
         return f"""
 (function(){{
     var plats={{}};
     try {{ plats = __PLATS_{uid}__; }} catch(e) {{ return; }}
+    var C = '#9ca3af';
     var SVGS = {{
-        "facebook": '<svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
-        "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_{uid}" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_{uid})"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
-        "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="#0099FF"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
-        "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
-        "audience_network": '<svg width="16" height="16" viewBox="0 0 24 24" fill="#6b7280"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
-        "threads": '<svg width="16" height="16" viewBox="0 0 192 192" fill="#000"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
+        "facebook": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
+        "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
+        "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
+        "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
+        "audience_network": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
+        "threads": '<svg width="16" height="16" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
     }};
     var el = document.getElementById('plat_icons_{uid}');
     if (!el) return;
@@ -3539,7 +3593,7 @@ html, body { background:transparent; overflow:hidden; }
     el.innerHTML = plats.map(function(p) {{
         var key = p.toLowerCase().replace(' ','_').replace('-','_');
         var svg = SVGS[key] || '';
-        return '<span class="plat-badge" title="'+p+'" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:#f3f4f6;">'+(svg||('<span style="font-size:10px;color:#6b7280">'+p[0].toUpperCase()+'</span>'))+'</span>';
+        return '<span class="plat-badge" title="'+p+'" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:#f3f4f6;">'+(svg||('<span style="font-size:10px;color:#9ca3af">'+p[0].toUpperCase()+'</span>'))+'</span>';
     }}).join('');
 }})();
 """
@@ -3587,7 +3641,6 @@ html, body { background:transparent; overflow:hidden; }
         else:
             ads_list = ads_list_raw
  
-        # Avatar
         if emp_item["tipo"] == "minha":
             page_pic_empresa = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
         else:
@@ -3749,8 +3802,6 @@ html, body { background:transparent; overflow:hidden; }
             "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
         }
  
-        # FIX 3+4: cada card em seu próprio components.html com altura auto
-        # e modal global de imagem/vídeo embutido no HTML de cada card
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
@@ -3784,16 +3835,22 @@ html, body { background:transparent; overflow:hidden; }
                     img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
-                # FIX 4: todas as imagens e thumbs de vídeo abrem modal ao clicar
+                # ── Bloco de mídia ────────────────────────────────────
                 if videos:
+                    if snap_url:
+                        _snap_safe    = snap_url.replace("'", "\\'")
+                        video_onclick = f"onclick=\"window.open('{_snap_safe}','_blank')\""
+                        video_style   = "cursor:pointer;"
+                    else:
+                        video_onclick = ""
+                        video_style   = ""
                     if video_thumb:
                         media_block = f"""
-<div class="media-block video-thumb-block" style="position:relative;cursor:pointer"
-     onclick="openModal_{uid}('{video_thumb.replace("'","")}', '{snap_url.replace("'","")}', true)">
+<div class="media-block video-thumb-block" {video_onclick} style="{video_style}position:relative;">
     <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
-         onerror="this.style.display='none';document.getElementById('vfb_{uid}').style.display='flex'" />
-    <div id="vfb_{uid}" style="display:none;position:absolute;inset:0;
-         background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;">
+         onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
+    <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;
+         background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;flex-direction:column;gap:8px">
         <svg width="36" height="36" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
             <polygon points="22,18 40,27 22,36" fill="white"/>
@@ -3805,25 +3862,19 @@ html, body { background:transparent; overflow:hidden; }
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
         </div>
     </div>
-    <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;
-                font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>
+    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:DM Sans,sans-serif;">▶ VER VÍDEO</div>' if snap_url else ''}
 </div>"""
                     else:
-                        _sv = snap_url.replace("'", "")
-                        _no_media_color = "#3a9fd6" if snap_url else "#c4c4c4"
-                        _no_media_label = "Ver criativo \u2192" if snap_url else "Sem criativo"
-                        _no_media_attrs = (
-                            'style="cursor:pointer" onclick="openModal_' + uid +
-                            "('', '" + _sv + "', false)\""
-                            if snap_url else ""
-                        )
                         media_block = f"""
-<div class="media-block no-media-block" {_no_media_attrs}>
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
-    </svg>
-    <span style="font-size:12px;color:{_no_media_color};font-weight:600;margin-top:8px;">{_no_media_label}</span>
+<div class="media-block video-block" {video_onclick} style="{video_style}">
+    <div class="video-play-icon">
+        <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
+            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
+            <circle cx="27" cy="27" r="20" fill="rgba(255,255,255,0.2)"/>
+            <polygon points="22,18 40,27 22,36" fill="white"/>
+        </svg>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
                 elif img_primary:
                     media_block = f"""
@@ -3913,7 +3964,6 @@ function imgFallback_{uid}(img){{
     Ver criativo no Ad Library
 </a>"""
  
-                # FIX 3: altura calculada mais generosa + ResizeObserver confiável
                 card_html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3932,7 +3982,7 @@ body{{padding-bottom:8px;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
 .plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:#f3f4f6;}}
 .dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
-.copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;flex:1;}}
+.copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
 .page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
 .page-name{{font-size:13px;font-weight:700;color:#050505;line-height:1.2;}}
@@ -3941,12 +3991,10 @@ body{{padding-bottom:8px;}}
 .copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;line-height:1.4;}}
 .copy-desc{{font-size:12px;color:#65676b;margin-top:3px;line-height:1.4;}}
 .no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;}}
-.ver-mais{{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;color:#1877F2;cursor:pointer;}}
-.ver-mais:hover{{text-decoration:underline;}}
-.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;}}
+.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:220px;}}
 .img-block{{height:220px;}}
 .video-thumb-block{{height:220px;}}
-.video-block{{height:200px;background:linear-gradient(135deg,#0f1f35 0%,#1a3a5c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
+.video-block{{height:220px;background:linear-gradient(135deg,#0f1f35 0%,#1a3a5c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
 .video-play-icon{{display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}}
 .video-block:hover .video-play-icon{{transform:scale(1.1);}}
 .no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;border-top:1px solid #f0f2f5;border-bottom:1px solid #f0f2f5;gap:8px;}}
@@ -3956,7 +4004,6 @@ body{{padding-bottom:8px;}}
 .cta-btn:hover{{background:#d8dadf;}}
 .lib-btn{{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px;background:#1877F2;color:#fff;border:none;border-radius:0 0 10px 10px;font-size:13px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
 .lib-btn:hover{{background:#166fe5;}}
-/* Modal */
 .modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(3px);}}
 .modal-overlay.open{{display:flex;}}
 .modal-box{{background:#1a1a2e;border-radius:16px;max-width:90vw;max-height:90vh;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;box-shadow:0 24px 80px rgba(0,0,0,0.6);}}
@@ -3992,9 +4039,9 @@ body{{padding-bottom:8px;}}
                 <div class="page-sponsored">Patrocinado</div>
             </div>
         </div>
-        {f'<div><div class="copy-body" id="cbody_{uid}"><span id="body_short_{uid}">{_truncar(body,200).replace(chr(10),"<br>")}</span><span id="body_full_{uid}" style="display:none">{body.replace(chr(10),"<br>")}</span>{"<span class=ver-mais onclick=toggleBody(&#39;"+uid+"&#39;)>Ver mais</span>" if len(body)>200 else ""}</div></div>' if body else ''}
+        {f'<div class="copy-body">{_truncar(body, 120).replace(chr(10), "<br>")}</div>' if body else ''}
         {f'<div class="copy-title">{title}</div>' if title else ''}
-        {f'<div class="copy-desc">{_truncar(desc,140)}</div>' if desc else ''}
+        {f'<div class="copy-desc">{_truncar(desc,120)}</div>' if desc else ''}
         {'<div class="no-copy">Sem copy disponível.</div>' if not body and not title and not desc else ''}
     </div>
     {media_block}
@@ -4007,7 +4054,6 @@ body{{padding-bottom:8px;}}
     {lib_btn_html}
 </div>
  
-<!-- FIX 4: Modal de imagem/vídeo local (dentro do iframe, sem conflito) -->
 <div class="modal-overlay" id="modal_{uid}" onclick="if(event.target===this)closeModal_{uid}()">
     <div class="modal-box" id="modalbox_{uid}">
         <button class="modal-close" onclick="closeModal_{uid}()">✕</button>
@@ -4069,19 +4115,6 @@ function closeModal_{uid}() {{
     document.getElementById('modal_{uid}').classList.remove('open');
 }}
  
-function toggleBody(uid){{
-    var s=document.getElementById('body_short_'+uid);
-    var f=document.getElementById('body_full_'+uid);
-    var btn=document.querySelector('#cbody_'+uid+' .ver-mais');
-    if(!s||!f)return;
-    var exp=f.style.display!=='none';
-    s.style.display=exp?'':'none';
-    f.style.display=exp?'none':'';
-    if(btn)btn.textContent=exp?'Ver mais':'Ver menos';
-    setTimeout(syncHeight_{uid}, 50);
-}}
- 
-// FIX 3: altura sincronizada de forma robusta
 function syncHeight_{uid}() {{
     var h = Math.max(
         document.body.scrollHeight,
@@ -4100,7 +4133,6 @@ function syncHeight_{uid}() {{
     }}
 }}
  
-// Dispara em múltiplos momentos para capturar renders lentos (imagens, fontes)
 document.addEventListener('DOMContentLoaded', function() {{ setTimeout(syncHeight_{uid}, 50); }});
 window.addEventListener('load', function() {{ syncHeight_{uid}(); }});
 document.querySelectorAll('img').forEach(function(img) {{
@@ -4114,15 +4146,10 @@ if (window.ResizeObserver) {{
 setTimeout(syncHeight_{uid}, 200);
 setTimeout(syncHeight_{uid}, 600);
 setTimeout(syncHeight_{uid}, 1400);
-setTimeout(syncHeight_{uid}, 2800);
 </script>
 </body></html>"""
  
-                # FIX 3: altura inicial generosa — o ResizeObserver ajusta depois
-                h_est = 540 if (img_primary or videos) else 360
-                if body and len(body) > 200: h_est += 60
-                if title: h_est += 30
-                components.html(card_html, height=h_est, scrolling=False)
+                components.html(card_html, height=620, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
