@@ -2994,12 +2994,21 @@ elif st.session_state.pagina == "ads":
     def buscar_ads_apify(query: str, limit: int = 100) -> tuple:
         return _apify_run_sync(query.strip(), limit=limit)
  
-    def executar_busca(empresas: list, query_values: dict):
+    # FIX 2: verifica cache antes de buscar
+    def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
         novos  = {}
+        cache_atual = dict(st.session_state.ads_cache or {})
+ 
         with st.status("Buscando anúncios...", expanded=True) as status:
             for e in empresas:
                 ck = e["nome"]
+ 
+                # Se cache fresco e não forçado, pula
+                entrada_cache = cache_atual.get(ck, {})
+                if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
+                    st.write(f"✅ **{ck}** — usando cache ({entrada_cache.get('ts','')}, {len(entrada_cache.get('data',[]))} anúncios)")
+                    continue
  
                 if e["tipo"] == "minha":
                     ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
@@ -3027,7 +3036,6 @@ elif st.session_state.pagina == "ads":
                     st.write(f"✅ {len(ads)} anúncios encontrados")
             status.update(label="✅ Busca concluída!", state="complete")
  
-        cache_atual = dict(st.session_state.ads_cache or {})
         cache_atual.update(novos)
         st.session_state.ads_cache = cache_atual
         st.session_state.ads_erro  = erros
@@ -3064,8 +3072,7 @@ elif st.session_state.pagina == "ads":
         else:
             cd = concs[e["idx"]]
             return bool(cd.get("ads_id", "").strip())
-
-    # ── salvar_ads_id: agora também persiste a foto de perfil da página ──
+ 
     def salvar_ads_id(e: dict, ads_id: str, page_pic: str = ""):
         if e["tipo"] == "minha":
             st.session_state.dados["minha_empresa"]["ads_id"] = ads_id
@@ -3076,8 +3083,7 @@ elif st.session_state.pagina == "ads":
             if page_pic:
                 st.session_state.dados["concorrentes"][e["idx"]]["ads_page_pic"] = page_pic
         salvar_dados_usuario(st.session_state.user.id)
-
-    # ── Busca página no Facebook e extrai foto de perfil ─────────────
+ 
     def buscar_paginas_facebook(termo: str) -> list:
         ads, _, erro = _apify_run_sync(termo, limit=20)
         if erro or not ads:
@@ -3095,21 +3101,17 @@ elif st.session_state.pagina == "ads":
                     paginas[nome]["profile_picture"] = pic
         return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
  
-    # ── _avatar_html_empresa: lê ads_page_pic do banco primeiro ──────
     def _avatar_html_empresa(e: dict, size: int = 42) -> str:
-        """Retorna HTML do avatar: foto da página salva no banco ou avatar colorido."""
         is_minha = e["tipo"] == "minha"
         cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
         nome = e["nome"]
         av = gerar_avatar(nome)
-
-        # 1) Foto salva diretamente no dado da empresa/concorrente (banco)
+ 
         if is_minha:
             pic = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
         else:
             pic = st.session_state.dados["concorrentes"][e["idx"]].get("ads_page_pic", "") or ""
-
-        # 2) Fallback: tenta obter do cache de anúncios
+ 
         if not pic:
             cache_entry = st.session_state.ads_cache.get(nome, {})
             ads_data = cache_entry.get("data", [])
@@ -3118,7 +3120,7 @@ elif st.session_state.pagina == "ads":
                 if p and p.startswith("http"):
                     pic = p
                     break
-
+ 
         if pic:
             return (
                 f'<div style="width:{size}px;height:{size}px;border-radius:50%;overflow:hidden;'
@@ -3135,8 +3137,8 @@ elif st.session_state.pagina == "ads":
             f'display:flex;align-items:center;justify-content:center;'
             f'font-size:{int(size*0.35)}px;font-weight:700;color:#fff;flex-shrink:0">{av}</div>'
         )
-
-    # ── Cabeçalho — padrão igual às outras páginas ───────────────────
+ 
+    # ── Cabeçalho ────────────────────────────────────────────────────
     h1_col, h2_col = st.columns([7, 3])
     with h1_col:
         components.html("""
@@ -3154,15 +3156,15 @@ html, body { background:transparent; overflow:hidden; }
 <div class="titulo">Biblioteca de Ads</div>
 <div class="sub">Criativos, copies e formatos dos anúncios dos seus concorrentes.</div>
 """, height=65)
-
+ 
     with h2_col:
+        # FIX 1: botão de busca com key única que não colide com botões de editar
         gerar_btn_ads = st.button(
             "🔍 Buscar / Atualizar Anúncios",
             type="primary",
             use_container_width=True,
-            key="ads_buscar_topo",
+            key="ads_buscar_topo_btn",
         )
-        # Timestamp — mesmo padrão de Redes Sociais e Confronto de Sites
         if st.session_state.ads_cache:
             _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
             if _tss:
@@ -3172,9 +3174,9 @@ html, body { background:transparent; overflow:hidden; }
                     f"🕒 Última busca: <b>{_ts_antigo}</b></div>",
                     unsafe_allow_html=True,
                 )
-
+ 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 16px 0'/>", unsafe_allow_html=True)
-
+ 
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
         st.stop()
@@ -3236,32 +3238,31 @@ html, body { background:transparent; overflow:hidden; }
                 )
                 id_para_salvar = pag.get("page_id") or pag["nome"]
                 pic_para_salvar = pag.get("profile_picture", "")
-
+ 
                 if st.button(
                     f"✅ Usar esta",
-                    key=f"direct_sel_{sk}_{ip}",
+                    key=f"sel_pag_{sk}_{ip}",
                     use_container_width=True,
                     type="primary",
                 ):
-                    # Salva ads_id E a foto de perfil no banco
                     salvar_ads_id(e, id_para_salvar, page_pic=pic_para_salvar)
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.session_state.ads_editando_empresa = None
                     st.toast(f"✅ Página «{pag['nome']}» configurada! ID: {id_para_salvar}", icon="✅")
                     st.rerun()
-
+ 
         with st.expander("Não encontrou? Digite manualmente (nome ou ID numérico)"):
             col_m1, col_m2 = st.columns([4, 2])
             with col_m1:
                 manual = st.text_input(
                     "Nome exato ou ID numérico",
                     placeholder="Ex: Kedu Educação  ou  102803918240129",
-                    key=f"_manual_direct_{sk}",
+                    key=f"_manual_{sk}",
                 )
             with col_m2:
                 st.markdown("<div style='height:28px'/>", unsafe_allow_html=True)
-                if st.button("💾 Salvar", key=f"btn_manual_direct_{sk}", use_container_width=True):
+                if st.button("💾 Salvar", key=f"btn_manual_{sk}", use_container_width=True):
                     if manual.strip():
                         salvar_ads_id(e, manual.strip())
                         st.session_state.ads_onboarding_empresa = None
@@ -3277,7 +3278,7 @@ html, body { background:transparent; overflow:hidden; }
             "letter-spacing:0.8px;margin-bottom:10px'>✅ Páginas configuradas</div>",
             unsafe_allow_html=True,
         )
-
+ 
         cfg_cols = st.columns(2)
         for ci, e in enumerate(empresas_configuradas):
             ck       = e["nome"]
@@ -3289,158 +3290,37 @@ html, body { background:transparent; overflow:hidden; }
             badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
             ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             is_editing = (st.session_state.ads_editando_empresa == ck)
-
             avatar_html = _avatar_html_empresa(e, size=42)
-
+ 
+            # FIX 1: key única para botão de editar, nunca colide com buscar
+            edit_btn_key = f"cfg_edit_btn_{sk}_{ci}"
+ 
             with cfg_cols[ci % 2]:
-                avatar_html = _avatar_html_empresa(e, size=42)
-
                 st.markdown(f"""
-                <style>
-                .st-key-btn_editar_cfg_{sk} > div > button {{
-                    background: #ffffff !important;
-                    border: none !important;
-                    border-top: 1px solid #f3f4f6 !important;
-                    border-radius: 0 !important;
-                    color: #6b7280 !important;
-                    font-size: 15px !important;
-                    font-weight: 600 !important;
-                    padding: 11px 0 !important;
-                    margin-top: 0 !important;
-                    box-shadow: none !important;
-                }}
-                .st-key-btn_editar_cfg_{sk} > div > button:hover {{
-                    background: #f9fafb !important;
-                    color: #111827 !important;
-                }}
-                .st-key-btn_editar_cfg_{sk} {{
-                    margin-top: 0 !important;
-                    padding: 0 !important;
-                }}
-                </style>
+                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;margin-bottom:8px'>
+                    <div style='display:flex;align-items:center;gap:12px;padding:18px 20px 16px'>
+                        {avatar_html}
+                        <div style='flex:1;min-width:0'>
+                            <div style='font-size:16px;font-weight:700;color:#111827'>{ck}</div>
+                            <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px'>
+                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
+                                             padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
+                                <span style='background:#dcfce7;color:#15803d;border:1px solid #86efac;
+                                             padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>✅ {ads_id_atual}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 """, unsafe_allow_html=True)
-
-                components.html(f"""
-<!DOCTYPE html>
-<html>
-<head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif;
-              -webkit-font-smoothing:antialiased; overflow:hidden; }}
-body {{ padding-bottom:4px; }}
-.card {{
-    background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;
-    overflow:hidden;
-}}
-.card-header {{
-    display:flex; align-items:center; gap:12px;
-    padding:18px 20px 16px;
-}}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:16px; font-weight:700; color:#111827; }}
-.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; }}
-.badge {{ padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block; }}
-.card-footer {{
-    display:grid; grid-template-columns:1fr;
-    border-top:1px solid #f3f4f6;
-}}
-.footer-btn {{
-    padding:11px 0; text-align:center;
-    font-size:15px; font-weight:600; color:#6b7280;
-    cursor:pointer; background:transparent; border:none;
-    font-family:'DM Sans',sans-serif; transition:background 0.12s;
-    display:flex; align-items:center; justify-content:center; gap:6px;
-}}
-.footer-btn:hover {{ background:#f9fafb; color:#111827; }}
-</style>
-</head>
-<body>
-<div class="card">
-    <div class="card-header">
-        {avatar_html}
-        <div class="info">
-            <div class="nome">{ck}</div>
-            <div class="badges">
-                <span class="badge" style="background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd}">{badge_lbl}</span>
-                <span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac">✅ {ads_id_atual}</span>
-            </div>
-        </div>
-    </div>
-    <div class="card-footer">
-        <button class="footer-btn" onclick="acionar()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Editar
-        </button>
-    </div>
-</div>
-<script>
-function acionar() {{
-    var myIframe = null;
-    var allIframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < allIframes.length; i++) {{
-        try {{
-            if (allIframes[i].contentWindow === window) {{
-                myIframe = allIframes[i];
-                break;
-            }}
-        }} catch(e) {{}}
-    }}
-    if (!myIframe) return;
-    var iRect = myIframe.getBoundingClientRect();
-    var allBtns = window.parent.document.querySelectorAll('button');
-    for (var j = 0; j < allBtns.length; j++) {{
-        var bRect = allBtns[j].getBoundingClientRect();
-        if (bRect.top > iRect.bottom && bRect.top < iRect.bottom + 300) {{
-            allBtns[j].click();
-            return;
-        }}
-    }}
-}}
-function ajustar() {{
-    var h = document.body.scrollHeight;
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{
-            if (iframes[i].contentWindow === window) {{
-                iframes[i].style.height = (h + 8) + 'px'; break;
-            }}
-        }} catch(e) {{}}
-    }}
-}}
-document.addEventListener('DOMContentLoaded', ajustar);
-window.addEventListener('load', ajustar);
-setTimeout(ajustar, 100); setTimeout(ajustar, 400);
-</script>
-</body>
-</html>
-                """, height=130, scrolling=False)
-
-                # Ghost button oculto que o JS aciona
-                st.markdown(f"""
-                <style>
-                .st-key-ghost_editar_{sk} {{
-                    position:fixed !important; top:-9999px !important;
-                    left:-9999px !important; width:1px !important;
-                    height:1px !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important;
-                    visibility:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
-
-                if st.button(f"✏️ Editar_{sk}", key=f"ghost_editar_{sk}"):
+ 
+                # Botão de editar Streamlit nativo (visível, sem conflito JS)
+                if st.button("✏️ Editar página", key=edit_btn_key, use_container_width=True):
                     st.session_state.ads_editando_empresa = ck
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.rerun()
-
-                # Form de edição no padrão do site
+ 
+                # Form de edição
                 if is_editing:
                     with st.container(border=True):
                         st.markdown(
@@ -3457,7 +3337,7 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                         )
                         col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
                         with col_b1:
-                            if st.button("🔍 Buscar Páginas", key=f"btn_buscar_edit_{sk}", use_container_width=True):
+                            if st.button("🔍 Buscar Páginas", key=f"buscar_edit_{sk}", use_container_width=True):
                                 if termo_edit.strip():
                                     st.session_state.ads_onboarding_empresa = ck
                                     st.session_state.ads_onboarding_termo   = termo_edit.strip()
@@ -3466,7 +3346,7 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                                     st.session_state.ads_onboarding_paginas = paginas
                                     st.rerun()
                         with col_b2:
-                            if st.button("💾 Salvar direto", key=f"btn_save_direct_{sk}", use_container_width=True):
+                            if st.button("💾 Salvar direto", key=f"save_direct_{sk}", use_container_width=True):
                                 if termo_edit.strip():
                                     salvar_ads_id(e, termo_edit.strip())
                                     st.session_state.ads_editando_empresa = None
@@ -3475,16 +3355,16 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                                     st.toast(f"✅ Salvo: {termo_edit.strip()}", icon="✅")
                                     st.rerun()
                         with col_b3:
-                            if st.button("✕ Cancelar", key=f"btn_cancel_edit_{sk}", use_container_width=True):
+                            if st.button("✕", key=f"cancel_edit_{sk}", use_container_width=True):
                                 st.session_state.ads_editando_empresa = None
                                 st.session_state.ads_onboarding_empresa = None
                                 st.session_state.ads_onboarding_paginas = []
                                 st.rerun()
-
+ 
                     if (st.session_state.ads_onboarding_empresa == ck
                             and st.session_state.ads_onboarding_paginas is not None):
                         _render_paginas_resultado(e, sk, ck)
-
+ 
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
     # ── Empresas sem configuração ─────────────────────────────────────
@@ -3532,11 +3412,11 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                     "Nome ou ID da página",
                     value=ck,
                     placeholder=f"Ex: {ck}  ou  102803918240129",
-                    key=f"_termo_input_{sk}",
+                    key=f"_termo_uncfg_{sk}",
                     label_visibility="collapsed",
                 )
             with col_btn_b:
-                if st.button("🔍 Buscar", key=f"btn_buscar_uncfg_{sk}", use_container_width=True, type="primary"):
+                if st.button("🔍 Buscar", key=f"buscar_uncfg_{sk}", use_container_width=True, type="primary"):
                     if termo_input.strip():
                         st.session_state.ads_onboarding_empresa = ck
                         st.session_state.ads_onboarding_termo   = termo_input.strip()
@@ -3545,7 +3425,7 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                         st.session_state.ads_onboarding_paginas = paginas
                         st.rerun()
             with col_btn_s:
-                if st.button("💾 Salvar ID", key=f"btn_salvar_uncfg_{sk}", use_container_width=True):
+                if st.button("💾 Salvar ID", key=f"salvar_uncfg_{sk}", use_container_width=True):
                     if termo_input.strip():
                         salvar_ads_id(e, termo_input.strip())
                         st.session_state.ads_onboarding_empresa = None
@@ -3575,11 +3455,22 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
         ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
         query_values[ck] = ads_id_salvo
  
-    bcol1, bcol2 = st.columns([3, 2])
+    bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
     with bcol1:
-        buscar_inline = st.button("🔍 Buscar / Atualizar Anúncios", use_container_width=True, type="primary", key="ads_buscar_inline")
+        buscar_inline = st.button(
+            "🔍 Buscar / Atualizar",
+            use_container_width=True, type="primary",
+            key="ads_buscar_inline_btn",
+        )
     with bcol2:
-        limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True)
+        forcar_atualizacao = st.button(
+            "🔄 Forçar atualização",
+            use_container_width=True,
+            key="ads_forcar_btn",
+            help="Ignora o cache e busca tudo novamente na API",
+        )
+    with bcol3:
+        limpar_cache = st.button("🗑️ Limpar Cache", use_container_width=True, key="ads_limpar_cache_btn")
  
     if limpar_cache:
         st.session_state.ads_cache = {}
@@ -3588,6 +3479,7 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
         st.toast("Cache limpo!", icon="🗑️")
         st.rerun()
  
+    # FIX 2: passa forcar=True apenas quando forçado
     if gerar_btn_ads or buscar_inline:
         if not query_values:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
@@ -3595,6 +3487,17 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
             executar_busca(
                 [e for e in todas_empresas if empresa_tem_ads_id(e)],
                 query_values,
+                forcar=False,
+            )
+ 
+    if forcar_atualizacao:
+        if not query_values:
+            st.warning("Configure pelo menos uma empresa antes de buscar.")
+        else:
+            executar_busca(
+                [e for e in todas_empresas if empresa_tem_ads_id(e)],
+                query_values,
+                forcar=True,
             )
  
     empresas_com_dados = [
@@ -3608,7 +3511,7 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                     padding:48px 32px;text-align:center;margin-top:8px'>
             <div style='font-size:32px;margin-bottom:12px'>📢</div>
             <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
-            <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar Anúncios</b>.</div>
+            <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar</b>.</div>
         </div>
         """, unsafe_allow_html=True)
         st.stop()
@@ -3683,13 +3586,13 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                     ads_list = partial if partial else ads_list_raw
         else:
             ads_list = ads_list_raw
-
-        # Avatar: foto salva no banco (ads_page_pic) ou fallback do cache
+ 
+        # Avatar
         if emp_item["tipo"] == "minha":
             page_pic_empresa = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
         else:
             page_pic_empresa = st.session_state.dados["concorrentes"][emp_item["idx"]].get("ads_page_pic", "") or ""
-
+ 
         if not page_pic_empresa:
             for ad in ads_list:
                 p = ad.get("page_profile_picture", "") or ""
@@ -3846,6 +3749,8 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
             "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
         }
  
+        # FIX 3+4: cada card em seu próprio components.html com altura auto
+        # e modal global de imagem/vídeo embutido no HTML de cada card
         cols_ads = st.columns(3)
         for j, ad in enumerate(ads_f):
             with cols_ads[j % 3]:
@@ -3879,23 +3784,16 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
                     img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
-                if snap_url:
-                    _snap_safe      = snap_url.replace("'", "\\'")
-                    video_onclick   = f"onclick=\"window.open('{_snap_safe}','_blank')\""
-                    video_style     = "cursor:pointer;"
-                    nomedia_onclick = f"onclick=\"window.open('{_snap_safe}','_blank')\""
-                    nomedia_style   = "cursor:pointer;"
-                else:
-                    video_onclick = video_style = nomedia_onclick = nomedia_style = ""
- 
+                # FIX 4: todas as imagens e thumbs de vídeo abrem modal ao clicar
                 if videos:
                     if video_thumb:
                         media_block = f"""
-<div class="media-block video-thumb-block" {video_onclick} style="{video_style}position:relative;">
+<div class="media-block video-thumb-block" style="position:relative;cursor:pointer"
+     onclick="openModal_{uid}('{video_thumb.replace("'","")}', '{snap_url.replace("'","")}', true)">
     <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
-         onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
-    <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;
-         background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;flex-direction:column;gap:8px">
+         onerror="this.style.display='none';document.getElementById('vfb_{uid}').style.display='flex'" />
+    <div id="vfb_{uid}" style="display:none;position:absolute;inset:0;
+         background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;">
         <svg width="36" height="36" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
             <polygon points="22,18 40,27 22,36" fill="white"/>
@@ -3907,11 +3805,14 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
         </div>
     </div>
-    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:DM Sans,sans-serif;">▶ VER VÍDEO</div>' if snap_url else ''}
+    <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;
+                font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>
 </div>"""
                     else:
+                        _sv = snap_url.replace("'","")
                         media_block = f"""
-<div class="media-block video-block" {video_onclick} style="{video_style}">
+<div class="media-block video-block" style="cursor:pointer"
+     onclick="openModal_{uid}('', '{_sv}', true)">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
@@ -3919,34 +3820,25 @@ setTimeout(ajustar, 100); setTimeout(ajustar, 400);
             <polygon points="22,18 40,27 22,36" fill="white"/>
         </svg>
     </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
                 elif img_primary:
-                    if snap_url:
-                        fallback_link_open  = f'<a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">'
-                        fallback_link_close = '</a>'
-                        fallback_color      = '#3a9fd6'
-                        fallback_label      = 'Ver criativo →'
-                    else:
-                        fallback_link_open  = '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
-                        fallback_link_close = '</div>'
-                        fallback_color      = '#9ca3af'
-                        fallback_label      = 'Sem imagem'
                     media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;">
+<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
+     onclick="openModal_{uid}(document.getElementById('mimg_{uid}') ? document.getElementById('mimg_{uid}').src : '{img_primary.replace("'","")}', '{snap_url.replace("'","")}', false)">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;
          flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
-        {fallback_link_open}
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <span style="font-size:12px;color:{fallback_color};font-weight:600;font-family:DM Sans,sans-serif;">{fallback_label}</span>
-        {fallback_link_close}
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
+                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ampliar</div>
 </div>
 <script>
 var _srcs_{uid}={srcs_js};
@@ -3960,31 +3852,27 @@ function imgFallback_{uid}(img){{
                 else:
                     if microlink_url:
                         media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;">
+<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
+     onclick="openModal_{uid}('{microlink_url.replace("'","")}', '{snap_url.replace("'","")}', false)">
     <img id="mimg_{uid}" src="{microlink_url}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="this.style.display='none';document.getElementById('mnomedia_{uid}').style.display='flex'" />
     <div id="mnomedia_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;
          flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
-        <a href="{snap_url}" target="_blank" style="display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <span style="font-size:12px;color:#3a9fd6;font-weight:600;font-family:DM Sans,sans-serif;">Ver criativo →</span>
-        </a>
+        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">Ver criativo →</span>
     </div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
+                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ampliar</div>
 </div>"""
                     else:
-                        nomedia_color = '#3a9fd6' if snap_url else '#c4c4c4'
-                        nomedia_label = 'Ver criativo →' if snap_url else 'Sem criativo disponível'
+                        _sv = snap_url.replace("'","")
                         media_block = f"""
-<div class="media-block no-media-block" {nomedia_onclick} style="{nomedia_style}">
+<div class="media-block no-media-block" {'style="cursor:pointer" onclick="openModal_'+uid+'(\\'\\', \\''+_sv+'\\', false)"' if snap_url else ''}>
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
     </svg>
-    <span style="font-size:12px;color:{nomedia_color};font-weight:600;margin-top:8px;font-family:DM Sans,sans-serif;">{nomedia_label}</span>
+    <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;">{'Ver criativo →' if snap_url else 'Sem criativo'}</span>
 </div>"""
  
                 cta_display = cta_labels.get(cta.upper() if cta else "", cta)
@@ -3994,15 +3882,6 @@ function imgFallback_{uid}(img){{
                     'padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:6px;">'
                     '⚠️ Baixo volume</span>'
                 ) if baixo_vol else ""
- 
-                h_media = 230 if (img_primary or microlink_url) else (210 if videos else 120)
-                body_lines = max(1, len(body) // 55) if body else 0
-                h_copy  = 80 + (body_lines * 22) if (body or title or desc) else 60
-                h_copy += 40 if title else 0
-                h_copy += 30 if desc else 0
-                h_data  = 22 if data_inicio else 0
-                h_imp   = 22 if impressoes else 0
-                card_height = 60 + 80 + 50 + 44 + h_copy + h_media + h_data + h_imp + 80
  
                 if page_pic and page_pic.startswith("http"):
                     page_avatar_html = (
@@ -4027,13 +3906,14 @@ function imgFallback_{uid}(img){{
     Ver criativo no Ad Library
 </a>"""
  
+                # FIX 3: altura calculada mais generosa + ResizeObserver confiável
                 card_html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:24px;}}
+body{{padding-bottom:8px;}}
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
@@ -4069,7 +3949,18 @@ body{{padding-bottom:24px;}}
 .cta-btn:hover{{background:#d8dadf;}}
 .lib-btn{{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px;background:#1877F2;color:#fff;border:none;border-radius:0 0 10px 10px;font-size:13px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
 .lib-btn:hover{{background:#166fe5;}}
-</style></head><body>
+/* Modal */
+.modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(3px);}}
+.modal-overlay.open{{display:flex;}}
+.modal-box{{background:#1a1a2e;border-radius:16px;max-width:90vw;max-height:90vh;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;box-shadow:0 24px 80px rgba(0,0,0,0.6);}}
+.modal-close{{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:34px;height:34px;font-size:18px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
+.modal-close:hover{{background:rgba(255,255,255,0.3);}}
+.modal-img{{max-width:80vw;max-height:78vh;object-fit:contain;border-radius:10px;display:block;}}
+.modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 24px;}}
+.modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;}}
+.modal-video-thumb{{max-width:70vw;max-height:55vh;object-fit:contain;border-radius:10px;opacity:0.85;}}
+</style>
+</head><body>
 <div class="card">
     <div class="status-bar">
         <div style="display:flex;align-items:center;gap:6px">
@@ -4108,9 +3999,68 @@ body{{padding-bottom:24px;}}
     </div>
     {lib_btn_html}
 </div>
+ 
+<!-- FIX 4: Modal de imagem/vídeo local (dentro do iframe, sem conflito) -->
+<div class="modal-overlay" id="modal_{uid}" onclick="if(event.target===this)closeModal_{uid}()">
+    <div class="modal-box" id="modalbox_{uid}">
+        <button class="modal-close" onclick="closeModal_{uid}()">✕</button>
+        <div id="modalcontent_{uid}"></div>
+    </div>
+</div>
+ 
 <script>
 var __PLATS_{uid}__ = {plat_js};
 {_plat_svg_js(uid)}
+ 
+function openModal_{uid}(imgSrc, snapUrl, isVideo) {{
+    var overlay = document.getElementById('modal_{uid}');
+    var content = document.getElementById('modalcontent_{uid}');
+    content.innerHTML = '';
+    if (isVideo) {{
+        var wrap = document.createElement('div');
+        wrap.className = 'modal-video-wrap';
+        if (imgSrc) {{
+            var thumb = document.createElement('img');
+            thumb.src = imgSrc;
+            thumb.className = 'modal-video-thumb';
+            thumb.onerror = function() {{ this.style.display='none'; }};
+            wrap.appendChild(thumb);
+        }}
+        if (snapUrl) {{
+            var btn = document.createElement('a');
+            btn.href = snapUrl;
+            btn.target = '_blank';
+            btn.className = 'modal-video-btn';
+            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
+            wrap.appendChild(btn);
+        }} else {{
+            var msg = document.createElement('div');
+            msg.style.cssText = 'color:#aaa;font-size:14px;padding:12px';
+            msg.textContent = 'Vídeo não disponível para visualização direta.';
+            wrap.appendChild(msg);
+        }}
+        content.appendChild(wrap);
+    }} else {{
+        if (imgSrc) {{
+            var img = document.createElement('img');
+            img.src = imgSrc;
+            img.className = 'modal-img';
+            img.onerror = function() {{
+                this.style.display='none';
+                if (snapUrl) window.open(snapUrl, '_blank');
+            }};
+            content.appendChild(img);
+        }} else if (snapUrl) {{
+            window.open(snapUrl, '_blank');
+            return;
+        }}
+    }}
+    overlay.classList.add('open');
+}}
+ 
+function closeModal_{uid}() {{
+    document.getElementById('modal_{uid}').classList.remove('open');
+}}
  
 function toggleBody(uid){{
     var s=document.getElementById('body_short_'+uid);
@@ -4121,43 +4071,51 @@ function toggleBody(uid){{
     s.style.display=exp?'':'none';
     f.style.display=exp?'none':'';
     if(btn)btn.textContent=exp?'Ver mais':'Ver menos';
-    setTimeout(ajustarAltura, 30);
-    setTimeout(ajustarAltura, 150);
+    setTimeout(syncHeight_{uid}, 50);
 }}
-function ajustarAltura(){{
+ 
+// FIX 3: altura sincronizada de forma robusta
+function syncHeight_{uid}() {{
     var h = Math.max(
         document.body.scrollHeight,
         document.documentElement.scrollHeight,
-        document.body.offsetHeight,
-        document.documentElement.offsetHeight
+        document.body.offsetHeight
     );
-    window.parent.document.querySelectorAll('iframe').forEach(function(fr){{
-        try{{
-            if(fr.contentWindow===window){{
-                fr.style.height=(h+24)+'px';
-                fr.style.minHeight=(h+24)+'px';
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{
+            if (frames[i].contentWindow === window) {{
+                frames[i].style.height = (h + 16) + 'px';
+                frames[i].style.minHeight = 'unset';
+                break;
             }}
-        }}catch(e){{}}
-    }});
+        }} catch(e) {{}}
+    }}
 }}
-if(window.ResizeObserver){{
-    var _ro = new ResizeObserver(function(){{ ajustarAltura(); }});
-    _ro.observe(document.body);
-}}
-document.addEventListener('DOMContentLoaded', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
-document.querySelectorAll('img').forEach(function(img){{
-    img.addEventListener('load', ajustarAltura);
-    img.addEventListener('error', ajustarAltura);
+ 
+// Dispara em múltiplos momentos para capturar renders lentos (imagens, fontes)
+document.addEventListener('DOMContentLoaded', function() {{ setTimeout(syncHeight_{uid}, 50); }});
+window.addEventListener('load', function() {{ syncHeight_{uid}(); }});
+document.querySelectorAll('img').forEach(function(img) {{
+    img.addEventListener('load', function() {{ setTimeout(syncHeight_{uid}, 30); }});
+    img.addEventListener('error', function() {{ setTimeout(syncHeight_{uid}, 30); }});
 }});
-setTimeout(ajustarAltura, 100);
-setTimeout(ajustarAltura, 400);
-setTimeout(ajustarAltura, 900);
-setTimeout(ajustarAltura, 2000);
+if (window.ResizeObserver) {{
+    var _ro_{uid} = new ResizeObserver(function() {{ syncHeight_{uid}(); }});
+    _ro_{uid}.observe(document.body);
+}}
+setTimeout(syncHeight_{uid}, 200);
+setTimeout(syncHeight_{uid}, 600);
+setTimeout(syncHeight_{uid}, 1400);
+setTimeout(syncHeight_{uid}, 2800);
 </script>
 </body></html>"""
  
-                components.html(card_html, height=500, scrolling=False)
+                # FIX 3: altura inicial generosa — o ResizeObserver ajusta depois
+                h_est = 540 if (img_primary or videos) else 360
+                if body and len(body) > 200: h_est += 60
+                if title: h_est += 30
+                components.html(card_html, height=h_est, scrolling=False)
                 st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
