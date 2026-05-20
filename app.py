@@ -3395,106 +3395,144 @@ setTimeout(ajustarAltura, 100);
 """, height=118, scrolling=False)
  
                 else:
-                    # ── FIX 2: Card em modo edição — tudo dentro de um único bloco HTML ──
-                    novo_id_key   = f"_inline_edit_{sk}_{ci}"
-                    buscar_key    = f"buscar_cfg_{sk}_{ci}"
-                    salvar_key    = f"salvar_cfg_{sk}_{ci}"
-                    cancel_key    = f"cancel_edit_{sk}_{ci}"
- 
-                    # CSS: força o container Streamlit a parecer o card
-                    st.markdown(f"""
-                    <style>
-                    /* Container do card editando */
-                    .st-key-edit_card_wrap_{sk}_{ci} > div {{
-                        background: #fff !important;
-                        border: 1.5px solid #3a9fd6 !important;
-                        border-radius: 14px !important;
-                        box-shadow: 0 0 0 3px rgba(58,159,214,0.10) !important;
-                        padding: 16px 20px 20px 20px !important;
-                        margin-bottom: 8px !important;
-                    }}
-                    /* Inputs dentro do card */
-                    .st-key-edit_card_wrap_{sk}_{ci} div[data-testid="stTextInput"] input {{
-                        border: 1px solid #e5e7eb !important;
-                        border-radius: 8px !important;
-                        font-size: 14px !important;
-                    }}
-                    /* Botões dentro do card */
-                    .st-key-edit_card_wrap_{sk}_{ci} div.stButton > button {{
-                        min-height: 36px !important;
-                        font-size: 13px !important;
-                    }}
-                    </style>
-                    """, unsafe_allow_html=True)
- 
-                    with st.container(key=f"edit_card_wrap_{sk}_{ci}", border=False):
-                        # Header do card
-                        st.markdown(f"""
-                        <div style="display:flex;align-items:center;gap:14px;
-                                    margin-bottom:14px;padding-bottom:12px;
-                                    border-bottom:1px solid #f0f4f8">
-                            {avatar_html}
-                            <div>
-                                <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:4px">{ck}</div>
-                                <div style="display:flex;gap:6px;flex-wrap:wrap">
-                                    <span style="background:{badge_bg};color:{badge_txt};
-                                                 border:1px solid {badge_brd};padding:2px 8px;
-                                                 border-radius:20px;font-size:11px;font-weight:600">{badge_lbl}</span>
-                                    <span style="background:#fff3e0;color:#c2410c;
-                                                 border:1px solid #fed7aa;padding:2px 8px;
-                                                 border-radius:20px;font-size:11px;font-weight:600">✏️ Editando</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="font-size:11px;font-weight:700;color:#9ca3af;
-                                    text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
-                            Editar Página
-                        </div>
-                        """, unsafe_allow_html=True)
- 
-                        # Input do ID/nome
-                        novo_id = st.text_input(
-                            "ID ou nome da página",
-                            value=ads_id_atual,
-                            key=novo_id_key,
-                            placeholder="Nome exato ou ID numérico",
-                            label_visibility="collapsed",
-                        )
- 
-                        # Botões de ação
-                        col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
-                        with col_b1:
-                            if st.button("🔍 Buscar Páginas", key=buscar_key, use_container_width=True, type="primary"):
-                                if novo_id.strip():
-                                    st.session_state.ads_onboarding_empresa = ck
-                                    st.session_state.ads_onboarding_termo   = novo_id.strip()
-                                    with st.spinner(f"Buscando «{novo_id.strip()}»…"):
-                                        paginas = buscar_paginas_facebook(novo_id.strip())
-                                    st.session_state.ads_onboarding_paginas = paginas
-                                    st.rerun()
-                        with col_b2:
-                            if st.button("💾 Salvar direto", key=salvar_key, use_container_width=True):
-                                if novo_id.strip():
-                                    salvar_ads_id(e, novo_id.strip())
-                                    st.session_state.ads_editando_empresa = None
-                                    st.session_state.ads_onboarding_empresa = None
-                                    st.session_state.ads_onboarding_paginas = []
-                                    st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
-                                    st.rerun()
-                        with col_b3:
-                            if st.button("✕", key=cancel_key, use_container_width=True):
-                                st.session_state.ads_editando_empresa = None
-                                st.session_state.ads_onboarding_empresa = None
-                                st.session_state.ads_onboarding_paginas = []
-                                st.rerun()
- 
-                        # Resultado de busca de páginas (se houver)
-                        if (st.session_state.ads_onboarding_empresa == ck
-                                and st.session_state.ads_onboarding_paginas is not None
-                                and len(st.session_state.ads_onboarding_paginas) > 0):
-                            _render_paginas_resultado(e, sk, ck)
- 
-                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+                    # ── FIX 2: lse:
+    # ── Card em modo edição — tudo em um único HTML ──
+    novo_id_key   = f"_inline_edit_{sk}_{ci}"
+    buscar_key    = f"buscar_cfg_{sk}_{ci}"
+    salvar_key    = f"salvar_cfg_{sk}_{ci}"
+    cancel_key    = f"cancel_edit_{sk}_{ci}"
+
+    # CSS: esconde botões fantasmas
+    st.markdown(f"""
+    <style>
+    .st-key-{buscar_key}, .st-key-{salvar_key}, .st-key-{cancel_key} {{
+        position: fixed !important; top: -9999px !important; left: -9999px !important;
+        width: 1px !important; height: 1px !important; overflow: hidden !important;
+        opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    novo_id = st.text_input(
+        "ID ou nome da página",
+        value=ads_id_atual,
+        key=novo_id_key,
+        label_visibility="collapsed",
+    )
+    buscar_clicked  = st.button("🔍 Buscar Páginas", key=buscar_key)
+    salvar_clicked  = st.button("💾 Salvar direto",  key=salvar_key)
+    cancel_clicked  = st.button("✕",                 key=cancel_key)
+
+    components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+body {{ padding-bottom:4px; }}
+.card {{
+    background:#fff;
+    border:1.5px solid #3a9fd6;
+    border-radius:14px;
+    box-shadow:0 0 0 3px rgba(58,159,214,0.10);
+    overflow:hidden;
+    padding:16px 20px 20px 20px;
+}}
+.card-header {{
+    display:flex; align-items:center; gap:14px;
+    padding-bottom:14px; border-bottom:1px solid #f0f4f8;
+    margin-bottom:14px;
+}}
+.label-sm {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;
+}}
+.input-fake {{
+    width:100%; padding:10px 14px;
+    border:1px solid #e5e7eb; border-radius:8px;
+    font-size:14px; color:#111827; background:#f9fafb;
+    font-family:'DM Sans',sans-serif; margin-bottom:12px;
+}}
+.btn-row {{ display:flex; gap:8px; }}
+.btn {{ padding:9px 0; border-radius:8px; border:none; font-size:13px; font-weight:700;
+        cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; flex:1; }}
+.btn-primary {{ background:#3a9fd6; color:#fff; border:1px solid #3a9fd6; }}
+.btn-primary:hover {{ background:#2d8bb8; }}
+.btn-secondary {{ background:#fff; color:#374151; border:1px solid #e5e7eb; }}
+.btn-secondary:hover {{ background:#f9fafb; }}
+.btn-cancel {{ flex:0; padding:9px 14px; background:#fff; color:#9ca3af; border:1px solid #e5e7eb; }}
+.btn-cancel:hover {{ color:#374151; }}
+.editing-badge {{
+    background:#fff3e0; color:#c2410c; border:1px solid #fed7aa;
+    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;
+}}
+</style>
+<div class="card">
+    <div class="card-header">
+        {avatar_html}
+        <div>
+            <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:4px">{ck}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <span style="background:{badge_bg};color:{badge_txt};
+                             border:1px solid {badge_brd};padding:2px 8px;
+                             border-radius:20px;font-size:11px;font-weight:600">{badge_lbl}</span>
+                <span class="editing-badge">✏️ Editando</span>
+            </div>
+        </div>
+    </div>
+    <div class="label-sm">ID ou nome da página</div>
+    <div class="input-fake">{ads_id_atual}</div>
+    <div class="btn-row">
+        <button class="btn btn-primary" onclick="trigger('{buscar_key}')">🔍 Buscar Páginas</button>
+        <button class="btn btn-secondary" onclick="trigger('{salvar_key}')">💾 Salvar direto</button>
+        <button class="btn btn-cancel" onclick="trigger('{cancel_key}')">✕</button>
+    </div>
+</div>
+<script>
+function trigger(key) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{ if (b.innerText.trim() === key) {{ b.click(); return; }} }}
+}}
+function ajustar() {{
+    var h = document.body.scrollHeight;
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i=0;i<frames.length;i++) {{
+        try {{ if (frames[i].contentWindow===window) {{
+            frames[i].style.height=(h+8)+'px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(ajustar).observe(document.body);
+setTimeout(ajustar, 100);
+</script>
+""", height=220, scrolling=False)
+
+    if buscar_clicked:
+        if novo_id.strip():
+            st.session_state.ads_onboarding_empresa = ck
+            st.session_state.ads_onboarding_termo   = novo_id.strip()
+            with st.spinner(f"Buscando «{novo_id.strip()}»…"):
+                paginas = buscar_paginas_facebook(novo_id.strip())
+            st.session_state.ads_onboarding_paginas = paginas
+            st.rerun()
+
+    if salvar_clicked:
+        if novo_id.strip():
+            salvar_ads_id(e, novo_id.strip())
+            st.session_state.ads_editando_empresa = None
+            st.session_state.ads_onboarding_empresa = None
+            st.session_state.ads_onboarding_paginas = []
+            st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
+            st.rerun()
+
+    if cancel_clicked:
+        st.session_state.ads_editando_empresa = None
+        st.session_state.ads_onboarding_empresa = None
+        st.session_state.ads_onboarding_paginas = []
+        st.rerun()
+
+    if (st.session_state.ads_onboarding_empresa == ck
+            and st.session_state.ads_onboarding_paginas):
+        _render_paginas_resultado(e, sk, ck)
  
     # ── Empresas sem configuração ─────────────────────────────────────
     if empresas_sem_config:
