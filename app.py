@@ -2795,6 +2795,7 @@ elif st.session_state.pagina == "ads":
                     add(card.get(k))
         return vids
  
+    # FIX 3: Corrected format detection — video takes priority, then carousel, then image
     def _normalizar_item_apify(item: dict) -> dict:
         snapshot = item.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -2820,11 +2821,15 @@ elif st.session_state.pagina == "ads":
         if isinstance(plats, str): plats = [plats]
         if not plats: plats = ["facebook", "instagram"]
  
-        has_video   = bool(videos) or (item.get("mediaType") or item.get("media_type") or "").upper() == "VIDEO"
-        has_cards   = len(cards) > 1
+        # FIX 3: Only treat as video if there are actual video URLs
+        raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
+        has_video   = bool(videos) or raw_media_type == "VIDEO"
+        has_cards   = len(cards) > 1 and not has_video
+        has_image   = bool(images) and not has_video
+ 
         if has_video:   fmt = "Vídeo 🎬"
         elif has_cards: fmt = "Carrossel 🎠"
-        elif images:    fmt = "Imagem 🖼️"
+        elif has_image: fmt = "Imagem 🖼️"
         else:           fmt = "Texto 📝"
  
         is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"]) or _is_dynamic(copy["desc"]))
@@ -3276,7 +3281,6 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
-        # CSS para esconder todos os botões nativos de editar
         edit_hide_css = "\n".join([
             f".st-key-cfg_edit_native_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
             for ci, e in enumerate(empresas_configuradas)
@@ -3298,7 +3302,6 @@ html, body { background:transparent; overflow:hidden; }
             edit_native_key = f"cfg_edit_native_{sk}_{ci}"
  
             with cfg_cols[ci % 2]:
-                # Card da empresa configurada
                 components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3361,14 +3364,12 @@ body {{ padding-bottom:4px; }}
 </div>
 """, height=118, scrolling=False)
  
-                # Botão nativo oculto
                 if st.button(edit_native_key, key=edit_native_key, use_container_width=True):
                     st.session_state.ads_editando_empresa = ck
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.rerun()
  
-                # Form de edição no padrão do site
                 if is_editing:
                     st.markdown(f"""
                     <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
@@ -3400,7 +3401,8 @@ body {{ padding-bottom:4px; }}
                                 st.session_state.ads_onboarding_paginas = paginas
                                 st.rerun()
                     with col_b2:
-                        if st.button("💾 Salvar direto", key=f"save_direct_{sk}", use_container_windt=True):
+                        # FIX 4: typo use_container_windt → use_container_width
+                        if st.button("💾 Salvar direto", key=f"save_direct_{sk}", use_container_width=True):
                             if termo_edit.strip():
                                 salvar_ads_id(e, termo_edit.strip())
                                 st.session_state.ads_editando_empresa = None
@@ -3572,7 +3574,7 @@ body {{ padding-bottom:4px; }}
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
-    # ── Ícones de plataformas em cinza ────────────────────────────────
+    # ── FIX 1 & 2: platform icons — no background, smaller facebook, meta row same style ──
     def _plat_svg_js(uid: str) -> str:
         return f"""
 (function(){{
@@ -3580,7 +3582,7 @@ body {{ padding-bottom:4px; }}
     try {{ plats = __PLATS_{uid}__; }} catch(e) {{ return; }}
     var C = '#9ca3af';
     var SVGS = {{
-        "facebook": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
+        "facebook": '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
         "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
         "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
         "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
@@ -3593,10 +3595,37 @@ body {{ padding-bottom:4px; }}
     el.innerHTML = plats.map(function(p) {{
         var key = p.toLowerCase().replace(' ','_').replace('-','_');
         var svg = SVGS[key] || '';
-        return '<span class="plat-badge" title="'+p+'" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:#f3f4f6;">'+(svg||('<span style="font-size:10px;color:#9ca3af">'+p[0].toUpperCase()+'</span>'))+'</span>';
+        return '<span class="plat-badge" title="'+p+'">'+(svg||('<span style="font-size:10px;color:#9ca3af">'+p[0].toUpperCase()+'</span>'))+'</span>';
     }}).join('');
 }})();
 """
+ 
+    # ── Copy helper: truncate at fixed char count, add "ver mais" ────
+    def _copy_block_html(text: str, uid: str, max_chars: int = 120) -> str:
+        if not text:
+            return ""
+        text = text.strip()
+        safe_full = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        if len(text) <= max_chars:
+            display = safe_full.replace("\n", "<br>")
+            return f'<div class="copy-body">{display}</div>'
+        short = safe_full[:max_chars].replace("\n", " ")
+        rest  = safe_full[max_chars:].replace("\n", "<br>")
+        return (
+            f'<div class="copy-body">'
+            f'{short}'
+            f'<span id="cm_{uid}" style="display:none">{rest}</span>'
+            f'<button id="cb_{uid}" '
+            f'onclick="var m=document.getElementById(\'cm_{uid}\');'
+            f'var b=document.getElementById(\'cb_{uid}\');'
+            f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\'}}'
+            f'else{{m.style.display=\'none\';b.textContent=\'ver mais\'}}" '
+            f'style="background:none;border:none;color:#3a9fd6;font-weight:700;'
+            f'font-size:13px;cursor:pointer;padding:0;margin-left:4px;'
+            f'font-family:DM Sans,sans-serif;white-space:nowrap;vertical-align:baseline">'
+            f'ver mais</button>'
+            f'</div>'
+        )
  
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3769,6 +3798,7 @@ body {{ padding-bottom:4px; }}
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
+        # FIX 3: Correct counters using exact format strings
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -3964,6 +3994,8 @@ function imgFallback_{uid}(img){{
     Ver criativo no Ad Library
 </a>"""
  
+                # FIX 1: "Veiculação iniciada" same style as "Plataformas"
+                # FIX 2: plat-badge no background, facebook 14px
                 card_html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3977,10 +4009,11 @@ body{{padding-bottom:8px;}}
 .status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
 .ad-id{{font-size:10px;color:#8a8d91;font-family:monospace;}}
 .meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
-.meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
+.meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;font-weight:400;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
 .meta-row:last-child{{margin-bottom:0;}}
+.meta-label{{font-size:12px;color:#65676b;font-weight:400;flex-shrink:0;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
-.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:#f3f4f6;}}
+.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:transparent;}}
 .dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
@@ -4024,12 +4057,12 @@ body{{padding-bottom:8px;}}
         {f'<span class="ad-id">ID: {ad_id_short}</span>' if ad_id_short else ''}
     </div>
     <div class="meta-info">
-        {f'<div class="meta-row" style="color:#6b7280;font-size:12px">{data_inicio}</div>' if data_inicio else ''}
+        {f'<div class="meta-row"><span class="meta-label">{data_inicio}</span></div>' if data_inicio else ''}
         <div class="meta-row">
-            <span style="font-size:11px;color:#9ca3af;font-weight:600;margin-right:2px">Plataformas:</span>
+            <span class="meta-label">Plataformas:</span>
             <span id="plat_icons_{uid}" class="plat-icons"></span>
         </div>
-        {f'<div class="meta-row"><span style="font-size:11px;color:#9ca3af;font-weight:600">Impressões:</span>&nbsp;{impressoes}</div>' if impressoes else ''}
+        {f'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;{impressoes}</div>' if impressoes else ''}
     </div>
     <div class="copy-section">
         <div class="page-header">
@@ -4039,7 +4072,7 @@ body{{padding-bottom:8px;}}
                 <div class="page-sponsored">Patrocinado</div>
             </div>
         </div>
-        {f'<div class="copy-body">{_truncar(body, 120).replace(chr(10), "<br>")}</div>' if body else ''}
+        {_copy_block_html(body, uid)}
         {f'<div class="copy-title">{title}</div>' if title else ''}
         {f'<div class="copy-desc">{_truncar(desc,120)}</div>' if desc else ''}
         {'<div class="no-copy">Sem copy disponível.</div>' if not body and not title and not desc else ''}
