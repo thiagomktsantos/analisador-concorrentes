@@ -2590,12 +2590,15 @@ elif st.session_state.pagina == "ads":
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
  
+    # ── FIX: salvar_cache_ads usa UPDATE seletivo para não apagar outros campos ──
     def salvar_cache_ads(dados: dict):
         try:
-            supabase.table("ci_dados").upsert(
-                {"user_id": st.session_state.user.id, "ads_cache": dados},
-                on_conflict="user_id",
-            ).execute()
+            user_id = st.session_state.user.id
+            existing = supabase.table("ci_dados").select("id").eq("user_id", user_id).execute()
+            if existing.data:
+                supabase.table("ci_dados").update({"ads_cache": dados}).eq("user_id", user_id).execute()
+            else:
+                supabase.table("ci_dados").insert({"user_id": user_id, "ads_cache": dados}).execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
  
@@ -2795,7 +2798,6 @@ elif st.session_state.pagina == "ads":
                     add(card.get(k))
         return vids
  
-    # FIX 3: Corrected format detection — video takes priority, then carousel, then image
     def _normalizar_item_apify(item: dict) -> dict:
         snapshot = item.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -2821,7 +2823,6 @@ elif st.session_state.pagina == "ads":
         if isinstance(plats, str): plats = [plats]
         if not plats: plats = ["facebook", "instagram"]
  
-        # FIX 3: Only treat as video if there are actual video URLs
         raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
         has_video   = bool(videos) or raw_media_type == "VIDEO"
         has_cards   = len(cards) > 1 and not has_video
@@ -3281,11 +3282,30 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
-        edit_hide_css = "\n".join([
-            f".st-key-cfg_edit_native_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
+        # CSS: esconde todos os trigger buttons fantasmas
+        ghost_css = "\n".join([
+            f".st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
             for ci, e in enumerate(empresas_configuradas)
         ])
-        st.markdown(f"<style>{edit_hide_css}</style>", unsafe_allow_html=True)
+        st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
+ 
+        # Registrar trigger buttons ANTES de renderizar os cards
+        edit_triggers = {}
+        for ci, e in enumerate(empresas_configuradas):
+            sk = safe_key(e["nome"])
+            triggered = st.button(
+                f"cfg_edit_trigger_{sk}_{ci}",
+                key=f"cfg_edit_trigger_{sk}_{ci}",
+            )
+            edit_triggers[ci] = triggered
+ 
+        # Processar cliques de "editar"
+        for ci, e in enumerate(empresas_configuradas):
+            if edit_triggers[ci]:
+                st.session_state.ads_editando_empresa = e["nome"]
+                st.session_state.ads_onboarding_empresa = None
+                st.session_state.ads_onboarding_paginas = []
+                st.rerun()
  
         cfg_cols = st.columns(2)
         for ci, e in enumerate(empresas_configuradas):
@@ -3299,42 +3319,33 @@ html, body { background:transparent; overflow:hidden; }
             ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             is_editing = (st.session_state.ads_editando_empresa == ck)
             avatar_html = _avatar_html_empresa(e, size=42)
-            edit_native_key = f"cfg_edit_native_{sk}_{ci}"
+            edit_trigger_key = f"cfg_edit_trigger_{sk}_{ci}"
  
             with cfg_cols[ci % 2]:
-                components.html(f"""
+                if not is_editing:
+                    # ── Card normal (só visualização) ──────────────────
+                    components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 body {{ padding-bottom:4px; }}
-.card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;
-}}
-.card-body {{
-    display:flex; align-items:center; gap:14px; padding:16px 20px;
-    border-bottom:1px solid #f3f4f6;
-}}
+.card {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
+.card-body {{ display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid #f3f4f6; }}
 .info {{ flex:1; min-width:0; }}
 .nome {{ font-size:16px; font-weight:700; color:#111827; margin-bottom:4px; }}
 .badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
-.badge {{
+.badge {{ padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd}; }}
+.badge-id {{ background:#dcfce7; color:#15803d; border:1px solid #86efac;
     padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
-    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
-}}
-.badge-id {{
-    background:#dcfce7; color:#15803d; border:1px solid #86efac;
-    padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;
-}}
-.edit-btn {{
-    width:100%; padding:10px 0; background:#fff;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; }}
+.edit-btn {{ width:100%; padding:10px 0; background:#fff;
     border:none; border-top:1px solid #f3f4f6;
     font-size:14px; font-weight:600; color:#6b7280;
     cursor:pointer; font-family:'DM Sans',sans-serif;
     display:flex; align-items:center; justify-content:center; gap:8px;
-    transition:all 0.12s ease;
-}}
+    transition:all 0.12s ease; }}
 .edit-btn:hover {{ background:#f9fafb; color:#111827; }}
 </style>
 <div class="card">
@@ -3348,12 +3359,7 @@ body {{ padding-bottom:4px; }}
             </div>
         </div>
     </div>
-    <button class="edit-btn" onclick="
-        var btns = window.parent.document.querySelectorAll('button');
-        for (var b of btns) {{
-            if (b.innerText.trim() === '{edit_native_key}') {{ b.click(); break; }}
-        }}
-    ">
+    <button class="edit-btn" onclick="triggerBtn('{edit_trigger_key}')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -3362,63 +3368,127 @@ body {{ padding-bottom:4px; }}
         Editar página
     </button>
 </div>
+<script>
+function triggerBtn(key) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{ if (b.innerText.trim() === key) {{ b.click(); return; }} }}
+}}
+function ajustarAltura() {{
+    var h = document.body.scrollHeight;
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = (h + 8) + 'px'; break;
+        }} }} catch(err) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
+setTimeout(ajustarAltura, 100);
+</script>
 """, height=118, scrolling=False)
  
-                if st.button(edit_native_key, key=edit_native_key, use_container_width=True):
-                    st.session_state.ads_editando_empresa = ck
-                    st.session_state.ads_onboarding_empresa = None
-                    st.session_state.ads_onboarding_paginas = []
-                    st.rerun()
+                else:
+                    # ── FIX: Card em modo edição — header HTML + body com widgets Streamlit ──
+                    # Header do card (avatar + badges) via HTML com borda azul
+                    components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+.card-top {{
+    background:#fff;
+    border:1.5px solid #3a9fd6;
+    border-bottom:1px solid #e5e7eb;
+    border-radius:14px 14px 0 0;
+    padding:14px 20px;
+    display:flex; align-items:center; gap:14px;
+    box-shadow:0 0 0 3px rgba(58,159,214,0.10);
+}}
+.nome {{ font-size:16px; font-weight:700; color:#111827; margin-bottom:4px; }}
+.badge {{ padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd}; }}
+.badge-editing {{
+    background:#fff3e0; color:#c2410c; border:1px solid #fed7aa;
+    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; margin-left:6px;
+}}
+</style>
+<div class="card-top">
+    {avatar_html}
+    <div>
+        <div class="nome">{ck}</div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:4px">
+            <span class="badge">{badge_lbl}</span>
+            <span class="badge-editing">✏️ Editando</span>
+        </div>
+    </div>
+</div>
+""", height=88, scrolling=False)
  
-                if is_editing:
+                    # Corpo do formulário: CSS costura visualmente com o header acima
                     st.markdown(f"""
-                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;
-                                padding:18px 20px;margin-top:8px'>
-                        <div style='font-size:11px;font-weight:700;color:#9ca3af;
+                    <style>
+                    /* Remove margin entre o iframe do header e o container abaixo */
+                    div[data-testid="stVerticalBlock"] > div:has(iframe) + div {{
+                        margin-top: 0 !important;
+                    }}
+                    .edit-body-{sk}-{ci} {{
+                        background: #fff;
+                        border: 1.5px solid #3a9fd6;
+                        border-top: none;
+                        border-radius: 0 0 14px 14px;
+                        padding: 14px 20px 16px 20px;
+                        box-shadow: 0 0 0 3px rgba(58,159,214,0.10);
+                        margin-top: -6px;
+                    }}
+                    </style>
+                    <div class="edit-body-{sk}-{ci}">
+                        <div style="font-size:11px;font-weight:700;color:#9ca3af;
                                     text-transform:uppercase;letter-spacing:1px;
-                                    margin-bottom:14px;padding-bottom:10px;
-                                    border-bottom:1px solid #f3f4f6'>
+                                    margin-bottom:10px;padding-bottom:8px;
+                                    border-bottom:1px solid #f3f4f6;">
                             Editar Página
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
  
-                    termo_edit = st.text_input(
-                        "Nome ou ID numérico da página",
+                    novo_id = st.text_input(
+                        "ID ou nome da página",
                         value=ads_id_atual,
-                        placeholder="Ex: Kedu Educação  ou  106563541907639",
-                        key=f"_termo_edit_{sk}",
+                        key=f"_inline_edit_{sk}_{ci}",
+                        placeholder="Nome exato ou ID numérico",
                         label_visibility="collapsed",
                     )
+ 
                     col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
                     with col_b1:
-                        if st.button("🔍 Buscar Páginas", key=f"buscar_edit_{sk}", use_container_width=True):
-                            if termo_edit.strip():
+                        if st.button("🔍 Buscar Páginas", key=f"buscar_cfg_{sk}_{ci}", use_container_width=True, type="primary"):
+                            if novo_id.strip():
                                 st.session_state.ads_onboarding_empresa = ck
-                                st.session_state.ads_onboarding_termo   = termo_edit.strip()
-                                with st.spinner(f"Buscando «{termo_edit.strip()}»…"):
-                                    paginas = buscar_paginas_facebook(termo_edit.strip())
+                                st.session_state.ads_onboarding_termo   = novo_id.strip()
+                                with st.spinner(f"Buscando «{novo_id.strip()}»…"):
+                                    paginas = buscar_paginas_facebook(novo_id.strip())
                                 st.session_state.ads_onboarding_paginas = paginas
                                 st.rerun()
                     with col_b2:
-                        # FIX 4: typo use_container_windt → use_container_width
-                        if st.button("💾 Salvar direto", key=f"save_direct_{sk}", use_container_width=True):
-                            if termo_edit.strip():
-                                salvar_ads_id(e, termo_edit.strip())
+                        if st.button("💾 Salvar direto", key=f"salvar_cfg_{sk}_{ci}", use_container_width=True):
+                            if novo_id.strip():
+                                salvar_ads_id(e, novo_id.strip())
                                 st.session_state.ads_editando_empresa = None
                                 st.session_state.ads_onboarding_empresa = None
                                 st.session_state.ads_onboarding_paginas = []
-                                st.toast(f"✅ Salvo: {termo_edit.strip()}", icon="✅")
+                                st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
                                 st.rerun()
                     with col_b3:
-                        if st.button("✕", key=f"cancel_edit_{sk}", use_container_width=True):
+                        if st.button("✕", key=f"cancel_edit_{sk}_{ci}", use_container_width=True):
                             st.session_state.ads_editando_empresa = None
                             st.session_state.ads_onboarding_empresa = None
                             st.session_state.ads_onboarding_paginas = []
                             st.rerun()
  
+                    # Resultado de busca de páginas (se houver)
                     if (st.session_state.ads_onboarding_empresa == ck
-                            and st.session_state.ads_onboarding_paginas is not None):
+                            and st.session_state.ads_onboarding_paginas is not None
+                            and len(st.session_state.ads_onboarding_paginas) > 0):
                         _render_paginas_resultado(e, sk, ck)
  
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
@@ -3574,7 +3644,6 @@ body {{ padding-bottom:4px; }}
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
-    # ── FIX 1 & 2: platform icons — no background, smaller facebook, meta row same style ──
     def _plat_svg_js(uid: str) -> str:
         return f"""
 (function(){{
@@ -3600,7 +3669,6 @@ body {{ padding-bottom:4px; }}
 }})();
 """
  
-    # ── Copy helper: truncate at fixed char count, add "ver mais" ────
     def _copy_block_html(text: str, uid: str, max_chars: int = 120) -> str:
         if not text:
             return ""
@@ -3798,7 +3866,6 @@ body {{ padding-bottom:4px; }}
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
-        # FIX 3: Correct counters using exact format strings
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -3865,7 +3932,6 @@ body {{ padding-bottom:4px; }}
                     img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
-                # ── Bloco de mídia ────────────────────────────────────
                 if videos:
                     if snap_url:
                         _snap_safe    = snap_url.replace("'", "\\'")
@@ -3994,8 +4060,6 @@ function imgFallback_{uid}(img){{
     Ver criativo no Ad Library
 </a>"""
  
-                # FIX 1: "Veiculação iniciada" same style as "Plataformas"
-                # FIX 2: plat-badge no background, facebook 14px
                 card_html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
