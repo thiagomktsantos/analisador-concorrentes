@@ -3420,7 +3420,7 @@ setTimeout(ajustarAltura, 100);
                     """, unsafe_allow_html=True)
 
                     # Card inferior — edição
-                    st.markdown("""
+                    st.markdown(f"""
                     <style>
                     .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"],
                     .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"] *,
@@ -3429,9 +3429,7 @@ setTimeout(ajustarAltura, 100);
                     .st-key-inline_edit_{sk}_{ci} .stElementContainer,
                     .st-key-inline_edit_{sk}_{ci} .stElementContainer > div,
                     .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"],
-                    .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div,
-                    .st-key-inline_edit_{sk}_{ci} div[data-baseweb="select"],
-                    .st-key-inline_edit_{sk}_{ci} div[data-baseweb="select"] > div {{
+                    .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div {{
                         background-color: #ffffff !important;
                         background: #ffffff !important;
                     }}
@@ -3444,25 +3442,12 @@ setTimeout(ajustarAltura, 100);
                     """, unsafe_allow_html=True)
 
                     with st.container(border=True, key=f"inline_edit_{sk}_{ci}"):
-                        st.markdown("""
-                        <style>
-                        [data-testid="stVerticalBlockBorderWrapper"],
-                        [data-testid="stVerticalBlockBorderWrapper"] > div,
-                        [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-                        [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-                        [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
-                        [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"],
-                        [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"] > div {
-                            background-color: #ffffff !important;
-                        }
-                        </style>
-                        <div style='background:#ffffff;padding:4px 0 8px 0'>
-                            <div style='font-size:11px;font-weight:700;color:#9ca3af;
-                                        text-transform:uppercase;letter-spacing:0.8px'>
-                                Nome ou ID numérico da página
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        st.markdown(
+                            "<div style='font-size:11px;font-weight:700;color:#9ca3af;"
+                            "text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px 0'>"
+                            "Nome ou ID numérico da página</div>",
+                            unsafe_allow_html=True,
+                        )
 
                         novo_id = st.text_input(
                             "ID ou nome",
