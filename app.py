@@ -3422,19 +3422,28 @@ setTimeout(ajustarAltura, 100);
                     # Card inferior — edição
                     st.markdown("""
                     <style>
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]),
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) *:not(button):not(input):not(svg):not(path) {
+                    .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"],
+                    .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"] *,
+                    .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"],
+                    .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"] *,
+                    .st-key-inline_edit_{sk}_{ci} .stElementContainer,
+                    .st-key-inline_edit_{sk}_{ci} .stElementContainer > div,
+                    .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"],
+                    .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div,
+                    .st-key-inline_edit_{sk}_{ci} div[data-baseweb="select"],
+                    .st-key-inline_edit_{sk}_{ci} div[data-baseweb="select"] > div {{
                         background-color: #ffffff !important;
                         background: #ffffff !important;
-                    }
-                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) {
+                    }}
+                    .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"] {{
                         border: 1.5px solid #e5e7eb !important;
                         border-radius: 14px !important;
                         padding: 16px 20px !important;
-                    }
+                    }}
                     </style>
                     """, unsafe_allow_html=True)
-                    with st.container(border=True):
+
+                    with st.container(border=True, key=f"inline_edit_{sk}_{ci}"):
                         st.markdown("""
                         <style>
                         [data-testid="stVerticalBlockBorderWrapper"],
