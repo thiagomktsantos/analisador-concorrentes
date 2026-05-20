@@ -3712,7 +3712,7 @@ setTimeout(ajustarAltura, 100);
 """
 
     # FIX: copy_block_html — mostra "... ver mais" inline para indicar que há mais texto
-    def _copy_block_html(text: str, uid: str, max_chars: int = 120) -> str:
+    def _copy_block_html(text: str, uid: str, max_chars: int = 118) -> str:
         if not text:
             return ""
         text = text.strip()
@@ -3734,7 +3734,7 @@ setTimeout(ajustarAltura, 100);
             f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}'
             f'else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" '
             f'style="background:none;border:none;color:#3a9fd6;font-weight:700;'
-            f'font-size:13px;cursor:pointer;padding:0;margin-left:0px;'
+            f'font-size:13px;cursor:pointer;padding:0;margin-left:3px;'
             f'font-family:DM Sans,sans-serif;white-space:nowrap;vertical-align:baseline">'
             f'ver mais</button>'
             f'</div>'
