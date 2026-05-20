@@ -2623,7 +2623,18 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
  
 elif st.session_state.pagina == "ads":
- 
+
+    st.markdown("""
+    <style>
+    /* Bigger font for ads company tabs */
+    div[data-testid="stTabs"] button[role="tab"] {
+        font-size: 17px !important;
+        font-weight: 700 !important;
+        padding: 12px 32px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     import datetime as _dt
     import json as _json
     import base64 as _b64
@@ -2887,10 +2898,10 @@ elif st.session_state.pagina == "ads":
         has_cards   = len(cards) > 1 and not has_video
         has_image   = bool(images) and not has_video
  
-        if has_video:   fmt = "Vídeo 🎬"
-        elif has_cards: fmt = "Carrossel 🎠"
-        elif has_image: fmt = "Imagem 🖼️"
-        else:           fmt = "Texto 📝"
+        if has_video:   fmt = "Vídeo"
+        elif has_cards: fmt = "Carrossel"
+        elif has_image: fmt = "Imagem"
+        else:           fmt = "Texto"
  
         is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"]) or _is_dynamic(copy["desc"]))
         body_c  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
@@ -3707,7 +3718,7 @@ setTimeout(ajustarAltura, 100);
     try {{ plats = __PLATS_{uid}__; }} catch(e) {{ return; }}
     var C = '#9ca3af';
     var SVGS = {{
-        "facebook": '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
+        "facebook": '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
         "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
         "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
         "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
@@ -3877,10 +3888,10 @@ setTimeout(ajustarAltura, 100);
                     </span>
                 </div>
             </div>
-            <div style='display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0'>
-                <div style='text-align:right'>
-                    <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
-                    <div style='font-size:12px;color:#9ca3af'>anúncios encontrados</div>
+            <div style='display:flex;align-items:center;gap:16px;flex-shrink:0'>
+                <div style='text-align:right;border-right:1px solid #e5e7eb;padding-right:16px'>
+                    <div style='font-size:36px;font-weight:900;color:#111827;line-height:1'>{len(ads_list)}</div>
+                    <div style='font-size:12px;color:#9ca3af;margin-top:2px'>anúncios encontrados</div>
                 </div>
                 {lib_btn_top}
             </div>
@@ -3891,7 +3902,24 @@ setTimeout(ajustarAltura, 100);
             if lib_url:
                 st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
- 
+
+        st.markdown("""
+        <style>
+        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) {
+            background: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 10px !important;
+            padding: 10px 14px !important;
+            margin-bottom: 12px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) > div,
+        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) .stElementContainer,
+        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) .stElementContainer > div {
+            background: #ffffff !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
@@ -4045,7 +4073,7 @@ setTimeout(ajustarAltura, 100);
                 is_dyn      = ad.get("is_dynamic", False)
                 baixo_vol   = ad.get("baixo_volume", False)
                 ad_id       = ad.get("id","")
-                ad_id_short = ad_id[:15] + "…" if len(ad_id) > 15 else ad_id
+                ad_id_short = ad_id  # show full ID
                 plats       = ad.get("plataformas") or []
                 plat_js     = _json.dumps([p.lower() for p in plats])
                 data_inicio = ad.get("data_inicio","")
@@ -4182,18 +4210,17 @@ function imgFallback_{uid}(img){{
                 else:
                     page_avatar_html = f'<div class="page-avatar">{avatar}</div>'
  
-                lib_btn_html = ""
-                if snap_url:
-                    lib_btn_html = f"""
-<a href="{snap_url}" target="_blank" class="lib-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-         stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-        <polyline points="15 3 21 3 21 9"/>
-        <line x1="10" y1="14" x2="21" y2="3"/>
-    </svg>
-    Ver criativo no Ad Library
-</a>"""
+                ia_ad_btn_key = f"ia_ad_{safe_key(ck)}_{j}"
+                lib_btn_html = f"""
+<div class="card-btns">
+    {'<a href="' + snap_url + '" target="_blank" class="lib-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ver no Ad Library</a>' if snap_url else '<span style="display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;border-radius:0 0 0 10px">Sem link</span>'}
+    <button class="ia-btn" onclick="triggerIaAd_{uid}()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Analisar anúncio
+    </button>
+</div>"""
  
                 is_ativo = ad.get("ativo", True)
                 status_dot_html = (
@@ -4227,7 +4254,7 @@ body{{padding-bottom:2px;}}
 .meta-row:last-child{{margin-bottom:0;}}
 .meta-label{{font-size:12px;color:#65676b;font-weight:700;flex-shrink:0;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
-.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:transparent;}}
+.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:transparent;}}
 .dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
@@ -4249,8 +4276,11 @@ body{{padding-bottom:2px;}}
 .cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;letter-spacing:0.3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-block;transition:background 0.15s;flex-shrink:0;}}
 .cta-btn:hover{{background:#d8dadf;}}
-.lib-btn{{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px;background:#1877F2;color:#fff;border:none;border-radius:0 0 10px 10px;font-size:13px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
+.card-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e4e6ea;}}
+.lib-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:12px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
 .lib-btn:hover{{background:#166fe5;}}
+.ia-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#f0fdf4;color:#15803d;border:none;border-top:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;border-left:1px solid #e4e6ea;}}
+.ia-btn:hover{{background:#dcfce7;}}
 .modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(3px);}}
 .modal-overlay.open{{display:flex;}}
 .modal-box{{background:#1a1a2e;border-radius:16px;max-width:90vw;max-height:90vh;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;box-shadow:0 24px 80px rgba(0,0,0,0.6);}}
@@ -4379,7 +4409,7 @@ function syncHeight_{uid}() {{
         }} catch(e) {{}}
     }}
 }}
- 
+
 document.addEventListener('DOMContentLoaded', function() {{ setTimeout(syncHeight_{uid}, 50); }});
 window.addEventListener('load', function() {{ syncHeight_{uid}(); }});
 document.querySelectorAll('img').forEach(function(img) {{
@@ -4394,9 +4424,79 @@ setTimeout(syncHeight_{uid}, 200);
 setTimeout(syncHeight_{uid}, 600);
 setTimeout(syncHeight_{uid}, 1400);
 </script>
+
+function triggerIaAd_{uid}() {{
+    var targetText = '__ia_ad_{uid}__';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if (b.innerText.trim() === targetText) {{ b.click(); return; }}
+    }}
+}}
+
 </body></html>"""
  
                 components.html(card_html, height=610, scrolling=False)
+
+                # Ghost button for per-ad IA analysis
+                chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
+                if chave_ia_ad not in st.session_state:
+                    st.session_state[chave_ia_ad] = ""
+
+                st.markdown(f"<style>.st-key-btn_ia_ad_{safe_key(ck)}_{j} {{ display:none !important; }}</style>", unsafe_allow_html=True)
+                if st.button(f"__ia_ad_{uid}__", key=f"btn_ia_ad_{safe_key(ck)}_{j}"):
+                    if gemini_model is None:
+                        st.session_state[chave_ia_ad] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner(f"Analisando anúncio…"):
+                            try:
+                                ad_body_txt = ad.get("body") or ""
+                                ad_title_txt = ad.get("title") or ""
+                                ad_desc_txt = ad.get("description") or ""
+                                ad_fmt_txt = ad.get("formato") or ""
+                                ad_plat_txt = ", ".join(ad.get("plataformas") or [])
+                                ad_inicio_txt = ad.get("data_inicio") or ""
+                                prompt_ad_ia = f"""Você é especialista em mídia paga e copywriting.
+Analise este anúncio específico e dê feedback estratégico em português.
+
+Empresa: {nome}
+Formato: {ad_fmt_txt}
+Plataformas: {ad_plat_txt}
+Veiculação: {ad_inicio_txt}
+Título: {ad_title_txt}
+Copy principal: {ad_body_txt}
+Descrição: {ad_desc_txt}
+
+Responda com:
+### 🎯 Objetivo do Anúncio
+Qual é o objetivo provável deste anúncio?
+
+### 📝 Análise de Copy
+Pontos fortes e fracos do texto.
+
+### 🖼️ Análise de Formato
+O formato escolhido é adequado? Por quê?
+
+### 💡 Sugestões de Melhoria
+2 melhorias concretas que aumentariam a performance.
+
+Seja direto e objetivo."""
+                                resp = gemini_model.generate_content(prompt_ad_ia)
+                                st.session_state[chave_ia_ad] = resp.text
+                                st.rerun()
+                            except Exception as ex:
+                                st.session_state[chave_ia_ad] = f"Erro: {ex}"
+                                st.rerun()
+
+                if st.session_state.get(chave_ia_ad):
+                    st.markdown(f"""
+                    <div style='background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
+                                padding:14px 16px;font-size:13px;color:#374151;line-height:1.75;
+                                max-height:260px;overflow-y:auto;margin-top:4px;margin-bottom:8px'>
+                        {st.session_state[chave_ia_ad].replace(chr(10), "<br>")}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                
                 st.markdown("<div style='height:1px'/>", unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
