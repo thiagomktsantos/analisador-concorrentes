@@ -2890,8 +2890,21 @@ elif st.session_state.pagina == "ads":
                  or item.get("publisher_platforms")
                  or snapshot.get("publisher_platforms")
                  or [])
-        if isinstance(plats, str): plats = [plats]
-        if not plats: plats = ["facebook", "instagram"]
+
+        if isinstance(plats, str):
+            plats = [plats]
+        elif isinstance(plats, list):
+            normalized = []
+            for p in plats:
+                if isinstance(p, dict):
+                    normalized.append(p.get("name") or p.get("value") or str(p))
+                elif isinstance(p, str):
+                    normalized.append(p)
+            plats = normalized
+
+        if not plats:
+        plats = ["facebook", "instagram"]
+ 
  
         raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
         has_video   = bool(videos) or raw_media_type == "VIDEO"
