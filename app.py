@@ -3395,7 +3395,6 @@ setTimeout(ajustarAltura, 100);
 """, height=118, scrolling=False)
  
                 else:
-                    # ── FIX 2: lse:
     # ── Card em modo edição — tudo em um único HTML ──
     novo_id_key   = f"_inline_edit_{sk}_{ci}"
     buscar_key    = f"buscar_cfg_{sk}_{ci}"
