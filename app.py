@@ -2614,7 +2614,7 @@ elif st.session_state.pagina == "ads":
                 supabase.table("ci_dados").insert(payload).execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
- 
+
     def carregar_cache_ads() -> dict:
         try:
             res = (
@@ -2628,6 +2628,46 @@ elif st.session_state.pagina == "ads":
         except Exception:
             pass
         return {}
+
+    def merge_ads(cache_existente: dict, novos: dict) -> dict:
+        """
+        Merge inteligente: mantém histórico de anúncios.
+        Anúncios não encontrados na nova busca ficam com ativo=False.
+        Anúncios novos entram com ativo=True.
+        Anúncios já existentes e reencontrados voltam para ativo=True.
+        """
+        resultado = dict(cache_existente)
+        for nome_empresa, novo_entry in novos.items():
+            novos_ads = novo_entry.get("data", [])
+            novos_ids = {str(a.get("id", "")) for a in novos_ads if a.get("id")}
+
+            entry_existente = resultado.get(nome_empresa, {})
+            ads_anteriores = entry_existente.get("data", [])
+
+            # Marcar todos os anteriores: ativo=True se reencontrado, False se sumiu
+            ads_anteriores_atualizados = []
+            for ad in ads_anteriores:
+                ad_id = str(ad.get("id", ""))
+                ad["ativo"] = (ad_id in novos_ids) if ad_id else ad.get("ativo", True)
+                ads_anteriores_atualizados.append(ad)
+
+            # IDs já existentes no histórico
+            ids_existentes = {str(a.get("id", "")) for a in ads_anteriores_atualizados if a.get("id")}
+
+            # Adicionar novos anúncios que não estavam no histórico
+            for ad in novos_ads:
+                ad_id = str(ad.get("id", ""))
+                if not ad_id or ad_id not in ids_existentes:
+                    ad["ativo"] = True
+                    ads_anteriores_atualizados.append(ad)
+
+            resultado[nome_empresa] = {
+                **novo_entry,
+                "data": ads_anteriores_atualizados,
+                "ts": novo_entry.get("ts", entry_existente.get("ts", "")),
+                "ts_historico": entry_existente.get("ts", ""),
+            }
+        return resultado
  
     def cache_esta_fresco(ts_str: str) -> bool:
         if not ts_str:
