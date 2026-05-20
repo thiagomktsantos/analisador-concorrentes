@@ -2617,8 +2617,7 @@ def salvar_cache_ads(dados: dict):
         supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
     except Exception as e:
         st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
- 
- 
+  
 # ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
@@ -5473,8 +5472,9 @@ setTimeout(enviarAltura, 1000);
 """
             components.html(ia_html, height=420, scrolling=False)
 
-idx_plus_1 = idx + 1
-st.markdown(f"""
+    if ok:
+        idx_plus_1 = len(ok)
+        st.markdown(f"""
 <script>
 (function() {{
     var listeners = window._iaListeners || 0;
