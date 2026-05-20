@@ -2579,14 +2579,6 @@ setTimeout(ajustarAltura, 600);
  
 elif st.session_state.pagina == "ads":
 
-    st.markdown("""
-<style>
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background-color: #ffffff !important;
-}
-</style>
-""", unsafe_allow_html=True)
-    
     import datetime as _dt
     import json as _json
     import base64 as _b64
@@ -3428,8 +3420,31 @@ setTimeout(ajustarAltura, 100);
                     """, unsafe_allow_html=True)
 
                     # Card inferior — edição
+                    st.markdown("""
+                    <style>
+                    [data-testid="stVerticalBlockBorderWrapper"]:has(
+                        [data-testid="stTextInput"]
+                    ) {
+                        background-color: #ffffff !important;
+                        border: 1.5px solid #e5e7eb !important;
+                        border-radius: 14px !important;
+                        padding: 16px 20px !important;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
                     with st.container(border=True):
                         st.markdown("""
+                        <style>
+                        [data-testid="stVerticalBlockBorderWrapper"],
+                        [data-testid="stVerticalBlockBorderWrapper"] > div,
+                        [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+                        [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+                        [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
+                        [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"],
+                        [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"] > div {
+                            background-color: #ffffff !important;
+                        }
+                        </style>
                         <div style='background:#ffffff;padding:4px 0 8px 0'>
                             <div style='font-size:11px;font-weight:700;color:#9ca3af;
                                         text-transform:uppercase;letter-spacing:0.8px'>
