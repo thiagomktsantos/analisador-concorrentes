@@ -461,16 +461,20 @@ section.main div.stButton > button:hover {
 
 section.main div.stButton > button[kind="primary"],
 [data-testid="stMainBlockContainer"] button[kind="primary"],
-button[data-testid="baseButton-primary"] {
+button[data-testid="baseButton-primary"],
+div.stButton > button[kind="primary"] {
     background: #0780c0 !important;
     color: #ffffff !important;
     border: none !important;
+    opacity: 1 !important;
 }
 section.main div.stButton > button[kind="primary"]:hover,
 [data-testid="stMainBlockContainer"] button[kind="primary"]:hover,
-button[data-testid="baseButton-primary"]:hover {
+button[data-testid="baseButton-primary"]:hover,
+div.stButton > button[kind="primary"]:hover {
     background: #065f9e !important;
     color: #ffffff !important;
+    opacity: 1 !important;
 }
 
 section.main div.stFormSubmitButton > button {
