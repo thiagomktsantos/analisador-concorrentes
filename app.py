@@ -573,7 +573,7 @@ div[data-testid="stTabs"] > div:first-child {
     justify-content: center !important; border-bottom: 2px solid #e5e7eb !important; gap: 0 !important;
 }
 div[data-testid="stTabs"] button[role="tab"] {
-    font-size: 15px !important; font-weight: 600 !important;
+    font-size: 18px !important; font-weight: 900 !important;
     font-family: 'DM Sans', sans-serif !important; padding: 10px 32px !important;
     color: #9ca3af !important; border-bottom: 2px solid transparent !important;
     margin-bottom: -2px !important;
@@ -764,7 +764,7 @@ if not st.session_state.logado:
     }
     div[data-testid="stTabs"] button[role="tab"] {
         font-size: 18px !important;
-        font-weight: 600 !important;
+        font-weight: 900 !important;
         padding: 8px 0 !important;
         color: #9ca3af !important;
         border-bottom: 2px solid transparent !important;
@@ -2628,8 +2628,8 @@ elif st.session_state.pagina == "ads":
     <style>
     /* Bigger font for ads company tabs */
     div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 17px !important;
-        font-weight: 700 !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
         padding: 12px 32px !important;
     }
     </style>
@@ -3837,25 +3837,28 @@ setTimeout(ajustarAltura, 100);
  
         frescos_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
         st.markdown(f"""
-        <div style='display:flex;align-items:center;gap:16px;margin-bottom:20px;
-                    padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
-            {avatar_empresa_html}
-            <div style='flex:1;min-width:0'>
-                <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
-                <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px'>
-                    <span style='font-size:12px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
-                    <span style='color:#d1d5db;font-size:12px'>·</span>
-                    <span style='font-size:12px;color:#6b7280'>{frescos_label}</span>
-                    <span style='color:#d1d5db;font-size:12px'>·</span>
-                    <span style='font-size:12px;color:#6b7280'>Página: {page_display}</span>
+        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:0px;overflow:hidden'>
+            <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
+                {avatar_empresa_html}
+                <div style='flex:1;min-width:0'>
+                    <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
+                    <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px'>
+                        <span style='font-size:12px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
+                        <span style='color:#d1d5db;font-size:12px'>·</span>
+                        <span style='font-size:12px;color:#6b7280'>{frescos_label}</span>
+                        <span style='color:#d1d5db;font-size:12px'>·</span>
+                        <span style='font-size:12px;color:#6b7280'>Página: {page_display}</span>
+                    </div>
                 </div>
-            </div>
-            <div style='display:flex;align-items:center;gap:14px;flex-shrink:0'>
-                <div style='text-align:right'>
-                    <div style='font-size:28px;font-weight:700;color:#111827;line-height:1'>{len(ads_list)}</div>
-                    <div style='font-size:12px;color:#9ca3af;margin-top:2px'>anúncios</div>
+                <div style='display:flex;align-items:center;gap:0;flex-shrink:0'>
+                    <div style='width:1px;height:40px;background:#e5e7eb;margin-right:20px'></div>
+                    <div style='text-align:center;min-width:56px'>
+                        <div style='font-size:28px;font-weight:800;color:#111827;line-height:1'>{len(ads_list)}</div>
+                        <div style='font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px'>anúncios</div>
+                    </div>
+                    <div style='width:1px;height:40px;background:#e5e7eb;margin:0 20px'></div>
+                    {lib_btn_top}
                 </div>
-                {lib_btn_top}
             </div>
         </div>""", unsafe_allow_html=True)
  
@@ -3870,9 +3873,11 @@ setTimeout(ajustarAltura, 100);
         div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) {
             background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
-            border-radius: 10px !important;
+            border-top: none !important;
+            border-radius: 0 0 12px 12px !important;
             padding: 10px 14px !important;
-            margin-bottom: 12px !important;
+            margin-bottom: 20px !important;
+            margin-top: 0px !important;
         }
         div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) > div,
         div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) .stElementContainer,
@@ -3880,6 +3885,7 @@ setTimeout(ajustarAltura, 100);
             background: #ffffff !important;
         }
         </style>
+        <div style='border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;border-top:1px solid #f0f0f0;margin-bottom:-20px'></div>
         """, unsafe_allow_html=True)
         
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
@@ -4588,8 +4594,8 @@ elif st.session_state.pagina == "redes":
         margin-bottom: 20px !important;
     }
     div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 15px !important;
-        font-weight: 600 !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
         color: #6b7280 !important;
         border-bottom: none !important;
         border-radius: 8px 8px 0px 0px !important;
