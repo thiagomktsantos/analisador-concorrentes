@@ -3427,9 +3427,7 @@ setTimeout(ajustarAltura, 100);
                     st.markdown(f"""
                     <style>
                     .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"],
-                    .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"] *,
                     .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"],
-                    .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"] *,
                     .st-key-inline_edit_{sk}_{ci} .stElementContainer,
                     .st-key-inline_edit_{sk}_{ci} .stElementContainer > div,
                     .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"],
@@ -3441,6 +3439,11 @@ setTimeout(ajustarAltura, 100);
                         border: 1.5px solid #e5e7eb !important;
                         border-radius: 14px !important;
                         padding: 16px 20px !important;
+                    }}
+                    .st-key-inline_edit_{sk}_{ci} button[kind="primary"] {{
+                        background: #0780c0 !important;
+                        color: #ffffff !important;
+                        border: none !important;
                     }}
                     </style>
                     """, unsafe_allow_html=True)
