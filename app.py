@@ -2014,7 +2014,12 @@ setTimeout(ajustarAltura, 400);
                         st.rerun()
                 with b2:
                     if st.button("Remover Concorrente", key=f"remove_{i}", use_container_width=True):
+                        nome_removido = st.session_state.dados["concorrentes"][i].get("nome", "")
                         st.session_state.dados["concorrentes"].pop(i)
+                        # Limpar dados de ads do histórico para este concorrente
+                        if nome_removido and nome_removido in st.session_state.get("ads_cache", {}):
+                            del st.session_state.ads_cache[nome_removido]
+                            salvar_cache_ads(st.session_state.ads_cache)
                         salvar_dados_usuario(st.session_state.user.id)
                         st.rerun()
 
@@ -3057,26 +3062,33 @@ elif st.session_state.pagina == "ads":
         erros  = {}
         novos  = {}
         cache_atual = dict(st.session_state.ads_cache or {})
- 
+
         with st.status("Buscando anúncios...", expanded=True) as status:
             for e in empresas:
                 ck = e["nome"]
- 
+
                 entrada_cache = cache_atual.get(ck, {})
                 if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
-                    st.write(f"✅ **{ck}** — usando cache ({entrada_cache.get('ts','')}, {len(entrada_cache.get('data',[]))} anúncios)")
+                    total = len(entrada_cache.get("data", []))
+                    ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                    inativos = total - ativos
+                    msg = f"✅ **{ck}** — cache válido ({entrada_cache.get('ts','')}, {ativos} ativos"
+                    if inativos:
+                        msg += f", {inativos} inativos no histórico"
+                    msg += ")"
+                    st.write(msg)
                     continue
- 
+
                 if e["tipo"] == "minha":
                     ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
                 else:
                     ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
- 
+
                 query = ads_id_salvo or query_values.get(ck, "").strip()
- 
+
                 if not query:
                     continue
- 
+
                 label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
                 st.write(f"Buscando **{ck}** ({label})...")
                 ads, raw, erro = buscar_ads_apify(query)
@@ -3092,11 +3104,12 @@ elif st.session_state.pagina == "ads":
                     }
                     st.write(f"✅ {len(ads)} anúncios encontrados")
             status.update(label="✅ Busca concluída!", state="complete")
- 
-        cache_atual.update(novos)
-        st.session_state.ads_cache = cache_atual
+
+        # Merge inteligente: mantém histórico, marca inativos
+        cache_mergeado = merge_ads(cache_atual, novos)
+        st.session_state.ads_cache = cache_mergeado
         st.session_state.ads_erro  = erros
-        salvar_cache_ads(cache_atual)
+        salvar_cache_ads(cache_mergeado)
         st.rerun()
  
     # ── Session state ─────────────────────────────────────────────────
@@ -3885,7 +3898,7 @@ setTimeout(ajustarAltura, 100);
                 st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
  
-        fcol1, fcol2, fcol3 = st.columns([3, 2, 2])
+        fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
                 "Filtrar", placeholder="Pesquisar no copy…",
@@ -3904,6 +3917,12 @@ setTimeout(ajustarAltura, 100);
                 ["Todas"] + [p.capitalize() for p in plats_todas],
                 key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed",
             )
+        with fcol4:
+            filtro_status = st.selectbox(
+                "Status",
+                ["Todos", "Ativos", "Inativos (histórico)"],
+                key=f"ads_status_{safe_key(ck)}", label_visibility="collapsed",
+            )
  
         ads_f = ads_list
         if busca_texto:
@@ -3916,6 +3935,10 @@ setTimeout(ajustarAltura, 100);
             ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
         if filtro_plat != "Todas":
             ads_f = [a for a in ads_f if filtro_plat.lower() in (a["plataformas"] or [])]
+        if filtro_status == "Ativos":
+            ads_f = [a for a in ads_f if a.get("ativo", True)]
+        elif filtro_status == "Inativos (histórico)":
+            ads_f = [a for a in ads_f if not a.get("ativo", True)]
  
         if not ads_f:
             st.warning("Nenhum anúncio com os filtros aplicados.")
@@ -3925,12 +3948,15 @@ setTimeout(ajustarAltura, 100);
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
         n_dynamic   = sum(1 for a in ads_f if a.get("is_dynamic"))
- 
+        n_ativos    = sum(1 for a in ads_f if a.get("ativo", True))
+        n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
+
         st.markdown(f"""
         <div style='display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap'>
             <div style='flex:1;min-width:80px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#15803d'>{len(ads_f)}</div>
-                <div style='font-size:12px;color:#16a34a;font-weight:600'>Total</div></div>
+                <div style='font-size:22px;font-weight:800;color:#15803d'>{n_ativos}</div>
+                <div style='font-size:12px;color:#16a34a;font-weight:600'>Ativos</div></div>
+            {"<div style='flex:1;min-width:80px;background:#f9fafb;border:1px solid #d1d5db;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#6b7280'>" + str(n_inativos) + "</div><div style='font-size:12px;color:#9ca3af;font-weight:600'>Histórico inativo</div></div>" if n_inativos > 0 else ""}
             <div style='flex:1;min-width:80px;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;text-align:center'>
                 <div style='font-size:22px;font-weight:800;color:#92400e'>{n_imagem}</div>
                 <div style='font-size:12px;color:#b45309;font-weight:600'>Imagens</div></div>
@@ -4115,6 +4141,14 @@ function imgFallback_{uid}(img){{
     Ver criativo no Ad Library
 </a>"""
  
+                is_ativo = ad.get("ativo", True)
+                status_dot_html = (
+                    '<div class="status-dot">Ativo</div>'
+                    if is_ativo else
+                    '<div class="status-dot-inactive">Inativo</div>'
+                )
+                card_opacity = "1" if is_ativo else "0.72"
+
                 card_html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4122,10 +4156,12 @@ function imgFallback_{uid}(img){{
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:8px;}}
-.card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
+.card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);opacity:{card_opacity};}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
 .status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
+.status-dot-inactive{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6b7280;}}
+.status-dot-inactive::before{{content:'';width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0;}}
 .ad-id{{font-size:10px;color:#8a8d91;font-family:monospace;}}
 .meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
 .meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;font-weight:400;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
@@ -4170,7 +4206,7 @@ body{{padding-bottom:8px;}}
 <div class="card">
     <div class="status-bar">
         <div style="display:flex;align-items:center;gap:6px">
-            <div class="status-dot">Ativo</div>
+            {status_dot_html}
             {baixo_vol_badge}
         </div>
         {f'<span class="ad-id">ID: {ad_id_short}</span>' if ad_id_short else ''}
