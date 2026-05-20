@@ -3837,7 +3837,8 @@ setTimeout(ajustarAltura, 100);
  
         frescos_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
         st.markdown(f"""
-        <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:0px;overflow:hidden'>
+        <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
+                    border-radius:12px 12px 0 0;margin-bottom:0px;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
                 {avatar_empresa_html}
                 <div style='flex:1;min-width:0'>
@@ -3885,7 +3886,6 @@ setTimeout(ajustarAltura, 100);
             background: #ffffff !important;
         }
         </style>
-        <div style='border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;border-top:1px solid #f0f0f0;margin-bottom:-20px'></div>
         """, unsafe_allow_html=True)
         
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
