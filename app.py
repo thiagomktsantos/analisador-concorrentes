@@ -2604,19 +2604,33 @@ elif st.session_state.pagina == "ads":
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
  
-    def salvar_cache_ads(dados: dict):
-        try:
-            user_id = st.session_state.user.id
-            payload = {
-                "user_id": user_id,
-                "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
-                "concorrentes": st.session_state.dados.get("concorrentes", []),
-                "metricas_redes": st.session_state.get("metricas_redes", {}),
-                "ads_cache": dados,
-            }
-            supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
-        except Exception as e:
-            st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
+def salvar_cache_ads(dados: dict):
+    try:
+        user_id = st.session_state.user.id
+
+        # Remove campos pesados (base64) antes de salvar no Supabase
+        dados_limpos = {}
+        for empresa, entry in dados.items():
+            entry_limpa = dict(entry)
+            ads_limpos = []
+            for ad in entry.get("data", []):
+                ad_limpo = dict(ad)
+                ad_limpo.pop("images_b64", None)   # remove base64
+                ad_limpo.pop("video_thumb", None)  # remove thumb pesado
+                ads_limpos.append(ad_limpo)
+            entry_limpa["data"] = ads_limpos
+            dados_limpos[empresa] = entry_limpa
+
+        payload = {
+            "user_id": user_id,
+            "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
+            "concorrentes": st.session_state.dados.get("concorrentes", []),
+            "metricas_redes": st.session_state.get("metricas_redes", {}),
+            "ads_cache": dados_limpos,
+        }
+        supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
+    except Exception as e:
+        st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
  
     def carregar_cache_ads() -> dict:
         if st.session_state.get("ads_cache"):
@@ -4228,10 +4242,10 @@ body{{padding-bottom:2px;}}
 .page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
 .page-name{{font-size:13px;font-weight:700;color:#050505;line-height:1.2;}}
 .page-sponsored{{font-size:11px;color:#65676b;}}
-.copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;}}
+.copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;min-height: 46px;}}
 .copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;line-height:1.4;}}
 .copy-desc{{font-size:12px;color:#65676b;margin-top:3px;line-height:1.4;}}
-.no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;}}
+.no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;min-height: 46px;}}
 .media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:220px;}}
 .img-block{{height:220px;}}
 .video-thumb-block{{height:220px;}}
