@@ -3827,11 +3827,20 @@ window.closeGlobalModal = function() {
     document.getElementById('global-modal-overlay').classList.remove('open');
 };
  
-// Listen for messages from child iframes
-window.addEventListener('message', function(e) {
+// Listen for messages from child iframes (todos os níveis)
+function _handleModalMsg(e) {
     if (!e.data || e.data.type !== 'openGlobalModal') return;
     window.openGlobalModal(e.data.imgSrc, e.data.snapUrl, e.data.isVideo);
-});
+}
+window.addEventListener('message', _handleModalMsg);
+try { window.parent.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'openGlobalModal') return;
+    window.postMessage(e.data, '*');
+}); } catch(err) {}
+try { window.top.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'openGlobalModal') return;
+    window.postMessage(e.data, '*');
+}); } catch(err) {}
 </script>
 """, height=0, scrolling=False)
  
@@ -3892,6 +3901,14 @@ window.addEventListener('message', function(e) {
         )
  
     def render_ads_empresa(emp_item):
+
+        st.markdown("""
+        <style>
+        [data-testid="column"] { padding: 0 4px !important; }
+        [data-testid="stHorizontalBlock"] { gap: 0 !important; }
+        </style>
+        """, unsafe_allow_html=True)
+        
         ck       = emp_item["nome"]
         nome     = emp_item["nome"]
         is_minha = emp_item["tipo"] == "minha"
@@ -4044,8 +4061,10 @@ window.addEventListener('message', function(e) {
         </style>
         """, unsafe_allow_html=True)
  
-        # FIX 4: Remover emojis das opções do selectbox de formato
-        formatos_disponiveis = sorted(set(a["formato"] for a in ads_list))
+        import unicodedata as _ud
+        def _limpar_formato(s):
+            return ''.join(c for c in s if _ud.category(c) not in ('So','Sm','Sk','Mn')).strip()
+        formatos_disponiveis = sorted(set(_limpar_formato(a["formato"]) for a in ads_list))
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
@@ -4222,15 +4241,12 @@ setTimeout(ajustarAltura, 100);
                     img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
-                # FIX 2: Modal via postMessage para o parent (fora do iframe)
+                # Modal via postMessage — tenta parent e top
                 open_modal_js = """
 function openModal_{uid}(imgSrc, snapUrl, isVideo) {{
-    window.parent.postMessage({{
-        type: 'openGlobalModal',
-        imgSrc: imgSrc,
-        snapUrl: snapUrl,
-        isVideo: isVideo
-    }}, '*');
+    var msg = {{ type: 'openGlobalModal', imgSrc: imgSrc, snapUrl: snapUrl, isVideo: isVideo }};
+    try {{ window.parent.postMessage(msg, '*'); }} catch(e) {{}}
+    try {{ window.top.postMessage(msg, '*'); }} catch(e) {{}}
 }}
 """.replace("{uid}", uid)
  
@@ -4520,7 +4536,7 @@ function triggerIaAd_{uid}() {{
 </body></html>"""
  
                 # FIX 1: Reduzido de 580 para 560, e removido st.markdown height:1px
-                components.html(card_html, height=560, scrolling=False)
+                components.html(card_html, height=510, scrolling=False)
  
                 # Ghost button for per-ad IA analysis
                 chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
