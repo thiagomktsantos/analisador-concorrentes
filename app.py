@@ -2579,7 +2579,7 @@ setTimeout(ajustarAltura, 600);
  
 elif st.session_state.pagina == "ads":
 
-st.markdown("""
+    st.markdown("""
 <style>
 [data-testid="stVerticalBlockBorderWrapper"] {
     background-color: #ffffff !important;
