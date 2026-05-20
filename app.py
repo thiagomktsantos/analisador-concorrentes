@@ -4479,7 +4479,7 @@ Amostra:
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
- 
+
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
 # ---------------------------------------------------
