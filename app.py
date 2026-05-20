@@ -2745,7 +2745,8 @@ elif st.session_state.pagina == "ads":
                 dto = _dt.datetime.strptime(str(start_raw)[:10], "%Y-%m-%d")
             except Exception:
                 return str(start_raw)[:10]
-        data_fmt = f"{dto.day} de {meses[dto.month-1]} de {dto.year}"
+        # FIX: formato dd/mm/yyyy (211 dias ativo)
+        data_fmt = f"{dto.day:02d}/{dto.month:02d}/{dto.year}"
         dias = (_dt.datetime.now() - dto).days
         if dias == 0:
             dias_str = "hoje"
@@ -2753,7 +2754,7 @@ elif st.session_state.pagina == "ads":
             dias_str = "1 dia ativo"
         else:
             dias_str = f"{dias} dias ativo"
-        return f"Veiculação iniciada: {data_fmt} ({dias_str})"
+        return f"{data_fmt} ({dias_str})"
  
     def _extract_images(ad: dict) -> list:
         imgs = []
@@ -3622,22 +3623,6 @@ setTimeout(ajustarAltura, 100);
         ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
         query_values[ck] = ads_id_salvo
  
-    # ── FIX: Filters with white background ─────────────────────────
-    st.markdown("""
-    <style>
-    .ads-filter-row {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 16px;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 12px 16px;
-        align-items: center;
-    }
-    </style>
-    """, unsafe_allow_html=True)
- 
     bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
     with bcol1:
         buscar_inline = st.button(
@@ -3725,7 +3710,8 @@ setTimeout(ajustarAltura, 100);
     }}).join('');
 }})();
 """
- 
+
+    # FIX: copy_block_html — mostra "... ver mais" inline para indicar que há mais texto
     def _copy_block_html(text: str, uid: str, max_chars: int = 120) -> str:
         if not text:
             return ""
@@ -3739,14 +3725,16 @@ setTimeout(ajustarAltura, 100);
         return (
             f'<div class="copy-body">'
             f'{short}'
+            f'<span style="color:#9ca3af;font-weight:400;font-size:13px" id="ellipsis_{uid}">... </span>'
             f'<span id="cm_{uid}" style="display:none">{rest}</span>'
             f'<button id="cb_{uid}" '
             f'onclick="var m=document.getElementById(\'cm_{uid}\');'
             f'var b=document.getElementById(\'cb_{uid}\');'
-            f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\'}}'
-            f'else{{m.style.display=\'none\';b.textContent=\'ver mais\'}}" '
+            f'var e=document.getElementById(\'ellipsis_{uid}\');'
+            f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}'
+            f'else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" '
             f'style="background:none;border:none;color:#3a9fd6;font-weight:700;'
-            f'font-size:13px;cursor:pointer;padding:0;margin-left:4px;'
+            f'font-size:13px;cursor:pointer;padding:0;margin-left:0px;'
             f'font-family:DM Sans,sans-serif;white-space:nowrap;vertical-align:baseline">'
             f'ver mais</button>'
             f'</div>'
@@ -3891,58 +3879,40 @@ setTimeout(ajustarAltura, 100);
                 st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
  
-        # ── FIX: Filters with proper labels and white background ────
-        st.markdown("""
-        <style>
-        .ads-filters-wrap {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-        }
-        .ads-filters-wrap label {
-            font-size: 12px !important;
-            font-weight: 700 !important;
-            color: #6b7280 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
-        }
-        .ads-filters-wrap div[data-testid="stTextInput"] input,
-        .ads-filters-wrap div[data-baseweb="select"] > div {
-            background: #f9fafb !important;
-            border: 1px solid #e5e7eb !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
- 
-        with st.container():
-            fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
-            with fcol1:
-                busca_texto = st.text_input(
-                    "Pesquisar no copy",
-                    placeholder="Pesquisar no copy…",
-                    key=f"ads_busca_{safe_key(ck)}",
-                )
-            with fcol2:
-                filtro_fmt = st.selectbox(
-                    "Tipo",
-                    ["Tipo (todos)"] + sorted(set(a["formato"] for a in ads_list)),
-                    key=f"ads_fmt_{safe_key(ck)}",
-                )
-            with fcol3:
-                plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-                filtro_plat = st.selectbox(
-                    "Plataforma",
-                    ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
-                    key=f"ads_plat_{safe_key(ck)}",
-                )
-            with fcol4:
-                filtro_status = st.selectbox(
-                    "Status",
-                    ["Status (todos)", "Ativos", "Inativos (histórico)"],
-                    key=f"ads_status_{safe_key(ck)}",
-                )
+        # FIX: Filtros sem labels visíveis e fundo branco garantido via components.html
+        filter_ghost_css = f".st-key-ads_busca_{safe_key(ck)}_wrap {{ display:none!important; }}"
+        st.markdown(f"<style>{filter_ghost_css}</style>", unsafe_allow_html=True)
+
+        fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
+        with fcol1:
+            busca_texto = st.text_input(
+                "Pesquisar no copy",
+                placeholder="🔍 Pesquisar no copy…",
+                key=f"ads_busca_{safe_key(ck)}",
+                label_visibility="collapsed",
+            )
+        with fcol2:
+            filtro_fmt = st.selectbox(
+                "Tipo",
+                ["Tipo (todos)"] + sorted(set(a["formato"] for a in ads_list)),
+                key=f"ads_fmt_{safe_key(ck)}",
+                label_visibility="collapsed",
+            )
+        with fcol3:
+            plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
+            filtro_plat = st.selectbox(
+                "Plataforma",
+                ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
+                key=f"ads_plat_{safe_key(ck)}",
+                label_visibility="collapsed",
+            )
+        with fcol4:
+            filtro_status = st.selectbox(
+                "Status",
+                ["Status (todos)", "Ativos", "Inativos (histórico)"],
+                key=f"ads_status_{safe_key(ck)}",
+                label_visibility="collapsed",
+            )
  
         ads_f = ads_list
         if busca_texto:
@@ -3964,7 +3934,6 @@ setTimeout(ajustarAltura, 100);
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
-        # ── FIX: Stats cards rendered via components.html to avoid raw HTML ──
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -3972,7 +3941,6 @@ setTimeout(ajustarAltura, 100);
         n_ativos    = sum(1 for a in ads_f if a.get("ativo", True))
         n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
  
-        # Build stats cards HTML safely
         stats_cards = []
         stats_cards.append(f"""
             <div class="stat-card" style="background:#f0fdf4;border-color:#86efac">
@@ -4227,6 +4195,12 @@ function imgFallback_{uid}(img){{
                 card_opacity = "1" if is_ativo else "0.72"
  
                 dyn_badge_html = ' <span class="dynamic-badge">⚡ Dinâmico</span>' if is_dyn else ""
+
+                # FIX: "Veiculação iniciada:" em negrito + data sem negrito no formato dd/mm/yyyy
+                data_inicio_html = (
+                    f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span>&nbsp;<span style="font-weight:400">{data_inicio}</span></div>'
+                    if data_inicio else ""
+                )
  
                 card_html = f"""<!DOCTYPE html>
 <html><head>
@@ -4234,7 +4208,7 @@ function imgFallback_{uid}(img){{
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:4px;}}
+body{{padding-bottom:2px;}}
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);opacity:{card_opacity};}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
@@ -4245,7 +4219,7 @@ body{{padding-bottom:4px;}}
 .meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
 .meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;font-weight:400;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
 .meta-row:last-child{{margin-bottom:0;}}
-.meta-label{{font-size:12px;color:#65676b;font-weight:600;flex-shrink:0;}}
+.meta-label{{font-size:12px;color:#65676b;font-weight:700;flex-shrink:0;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
 .plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:transparent;}}
 .dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
@@ -4291,7 +4265,7 @@ body{{padding-bottom:4px;}}
         {'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}
     </div>
     <div class="meta-info">
-        {'<div class="meta-row"><span class="meta-label">' + data_inicio + '</span></div>' if data_inicio else ''}
+        {data_inicio_html}
         <div class="meta-row">
             <span class="meta-label">Plataformas:</span>
             <span id="plat_icons_{uid}" class="plat-icons"></span>
@@ -4417,8 +4391,8 @@ setTimeout(syncHeight_{uid}, 1400);
 </body></html>"""
  
                 components.html(card_html, height=620, scrolling=False)
-                # ── FIX: reduced spacing between cards ──
-                st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+                # FIX: espaço vertical reduzido entre cards
+                st.markdown("<div style='height:1px'/>", unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
