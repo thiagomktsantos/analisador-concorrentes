@@ -1169,6 +1169,8 @@ if st.session_state.pagina == "home":
             padding: 20px 32px !important;
             margin-bottom: 0px !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            background-color: #ffffff !important;
+            background: #ffffff !important;
         }
         html body section.main div[data-testid="stForm"],
         html body section.main div[data-testid="stForm"] > div,
