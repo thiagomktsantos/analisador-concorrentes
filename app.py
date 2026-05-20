@@ -3394,57 +3394,76 @@ setTimeout(ajustarAltura, 100);
 </script>
 """, height=118, scrolling=False)
  
-                else:
-                    # ── Card em modo edição — tudo em um único HTML ──
-                    novo_id_key   = f"_inline_edit_{sk}_{ci}"
-                    buscar_key    = f"buscar_cfg_{sk}_{ci}"
-                    salvar_key    = f"salvar_cfg_{sk}_{ci}"
-                    cancel_key    = f"cancel_edit_{sk}_{ci}"
+else:
+                    # ── Card em modo edição ──
+                    novo_id_key  = f"_inline_edit_{sk}_{ci}"
+                    buscar_key   = f"buscar_cfg_{sk}_{ci}"
+                    salvar_key   = f"salvar_cfg_{sk}_{ci}"
+                    cancel_key   = f"cancel_edit_{sk}_{ci}"
 
+                    # Card visual de edição
                     st.markdown(f"""
-                    <style>
-                    .st-key-{buscar_key}, .st-key-{salvar_key}, .st-key-{cancel_key} {{
-                        position: fixed !important; top: -9999px !important; left: -9999px !important;
-                        width: 1px !important; height: 1px !important; overflow: hidden !important;
-                        opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-                    }}
-                    </style>
+                    <div style='background:#fff;border:1.5px solid #3a9fd6;border-radius:14px;
+                                overflow:hidden;margin-bottom:4px'>
+                        <div style='display:flex;align-items:center;gap:14px;
+                                    padding:16px 20px;border-bottom:1px solid #f3f4f6'>
+                            {avatar_html}
+                            <div style='flex:1;min-width:0'>
+                                <div style='font-size:16px;font-weight:700;color:#111827'>{ck}</div>
+                                <span style='background:{badge_bg};color:{badge_txt};
+                                             border:1px solid {badge_brd};padding:2px 10px;
+                                             border-radius:20px;font-size:11px;font-weight:600'>
+                                    {badge_lbl}
+                                </span>
+                            </div>
+                        </div>
+                        <div style='padding:14px 20px 4px 20px;
+                                    font-size:12px;font-weight:700;color:#6b7280;
+                                    text-transform:uppercase;letter-spacing:0.5px'>
+                            Nome ou ID numérico da página
+                        </div>
+                    </div>
                     """, unsafe_allow_html=True)
 
                     novo_id = st.text_input(
-                        "ID ou nome da página",
+                        "ID ou nome",
                         value=ads_id_atual,
                         key=novo_id_key,
                         label_visibility="collapsed",
+                        placeholder="Ex: Nome da Página  ou  102803918240129",
                     )
-                    buscar_clicked  = st.button("🔍 Buscar Páginas", key=buscar_key)
-                    salvar_clicked  = st.button("💾 Salvar direto",  key=salvar_key)
-                    cancel_clicked  = st.button("✕",                 key=cancel_key)
 
-                    components.html(f"""...""", height=220, scrolling=False)
+                    col_b, col_s, col_c = st.columns([2, 2, 1])
+                    with col_b:
+                        buscar_clicked = st.button("🔍 Buscar páginas", key=buscar_key,
+                                                   use_container_width=True, type="primary")
+                    with col_s:
+                        salvar_clicked = st.button("💾 Salvar direto", key=salvar_key,
+                                                   use_container_width=True)
+                    with col_c:
+                        cancel_clicked = st.button("✕ Cancelar", key=cancel_key,
+                                                   use_container_width=True)
 
-                    if buscar_clicked:
-                        if novo_id.strip():
-                            st.session_state.ads_onboarding_empresa = ck
-                            st.session_state.ads_onboarding_termo   = novo_id.strip()
-                            with st.spinner(f"Buscando «{novo_id.strip()}»…"):
-                                paginas = buscar_paginas_facebook(novo_id.strip())
-                            st.session_state.ads_onboarding_paginas = paginas
-                            st.rerun()
+                    if buscar_clicked and novo_id.strip():
+                        st.session_state.ads_onboarding_empresa = ck
+                        st.session_state.ads_onboarding_termo   = novo_id.strip()
+                        with st.spinner(f"Buscando «{novo_id.strip()}»…"):
+                            paginas = buscar_paginas_facebook(novo_id.strip())
+                        st.session_state.ads_onboarding_paginas = paginas
+                        st.rerun()
 
-                    if salvar_clicked:
-                        if novo_id.strip():
-                            salvar_ads_id(e, novo_id.strip())
-                            st.session_state.ads_editando_empresa = None
-                            st.session_state.ads_onboarding_empresa = None
-                            st.session_state.ads_onboarding_paginas = []
-                            st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
-                            st.rerun()
+                    if salvar_clicked and novo_id.strip():
+                        salvar_ads_id(e, novo_id.strip())
+                        st.session_state.ads_editando_empresa    = None
+                        st.session_state.ads_onboarding_empresa  = None
+                        st.session_state.ads_onboarding_paginas  = []
+                        st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
+                        st.rerun()
 
                     if cancel_clicked:
-                        st.session_state.ads_editando_empresa = None
-                        st.session_state.ads_onboarding_empresa = None
-                        st.session_state.ads_onboarding_paginas = []
+                        st.session_state.ads_editando_empresa    = None
+                        st.session_state.ads_onboarding_empresa  = None
+                        st.session_state.ads_onboarding_paginas  = []
                         st.rerun()
 
                     if (st.session_state.ads_onboarding_empresa == ck
