@@ -3394,7 +3394,7 @@ setTimeout(ajustarAltura, 100);
 </script>
 """, height=118, scrolling=False)
  
-else:
+                else:
                     # ── Card em modo edição ──
                     novo_id_key  = f"_inline_edit_{sk}_{ci}"
                     buscar_key   = f"buscar_cfg_{sk}_{ci}"
