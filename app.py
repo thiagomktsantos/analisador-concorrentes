@@ -3869,29 +3869,25 @@ setTimeout(ajustarAltura, 100);
         if lib_url:
             lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">🔗 Ver no Ad Library</a>'
  
-        st.markdown(f"""
-        <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
+frescos_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
+st.markdown(f"""
+        <div style='display:flex;align-items:center;gap:16px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
             {avatar_empresa_html}
             <div style='flex:1;min-width:0'>
                 <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
-                <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px'>
-                    <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};
-                                 padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                    <span style='background:{bg_ts};color:{cor_ts};border:1px solid {brd_ts};
-                                 padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
-                        {ico_ts} Cache: {ts}
-                    </span>
-                    <span style='background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;
-                                 padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>
-                        📄 {page_display}
-                    </span>
+                <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px'>
+                    <span style='font-size:12px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
+                    <span style='color:#d1d5db;font-size:12px'>·</span>
+                    <span style='font-size:12px;color:#6b7280'>{frescos_label}</span>
+                    <span style='color:#d1d5db;font-size:12px'>·</span>
+                    <span style='font-size:12px;color:#6b7280'>Página: {page_display}</span>
                 </div>
             </div>
-            <div style='display:flex;align-items:center;gap:16px;flex-shrink:0'>
-                <div style='text-align:right;border-right:1px solid #e5e7eb;padding-right:16px'>
-                    <div style='font-size:36px;font-weight:900;color:#111827;line-height:1'>{len(ads_list)}</div>
-                    <div style='font-size:12px;color:#9ca3af;margin-top:2px'>anúncios encontrados</div>
+            <div style='display:flex;align-items:center;gap:14px;flex-shrink:0'>
+                <div style='text-align:right'>
+                    <div style='font-size:28px;font-weight:700;color:#111827;line-height:1'>{len(ads_list)}</div>
+                    <div style='font-size:12px;color:#9ca3af;margin-top:2px'>anúncios</div>
                 </div>
                 {lib_btn_top}
             </div>
@@ -3980,36 +3976,36 @@ setTimeout(ajustarAltura, 100);
  
         stats_cards = []
         stats_cards.append(f"""
-            <div class="stat-card" style="background:#f0fdf4;border-color:#86efac">
-                <div class="stat-num" style="color:#15803d">{n_ativos}</div>
-                <div class="stat-lbl" style="color:#16a34a">Ativos</div>
+            <div class="stat-card">
+                <div class="stat-num" style="color:#111827">{n_ativos}</div>
+                <div class="stat-lbl stat-lbl-green">Ativos</div>
             </div>""")
         if n_inativos > 0:
             stats_cards.append(f"""
-            <div class="stat-card" style="background:#f9fafb;border-color:#d1d5db">
+            <div class="stat-card">
                 <div class="stat-num" style="color:#6b7280">{n_inativos}</div>
-                <div class="stat-lbl" style="color:#9ca3af">Histórico inativo</div>
+                <div class="stat-lbl">Historico inativo</div>
             </div>""")
         stats_cards.append(f"""
-            <div class="stat-card" style="background:#fef3c7;border-color:#fcd34d">
-                <div class="stat-num" style="color:#92400e">{n_imagem}</div>
-                <div class="stat-lbl" style="color:#b45309">Imagens</div>
+            <div class="stat-card">
+                <div class="stat-num" style="color:#111827">{n_imagem}</div>
+                <div class="stat-lbl">Imagens</div>
             </div>""")
         stats_cards.append(f"""
-            <div class="stat-card" style="background:#eff6ff;border-color:#bfdbfe">
-                <div class="stat-num" style="color:#1e40af">{n_video}</div>
-                <div class="stat-lbl" style="color:#1d4ed8">Vídeos</div>
+            <div class="stat-card">
+                <div class="stat-num" style="color:#111827">{n_video}</div>
+                <div class="stat-lbl">Videos</div>
             </div>""")
         stats_cards.append(f"""
-            <div class="stat-card" style="background:#f5f3ff;border-color:#c4b5fd">
-                <div class="stat-num" style="color:#5b21b6">{n_carrossel}</div>
-                <div class="stat-lbl" style="color:#6d28d9">Carrossel</div>
+            <div class="stat-card">
+                <div class="stat-num" style="color:#111827">{n_carrossel}</div>
+                <div class="stat-lbl">Carrossel</div>
             </div>""")
         if n_dynamic > 0:
             stats_cards.append(f"""
-            <div class="stat-card" style="background:#fff7ed;border-color:#fed7aa">
-                <div class="stat-num" style="color:#c2410c">{n_dynamic}</div>
-                <div class="stat-lbl" style="color:#ea580c">Dinâmicos</div>
+            <div class="stat-card">
+                <div class="stat-num" style="color:#111827">{n_dynamic}</div>
+                <div class="stat-lbl">Dinamicos</div>
             </div>""")
  
         stats_html = "".join(stats_cards)
@@ -4023,13 +4019,15 @@ body {{ padding-bottom:4px; }}
 .stats-row {{ display:flex; gap:10px; flex-wrap:wrap; }}
 .stat-card {{
     flex:1; min-width:80px;
-    border:1px solid;
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
     border-radius:10px;
     padding:12px 16px;
     text-align:center;
 }}
+.stat-lbl-green {{ color:#15803d; }}
 .stat-num {{ font-size:22px; font-weight:800; }}
-.stat-lbl {{ font-size:12px; font-weight:600; margin-top:2px; }}
+.stat-lbl {{ color:#6b7280; font-size:12px; font-weight:600; margin-top:2px; }}
 </style>
 <div class="stats-row">
     {stats_html}
