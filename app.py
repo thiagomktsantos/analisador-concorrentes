@@ -3458,13 +3458,13 @@ setTimeout(ajustarAltura, 100);
                         )
                         col_b, col_s, col_c = st.columns([2, 2, 1])
                         with col_b:
-                            buscar_clicked = st.button("🔍 Buscar páginas", key=buscar_key,
+                            buscar_clicked = st.button("Buscar páginas", key=buscar_key,
                                                        use_container_width=True, type="primary")
                         with col_s:
-                            salvar_clicked = st.button("💾 Salvar Página", key=salvar_key,
+                            salvar_clicked = st.button("Salvar Página", key=salvar_key,
                                                        use_container_width=True)
                         with col_c:
-                            cancel_clicked = st.button("✕ Cancelar", key=cancel_key,
+                            cancel_clicked = st.button("Cancelar", key=cancel_key,
                                                        use_container_width=True)
 
                     if buscar_clicked and novo_id.strip():
