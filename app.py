@@ -3838,7 +3838,7 @@ setTimeout(ajustarAltura, 100);
         frescos_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
-                    border-radius:12px 12px 0 0;margin-bottom:0px;overflow:hidden'>
+                    border-radius:12px 12px 0 0;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
                 {avatar_empresa_html}
                 <div style='flex:1;min-width:0'>
@@ -3862,23 +3862,19 @@ setTimeout(ajustarAltura, 100);
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
- 
-        if not ads_list:
-            st.info("Nenhum anúncio encontrado. Verifique o ID/nome da página.")
-            if lib_url:
-                st.link_button("🔍 Verificar no Ad Library", lib_url)
-            return
 
         st.markdown("""
         <style>
         div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) {
             background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
-            border-top: none !important;
+            border-top: 1px solid #f0f0f0 !important;
             border-radius: 0 0 12px 12px !important;
             padding: 10px 14px !important;
+            margin-top: -8px !important;
             margin-bottom: 20px !important;
-            margin-top: 0px !important;
+            position: relative !important;
+            z-index: 0 !important;
         }
         div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) > div,
         div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) .stElementContainer,
@@ -3887,7 +3883,7 @@ setTimeout(ajustarAltura, 100);
         }
         </style>
         """, unsafe_allow_html=True)
-        
+
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
