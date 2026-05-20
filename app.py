@@ -3422,10 +3422,23 @@ setTimeout(ajustarAltura, 100);
                     # Card inferior — edição
                     st.markdown("""
                     <style>
-                    [data-testid="stVerticalBlockBorderWrapper"]:has(
-                        [data-testid="stTextInput"]
-                    ) {
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]),
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) > div,
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) > div > div,
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stVerticalBlock"],
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stHorizontalBlock"],
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="column"],
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="column"] > div,
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) .stElementContainer,
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) .stElementContainer > div,
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stTextInput"],
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-testid="stTextInput"] > div,
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-baseweb="input"],
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) [data-baseweb="input"] > div {
                         background-color: #ffffff !important;
+                        background: #ffffff !important;
+                    }
+                    [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stTextInput"]) {
                         border: 1.5px solid #e5e7eb !important;
                         border-radius: 14px !important;
                         padding: 16px 20px !important;
