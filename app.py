@@ -3476,7 +3476,7 @@ setTimeout(ajustarAltura, 100);
                             buscar_clicked = st.button("🔍 Buscar páginas", key=buscar_key,
                                                        use_container_width=True, type="primary")
                         with col_s:
-                            salvar_clicked = st.button("💾 Salvar direto", key=salvar_key,
+                            salvar_clicked = st.button("💾 Salvar Página", key=salvar_key,
                                                        use_container_width=True)
                         with col_c:
                             cancel_clicked = st.button("✕ Cancelar", key=cancel_key,
