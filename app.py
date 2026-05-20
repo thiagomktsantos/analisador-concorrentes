@@ -3809,18 +3809,20 @@ html, body { background:transparent; overflow:hidden; }
                 font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>
 </div>"""
                     else:
-                        _sv = snap_url.replace("'","")
+                        _sv = snap_url.replace("'", "")
+                        _no_media_color = "#3a9fd6" if snap_url else "#c4c4c4"
+                        _no_media_label = "Ver criativo →" if snap_url else "Sem criativo"
                         if snap_url:
                             _no_media_attrs = f'style="cursor:pointer" onclick="openModal_{uid}(\'\', \'{_sv}\', false)"'
                         else:
-                            _no_media_attrs = ''
+                            _no_media_attrs = ""
                         media_block = f"""
 <div class="media-block no-media-block" {_no_media_attrs}>
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
     </svg>
-    <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;">{'Ver criativo →' if snap_url else 'Sem criativo'}</span>
+    <span style="font-size:12px;color:{_no_media_color};font-weight:600;margin-top:8px;">{_no_media_label}</span>
 </div>"""
                 elif img_primary:
                     media_block = f"""
