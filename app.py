@@ -3426,6 +3426,9 @@ setTimeout(ajustarAltura, 100);
                     # Card inferior — edição
                     st.markdown(f"""
                     <style>
+                    .st-key-inline_edit_{sk}_{ci},
+                    .st-key-inline_edit_{sk}_{ci} > div,
+                    .st-key-inline_edit_{sk}_{ci} > div > div,
                     .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"],
                     .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"],
                     .st-key-inline_edit_{sk}_{ci} .stElementContainer,
