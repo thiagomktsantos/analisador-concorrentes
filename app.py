@@ -1134,6 +1134,37 @@ def cabecalho_simples(titulo, subtitulo=""):
 # ===================================================
 
 # ---------------------------------------------------
+# FUNÇÃO salvar_cache_ads 
+# ---------------------------------------------------
+ 
+def salvar_cache_ads(dados: dict):
+    try:
+        user_id = st.session_state.user.id
+ 
+        dados_limpos = {}
+        for empresa, entry in dados.items():
+            entry_limpa = dict(entry)
+            ads_limpos = []
+            for ad in entry.get("data", []):
+                ad_limpo = dict(ad)
+                ad_limpo.pop("images_b64", None)
+                ad_limpo.pop("video_thumb", None)
+                ads_limpos.append(ad_limpo)
+            entry_limpa["data"] = ads_limpos
+            dados_limpos[empresa] = entry_limpa
+ 
+        payload = {
+            "user_id": user_id,
+            "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
+            "concorrentes": st.session_state.dados.get("concorrentes", []),
+            "metricas_redes": st.session_state.get("metricas_redes", {}),
+            "ads_cache": dados_limpos,
+        }
+        supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
+    except Exception as e:
+        st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
+
+# ---------------------------------------------------
 # HOME — Minha Empresa
 # ---------------------------------------------------
 
@@ -2587,37 +2618,6 @@ setTimeout(ajustarAltura, 600);
  
     components.html(analises_html, height=60, scrolling=False)
 
-# ---------------------------------------------------
-# FUNÇÃO salvar_cache_ads 
-# ---------------------------------------------------
- 
-def salvar_cache_ads(dados: dict):
-    try:
-        user_id = st.session_state.user.id
- 
-        dados_limpos = {}
-        for empresa, entry in dados.items():
-            entry_limpa = dict(entry)
-            ads_limpos = []
-            for ad in entry.get("data", []):
-                ad_limpo = dict(ad)
-                ad_limpo.pop("images_b64", None)
-                ad_limpo.pop("video_thumb", None)
-                ads_limpos.append(ad_limpo)
-            entry_limpa["data"] = ads_limpos
-            dados_limpos[empresa] = entry_limpa
- 
-        payload = {
-            "user_id": user_id,
-            "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
-            "concorrentes": st.session_state.dados.get("concorrentes", []),
-            "metricas_redes": st.session_state.get("metricas_redes", {}),
-            "ads_cache": dados_limpos,
-        }
-        supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
-    except Exception as e:
-        st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
-  
 # ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
