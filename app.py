@@ -2589,19 +2589,18 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
  
 elif st.session_state.pagina == "ads":
-
+ 
     import datetime as _dt
     import json as _json
     import base64 as _b64
     import time as _time
-
+ 
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
  
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
  
-    # ── FIX 1: salvar_cache_ads robusto ──
     def salvar_cache_ads(dados: dict):
         try:
             user_id = st.session_state.user.id
@@ -2619,7 +2618,7 @@ elif st.session_state.pagina == "ads":
                 supabase.table("ci_dados").insert(payload).execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
-
+ 
     def carregar_cache_ads() -> dict:
         try:
             res = (
@@ -2633,39 +2632,25 @@ elif st.session_state.pagina == "ads":
         except Exception:
             pass
         return {}
-
+ 
     def merge_ads(cache_existente: dict, novos: dict) -> dict:
-        """
-        Merge inteligente: mantém histórico de anúncios.
-        Anúncios não encontrados na nova busca ficam com ativo=False.
-        Anúncios novos entram com ativo=True.
-        Anúncios já existentes e reencontrados voltam para ativo=True.
-        """
         resultado = dict(cache_existente)
         for nome_empresa, novo_entry in novos.items():
             novos_ads = novo_entry.get("data", [])
             novos_ids = {str(a.get("id", "")) for a in novos_ads if a.get("id")}
-
             entry_existente = resultado.get(nome_empresa, {})
             ads_anteriores = entry_existente.get("data", [])
-
-            # Marcar todos os anteriores: ativo=True se reencontrado, False se sumiu
             ads_anteriores_atualizados = []
             for ad in ads_anteriores:
                 ad_id = str(ad.get("id", ""))
                 ad["ativo"] = (ad_id in novos_ids) if ad_id else ad.get("ativo", True)
                 ads_anteriores_atualizados.append(ad)
-
-            # IDs já existentes no histórico
             ids_existentes = {str(a.get("id", "")) for a in ads_anteriores_atualizados if a.get("id")}
-
-            # Adicionar novos anúncios que não estavam no histórico
             for ad in novos_ads:
                 ad_id = str(ad.get("id", ""))
                 if not ad_id or ad_id not in ids_existentes:
                     ad["ativo"] = True
                     ads_anteriores_atualizados.append(ad)
-
             resultado[nome_empresa] = {
                 **novo_entry,
                 "data": ads_anteriores_atualizados,
@@ -3062,11 +3047,11 @@ elif st.session_state.pagina == "ads":
         erros  = {}
         novos  = {}
         cache_atual = dict(st.session_state.ads_cache or {})
-
+ 
         with st.status("Buscando anúncios...", expanded=True) as status:
             for e in empresas:
                 ck = e["nome"]
-
+ 
                 entrada_cache = cache_atual.get(ck, {})
                 if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
                     total = len(entrada_cache.get("data", []))
@@ -3078,17 +3063,17 @@ elif st.session_state.pagina == "ads":
                     msg += ")"
                     st.write(msg)
                     continue
-
+ 
                 if e["tipo"] == "minha":
                     ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
                 else:
                     ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
-
+ 
                 query = ads_id_salvo or query_values.get(ck, "").strip()
-
+ 
                 if not query:
                     continue
-
+ 
                 label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
                 st.write(f"Buscando **{ck}** ({label})...")
                 ads, raw, erro = buscar_ads_apify(query)
@@ -3104,15 +3089,13 @@ elif st.session_state.pagina == "ads":
                     }
                     st.write(f"✅ {len(ads)} anúncios encontrados")
             status.update(label="✅ Busca concluída!", state="complete")
-
-        # Merge inteligente: mantém histórico, marca inativos
+ 
         cache_mergeado = merge_ads(cache_atual, novos)
         st.session_state.ads_cache = cache_mergeado
         st.session_state.ads_erro  = erros
         salvar_cache_ads(cache_mergeado)
         st.rerun()
  
-    # ── Session state ─────────────────────────────────────────────────
     if "ads_cache" not in st.session_state:
         st.session_state.ads_cache = carregar_cache_ads()
     if "ads_erro" not in st.session_state:
@@ -3256,7 +3239,6 @@ html, body { background:transparent; overflow:hidden; }
     empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
     empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
  
-    # ── Render seleção de páginas (resultado da busca) ────────────────
     def _render_paginas_resultado(e, sk, ck):
         paginas = st.session_state.ads_onboarding_paginas
         termo_buscado = st.session_state.ads_onboarding_termo
@@ -3340,7 +3322,6 @@ html, body { background:transparent; overflow:hidden; }
                         st.toast(f"✅ «{manual.strip()}» salvo!", icon="✅")
                         st.rerun()
  
-    # ── Empresas configuradas ─────────────────────────────────────────
     if empresas_configuradas:
         st.markdown(
             "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
@@ -3350,14 +3331,12 @@ html, body { background:transparent; overflow:hidden; }
             unsafe_allow_html=True,
         )
  
-        # CSS: esconde todos os trigger buttons fantasmas
         ghost_css = "\n".join([
             f".st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
             for ci, e in enumerate(empresas_configuradas)
         ])
         st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
  
-        # Registrar trigger buttons ANTES de renderizar os cards
         edit_triggers = {}
         for ci, e in enumerate(empresas_configuradas):
             sk = safe_key(e["nome"])
@@ -3367,7 +3346,6 @@ html, body { background:transparent; overflow:hidden; }
             )
             edit_triggers[ci] = triggered
  
-        # Processar cliques de "editar"
         for ci, e in enumerate(empresas_configuradas):
             if edit_triggers[ci]:
                 st.session_state.ads_editando_empresa = e["nome"]
@@ -3391,7 +3369,6 @@ html, body { background:transparent; overflow:hidden; }
  
             with cfg_cols[ci % 2]:
                 if not is_editing:
-                    # ── Card normal (só visualização) ──────────────────
                     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3456,13 +3433,11 @@ setTimeout(ajustarAltura, 100);
 """, height=118, scrolling=False)
  
                 else:
-                    # ── Card em modo edição ──
                     novo_id_key  = f"_inline_edit_{sk}_{ci}"
                     buscar_key   = f"buscar_cfg_{sk}_{ci}"
                     salvar_key   = f"salvar_cfg_{sk}_{ci}"
                     cancel_key   = f"cancel_edit_{sk}_{ci}"
-
-                    # Card superior — identificação
+ 
                     st.markdown(f"""
                     <div style='background:#fff;border:1.5px solid #3a9fd6;border-radius:14px;
                                 overflow:hidden;margin-bottom:4px'>
@@ -3479,8 +3454,7 @@ setTimeout(ajustarAltura, 100);
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-
-                    # Card inferior — edição
+ 
                     st.markdown(f"""
                     <style>
                     .st-key-inline_edit_{sk}_{ci},
@@ -3508,7 +3482,7 @@ setTimeout(ajustarAltura, 100);
                     }}
                     </style>
                     """, unsafe_allow_html=True)
-
+ 
                     with st.container(border=True, key=f"inline_edit_{sk}_{ci}"):
                         st.markdown(
                             "<div style='font-size:11px;font-weight:700;color:#9ca3af;"
@@ -3516,7 +3490,7 @@ setTimeout(ajustarAltura, 100);
                             "Nome ou ID numérico da página</div>",
                             unsafe_allow_html=True,
                         )
-
+ 
                         novo_id = st.text_input(
                             "ID ou nome",
                             value=ads_id_atual,
@@ -3534,7 +3508,7 @@ setTimeout(ajustarAltura, 100);
                         with col_c:
                             cancel_clicked = st.button("Cancelar", key=cancel_key,
                                                        use_container_width=True)
-
+ 
                     if buscar_clicked and novo_id.strip():
                         st.session_state.ads_onboarding_empresa = ck
                         st.session_state.ads_onboarding_termo   = novo_id.strip()
@@ -3542,7 +3516,7 @@ setTimeout(ajustarAltura, 100);
                             paginas = buscar_paginas_facebook(novo_id.strip())
                         st.session_state.ads_onboarding_paginas = paginas
                         st.rerun()
-
+ 
                     if salvar_clicked and novo_id.strip():
                         salvar_ads_id(e, novo_id.strip())
                         st.session_state.ads_editando_empresa    = None
@@ -3550,18 +3524,17 @@ setTimeout(ajustarAltura, 100);
                         st.session_state.ads_onboarding_paginas  = []
                         st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
                         st.rerun()
-
+ 
                     if cancel_clicked:
                         st.session_state.ads_editando_empresa    = None
                         st.session_state.ads_onboarding_empresa  = None
                         st.session_state.ads_onboarding_paginas  = []
                         st.rerun()
-
+ 
                     if (st.session_state.ads_onboarding_empresa == ck
                             and st.session_state.ads_onboarding_paginas):
                         _render_paginas_resultado(e, sk, ck)
  
-    # ── Empresas sem configuração ─────────────────────────────────────
     if empresas_sem_config:
         st.markdown(
             "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
@@ -3642,12 +3615,27 @@ setTimeout(ajustarAltura, 100);
  
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>", unsafe_allow_html=True)
  
-    # ── Controles de busca ────────────────────────────────────────────
     query_values = {}
     for e in empresas_configuradas:
         ck = e["nome"]
         ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
         query_values[ck] = ads_id_salvo
+ 
+    # ── FIX: Filters with white background ─────────────────────────
+    st.markdown("""
+    <style>
+    .ads-filter-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px 16px;
+        align-items: center;
+    }
+    </style>
+    """, unsafe_allow_html=True)
  
     bcol1, bcol2, bcol3 = st.columns([3, 2, 2])
     with bcol1:
@@ -3864,6 +3852,10 @@ setTimeout(ajustarAltura, 100);
  
         page_display = configured_page if configured_page else "—"
  
+        lib_btn_top = ""
+        if lib_url:
+            lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">🔗 Ver no Ad Library</a>'
+ 
         st.markdown(f"""
         <div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;
                     padding:16px 20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px'>
@@ -3888,7 +3880,7 @@ setTimeout(ajustarAltura, 100);
                     <div style='font-size:28px;font-weight:800;color:#111827'>{len(ads_list)}</div>
                     <div style='font-size:12px;color:#9ca3af'>anúncios encontrados</div>
                 </div>
-                {f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">🔗 Ver no Ad Library</a>' if lib_url else ''}
+                {lib_btn_top}
             </div>
         </div>""", unsafe_allow_html=True)
  
@@ -3898,31 +3890,58 @@ setTimeout(ajustarAltura, 100);
                 st.link_button("🔍 Verificar no Ad Library", lib_url)
             return
  
-        fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
-        with fcol1:
-            busca_texto = st.text_input(
-                "Filtrar", placeholder="Pesquisar no copy…",
-                key=f"ads_busca_{safe_key(ck)}", label_visibility="collapsed",
-            )
-        with fcol2:
-            filtro_fmt = st.selectbox(
-                "Formato",
-                ["Todos"] + sorted(set(a["formato"] for a in ads_list)),
-                key=f"ads_fmt_{safe_key(ck)}", label_visibility="collapsed",
-            )
-        with fcol3:
-            plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-            filtro_plat = st.selectbox(
-                "Plataforma",
-                ["Todas"] + [p.capitalize() for p in plats_todas],
-                key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed",
-            )
-        with fcol4:
-            filtro_status = st.selectbox(
-                "Status",
-                ["Todos", "Ativos", "Inativos (histórico)"],
-                key=f"ads_status_{safe_key(ck)}", label_visibility="collapsed",
-            )
+        # ── FIX: Filters with proper labels and white background ────
+        st.markdown("""
+        <style>
+        .ads-filters-wrap {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+        .ads-filters-wrap label {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            color: #6b7280 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+        .ads-filters-wrap div[data-testid="stTextInput"] input,
+        .ads-filters-wrap div[data-baseweb="select"] > div {
+            background: #f9fafb !important;
+            border: 1px solid #e5e7eb !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+ 
+        with st.container():
+            fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
+            with fcol1:
+                busca_texto = st.text_input(
+                    "Pesquisar no copy",
+                    placeholder="Pesquisar no copy…",
+                    key=f"ads_busca_{safe_key(ck)}",
+                )
+            with fcol2:
+                filtro_fmt = st.selectbox(
+                    "Tipo",
+                    ["Tipo (todos)"] + sorted(set(a["formato"] for a in ads_list)),
+                    key=f"ads_fmt_{safe_key(ck)}",
+                )
+            with fcol3:
+                plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
+                filtro_plat = st.selectbox(
+                    "Plataforma",
+                    ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
+                    key=f"ads_plat_{safe_key(ck)}",
+                )
+            with fcol4:
+                filtro_status = st.selectbox(
+                    "Status",
+                    ["Status (todos)", "Ativos", "Inativos (histórico)"],
+                    key=f"ads_status_{safe_key(ck)}",
+                )
  
         ads_f = ads_list
         if busca_texto:
@@ -3931,9 +3950,9 @@ setTimeout(ajustarAltura, 100);
                      q in (a.get("body") or "").lower() or
                      q in (a.get("title") or "").lower() or
                      q in (a.get("body_raw") or "").lower()]
-        if filtro_fmt != "Todos":
+        if filtro_fmt != "Tipo (todos)":
             ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
-        if filtro_plat != "Todas":
+        if filtro_plat != "Plataforma (todas)":
             ads_f = [a for a in ads_f if filtro_plat.lower() in (a["plataformas"] or [])]
         if filtro_status == "Ativos":
             ads_f = [a for a in ads_f if a.get("ativo", True)]
@@ -3944,30 +3963,87 @@ setTimeout(ajustarAltura, 100);
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
  
+        # ── FIX: Stats cards rendered via components.html to avoid raw HTML ──
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
         n_dynamic   = sum(1 for a in ads_f if a.get("is_dynamic"))
         n_ativos    = sum(1 for a in ads_f if a.get("ativo", True))
         n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
-
-        st.markdown(f"""
-        <div style='display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap'>
-            <div style='flex:1;min-width:80px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#15803d'>{n_ativos}</div>
-                <div style='font-size:12px;color:#16a34a;font-weight:600'>Ativos</div></div>
-            {"<div style='flex:1;min-width:80px;background:#f9fafb;border:1px solid #d1d5db;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#6b7280'>" + str(n_inativos) + "</div><div style='font-size:12px;color:#9ca3af;font-weight:600'>Histórico inativo</div></div>" if n_inativos > 0 else ""}
-            <div style='flex:1;min-width:80px;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#92400e'>{n_imagem}</div>
-                <div style='font-size:12px;color:#b45309;font-weight:600'>Imagens</div></div>
-            <div style='flex:1;min-width:80px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#1e40af'>{n_video}</div>
-                <div style='font-size:12px;color:#1d4ed8;font-weight:600'>Vídeos</div></div>
-            <div style='flex:1;min-width:80px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:12px 16px;text-align:center'>
-                <div style='font-size:22px;font-weight:800;color:#5b21b6'>{n_carrossel}</div>
-                <div style='font-size:12px;color:#6d28d9;font-weight:600'>Carrossel</div></div>
-            {f"<div style='flex:1;min-width:80px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;text-align:center'><div style='font-size:22px;font-weight:800;color:#c2410c'>{n_dynamic}</div><div style='font-size:12px;color:#ea580c;font-weight:600'>Dinâmicos</div></div>" if n_dynamic > 0 else ""}
-        </div>""", unsafe_allow_html=True)
+ 
+        # Build stats cards HTML safely
+        stats_cards = []
+        stats_cards.append(f"""
+            <div class="stat-card" style="background:#f0fdf4;border-color:#86efac">
+                <div class="stat-num" style="color:#15803d">{n_ativos}</div>
+                <div class="stat-lbl" style="color:#16a34a">Ativos</div>
+            </div>""")
+        if n_inativos > 0:
+            stats_cards.append(f"""
+            <div class="stat-card" style="background:#f9fafb;border-color:#d1d5db">
+                <div class="stat-num" style="color:#6b7280">{n_inativos}</div>
+                <div class="stat-lbl" style="color:#9ca3af">Histórico inativo</div>
+            </div>""")
+        stats_cards.append(f"""
+            <div class="stat-card" style="background:#fef3c7;border-color:#fcd34d">
+                <div class="stat-num" style="color:#92400e">{n_imagem}</div>
+                <div class="stat-lbl" style="color:#b45309">Imagens</div>
+            </div>""")
+        stats_cards.append(f"""
+            <div class="stat-card" style="background:#eff6ff;border-color:#bfdbfe">
+                <div class="stat-num" style="color:#1e40af">{n_video}</div>
+                <div class="stat-lbl" style="color:#1d4ed8">Vídeos</div>
+            </div>""")
+        stats_cards.append(f"""
+            <div class="stat-card" style="background:#f5f3ff;border-color:#c4b5fd">
+                <div class="stat-num" style="color:#5b21b6">{n_carrossel}</div>
+                <div class="stat-lbl" style="color:#6d28d9">Carrossel</div>
+            </div>""")
+        if n_dynamic > 0:
+            stats_cards.append(f"""
+            <div class="stat-card" style="background:#fff7ed;border-color:#fed7aa">
+                <div class="stat-num" style="color:#c2410c">{n_dynamic}</div>
+                <div class="stat-lbl" style="color:#ea580c">Dinâmicos</div>
+            </div>""")
+ 
+        stats_html = "".join(stats_cards)
+ 
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+body {{ padding-bottom:4px; }}
+.stats-row {{ display:flex; gap:10px; flex-wrap:wrap; }}
+.stat-card {{
+    flex:1; min-width:80px;
+    border:1px solid;
+    border-radius:10px;
+    padding:12px 16px;
+    text-align:center;
+}}
+.stat-num {{ font-size:22px; font-weight:800; }}
+.stat-lbl {{ font-size:12px; font-weight:600; margin-top:2px; }}
+</style>
+<div class="stats-row">
+    {stats_html}
+</div>
+<script>
+function ajustarAltura() {{
+    var h = document.body.scrollHeight;
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = (h + 8) + 'px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
+setTimeout(ajustarAltura, 100);
+</script>
+""", height=80, scrolling=False)
+ 
+        st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
  
         cta_labels = {
             "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
@@ -4148,14 +4224,16 @@ function imgFallback_{uid}(img){{
                     '<div class="status-dot-inactive">Inativo</div>'
                 )
                 card_opacity = "1" if is_ativo else "0.72"
-
+ 
+                dyn_badge_html = ' <span class="dynamic-badge">⚡ Dinâmico</span>' if is_dyn else ""
+ 
                 card_html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:8px;}}
+body{{padding-bottom:4px;}}
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);opacity:{card_opacity};}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
@@ -4209,27 +4287,27 @@ body{{padding-bottom:8px;}}
             {status_dot_html}
             {baixo_vol_badge}
         </div>
-        {f'<span class="ad-id">ID: {ad_id_short}</span>' if ad_id_short else ''}
+        {'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}
     </div>
     <div class="meta-info">
-        {f'<div class="meta-row"><span class="meta-label">{data_inicio}</span></div>' if data_inicio else ''}
+        {'<div class="meta-row"><span class="meta-label">' + data_inicio + '</span></div>' if data_inicio else ''}
         <div class="meta-row">
             <span class="meta-label">Plataformas:</span>
             <span id="plat_icons_{uid}" class="plat-icons"></span>
         </div>
-        {f'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;{impressoes}</div>' if impressoes else ''}
+        {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
     </div>
     <div class="copy-section">
         <div class="page-header">
             {page_avatar_html}
             <div>
-                <div class="page-name">{ad.get("page_name") or nome}{' <span class="dynamic-badge">⚡ Dinâmico</span>' if is_dyn else ''}</div>
+                <div class="page-name">{ad.get("page_name") or nome}{dyn_badge_html}</div>
                 <div class="page-sponsored">Patrocinado</div>
             </div>
         </div>
         {_copy_block_html(body, uid)}
-        {f'<div class="copy-title">{title}</div>' if title else ''}
-        {f'<div class="copy-desc">{_truncar(desc,120)}</div>' if desc else ''}
+        {'<div class="copy-title">' + title + '</div>' if title else ''}
+        {'<div class="copy-desc">' + _truncar(desc,120) + '</div>' if desc else ''}
         {'<div class="no-copy">Sem copy disponível.</div>' if not body and not title and not desc else ''}
     </div>
     {media_block}
@@ -4338,7 +4416,8 @@ setTimeout(syncHeight_{uid}, 1400);
 </body></html>"""
  
                 components.html(card_html, height=620, scrolling=False)
-                st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+                # ── FIX: reduced spacing between cards ──
+                st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
