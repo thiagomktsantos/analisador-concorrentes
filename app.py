@@ -4075,7 +4075,7 @@ body{{padding-bottom:8px;}}
 .meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
 .meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;font-weight:400;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
 .meta-row:last-child{{margin-bottom:0;}}
-.meta-label{{font-size:12px;color:#65676b;font-weight:400;flex-shrink:0;}}
+.meta-label{{font-size:12px;color:#65676b;font-weight:600;flex-shrink:0;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
 .plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:transparent;}}
 .dynamic-badge{{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:4px;}}
