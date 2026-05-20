@@ -3288,8 +3288,10 @@ html, body { background:transparent; overflow:hidden; }
     # ── Empresas configuradas ─────────────────────────────────────────
     if empresas_configuradas:
         st.markdown(
-            "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
-            "letter-spacing:0.8px;margin-bottom:10px'>✅ Páginas configuradas</div>",
+            "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
+            "font-family:\"Source Sans\",sans-serif;"
+            "letter-spacing:0px;text-transform:uppercase;margin-bottom:10px'>"
+            "Páginas configuradas</div>",
             unsafe_allow_html=True,
         )
  
