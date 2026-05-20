@@ -3712,7 +3712,7 @@ setTimeout(ajustarAltura, 100);
 """
 
     # FIX: copy_block_html — mostra "... ver mais" inline para indicar que há mais texto
-    def _copy_block_html(text: str, uid: str, max_chars: int = 118) -> str:
+    def _copy_block_html(text: str, uid: str, max_chars: int = 115) -> str:
         if not text:
             return ""
         text = text.strip()
@@ -4390,7 +4390,7 @@ setTimeout(syncHeight_{uid}, 1400);
 </script>
 </body></html>"""
  
-                components.html(card_html, height=620, scrolling=False)
+                components.html(card_html, height=610, scrolling=False)
                 # FIX: espaço vertical reduzido entre cards
                 st.markdown("<div style='height:1px'/>", unsafe_allow_html=True)
  
