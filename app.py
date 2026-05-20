@@ -2578,12 +2578,20 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
  
 elif st.session_state.pagina == "ads":
- 
+
+st.markdown("""
+<style>
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background-color: #ffffff !important;
+}
+</style>
+""", unsafe_allow_html=True)
+    
     import datetime as _dt
     import json as _json
     import base64 as _b64
     import time as _time
- 
+
     emp   = st.session_state.dados["minha_empresa"]
     concs = st.session_state.dados["concorrentes"]
  
@@ -3401,12 +3409,11 @@ setTimeout(ajustarAltura, 100);
                     salvar_key   = f"salvar_cfg_{sk}_{ci}"
                     cancel_key   = f"cancel_edit_{sk}_{ci}"
 
-                    # Cabeçalho do card (igual ao card normal)
+                    # Card superior — identificação
                     st.markdown(f"""
                     <div style='background:#fff;border:1.5px solid #3a9fd6;border-radius:14px;
                                 overflow:hidden;margin-bottom:4px'>
-                        <div style='display:flex;align-items:center;gap:14px;
-                                    padding:16px 20px;border-bottom:1px solid #f3f4f6'>
+                        <div style='display:flex;align-items:center;gap:14px;padding:16px 20px'>
                             {avatar_html}
                             <div style='flex:1;min-width:0'>
                                 <div style='font-size:16px;font-weight:700;color:#111827'>{ck}</div>
@@ -3417,17 +3424,20 @@ setTimeout(ajustarAltura, 100);
                                 </span>
                             </div>
                         </div>
-                        <div style='padding:16px 20px 0px 20px'>
-                            <div style='font-size:11px;font-weight:700;color:#9ca3af;
-                                        text-transform:uppercase;letter-spacing:0.8px;
-                                        margin-bottom:8px'>
-                                Nome ou ID numérico da página
-                            </div>
-                        </div>
                     </div>
                     """, unsafe_allow_html=True)
 
+                    # Card inferior — edição
                     with st.container(border=True):
+                        st.markdown("""
+                        <div style='background:#ffffff;padding:4px 0 8px 0'>
+                            <div style='font-size:11px;font-weight:700;color:#9ca3af;
+                                        text-transform:uppercase;letter-spacing:0.8px'>
+                                Nome ou ID numérico da página
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
                         novo_id = st.text_input(
                             "ID ou nome",
                             value=ads_id_atual,
