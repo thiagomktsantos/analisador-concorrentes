@@ -4423,7 +4423,6 @@ if (window.ResizeObserver) {{
 setTimeout(syncHeight_{uid}, 200);
 setTimeout(syncHeight_{uid}, 600);
 setTimeout(syncHeight_{uid}, 1400);
-</script>
 
 function triggerIaAd_{uid}() {{
     var targetText = '__ia_ad_{uid}__';
@@ -4432,6 +4431,7 @@ function triggerIaAd_{uid}() {{
         if (b.innerText.trim() === targetText) {{ b.click(); return; }}
     }}
 }}
+</script>
 
 </body></html>"""
  
