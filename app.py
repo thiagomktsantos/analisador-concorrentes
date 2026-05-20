@@ -5481,11 +5481,12 @@ setTimeout(enviarAltura, 1000);
 """
             components.html(ia_html, height=420, scrolling=False)
 
-            st.markdown(f"""
+idx_plus_1 = idx + 1
+st.markdown(f"""
 <script>
 (function() {{
     var listeners = window._iaListeners || 0;
-    if (listeners >= {idx + 1}) return;
+    if (listeners >= {idx_plus_1}) return;
     window._iaListeners = listeners + 1;
 
     window.addEventListener('message', function(e) {{
