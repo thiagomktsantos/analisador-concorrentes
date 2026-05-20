@@ -2624,17 +2624,6 @@ setTimeout(ajustarAltura, 600);
  
 elif st.session_state.pagina == "ads":
  
-    st.markdown("""
-    <style>
-    /* Bigger font for ads company tabs */
-    div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 18px !important;
-        font-weight: 900 !important;
-        padding: 12px 32px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
     import datetime as _dt
     import json as _json
     import base64 as _b64
@@ -2904,7 +2893,6 @@ elif st.session_state.pagina == "ads":
  
         if not plats:
             plats = ["facebook", "instagram"]
- 
  
         raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
         has_video   = bool(videos) or raw_media_type == "VIDEO"
@@ -3687,171 +3675,16 @@ setTimeout(ajustarAltura, 100);
         """, unsafe_allow_html=True)
         st.stop()
  
-    # ── Modal global (fora de qualquer iframe) ───────────────────────
-    components.html("""
-<style>
-#global-modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.82);
-    z-index: 2147483647;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(3px);
-}
-#global-modal-overlay.open { display: flex; }
-#global-modal-box {
-    background: #1a1a2e;
-    border-radius: 16px;
-    max-width: 90vw;
-    max-height: 90vh;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-}
-#global-modal-close {
-    position: absolute;
-    top: 12px;
-    right: 14px;
-    background: rgba(255,255,255,0.15);
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    color: #fff;
-    cursor: pointer;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: sans-serif;
-}
-#global-modal-close:hover { background: rgba(255,255,255,0.3); }
-#global-modal-img {
-    max-width: 80vw;
-    max-height: 78vh;
-    object-fit: contain;
-    border-radius: 10px;
-    display: block;
-}
-#global-modal-video-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding: 32px 24px;
-}
-#global-modal-video-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #1877F2;
-    color: #fff;
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    text-decoration: none;
-    font-family: 'DM Sans', sans-serif;
-}
-#global-modal-video-thumb {
-    max-width: 70vw;
-    max-height: 55vh;
-    object-fit: contain;
-    border-radius: 10px;
-    opacity: 0.85;
-}
-</style>
- 
-<div id="global-modal-overlay" onclick="if(event.target===this)closeGlobalModal()">
-    <div id="global-modal-box">
-        <button id="global-modal-close" onclick="closeGlobalModal()">✕</button>
-        <div id="global-modal-content"></div>
-    </div>
-</div>
- 
-<script>
-window.openGlobalModal = function(imgSrc, snapUrl, isVideo) {
-    var overlay = document.getElementById('global-modal-overlay');
-    var content = document.getElementById('global-modal-content');
-    content.innerHTML = '';
- 
-    if (isVideo) {
-        var wrap = document.createElement('div');
-        wrap.id = 'global-modal-video-wrap';
-        if (imgSrc) {
-            var thumb = document.createElement('img');
-            thumb.src = imgSrc;
-            thumb.id = 'global-modal-video-thumb';
-            thumb.onerror = function() { this.style.display='none'; };
-            wrap.appendChild(thumb);
-        }
-        if (snapUrl) {
-            var btn = document.createElement('a');
-            btn.href = snapUrl;
-            btn.target = '_blank';
-            btn.id = 'global-modal-video-btn';
-            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
-            wrap.appendChild(btn);
-        } else {
-            var msg = document.createElement('div');
-            msg.style.cssText = 'color:#aaa;font-size:14px;padding:12px';
-            msg.textContent = 'Vídeo não disponível para visualização direta.';
-            wrap.appendChild(msg);
-        }
-        content.appendChild(wrap);
-    } else {
-        if (imgSrc) {
-            var img = document.createElement('img');
-            img.src = imgSrc;
-            img.id = 'global-modal-img';
-            img.onerror = function() {
-                this.style.display='none';
-                if (snapUrl) window.open(snapUrl, '_blank');
-            };
-            content.appendChild(img);
-        } else if (snapUrl) {
-            window.open(snapUrl, '_blank');
-            return;
-        }
-    }
-    overlay.classList.add('open');
-};
- 
-window.closeGlobalModal = function() {
-    document.getElementById('global-modal-overlay').classList.remove('open');
-};
- 
-// Listen for messages from child iframes (todos os níveis)
-function _handleModalMsg(e) {
-    if (!e.data || e.data.type !== 'openGlobalModal') return;
-    window.openGlobalModal(e.data.imgSrc, e.data.snapUrl, e.data.isVideo);
-}
-window.addEventListener('message', _handleModalMsg);
-try { window.parent.addEventListener('message', function(e) {
-    if (!e.data || e.data.type !== 'openGlobalModal') return;
-    window.postMessage(e.data, '*');
-}); } catch(err) {}
-try { window.top.addEventListener('message', function(e) {
-    if (!e.data || e.data.type !== 'openGlobalModal') return;
-    window.postMessage(e.data, '*');
-}); } catch(err) {}
-</script>
-""", height=0, scrolling=False)
- 
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+ 
+    # ── Tabs por empresa ──────────────────────────────────────────────
     abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
  
     def _plat_svg_js(uid: str) -> str:
         return f"""
 (function(){{
     var plats={{}};
-    try {{ plats = __PLATS_{uid}__; }} catch(e) {{ return; }}
+    try {{ plats = window.__PLATS_{uid}__; }} catch(e) {{ return; }}
     var C = '#9ca3af';
     var SVGS = {{
         "facebook": '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
@@ -3901,14 +3734,6 @@ try { window.top.addEventListener('message', function(e) {
         )
  
     def render_ads_empresa(emp_item):
-
-        st.markdown("""
-        <style>
-        [data-testid="column"] { padding: 0 4px !important; }
-        [data-testid="stHorizontalBlock"] { gap: 0 !important; }
-        </style>
-        """, unsafe_allow_html=True)
-        
         ck       = emp_item["nome"]
         nome     = emp_item["nome"]
         is_minha = emp_item["tipo"] == "minha"
@@ -3984,10 +3809,7 @@ try { window.top.addEventListener('message', function(e) {
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-        cor_ts    = "#15803d" if fresco_aba else "#92400e"
-        bg_ts     = "#f0fdf4" if fresco_aba else "#fffbeb"
-        brd_ts    = "#86efac" if fresco_aba else "#fcd34d"
-        ico_ts    = "✅"      if fresco_aba else "🕐"
+        fresco_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
  
         import urllib.parse as _urlparse
         if configured_page and configured_page.isdigit():
@@ -4013,7 +3835,6 @@ try { window.top.addEventListener('message', function(e) {
         if lib_url:
             lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Ad Library</a>'
  
-        frescos_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
                     border-radius:12px 12px 0 0;overflow:hidden'>
@@ -4024,7 +3845,7 @@ try { window.top.addEventListener('message', function(e) {
                     <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px'>
                         <span style='font-size:12px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
                         <span style='color:#d1d5db;font-size:12px'>·</span>
-                        <span style='font-size:12px;color:#6b7280'>{frescos_label}</span>
+                        <span style='font-size:12px;color:#6b7280'>{fresco_label}</span>
                         <span style='color:#d1d5db;font-size:12px'>·</span>
                         <span style='font-size:12px;color:#6b7280'>Página: {page_display}</span>
                     </div>
@@ -4041,30 +3862,12 @@ try { window.top.addEventListener('message', function(e) {
             </div>
         </div>""", unsafe_allow_html=True)
  
-        st.markdown("""
-        <style>
-        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) {
-            background: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-top: 1px solid #f0f0f0 !important;
-            border-radius: 0 0 12px 12px !important;
-            padding: 10px 14px !important;
-            margin-top: -20px !important;
-            position: relative !important;
-            z-index: 0 !important;
-        }
-        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) > div,
-        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) .stElementContainer,
-        div[data-testid="stHorizontalBlock"]:has(div[data-testid="stSelectbox"]) .stElementContainer > div {
-            background: #ffffff !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
- 
+        # Filtros inline (sem st.columns para não quebrar layout dos cards)
         import unicodedata as _ud
         def _limpar_formato(s):
             return ''.join(c for c in s if _ud.category(c) not in ('So','Sm','Sk','Mn')).strip()
         formatos_disponiveis = sorted(set(_limpar_formato(a["formato"]) for a in ads_list))
+ 
         fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
         with fcol1:
             busca_texto = st.text_input(
@@ -4124,38 +3927,14 @@ try { window.top.addEventListener('message', function(e) {
         n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
  
         stats_cards = []
-        stats_cards.append(f"""
-            <div class="stat-card">
-                <div class="stat-num" style="color:#111827">{n_ativos}</div>
-                <div class="stat-lbl stat-lbl-green">Ativos</div>
-            </div>""")
+        stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_ativos}</div><div class="stat-lbl stat-lbl-green">Ativos</div></div>')
         if n_inativos > 0:
-            stats_cards.append(f"""
-            <div class="stat-card">
-                <div class="stat-num" style="color:#6b7280">{n_inativos}</div>
-                <div class="stat-lbl">Historico inativo</div>
-            </div>""")
-        stats_cards.append(f"""
-            <div class="stat-card">
-                <div class="stat-num" style="color:#111827">{n_imagem}</div>
-                <div class="stat-lbl">Imagens</div>
-            </div>""")
-        stats_cards.append(f"""
-            <div class="stat-card">
-                <div class="stat-num" style="color:#111827">{n_video}</div>
-                <div class="stat-lbl">Videos</div>
-            </div>""")
-        stats_cards.append(f"""
-            <div class="stat-card">
-                <div class="stat-num" style="color:#111827">{n_carrossel}</div>
-                <div class="stat-lbl">Carrossel</div>
-            </div>""")
+            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#6b7280">{n_inativos}</div><div class="stat-lbl">Histórico inativo</div></div>')
+        stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_imagem}</div><div class="stat-lbl">Imagens</div></div>')
+        stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_video}</div><div class="stat-lbl">Vídeos</div></div>')
+        stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_carrossel}</div><div class="stat-lbl">Carrossel</div></div>')
         if n_dynamic > 0:
-            stats_cards.append(f"""
-            <div class="stat-card">
-                <div class="stat-num" style="color:#111827">{n_dynamic}</div>
-                <div class="stat-lbl">Dinamicos</div>
-            </div>""")
+            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Dinâmicos</div></div>')
  
         stats_html = "".join(stats_cards)
  
@@ -4165,29 +3944,18 @@ try { window.top.addEventListener('message', function(e) {
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
 .stats-row {{ display:flex; gap:10px; flex-wrap:wrap; }}
-.stat-card {{
-    flex:1; min-width:80px;
-    background:#ffffff;
-    border:1px solid #e5e7eb;
-    border-radius:10px;
-    padding:12px 16px;
-    text-align:center;
-}}
+.stat-card {{ flex:1; min-width:80px; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px; padding:12px 16px; text-align:center; }}
 .stat-lbl-green {{ color:#15803d; }}
 .stat-num {{ font-size:22px; font-weight:800; }}
 .stat-lbl {{ color:#6b7280; font-size:12px; font-weight:600; margin-top:2px; }}
 </style>
-<div class="stats-row">
-    {stats_html}
-</div>
+<div class="stats-row">{stats_html}</div>
 <script>
 function ajustarAltura() {{
     var h = document.body.scrollHeight;
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = (h + 8) + 'px'; break;
-        }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h + 8) + 'px'; break; }} }} catch(e) {{}}
     }}
 }}
 if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
@@ -4197,6 +3965,7 @@ setTimeout(ajustarAltura, 100);
  
         st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
  
+        # ─── CTA labels ───────────────────────────────────────────────
         cta_labels = {
             "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
             "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
@@ -4208,59 +3977,61 @@ setTimeout(ajustarAltura, 100);
             "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
         }
  
-        cols_ads = st.columns(3)
+        # ─── Ghost buttons + CSS para análise IA por ad ───────────────
+        ghost_ia_css = "\n".join([
+            f".st-key-btn_ia_ad_{safe_key(ck)}_{j} {{ display:none !important; }}"
+            for j in range(len(ads_f))
+        ])
+        st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
+ 
+        # ─── Renderizar cards em 3 colunas usando HTML puro ───────────
+        # Montamos TODOS os cards em um único components.html com grid CSS
+        # Isso evita completamente o conflito de st.columns com iframes
+ 
+        all_cards_html = []
+ 
         for j, ad in enumerate(ads_f):
-            with cols_ads[j % 3]:
-                snap_url    = ad.get("snapshot_url") or ""
-                images      = ad.get("images") or []
-                images_b64  = ad.get("images_b64") or []
-                videos      = ad.get("videos") or []
-                video_thumb = ad.get("video_thumb") or ""
-                is_dyn      = ad.get("is_dynamic", False)
-                baixo_vol   = ad.get("baixo_volume", False)
-                ad_id       = ad.get("id","")
-                ad_id_short = ad_id
-                plats       = ad.get("plataformas") or []
-                plat_js     = _json.dumps([p.lower() for p in plats])
-                data_inicio = ad.get("data_inicio","")
-                impressoes  = ad.get("impressoes","")
-                body        = ad.get("body")        or ""
-                title       = ad.get("title")       or ""
-                desc        = ad.get("description") or ""
-                cta         = ad.get("cta")         or ""
-                uid         = f"{safe_key(ck)}_{j}"
-                page_pic    = ad.get("page_profile_picture") or ""
-                microlink_url = _microlink_screenshot(snap_url)
+            snap_url    = ad.get("snapshot_url") or ""
+            images      = ad.get("images") or []
+            images_b64  = ad.get("images_b64") or []
+            videos      = ad.get("videos") or []
+            video_thumb = ad.get("video_thumb") or ""
+            is_dyn      = ad.get("is_dynamic", False)
+            baixo_vol   = ad.get("baixo_volume", False)
+            ad_id       = ad.get("id","")
+            ad_id_short = ad_id
+            plats       = ad.get("plataformas") or []
+            plat_js     = _json.dumps([p.lower() for p in plats])
+            data_inicio = ad.get("data_inicio","")
+            impressoes  = ad.get("impressoes","")
+            body        = ad.get("body") or ""
+            title       = ad.get("title") or ""
+            desc        = ad.get("description") or ""
+            cta         = ad.get("cta") or ""
+            uid         = f"{safe_key(ck)}_{j}"
+            page_pic    = ad.get("page_profile_picture") or ""
+            microlink_url = _microlink_screenshot(snap_url)
  
-                img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
-                img_fallbacks = []
-                if images_b64 and len(images_b64) > 1:
-                    img_fallbacks.extend(images_b64[1:])
-                img_fallbacks.extend([u for u in images if u not in img_fallbacks])
-                if microlink_url:
-                    img_fallbacks.append(microlink_url)
-                srcs_js = _json.dumps(img_fallbacks)
+            img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
+            img_fallbacks = []
+            if images_b64 and len(images_b64) > 1:
+                img_fallbacks.extend(images_b64[1:])
+            img_fallbacks.extend([u for u in images if u not in img_fallbacks])
+            if microlink_url:
+                img_fallbacks.append(microlink_url)
+            srcs_js = _json.dumps(img_fallbacks)
  
-                # Modal via postMessage — tenta parent e top
-                open_modal_js = """
-function openModal_{uid}(imgSrc, snapUrl, isVideo) {{
-    var msg = {{ type: 'openGlobalModal', imgSrc: imgSrc, snapUrl: snapUrl, isVideo: isVideo }};
-    try {{ window.parent.postMessage(msg, '*'); }} catch(e) {{}}
-    try {{ window.top.postMessage(msg, '*'); }} catch(e) {{}}
-}}
-""".replace("{uid}", uid)
- 
-                if videos:
-                    if snap_url:
-                        _snap_safe    = snap_url.replace("'", "\\'")
-                        video_onclick = f"onclick=\"openModal_{uid}('{video_thumb.replace(chr(39), '')}', '{_snap_safe}', true)\""
-                        video_style   = "cursor:pointer;"
-                    else:
-                        video_onclick = ""
-                        video_style   = ""
-                    if video_thumb:
-                        media_block = f"""
-<div class="media-block video-thumb-block" {video_onclick} style="{video_style}position:relative;">
+            if videos:
+                if snap_url:
+                    _snap_safe = snap_url.replace("'", "\\'")
+                    video_onclick = f"openModal('{video_thumb.replace(chr(39), '')}', '{_snap_safe}', true)"
+                    video_style   = "cursor:pointer;"
+                else:
+                    video_onclick = ""
+                    video_style   = ""
+                if video_thumb:
+                    media_block = f"""
+<div class="media-block video-thumb-block" onclick="{video_onclick}" style="{video_style}position:relative;">
     <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
          onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
     <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;
@@ -4278,9 +4049,9 @@ function openModal_{uid}(imgSrc, snapUrl, isVideo) {{
     </div>
     {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:DM Sans,sans-serif;">▶ VER VÍDEO</div>' if snap_url else ''}
 </div>"""
-                    else:
-                        media_block = f"""
-<div class="media-block video-block" {video_onclick} style="{video_style}">
+                else:
+                    media_block = f"""
+<div class="media-block video-block" onclick="{video_onclick}" style="{video_style}">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
@@ -4290,10 +4061,10 @@ function openModal_{uid}(imgSrc, snapUrl, isVideo) {{
     </div>
     <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
-                elif img_primary:
-                    media_block = f"""
+            elif img_primary:
+                media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal_{uid}(document.getElementById('mimg_{uid}') ? document.getElementById('mimg_{uid}').src : '{img_primary.replace("'","")}', '{snap_url.replace("'","")}', false)">
+     onclick="openModal(document.getElementById('mimg_{uid}') ? document.getElementById('mimg_{uid}').src : '{img_primary.replace("'","")}', '{snap_url.replace("'","")}', false)">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
@@ -4317,11 +4088,11 @@ function imgFallback_{uid}(img){{
     else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
-                else:
-                    if microlink_url:
-                        media_block = f"""
+            else:
+                if microlink_url:
+                    media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal_{uid}('{microlink_url.replace("'","")}', '{snap_url.replace("'","")}', false)">
+     onclick="openModal('{microlink_url.replace("'","")}', '{snap_url.replace("'","")}', false)">
     <img id="mimg_{uid}" src="{microlink_url}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="this.style.display='none';document.getElementById('mnomedia_{uid}').style.display='flex'" />
@@ -4332,101 +4103,202 @@ function imgFallback_{uid}(img){{
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
                 padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
 </div>"""
-                    else:
-                        _sv = snap_url.replace("'", "")
-                        _nm_attrs = ('style="cursor:pointer" onclick="openModal_' + uid + "('', '" + _sv + "', false)\"") if snap_url else ""
-                        _nm_color = "#3a9fd6" if snap_url else "#c4c4c4"
-                        _nm_label = "Ver criativo →" if snap_url else "Sem criativo"
-                        media_block = (
-                            '<div class="media-block no-media-block" ' + _nm_attrs + '>'
-                            '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
-                            '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
-                            '<polyline points="21 15 16 10 5 21"/>'
-                            '</svg>'
-                            '<span style="font-size:12px;color:' + _nm_color + ';font-weight:600;margin-top:8px;">' + _nm_label + '</span>'
-                            '</div>'
-                        )
- 
-                cta_display = cta_labels.get(cta.upper() if cta else "", cta)
- 
-                baixo_vol_badge = (
-                    '<span style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;'
-                    'padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;margin-left:6px;">'
-                    'Baixo volume</span>'
-                ) if baixo_vol else ""
- 
-                # FIX 3: Badge "Dinâmico" alinhado à direita, cor neutra (cinza)
-                dyn_badge_html = (
-                    '<span style="margin-left:auto;background:#f3f4f6;color:#6b7280;'
-                    'border:1px solid #e5e7eb;padding:2px 8px;border-radius:20px;'
-                    'font-size:10px;font-weight:600;flex-shrink:0;">Dinâmico</span>'
-                ) if is_dyn else ""
- 
-                if page_pic and page_pic.startswith("http"):
-                    page_avatar_html = (
-                        f'<div class="page-avatar" style="overflow:hidden;padding:0">'
-                        f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
-                        f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
+                else:
+                    _sv = snap_url.replace("'", "")
+                    _nm_onclick = f'onclick="openModal(\'\', \'{_sv}\', false)"' if snap_url else ""
+                    _nm_style   = "cursor:pointer;" if snap_url else ""
+                    _nm_color   = "#3a9fd6" if snap_url else "#c4c4c4"
+                    _nm_label   = "Ver criativo →" if snap_url else "Sem criativo"
+                    media_block = (
+                        f'<div class="media-block no-media-block" {_nm_onclick} style="{_nm_style}">'
+                        f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
+                        f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
+                        f'<polyline points="21 15 16 10 5 21"/>'
+                        f'</svg>'
+                        f'<span style="font-size:12px;color:{_nm_color};font-weight:600;margin-top:8px;">{_nm_label}</span>'
                         f'</div>'
                     )
+ 
+            cta_display = cta_labels.get(cta.upper() if cta else "", cta)
+            is_ativo    = ad.get("ativo", True)
+ 
+            status_dot_html = (
+                '<div class="status-dot">Ativo</div>'
+                if is_ativo else
+                '<div class="status-dot-inactive">Inativo</div>'
+            )
+            card_opacity = "1" if is_ativo else "0.72"
+ 
+            baixo_vol_badge = (
+                '<span class="badge-small">Baixo volume</span>'
+            ) if baixo_vol else ""
+ 
+            dyn_badge_html = (
+                '<span class="badge-small badge-dyn">Dinâmico</span>'
+            ) if is_dyn else ""
+ 
+            if page_pic and page_pic.startswith("http"):
+                page_avatar_html = (
+                    f'<div class="page-avatar" style="overflow:hidden;padding:0">'
+                    f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
+                    f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
+                    f'</div>'
+                )
+            else:
+                page_avatar_html = f'<div class="page-avatar">{avatar}</div>'
+ 
+            data_inicio_html = (
+                f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
+                if data_inicio else ""
+            )
+ 
+            body_safe  = body.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            title_safe = title.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            desc_safe  = _truncar(desc, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+ 
+            body_display = ""
+            if body_safe:
+                if len(body_safe) > 80:
+                    short_b = body_safe[:80]
+                    rest_b  = body_safe[80:]
+                    body_display = (
+                        f'<div class="copy-body">{short_b}'
+                        f'<span style="color:#9ca3af;font-size:13px" id="ell_{uid}">... </span>'
+                        f'<span id="cm_{uid}" style="display:none">{rest_b}</span>'
+                        f'<button id="cb_{uid}" onclick="var m=document.getElementById(\'cm_{uid}\');'
+                        f'var b=document.getElementById(\'cb_{uid}\');var e=document.getElementById(\'ell_{uid}\');'
+                        f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}'
+                        f'else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}"'
+                        f' style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;'
+                        f'cursor:pointer;padding:0;margin-left:3px;font-family:DM Sans,sans-serif">ver mais</button></div>'
+                    )
                 else:
-                    page_avatar_html = f'<div class="page-avatar">{avatar}</div>'
+                    body_display = f'<div class="copy-body">{body_safe}</div>'
  
-                ia_ad_btn_key = f"ia_ad_{safe_key(ck)}_{j}"
-                lib_btn_html = f"""
-<div class="card-btns">
-    {'<a href="' + snap_url + '" target="_blank" class="lib-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ver no Ad Library</a>' if snap_url else '<span style="display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;border-radius:0 0 0 10px">Sem link</span>'}
-    <button class="ia-btn" onclick="triggerIaAd_{uid}()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-        </svg>
-        Analisar anúncio
-    </button>
-</div>"""
- 
-                is_ativo = ad.get("ativo", True)
-                status_dot_html = (
-                    '<div class="status-dot">Ativo</div>'
-                    if is_ativo else
-                    '<div class="status-dot-inactive">Inativo</div>'
-                )
-                card_opacity = "1" if is_ativo else "0.72"
-                data_inicio_html = (
-                    f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
-                    if data_inicio else ""
-                )
- 
-                # FIX 3: page-header com flexbox para alinhar badge à direita
-                page_header_html = f"""
-<div class="page-header">
-    {page_avatar_html}
-    <div style="flex:1;min-width:0">
-        <div class="page-name">{ad.get("page_name") or nome}</div>
-        <div class="page-sponsored">Patrocinado</div>
+            card_html = f"""
+<div class="card" style="opacity:{card_opacity}" id="card_{uid}">
+    <div class="status-bar">
+        <div style="display:flex;align-items:center;gap:6px">
+            {status_dot_html}
+            {baixo_vol_badge}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+            {dyn_badge_html}
+            {'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}
+        </div>
     </div>
-    {dyn_badge_html}
-</div>"""
+    <div class="meta-info">
+        {data_inicio_html}
+        <div class="meta-row">
+            <span class="meta-label">Plataformas:</span>
+            <span id="plat_icons_{uid}" class="plat-icons"></span>
+        </div>
+        {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
+    </div>
+    <div class="copy-section">
+        <div class="page-header">
+            {page_avatar_html}
+            <div style="flex:1;min-width:0">
+                <div class="page-name">{ad.get("page_name") or nome}</div>
+                <div class="page-sponsored">Patrocinado</div>
+            </div>
+        </div>
+        {body_display}
+        {'<div class="copy-title">' + title_safe + '</div>' if title_safe else ''}
+        {'<div class="copy-desc">' + desc_safe + '</div>' if desc_safe else ''}
+        {'<div class="no-copy">Sem copy disponível.</div>' if not body_safe and not title_safe and not desc_safe else ''}
+    </div>
+    {media_block}
+    <div class="cta-footer">
+        <span class="cta-domain">{ad.get("caption") or (snap_url.replace("https://","").split("/")[0] if snap_url else "")}</span>
+        <a href="{snap_url or '#'}" target="_blank" class="cta-btn" {'style="pointer-events:none;opacity:0.4"' if not snap_url else ''}>
+            {cta_display or "Ver detalhes"}
+        </a>
+    </div>
+    <div class="card-btns">
+        {'<a href="' + snap_url + '" target="_blank" class="lib-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ver no Ad Library</a>' if snap_url else '<span class="lib-btn-disabled">Sem link</span>'}
+        <button class="ia-btn" onclick="triggerIaAd('{uid}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+            Analisar anúncio
+        </button>
+    </div>
+</div>
+<script>
+window.__PLATS_{uid}__ = {plat_js};
+{_plat_svg_js(uid)}
+</script>
+"""
+            all_cards_html.append(card_html)
  
-                card_html = f"""<!DOCTYPE html>
-<html><head>
+        # CSS base dos cards + grid + modal – tudo num único components.html
+        cards_joined = "\n".join(all_cards_html)
+ 
+        # IDs únicos para cada ad para callbacks IA
+        ia_callbacks_js = "\n".join([
+            f"""document.addEventListener('DOMContentLoaded', function() {{
+  var el = document.getElementById('ia_result_{safe_key(ck)}_{j}');
+  if (el) {{
+    el.style.display = 'block';
+  }}
+}});"""
+            for j in range(len(ads_f))
+        ])
+ 
+        # IA result HTML placeholders
+        ia_results_html = "\n".join([
+            f'<div id="ia_result_{safe_key(ck)}_{j}" style="display:none;grid-column:1;"></div>'
+            for j in range(len(ads_f))
+        ])
+ 
+        components.html(f"""
+<!DOCTYPE html>
+<html>
+<head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:2px;}}
-.card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);opacity:{card_opacity};}}
-.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
+body{{padding-bottom:4px;}}
+ 
+/* Grid 3 colunas */
+.ads-grid{{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    align-items:start;
+}}
+ 
+/* Card */
+.card{{
+    background:#fff;
+    border:1px solid #dde1e7;
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    break-inside:avoid;
+}}
+.status-bar{{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;
+    flex-wrap:wrap;gap:6px;
+}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
 .status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
 .status-dot-inactive{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6b7280;}}
 .status-dot-inactive::before{{content:'';width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0;}}
 .ad-id{{font-size:10px;color:#8a8d91;font-family:monospace;}}
+.badge-small{{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}}
+.badge-dyn{{background:#f0f9ff;color:#0369a1;border-color:#bae6fd;}}
 .meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
 .meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;font-weight:400;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
 .meta-row:last-child{{margin-bottom:0;}}
 .meta-label{{font-size:12px;color:#65676b;font-weight:700;flex-shrink:0;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
-.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:transparent;}}
+.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:transparent;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
 .page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
@@ -4450,59 +4322,135 @@ body{{padding-bottom:2px;}}
 .card-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e4e6ea;}}
 .lib-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:12px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
 .lib-btn:hover{{background:#166fe5;}}
+.lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;}}
 .ia-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#f0fdf4;color:#15803d;border:none;border-top:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;border-left:1px solid #e4e6ea;}}
 .ia-btn:hover{{background:#dcfce7;}}
+ 
+/* Modal */
+#modal-overlay{{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:999999;align-items:center;justify-content:center;
+    backdrop-filter:blur(4px);
+}}
+#modal-overlay.open{{display:flex;}}
+#modal-box{{
+    background:#1a1a2e;border-radius:16px;
+    max-width:88vw;max-height:90vh;
+    overflow:hidden;position:relative;
+    display:flex;flex-direction:column;align-items:center;
+    box-shadow:0 24px 80px rgba(0,0,0,0.6);
+}}
+#modal-close{{
+    position:absolute;top:12px;right:14px;
+    background:rgba(255,255,255,0.15);border:none;border-radius:50%;
+    width:36px;height:36px;font-size:18px;color:#fff;cursor:pointer;
+    z-index:10;display:flex;align-items:center;justify-content:center;
+    font-family:sans-serif;
+}}
+#modal-close:hover{{background:rgba(255,255,255,0.3);}}
+#modal-img{{max-width:80vw;max-height:80vh;object-fit:contain;border-radius:10px;display:block;}}
+#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 32px;}}
+#modal-video-btn{{
+    display:inline-flex;align-items:center;gap:8px;
+    background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;
+    font-size:15px;font-weight:700;text-decoration:none;
+    font-family:'DM Sans',sans-serif;
+}}
+#modal-video-thumb{{max-width:70vw;max-height:55vh;object-fit:contain;border-radius:10px;opacity:0.85;}}
 </style>
-</head><body>
-<div class="card">
-    <div class="status-bar">
-        <div style="display:flex;align-items:center;gap:6px">
-            {status_dot_html}
-            {baixo_vol_badge}
-        </div>
-        {'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}
+</head>
+<body>
+ 
+<!-- Modal dentro do mesmo iframe -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div id="modal-box">
+        <button id="modal-close" onclick="closeModal()">✕</button>
+        <div id="modal-content"></div>
     </div>
-    <div class="meta-info">
-        {data_inicio_html}
-        <div class="meta-row">
-            <span class="meta-label">Plataformas:</span>
-            <span id="plat_icons_{uid}" class="plat-icons"></span>
-        </div>
-        {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
-    </div>
-    <div class="copy-section">
-        {page_header_html}
-        {_copy_block_html(body, uid)}
-        {'<div class="copy-title">' + title + '</div>' if title else ''}
-        {'<div class="copy-desc">' + _truncar(desc,120) + '</div>' if desc else ''}
-        {'<div class="no-copy">Sem copy disponível.</div>' if not body and not title and not desc else ''}
-    </div>
-    {media_block}
-    <div class="cta-footer">
-        <span class="cta-domain">{ad.get("caption") or (snap_url.replace("https://","").split("/")[0] if snap_url else "")}</span>
-        <a href="{snap_url or '#'}" target="_blank" class="cta-btn" {'style="pointer-events:none;opacity:0.4"' if not snap_url else ''}>
-            {cta_display or "Ver detalhes"}
-        </a>
-    </div>
-    {lib_btn_html}
+</div>
+ 
+<div class="ads-grid">
+{cards_joined}
 </div>
  
 <script>
-var __PLATS_{uid}__ = {plat_js};
-{_plat_svg_js(uid)}
-{open_modal_js}
+function openModal(imgSrc, snapUrl, isVideo) {{
+    var overlay = document.getElementById('modal-overlay');
+    var content = document.getElementById('modal-content');
+    content.innerHTML = '';
  
-function syncHeight_{uid}() {{
-    var h = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight,
-        document.body.offsetHeight
-    );
+    if (isVideo) {{
+        var wrap = document.createElement('div');
+        wrap.id = 'modal-video-wrap';
+        if (imgSrc) {{
+            var thumb = document.createElement('img');
+            thumb.src = imgSrc;
+            thumb.id = 'modal-video-thumb';
+            thumb.onerror = function() {{ this.style.display='none'; }};
+            wrap.appendChild(thumb);
+        }}
+        if (snapUrl) {{
+            var btn = document.createElement('a');
+            btn.href = snapUrl;
+            btn.target = '_blank';
+            btn.id = 'modal-video-btn';
+            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
+            wrap.appendChild(btn);
+        }} else {{
+            var msg = document.createElement('div');
+            msg.style.cssText = 'color:#aaa;font-size:14px;padding:12px';
+            msg.textContent = 'Vídeo não disponível.';
+            wrap.appendChild(msg);
+        }}
+        content.appendChild(wrap);
+    }} else {{
+        if (imgSrc) {{
+            var img = document.createElement('img');
+            img.src = imgSrc;
+            img.id = 'modal-img';
+            img.onerror = function() {{
+                this.style.display='none';
+                if (snapUrl) window.open(snapUrl, '_blank');
+            }};
+            content.appendChild(img);
+        }} else if (snapUrl) {{
+            window.open(snapUrl, '_blank');
+            return;
+        }}
+    }}
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}}
+ 
+function closeModal() {{
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+}}
+ 
+document.addEventListener('keydown', function(e) {{
+    if (e.key === 'Escape') closeModal();
+}});
+ 
+function triggerIaAd(uid) {{
+    // Extrai o índice do uid: formato safe_key(ck)_j
+    var parts = uid.split('_');
+    var idx = parts[parts.length - 1];
+    var targetText = '__ia_ad_' + uid + '__';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if (b.innerText.trim() === targetText) {{ b.click(); return; }}
+    }}
+}}
+ 
+// Ajustar altura do iframe
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{
             if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 16) + 'px';
+                frames[i].style.height = (h + 20) + 'px';
                 frames[i].style.minHeight = 'unset';
                 break;
             }}
@@ -4510,62 +4458,46 @@ function syncHeight_{uid}() {{
     }}
 }}
  
-document.addEventListener('DOMContentLoaded', function() {{ setTimeout(syncHeight_{uid}, 50); }});
-window.addEventListener('load', function() {{ syncHeight_{uid}(); }});
 document.querySelectorAll('img').forEach(function(img) {{
-    img.addEventListener('load', function() {{ setTimeout(syncHeight_{uid}, 30); }});
-    img.addEventListener('error', function() {{ setTimeout(syncHeight_{uid}, 30); }});
+    img.addEventListener('load', function() {{ setTimeout(syncHeight, 30); }});
+    img.addEventListener('error', function() {{ setTimeout(syncHeight, 30); }});
 }});
 if (window.ResizeObserver) {{
-    var _ro_{uid} = new ResizeObserver(function() {{ syncHeight_{uid}(); }});
-    _ro_{uid}.observe(document.body);
+    new ResizeObserver(syncHeight).observe(document.body);
 }}
-setTimeout(syncHeight_{uid}, 50);
-setTimeout(syncHeight_{uid}, 300);
-setTimeout(syncHeight_{uid}, 800);
- 
-function triggerIaAd_{uid}() {{
-    var targetText = '__ia_ad_{uid}__';
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if (b.innerText.trim() === targetText) {{ b.click(); return; }}
-    }}
-}}
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200);
+setTimeout(syncHeight, 600);
+setTimeout(syncHeight, 1500);
 </script>
+</body>
+</html>
+""", height=600, scrolling=False)
  
-</body></html>"""
+        # Ghost buttons para análise IA por ad
+        for j, ad in enumerate(ads_f):
+            uid = f"{safe_key(ck)}_{j}"
+            chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
+            if chave_ia_ad not in st.session_state:
+                st.session_state[chave_ia_ad] = ""
  
-                # FIX 1: Reduzido de 580 para 560, e removido st.markdown height:1px
-                components.html(card_html, height=510, scrolling=False)
- 
-                # Ghost button for per-ad IA analysis
-                chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
-                if chave_ia_ad not in st.session_state:
-                    st.session_state[chave_ia_ad] = ""
- 
-                st.markdown(f"<style>.st-key-btn_ia_ad_{safe_key(ck)}_{j} {{ display:none !important; }}</style>", unsafe_allow_html=True)
-                if st.button(f"__ia_ad_{uid}__", key=f"btn_ia_ad_{safe_key(ck)}_{j}"):
-                    if gemini_model is None:
-                        st.session_state[chave_ia_ad] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner(f"Analisando anúncio…"):
-                            try:
-                                ad_body_txt = ad.get("body") or ""
-                                ad_title_txt = ad.get("title") or ""
-                                ad_desc_txt = ad.get("description") or ""
-                                ad_fmt_txt = ad.get("formato") or ""
-                                ad_plat_txt = ", ".join(ad.get("plataformas") or [])
-                                ad_inicio_txt = ad.get("data_inicio") or ""
-                                prompt_ad_ia = f"""Você é especialista em mídia paga e copywriting.
+            if st.button(f"__ia_ad_{uid}__", key=f"btn_ia_ad_{safe_key(ck)}_{j}"):
+                if gemini_model is None:
+                    st.session_state[chave_ia_ad] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando anúncio…"):
+                        try:
+                            prompt_ad_ia = f"""Você é especialista em mídia paga e copywriting.
 Analise este anúncio específico e dê feedback estratégico em português.
  
 Empresa: {nome}
-Formato: {ad_fmt_txt}
-Plataformas: {ad_plat_txt}
-Veiculação: {ad_inicio_txt}
-Título: {ad_title_txt}
-Copy principal: {ad_body_txt}
-Descrição: {ad_desc_txt}
+Formato: {ad.get("formato","")}
+Plataformas: {", ".join(ad.get("plataformas") or [])}
+Veiculação: {ad.get("data_inicio","")}
+Título: {ad.get("title","")}
+Copy principal: {ad.get("body","")}
+Descrição: {ad.get("description","")}
  
 Responda com:
 ### Objetivo do Anúncio
@@ -4581,25 +4513,25 @@ O formato escolhido é adequado? Por quê?
 2 melhorias concretas que aumentariam a performance.
  
 Seja direto e objetivo."""
-                                resp = gemini_model.generate_content(prompt_ad_ia)
-                                st.session_state[chave_ia_ad] = resp.text
-                                st.rerun()
-                            except Exception as ex:
-                                st.session_state[chave_ia_ad] = f"Erro: {ex}"
-                                st.rerun()
+                            resp = gemini_model.generate_content(prompt_ad_ia)
+                            st.session_state[chave_ia_ad] = resp.text
+                            st.rerun()
+                        except Exception as ex:
+                            st.session_state[chave_ia_ad] = f"Erro: {ex}"
+                            st.rerun()
  
-                if st.session_state.get(chave_ia_ad):
-                    st.markdown(f"""
-                    <div style='background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
-                                padding:14px 16px;font-size:13px;color:#374151;line-height:1.75;
-                                max-height:260px;overflow-y:auto;margin-top:4px;margin-bottom:4px'>
-                        {st.session_state[chave_ia_ad].replace(chr(10), "<br>")}
-                    </div>
-                    """, unsafe_allow_html=True)
-                # FIX 1: Removido o st.markdown("<div style='height:1px'/>") que estava aqui
+            if st.session_state.get(chave_ia_ad):
+                st.markdown(f"""
+                <div style='background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
+                            padding:14px 16px;font-size:13px;color:#374151;line-height:1.75;
+                            max-height:260px;overflow-y:auto;margin-bottom:8px'>
+                    {st.session_state[chave_ia_ad].replace(chr(10), "<br>")}
+                </div>
+                """, unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
+        # ── Análise IA geral da empresa ───────────────────────────────
         chave_ia = f"ia_ads_{safe_key(ck)}"
         if chave_ia not in st.session_state:
             st.session_state[chave_ia] = ""
