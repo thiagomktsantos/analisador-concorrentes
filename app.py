@@ -3982,11 +3982,10 @@ setTimeout(ajustarAltura, 100);
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-body {{ padding-bottom:4px; }}
 .stats-row {{ display:flex; gap:10px; flex-wrap:wrap; }}
 .stat-card {{
     flex:1; min-width:80px;
-    background:#f9fafb;
+    background:#ffffff;
     border:1px solid #e5e7eb;
     border-radius:10px;
     padding:12px 16px;
