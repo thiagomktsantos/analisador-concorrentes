@@ -4397,9 +4397,9 @@ if (window.ResizeObserver) {{
     var _ro_{uid} = new ResizeObserver(function() {{ syncHeight_{uid}(); }});
     _ro_{uid}.observe(document.body);
 }}
-setTimeout(syncHeight_{uid}, 200);
-setTimeout(syncHeight_{uid}, 600);
-setTimeout(syncHeight_{uid}, 1400);
+setTimeout(syncHeight_{uid}, 50);
+setTimeout(syncHeight_{uid}, 300);
+setTimeout(syncHeight_{uid}, 800);
 
 function triggerIaAd_{uid}() {{
     var targetText = '__ia_ad_{uid}__';
@@ -4412,7 +4412,7 @@ function triggerIaAd_{uid}() {{
 
 </body></html>"""
  
-                components.html(card_html, height=610, scrolling=False)
+                components.html(card_html, height=580, scrolling=False)
 
                 # Ghost button for per-ad IA analysis
                 chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
