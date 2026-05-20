@@ -3353,7 +3353,7 @@ html, body { background:transparent; overflow:hidden; }
         st.markdown(
             "<div style='font-size:18px;font-weight:700;color:#1a2e4a;"
             "font-family:\"Source Sans\",sans-serif;"
-            "letter-spacing:0px;text-transform:uppercase;margin-bottom:10px'>"
+            "letter-spacing:0px;text-transform:uppercase'>"
             "Páginas configuradas</div>",
             unsafe_allow_html=True,
         )
