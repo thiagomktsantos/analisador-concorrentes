@@ -3810,17 +3810,17 @@ html, body { background:transparent; overflow:hidden; }
 </div>"""
                     else:
                         _sv = snap_url.replace("'","")
+                        if snap_url:
+                            _no_media_attrs = f'style="cursor:pointer" onclick="openModal_{uid}(\'\', \'{_sv}\', false)"'
+                        else:
+                            _no_media_attrs = ''
                         media_block = f"""
-<div class="media-block video-block" style="cursor:pointer"
-     onclick="openModal_{uid}('', '{_sv}', true)">
-    <div class="video-play-icon">
-        <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
-            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
-            <circle cx="27" cy="27" r="20" fill="rgba(255,255,255,0.2)"/>
-            <polygon points="22,18 40,27 22,36" fill="white"/>
-        </svg>
-    </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
+<div class="media-block no-media-block" {_no_media_attrs}>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+    </svg>
+    <span style="font-size:12px;color:{'#3a9fd6' if snap_url else '#c4c4c4'};font-weight:600;margin-top:8px;">{'Ver criativo →' if snap_url else 'Sem criativo'}</span>
 </div>"""
                 elif img_primary:
                     media_block = f"""
