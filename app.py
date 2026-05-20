@@ -3431,7 +3431,8 @@ setTimeout(ajustarAltura, 100);
                     .st-key-inline_edit_{sk}_{ci} .stElementContainer,
                     .st-key-inline_edit_{sk}_{ci} .stElementContainer > div,
                     .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"],
-                    .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div {{
+                    .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div,
+                    .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] input {{
                         background-color: #ffffff !important;
                         background: #ffffff !important;
                     }}
