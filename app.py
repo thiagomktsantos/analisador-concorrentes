@@ -3401,7 +3401,7 @@ setTimeout(ajustarAltura, 100);
                     salvar_key   = f"salvar_cfg_{sk}_{ci}"
                     cancel_key   = f"cancel_edit_{sk}_{ci}"
 
-                    # Card visual de edição
+                    # Cabeçalho do card (igual ao card normal)
                     st.markdown(f"""
                     <div style='background:#fff;border:1.5px solid #3a9fd6;border-radius:14px;
                                 overflow:hidden;margin-bottom:4px'>
@@ -3417,32 +3417,34 @@ setTimeout(ajustarAltura, 100);
                                 </span>
                             </div>
                         </div>
-                        <div style='padding:14px 20px 4px 20px;
-                                    font-size:12px;font-weight:700;color:#6b7280;
-                                    text-transform:uppercase;letter-spacing:0.5px'>
-                            Nome ou ID numérico da página
+                        <div style='padding:16px 20px 0px 20px'>
+                            <div style='font-size:11px;font-weight:700;color:#9ca3af;
+                                        text-transform:uppercase;letter-spacing:0.8px;
+                                        margin-bottom:8px'>
+                                Nome ou ID numérico da página
+                            </div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
 
-                    novo_id = st.text_input(
-                        "ID ou nome",
-                        value=ads_id_atual,
-                        key=novo_id_key,
-                        label_visibility="collapsed",
-                        placeholder="Ex: Nome da Página  ou  102803918240129",
-                    )
-
-                    col_b, col_s, col_c = st.columns([2, 2, 1])
-                    with col_b:
-                        buscar_clicked = st.button("🔍 Buscar páginas", key=buscar_key,
-                                                   use_container_width=True, type="primary")
-                    with col_s:
-                        salvar_clicked = st.button("💾 Salvar direto", key=salvar_key,
-                                                   use_container_width=True)
-                    with col_c:
-                        cancel_clicked = st.button("✕ Cancelar", key=cancel_key,
-                                                   use_container_width=True)
+                    with st.container(border=True):
+                        novo_id = st.text_input(
+                            "ID ou nome",
+                            value=ads_id_atual,
+                            key=novo_id_key,
+                            label_visibility="collapsed",
+                            placeholder="Ex: Nome da Página  ou  102803918240129",
+                        )
+                        col_b, col_s, col_c = st.columns([2, 2, 1])
+                        with col_b:
+                            buscar_clicked = st.button("🔍 Buscar páginas", key=buscar_key,
+                                                       use_container_width=True, type="primary")
+                        with col_s:
+                            salvar_clicked = st.button("💾 Salvar direto", key=salvar_key,
+                                                       use_container_width=True)
+                        with col_c:
+                            cancel_clicked = st.button("✕ Cancelar", key=cancel_key,
+                                                       use_container_width=True)
 
                     if buscar_clicked and novo_id.strip():
                         st.session_state.ads_onboarding_empresa = ck
