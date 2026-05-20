@@ -3712,7 +3712,7 @@ setTimeout(ajustarAltura, 100);
 """
 
     # FIX: copy_block_html — mostra "... ver mais" inline para indicar que há mais texto
-    def _copy_block_html(text: str, uid: str, max_chars: int = 115) -> str:
+    def _copy_block_html(text: str, uid: str, max_chars: int = 90) -> str:
         if not text:
             return ""
         text = text.strip()
