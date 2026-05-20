@@ -200,6 +200,7 @@ def carregar_dados_usuario(user_id: str) -> dict:
                 "minha_empresa": row.get("minha_empresa", {}),
                 "concorrentes": row.get("concorrentes", []),
                 "metricas_redes": row.get("metricas_redes", {}),
+                "ads_cache": row.get("ads_cache", {}),
             }
     except Exception:
         pass
@@ -212,6 +213,7 @@ def carregar_dados_usuario(user_id: str) -> dict:
         },
         "concorrentes": [],
         "metricas_redes": {},
+        "ads_cache": {},
     }
 
 def salvar_dados_usuario(user_id: str):
@@ -828,6 +830,7 @@ if not st.session_state.logado:
                             "concorrentes": dados_db.get("concorrentes", []),
                         }
                         st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
+                        st.session_state.ads_cache = dados_db.get("ads_cache", {})  # ← CORREÇÃO
                         st.rerun()
                     else:
                         st.error(f"Erro ao entrar: {err}")
@@ -2604,22 +2607,20 @@ elif st.session_state.pagina == "ads":
     def salvar_cache_ads(dados: dict):
         try:
             user_id = st.session_state.user.id
-            existing = supabase.table("ci_dados").select("*").eq("user_id", user_id).execute()
-            if existing.data:
-                supabase.table("ci_dados").update({"ads_cache": dados}).eq("user_id", user_id).execute()
-            else:
-                payload = {
-                    "user_id": user_id,
-                    "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
-                    "concorrentes": st.session_state.dados.get("concorrentes", []),
-                    "metricas_redes": st.session_state.get("metricas_redes", {}),
-                    "ads_cache": dados,
-                }
-                supabase.table("ci_dados").insert(payload).execute()
+            payload = {
+                "user_id": user_id,
+                "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
+                "concorrentes": st.session_state.dados.get("concorrentes", []),
+                "metricas_redes": st.session_state.get("metricas_redes", {}),
+                "ads_cache": dados,
+            }
+            supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
  
     def carregar_cache_ads() -> dict:
+        if st.session_state.get("ads_cache"):
+            return st.session_state.ads_cache
         try:
             res = (
                 supabase.table("ci_dados")
@@ -3096,7 +3097,7 @@ elif st.session_state.pagina == "ads":
         salvar_cache_ads(cache_mergeado)
         st.rerun()
  
-    if "ads_cache" not in st.session_state:
+    if "ads_cache" not in st.session_state or not st.session_state.ads_cache:
         st.session_state.ads_cache = carregar_cache_ads()
     if "ads_erro" not in st.session_state:
         st.session_state.ads_erro = {}
