@@ -4198,7 +4198,7 @@ function imgFallback_{uid}(img){{
 
                 # FIX: "Veiculação iniciada:" em negrito + data sem negrito no formato dd/mm/yyyy
                 data_inicio_html = (
-                    f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span>&nbsp;<span style="font-weight:400">{data_inicio}</span></div>'
+                    f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
                     if data_inicio else ""
                 )
  
