@@ -2590,15 +2590,22 @@ elif st.session_state.pagina == "ads":
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
  
-    # ── FIX: salvar_cache_ads usa UPDATE seletivo para não apagar outros campos ──
+    # ── FIX 1: salvar_cache_ads robusto ──
     def salvar_cache_ads(dados: dict):
         try:
             user_id = st.session_state.user.id
-            existing = supabase.table("ci_dados").select("id").eq("user_id", user_id).execute()
+            existing = supabase.table("ci_dados").select("*").eq("user_id", user_id).execute()
             if existing.data:
                 supabase.table("ci_dados").update({"ads_cache": dados}).eq("user_id", user_id).execute()
             else:
-                supabase.table("ci_dados").insert({"user_id": user_id, "ads_cache": dados}).execute()
+                payload = {
+                    "user_id": user_id,
+                    "minha_empresa": st.session_state.dados.get("minha_empresa", {}),
+                    "concorrentes": st.session_state.dados.get("concorrentes", []),
+                    "metricas_redes": st.session_state.get("metricas_redes", {}),
+                    "ads_cache": dados,
+                }
+                supabase.table("ci_dados").insert(payload).execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache de ads: {e}", icon="⚠️")
  
@@ -3388,108 +3395,104 @@ setTimeout(ajustarAltura, 100);
 """, height=118, scrolling=False)
  
                 else:
-                    # ── FIX: Card em modo edição — header HTML + body com widgets Streamlit ──
-                    # Header do card (avatar + badges) via HTML com borda azul
-                    components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.card-top {{
-    background:#fff;
-    border:1.5px solid #3a9fd6;
-    border-bottom:1px solid #e5e7eb;
-    border-radius:14px 14px 0 0;
-    padding:14px 20px;
-    display:flex; align-items:center; gap:14px;
-    box-shadow:0 0 0 3px rgba(58,159,214,0.10);
-}}
-.nome {{ font-size:16px; font-weight:700; color:#111827; margin-bottom:4px; }}
-.badge {{ padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
-    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd}; }}
-.badge-editing {{
-    background:#fff3e0; color:#c2410c; border:1px solid #fed7aa;
-    padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; margin-left:6px;
-}}
-</style>
-<div class="card-top">
-    {avatar_html}
-    <div>
-        <div class="nome">{ck}</div>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:4px">
-            <span class="badge">{badge_lbl}</span>
-            <span class="badge-editing">✏️ Editando</span>
-        </div>
-    </div>
-</div>
-""", height=88, scrolling=False)
+                    # ── FIX 2: Card em modo edição — tudo dentro de um único bloco HTML ──
+                    novo_id_key   = f"_inline_edit_{sk}_{ci}"
+                    buscar_key    = f"buscar_cfg_{sk}_{ci}"
+                    salvar_key    = f"salvar_cfg_{sk}_{ci}"
+                    cancel_key    = f"cancel_edit_{sk}_{ci}"
  
-                    # Corpo do formulário: CSS costura visualmente com o header acima
+                    # CSS: força o container Streamlit a parecer o card
                     st.markdown(f"""
                     <style>
-                    /* Remove margin entre o iframe do header e o container abaixo */
-                    div[data-testid="stVerticalBlock"] > div:has(iframe) + div {{
-                        margin-top: 0 !important;
+                    /* Container do card editando */
+                    .st-key-edit_card_wrap_{sk}_{ci} > div {{
+                        background: #fff !important;
+                        border: 1.5px solid #3a9fd6 !important;
+                        border-radius: 14px !important;
+                        box-shadow: 0 0 0 3px rgba(58,159,214,0.10) !important;
+                        padding: 16px 20px 20px 20px !important;
+                        margin-bottom: 8px !important;
                     }}
-                    .edit-body-{sk}-{ci} {{
-                        background: #fff;
-                        border: 1.5px solid #3a9fd6;
-                        border-top: none;
-                        border-radius: 0 0 14px 14px;
-                        padding: 14px 20px 16px 20px;
-                        box-shadow: 0 0 0 3px rgba(58,159,214,0.10);
-                        margin-top: -6px;
+                    /* Inputs dentro do card */
+                    .st-key-edit_card_wrap_{sk}_{ci} div[data-testid="stTextInput"] input {{
+                        border: 1px solid #e5e7eb !important;
+                        border-radius: 8px !important;
+                        font-size: 14px !important;
+                    }}
+                    /* Botões dentro do card */
+                    .st-key-edit_card_wrap_{sk}_{ci} div.stButton > button {{
+                        min-height: 36px !important;
+                        font-size: 13px !important;
                     }}
                     </style>
-                    <div class="edit-body-{sk}-{ci}">
-                        <div style="font-size:11px;font-weight:700;color:#9ca3af;
-                                    text-transform:uppercase;letter-spacing:1px;
-                                    margin-bottom:10px;padding-bottom:8px;
-                                    border-bottom:1px solid #f3f4f6;">
-                            Editar Página
-                        </div>
-                    </div>
                     """, unsafe_allow_html=True)
  
-                    novo_id = st.text_input(
-                        "ID ou nome da página",
-                        value=ads_id_atual,
-                        key=f"_inline_edit_{sk}_{ci}",
-                        placeholder="Nome exato ou ID numérico",
-                        label_visibility="collapsed",
-                    )
+                    with st.container(key=f"edit_card_wrap_{sk}_{ci}", border=False):
+                        # Header do card
+                        st.markdown(f"""
+                        <div style="display:flex;align-items:center;gap:14px;
+                                    margin-bottom:14px;padding-bottom:12px;
+                                    border-bottom:1px solid #f0f4f8">
+                            {avatar_html}
+                            <div>
+                                <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:4px">{ck}</div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                    <span style="background:{badge_bg};color:{badge_txt};
+                                                 border:1px solid {badge_brd};padding:2px 8px;
+                                                 border-radius:20px;font-size:11px;font-weight:600">{badge_lbl}</span>
+                                    <span style="background:#fff3e0;color:#c2410c;
+                                                 border:1px solid #fed7aa;padding:2px 8px;
+                                                 border-radius:20px;font-size:11px;font-weight:600">✏️ Editando</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size:11px;font-weight:700;color:#9ca3af;
+                                    text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+                            Editar Página
+                        </div>
+                        """, unsafe_allow_html=True)
  
-                    col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
-                    with col_b1:
-                        if st.button("🔍 Buscar Páginas", key=f"buscar_cfg_{sk}_{ci}", use_container_width=True, type="primary"):
-                            if novo_id.strip():
-                                st.session_state.ads_onboarding_empresa = ck
-                                st.session_state.ads_onboarding_termo   = novo_id.strip()
-                                with st.spinner(f"Buscando «{novo_id.strip()}»…"):
-                                    paginas = buscar_paginas_facebook(novo_id.strip())
-                                st.session_state.ads_onboarding_paginas = paginas
-                                st.rerun()
-                    with col_b2:
-                        if st.button("💾 Salvar direto", key=f"salvar_cfg_{sk}_{ci}", use_container_width=True):
-                            if novo_id.strip():
-                                salvar_ads_id(e, novo_id.strip())
+                        # Input do ID/nome
+                        novo_id = st.text_input(
+                            "ID ou nome da página",
+                            value=ads_id_atual,
+                            key=novo_id_key,
+                            placeholder="Nome exato ou ID numérico",
+                            label_visibility="collapsed",
+                        )
+ 
+                        # Botões de ação
+                        col_b1, col_b2, col_b3 = st.columns([2, 2, 1])
+                        with col_b1:
+                            if st.button("🔍 Buscar Páginas", key=buscar_key, use_container_width=True, type="primary"):
+                                if novo_id.strip():
+                                    st.session_state.ads_onboarding_empresa = ck
+                                    st.session_state.ads_onboarding_termo   = novo_id.strip()
+                                    with st.spinner(f"Buscando «{novo_id.strip()}»…"):
+                                        paginas = buscar_paginas_facebook(novo_id.strip())
+                                    st.session_state.ads_onboarding_paginas = paginas
+                                    st.rerun()
+                        with col_b2:
+                            if st.button("💾 Salvar direto", key=salvar_key, use_container_width=True):
+                                if novo_id.strip():
+                                    salvar_ads_id(e, novo_id.strip())
+                                    st.session_state.ads_editando_empresa = None
+                                    st.session_state.ads_onboarding_empresa = None
+                                    st.session_state.ads_onboarding_paginas = []
+                                    st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
+                                    st.rerun()
+                        with col_b3:
+                            if st.button("✕", key=cancel_key, use_container_width=True):
                                 st.session_state.ads_editando_empresa = None
                                 st.session_state.ads_onboarding_empresa = None
                                 st.session_state.ads_onboarding_paginas = []
-                                st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
                                 st.rerun()
-                    with col_b3:
-                        if st.button("✕", key=f"cancel_edit_{sk}_{ci}", use_container_width=True):
-                            st.session_state.ads_editando_empresa = None
-                            st.session_state.ads_onboarding_empresa = None
-                            st.session_state.ads_onboarding_paginas = []
-                            st.rerun()
  
-                    # Resultado de busca de páginas (se houver)
-                    if (st.session_state.ads_onboarding_empresa == ck
-                            and st.session_state.ads_onboarding_paginas is not None
-                            and len(st.session_state.ads_onboarding_paginas) > 0):
-                        _render_paginas_resultado(e, sk, ck)
+                        # Resultado de busca de páginas (se houver)
+                        if (st.session_state.ads_onboarding_empresa == ck
+                                and st.session_state.ads_onboarding_paginas is not None
+                                and len(st.session_state.ads_onboarding_paginas) > 0):
+                            _render_paginas_resultado(e, sk, ck)
  
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
@@ -4320,7 +4323,7 @@ Amostra:
     for aba, emp_item in zip(abas_ads, empresas_com_dados):
         with aba:
             render_ads_empresa(emp_item)
-
+ 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
 # ---------------------------------------------------
