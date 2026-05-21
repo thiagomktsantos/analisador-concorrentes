@@ -3435,6 +3435,29 @@ body {{ padding-bottom:4px; }}
     display:flex; align-items:center; justify-content:center; gap:8px;
     transition:all 0.12s ease; }}
 .edit-btn:hover {{ background:#f9fafb; color:#111827; }}
+
+    div[data-testid="stTabs"] button[role="tab"] {{
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        font-family: 'DM Sans', sans-serif !important;
+        padding: 8px 0 !important;
+        color: #9ca3af !important;
+        border-radius: 8px 8px 0px 0px !important;
+        margin-bottom: -2px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        flex: 1 !important;
+        text-align: center !important;
+    }}
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+        color: #fff !important;
+        background-color: #3a9fd6 !important;
+    }}
+    div[data-testid="stTabs"] button[role="tab"]:focus,
+    div[data-testid="stTabs"] button[role="tab"]:focus-visible {{
+        box-shadow: none !important;
+        outline: none !important;
+    }}
 </style>
 <div class="card">
     <div class="card-body">
