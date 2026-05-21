@@ -3836,20 +3836,16 @@ setTimeout(ajustarAltura, 100);
         filtros_key = f"filtros_{safe_key(ck)}"
         st.markdown(f"""
         <style>
-        div[data-testid="stTextInput"] input {{
+        .st-key-{filtros_key} div[data-testid="stTextInput"] input,
+        .st-key-{filtros_key} div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: #ffffff !important;
             background: #ffffff !important;
-            border: 2px solid #e5e7eb !important;
+            border: 1px solid #e5e7eb !important;
             border-radius: 7px !important;
-        }}
-        div[data-baseweb="select"] > div:first-child {{
-            background-color: #ffffff !important;
-            background: #ffffff !important;
-            border: 2px solid #e5e7eb !important;
-            border-radius: 7px !important;
-        }}
-        .st-key-{filtros_key} {{
-            margin-top: -15px !important;
+            font-size: 15px !important;
+            font-family: 'DM Sans', sans-serif !important;
+            color: #111827 !important;
+            min-height: 42px !important;
         }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
             background: #ffffff !important;
@@ -3858,6 +3854,9 @@ setTimeout(ajustarAltura, 100);
             border-radius: 0 0 12px 12px !important;
             padding: 10px 14px !important;
             gap: 10px !important;
+        }}
+        .st-key-{filtros_key} label {{
+            display: none !important;
         }}
         </style>
         """, unsafe_allow_html=True)
