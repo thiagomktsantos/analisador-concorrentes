@@ -3853,21 +3853,21 @@ setTimeout(ajustarAltura, 100);
         .st-key-{filtros_key} div[data-testid="stTextInput"] > div,
         .st-key-{filtros_key} div[data-testid="stTextInput"] > div > div {{
             background-color: #ffffff !important;
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 43px !important;
+            min-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
             background-color: #ffffff !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 43px !important;
+            min-height: 43px !important;
             padding: 0 14px !important;
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
             color: #6b7280 !important;
             box-shadow: none !important;
-            line-height: 44px !important;
+            line-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
             font-size: 14px !important;
@@ -3877,15 +3877,15 @@ setTimeout(ajustarAltura, 100);
 
         /* ── Wrapper do select ── */
         .st-key-{filtros_key} div[data-baseweb="select"] {{
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 43px !important;
+            min-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-baseweb="select"] > div {{
             background-color: #ffffff !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 43px !important;
+            min-height: 43px !important;
             padding: 0 14px !important;
             box-shadow: none !important;
             display: flex !important;
