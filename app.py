@@ -765,6 +765,7 @@ if not st.session_state.logado:
     div[data-testid="stTabs"] button[role="tab"] {
         font-size: 18px !important;
         font-weight: 900 !important;
+        font-family: 'DM Sans', sans-serif !important;
         padding: 8px 0 !important;
         color: #9ca3af !important;
         border-bottom: 2px solid transparent !important;
@@ -4789,6 +4790,7 @@ elif st.session_state.pagina == "redes":
     div[data-testid="stTabs"] button[role="tab"] {
         font-size: 18px !important;
         font-weight: 900 !important;
+        font-family: 'DM Sans', sans-serif !important;
         color: #6b7280 !important;
         border-bottom: none !important;
         border-radius: 8px 8px 0px 0px !important;
