@@ -3313,7 +3313,7 @@ html, body { background:transparent; overflow:hidden; }
         active_class = "active" if i == aba_ativa else ""
         abas_html_items += f'<button class="aba {active_class}" onclick="triggerAba({i})">{nome}</button>'
 
-    components.html(f"""
+components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -3346,6 +3346,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     align-items:center;
     flex:1;
     height:100%;
+    overflow:hidden;
 }}
 .aba {{
     height:100%;
@@ -3398,17 +3399,18 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     </button>
 </div>
 <script>
+function trigger(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+        var txt = (btns[i].textContent || btns[i].innerText || '').trim();
+        if (txt === label) {{ btns[i].click(); return; }}
+    }}
+}}
 function triggerToggle() {{
     trigger('_toggle_edicao_ads_');
 }}
 function triggerAba(i) {{
     trigger('_aba_ads_' + i + '_');
-}}
-function trigger(label) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if (b.innerText.trim() === label) {{ b.click(); return; }}
-    }}
 }}
 function ajustarAltura() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -3745,7 +3747,9 @@ setTimeout(ajustarAltura, 100);
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
     # ── Tabs por empresa ──────────────────────────────────────────────
-    abas_ads = st.tabs([e["nome"] for e in empresas_com_dados])
+    aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
+    if empresas_com_dados:
+        render_ads_empresa(empresas_com_dados[aba_idx])
  
     def _plat_svg_js(uid: str) -> str:
         return f"""
