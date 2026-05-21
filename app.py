@@ -5342,9 +5342,12 @@ Seja direto e objetivo.
                     <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
                         <button onclick="
                             const btns = window.parent.document.querySelectorAll('button');
-                            for (const b of btns) {
-                                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{ b.click(); break; }}
-                            }
+                            for (const b of btns) {{
+                                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{
+                                    b.click();
+                                    break;
+                                }}
+                            }}
                         " style="
                             width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
                             background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
