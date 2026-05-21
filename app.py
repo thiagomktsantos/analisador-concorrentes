@@ -3294,12 +3294,12 @@ html, body { background:transparent; overflow:hidden; }
     ])
     st.markdown(f"<style>{ghost_barra_css}</style>", unsafe_allow_html=True)
 
-    if st.button("_toggle_edicao_ads_", key="btn_toggle_edicao_ads"):
+    if st.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads"):
         st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
         st.rerun()
 
     for i in range(len(empresas_configuradas)):
-        if st.button(f"_aba_ads_{i}_", key=f"btn_aba_ads_{i}"):
+        if st.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}"):
             st.session_state.ads_aba_ativa = i
             st.rerun()
 
