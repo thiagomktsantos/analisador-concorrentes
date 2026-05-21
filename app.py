@@ -3846,32 +3846,56 @@ setTimeout(ajustarAltura, 100);
             border-radius: 0 0 12px 12px !important;
             padding: 10px 14px !important;
             gap: 10px !important;
+            align-items: center !important;
         }}
+
+        /* ── Input de texto ── */
         .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
             background-color: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 7px !important;
-            font-size: 15px !important;
+            border: 2px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            padding: 0 14px !important;
+            font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #111827 !important;
+            color: #374151 !important;
+            box-shadow: none !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
-            font-size: 15px !important;
+            font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
             color: #9ca3af !important;
         }}
+        .st-key-{filtros_key} div[data-testid="stTextInput"] > div {{
+            background-color: #ffffff !important;
+        }}
+
+        /* ── Selects ── */
         .st-key-{filtros_key} div[data-baseweb="select"] > div {{
             background-color: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 7px !important;
-            font-size: 15px !important;
+            border: 2px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            padding: 0 14px !important;
+            font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #111827 !important;
+            color: #374151 !important;
+            box-shadow: none !important;
+            align-items: center !important;
         }}
-        .st-key-{filtros_key} div[data-baseweb="select"] span {{
-            font-size: 15px !important;
+        .st-key-{filtros_key} div[data-baseweb="select"] span,
+        .st-key-{filtros_key} div[data-baseweb="select"] [data-testid="stSelectboxLabel"] {{
+            font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #111827 !important;
+            color: #374151 !important;
+            line-height: 42px !important;
+        }}
+        .st-key-{filtros_key} div[data-baseweb="select"] svg {{
+            color: #9ca3af !important;
+            width: 16px !important;
+            height: 16px !important;
         }}
         </style>
         """, unsafe_allow_html=True)
