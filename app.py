@@ -3850,49 +3850,62 @@ setTimeout(ajustarAltura, 100);
         }}
 
        /* ── Wrapper do input — idêntico ao select ── */
-        .st-key-{filtros_key} div[data-testid="stTextInput"] > div,
-        .st-key-{filtros_key} div[data-testid="stTextInput"] > div > div {{
-            background-color: #ffffff !important;
+        .st-key-{filtros_key} div[data-testid="stTextInput"] {{
             height: 43px !important;
             min-height: 43px !important;
         }}
-        .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="base-input"] {{
+        .st-key-{filtros_key} div[data-testid="stTextInput"] > div,
+        .st-key-{filtros_key} div[data-testid="stTextInput"] > div > div,
+        .st-key-{filtros_key} div[data-testid="stTextInput"] > div > div > div {{
             height: 43px !important;
             min-height: 43px !important;
-            display: flex !important;
-            align-items: center !important;
-            padding: 0 !important;
             background-color: #ffffff !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="input-container"] {{
             height: 43px !important;
             min-height: 43px !important;
-            display: flex !important;
-            align-items: center !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
             background-color: #ffffff !important;
             box-shadow: none !important;
             padding: 0 14px !important;
+            display: flex !important;
+            align-items: center !important;
+        }}
+        .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="base-input"] {{
+            height: 43px !important;
+            min-height: 43px !important;
+            background-color: #ffffff !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
             height: 43px !important;
             min-height: 43px !important;
             border: none !important;
-            border-radius: 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
             padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #6b7280 !important;
-            box-shadow: none !important;
-            background: transparent !important;
+            color: #374151 !important;
             line-height: 43px !important;
-            outline: none !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #6b7280 !important;
+            color: #9ca3af !important;
+        }}
+        .st-key-{filtros_key} div[data-testid="stTextInput"] input:focus {{
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }}
+        .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="input-container"]:focus-within {{
+            border-color: #3a9fd6 !important;
         }}
 
         /* ── Wrapper do select ── */
