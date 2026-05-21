@@ -812,7 +812,6 @@ if not st.session_state.logado:
             {'<img src="' + logo_src + '" style="width:200px;" />' if logo_src else '<div style="font-size:24px;font-weight:700;color:#1a2234">Marketylics</div>'}
             <div style="font-size:10.9px;color:#3a9fd6;font-weight:600;letter-spacing:2px;text-transform:uppercase">Competitive Intelligence</div>
         </div>
-        <hr style="border:none;border-top:1px solid #f3f4f6;margin:0 0 10px 0" />
         """, unsafe_allow_html=True)
 
         aba = st.tabs(["Já tenho conta", "Criar conta"])
