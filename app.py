@@ -3834,54 +3834,64 @@ setTimeout(ajustarAltura, 100);
             </div>
         </div>""", unsafe_allow_html=True)
  
-        # ── FIX 1: Filtros com fundo branco explícito ──────────────────
-        st.markdown("""
+        # ── FIX 1: Filtros com fundo branco e borda ──────────────────
+        filtros_key = f"filtros_{safe_key(ck)}"
+        st.markdown(f"""
         <style>
         div[data-testid="stTextInput"] input,
         div[data-baseweb="select"] > div,
         div[data-baseweb="select"] > div > div,
-        div[data-baseweb="select"] input {
+        div[data-baseweb="select"] input {{
             background-color: #ffffff !important;
             background: #ffffff !important;
-        }
+        }}
+        .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
+            background: #f9fafb !important;
+            border: 1px solid #e5e7eb !important;
+            border-top: none !important;
+            border-radius: 0 0 8px 8px !important;
+            padding: 10px 12px !important;
+            gap: 10px !important;
+        }}
         </style>
         """, unsafe_allow_html=True)
- 
+
         import unicodedata as _ud
         def _limpar_formato(s):
             return ''.join(c for c in s if _ud.category(c) not in ('So','Sm','Sk','Mn')).strip()
         formatos_disponiveis = sorted(set(_limpar_formato(a["formato"]) for a in ads_list))
- 
-        fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
-        with fcol1:
-            busca_texto = st.text_input(
-                "Pesquisar no copy",
-                placeholder="Pesquisar no copy…",
-                key=f"ads_busca_{safe_key(ck)}",
-                label_visibility="collapsed",
-            )
-        with fcol2:
-            filtro_fmt = st.selectbox(
-                "Tipo",
-                ["Tipo (todos)"] + formatos_disponiveis,
-                key=f"ads_fmt_{safe_key(ck)}",
-                label_visibility="collapsed",
-            )
-        with fcol3:
-            plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-            filtro_plat = st.selectbox(
-                "Plataforma",
-                ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
-                key=f"ads_plat_{safe_key(ck)}",
-                label_visibility="collapsed",
-            )
-        with fcol4:
-            filtro_status = st.selectbox(
-                "Status",
-                ["Status (todos)", "Ativos", "Inativos (histórico)"],
-                key=f"ads_status_{safe_key(ck)}",
-                label_visibility="collapsed",
-            )
+
+        with st.container(key=filtros_key):
+            fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
+            with fcol1:
+                busca_texto = st.text_input(
+                    "Pesquisar no copy",
+                    placeholder="Pesquisar no copy…",
+                    key=f"ads_busca_{safe_key(ck)}",
+                    label_visibility="collapsed",
+                )
+            with fcol2:
+                filtro_fmt = st.selectbox(
+                    "Tipo",
+                    ["Tipo (todos)"] + formatos_disponiveis,
+                    key=f"ads_fmt_{safe_key(ck)}",
+                    label_visibility="collapsed",
+                )
+            with fcol3:
+                plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
+                filtro_plat = st.selectbox(
+                    "Plataforma",
+                    ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
+                    key=f"ads_plat_{safe_key(ck)}",
+                    label_visibility="collapsed",
+                )
+            with fcol4:
+                filtro_status = st.selectbox(
+                    "Status",
+                    ["Status (todos)", "Ativos", "Inativos (histórico)"],
+                    key=f"ads_status_{safe_key(ck)}",
+                    label_visibility="collapsed",
+                )
  
         ads_f = ads_list
         if busca_texto:
