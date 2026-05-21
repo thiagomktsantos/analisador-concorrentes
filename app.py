@@ -3837,12 +3837,11 @@ setTimeout(ajustarAltura, 100);
         st.markdown(f"""
         <style>
         .st-key-{filtros_key} {{
-            margin-top: -15px !important;
+            margin-top: -16px !important;
         }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
             background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
-            border-top: none !important;
             border-radius: 0 0 12px 12px !important;
             padding: 12px 14px !important;
             gap: 10px !important;
