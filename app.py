@@ -3313,121 +3313,144 @@ html, body { background:transparent; overflow:hidden; }
         abas_html_items += f'<button class="aba {active_class}" onclick="triggerAba({i})">{nome}</button>'
 
     components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 .barra {{
     background:#fff;
     border:1px solid #e5e7eb;
     border-radius:12px;
     display:flex;
-    align-items:center;
-    height:52px;
+    align-items:stretch;
+    height:48px;
     overflow:hidden;
 }}
 .barra-label {{
-    padding:0 18px;
-    font-size:11px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:0 14px;
+    border-right:1px solid #f3f4f6;
+    flex-shrink:0;
+}}
+.barra-label-icon {{
+    width:16px;height:16px;opacity:0.4;flex-shrink:0;
+}}
+.barra-label-txt {{
+    font-size:10.5px;
     font-weight:700;
     color:#9ca3af;
     text-transform:uppercase;
     letter-spacing:1px;
     white-space:nowrap;
-    border-right:1px solid #e5e7eb;
-    height:100%;
-    display:flex;
-    align-items:center;
-    flex-shrink:0;
 }}
 .abas-wrap {{
     display:flex;
     align-items:center;
     flex:1;
-    height:100%;
+    padding:6px 8px;
+    gap:4px;
     overflow:hidden;
 }}
 .aba {{
-    height:100%;
-    padding:0 24px;
+    height:36px;
+    padding:0 18px;
+    border-radius:7px;
+    border:1px solid transparent;
+    background:transparent;
     font-size:14px;
     font-weight:600;
     color:#9ca3af;
-    background:transparent;
-    border:none;
-    border-right:1px solid #f3f4f6;
     cursor:pointer;
     font-family:'DM Sans',sans-serif;
-    transition:all 0.15s;
+    transition:all 0.12s;
     white-space:nowrap;
+    flex-shrink:0;
 }}
-.aba:hover {{ color:#374151; background:#f9fafb; }}
+.aba:hover {{ background:#f3f4f6; color:#374151; }}
 .aba.active {{
-    color:#fff;
     background:#0e2a47;
+    color:#fff;
+    border-color:#0e2a47;
+}}
+.divider {{
+    width:1px;
+    background:#f3f4f6;
+    align-self:stretch;
+    margin:8px 0;
+    flex-shrink:0;
+}}
+.btn-wrap {{
+    display:flex;
+    align-items:center;
+    padding:0 10px;
+    border-left:1px solid #f3f4f6;
+    flex-shrink:0;
 }}
 .btn-editar {{
-    height:36px;
-    margin:0 10px;
-    padding:0 16px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    height:34px;
+    padding:0 14px;
     border:1px solid #e5e7eb;
-    border-radius:8px;
+    border-radius:7px;
     background:#fff;
     font-size:13px;
-    font-weight:700;
+    font-weight:600;
     color:#374151;
     cursor:pointer;
     font-family:'DM Sans',sans-serif;
     white-space:nowrap;
-    flex-shrink:0;
-    transition:all 0.15s;
-    display:flex;
-    align-items:center;
-    gap:6px;
+    transition:all 0.12s;
 }}
-.btn-editar:hover {{ background:#f3f4f6; border-color:#9ca3af; }}
+.btn-editar:hover {{ background:#f3f4f6; border-color:#d1d5db; }}
 .btn-editar.open {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
+.btn-editar svg {{ flex-shrink:0; }}
 </style>
 <div class="barra">
-    <div class="barra-label">Páginas Configuradas</div>
+    <div class="barra-label">
+        <svg class="barra-label-icon" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        <span class="barra-label-txt">Páginas configuradas</span>
+    </div>
     <div class="abas-wrap">
         {abas_html_items}
     </div>
-    <button class="btn-editar {'open' if editando else ''}" onclick="triggerToggle()">
-        {'✕ Fechar' if editando else '⚙️ Editar Páginas'}
-    </button>
+    <div class="btn-wrap">
+        <button class="btn-editar {'open' if editando else ''}" onclick="triggerToggle()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            {'Fechar' if editando else 'Editar páginas'}
+        </button>
+    </div>
 </div>
 <script>
 function trigger(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {{
         var txt = (btns[i].textContent || btns[i].innerText || '').trim();
-        if (txt === label) {{
-            btns[i].click();
-            return;
-        }}
+        if (txt === label) {{ btns[i].click(); return; }}
     }}
 }}
-function triggerToggle() {{
-    trigger('_toggle_edicao_ads_');
-}}
-function triggerAba(i) {{
-    trigger('_aba_ads_' + i + '_');
-}}
-function ajustarAltura() {{
+function triggerToggle() {{ trigger('_toggle_edicao_ads_'); }}
+function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
+(function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{
-            if (iframes[i].contentWindow === window) {{
-                iframes[i].style.height = '60px';
-                break;
-            }}
-        }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = '56px';
+            iframes[i].style.marginBottom = '-8px';
+            break;
+        }} }} catch(e) {{}}
     }}
-}}
-setTimeout(ajustarAltura, 50);
+}})();
 </script>
-""", height=60, scrolling=False)
+""", height=56, scrolling=False)
 
     # ── Painel de edição (expansível) ────────────────────────────────
     if st.session_state.ads_mostrar_edicao:
