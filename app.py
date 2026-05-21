@@ -3338,9 +3338,9 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     width:16px;height:16px;opacity:0.4;flex-shrink:0;
 }}
 .barra-label-txt {{
-    font-size:10.5px;
+    font-size:12px;
     font-weight:700;
-    color:#9ca3af;
+    color:#000000;
     text-transform:uppercase;
     letter-spacing:1px;
     white-space:nowrap;
@@ -3361,7 +3361,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     background:transparent;
     font-size:14px;
     font-weight:600;
-    color:#9ca3af;
+    color:#6d6c6c;
     cursor:pointer;
     font-family:'DM Sans',sans-serif;
     transition:all 0.12s;
