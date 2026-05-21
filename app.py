@@ -594,7 +594,7 @@ div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"]
     text-transform: uppercase;
 }
 div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-    color: #111827 !important; border-bottom: 2px solid #111827 !important;
+    color: #fff !important; backround-color:#111827 !important; border-bottom: 2px solid #111827 !important;
 }
 div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
 
