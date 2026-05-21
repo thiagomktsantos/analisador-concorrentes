@@ -573,10 +573,23 @@ div[data-testid="stTabs"] > div:first-child {
     justify-content: center !important; border-bottom: 2px solid #e5e7eb !important; gap: 0 !important;
 }
 div[data-testid="stTabs"] button[role="tab"] {
-    font-size: 18px !important; font-weight: 900 !important;
-    font-family: 'DM Sans', sans-serif !important; padding: 10px 32px !important;
-    color: #9ca3af !important; border-bottom: 2px solid transparent !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    padding: 10px 32px !important;
+    color: #9ca3af !important;
+    border-bottom: 2px solid transparent !important;
     margin-bottom: -2px !important;
+}
+div[data-testid="stTabs"] button[role="tab"] p,
+div[data-testid="stTabs"] button[role="tab"] div,
+div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"],
+div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"] p {
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
     color: #111827 !important; border-bottom: 2px solid #111827 !important;
