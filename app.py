@@ -1081,15 +1081,16 @@ body {{
 </div>
 </body>
 <script>
-function nav(page) {{
+function nav(page) {
+    var norm = page.replace(/\s+/g, ' ').trim();
     const buttons = window.parent.document.querySelectorAll('[data-testid="stSidebar"] button');
-    for (const btn of buttons) {{
-        if (btn.innerText.trim() === page) {{
+    for (const btn of buttons) {
+        if ((btn.innerText || btn.textContent || '').replace(/\s+/g, ' ').trim() === norm) {
             btn.click();
             break;
-        }}
-    }}
-}}
+        }
+    }
+}
 </script>
 """
 
@@ -2025,7 +2026,7 @@ function acionar(key) {{
     var label = keyMap[key];
     var found = [];
     btns.forEach(function(b) {{
-        if (b.innerText.trim() === label) found.push(b);
+        if ((b.innerText || b.textContent || '').replace(/\s+/g, ' ').trim() === label) found.push(b);
     }});
     if (found[{i}]) {{ found[{i}].click(); return; }}
     if (found[0])   {{ found[0].click(); }}
@@ -2280,16 +2281,14 @@ html, body {{
     </div>
 </div>
 <script>
-function triggerAnalise(idx) {{
-    var targetText = '_site_ia_trigger_' + idx + '_';
+function triggerAnalise(idx) {
+    var targetText = ('_site_ia_trigger_' + idx + '_').replace(/\s+/g, ' ').trim();
     var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-        if (btns[i].innerText.trim() === targetText) {{
-            btns[i].click();
-            return;
-        }}
-    }}
-}}
+    for (var i = 0; i < btns.length; i++) {
+        var txt = (btns[i].innerText || btns[i].textContent || '').replace(/\s+/g, ' ').trim();
+        if (txt === targetText) { btns[i].click(); return; }
+    }
+}
  
 function ajustarAltura() {{
     var card = document.getElementById('card_{uid}');
@@ -3399,13 +3398,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     </button>
 </div>
 <script>
-function trigger(label) {{
+function trigger(label) {
+    var norm = label.replace(/\s+/g, ' ').trim();
     var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-        var txt = (btns[i].textContent || btns[i].innerText || '').trim();
-        if (txt === label) {{ btns[i].click(); return; }}
-    }}
-}}
+    for (var i = 0; i < btns.length; i++) {
+        var txt = (btns[i].textContent || btns[i].innerText || '').replace(/\s+/g, ' ').trim();
+        if (txt === norm) { btns[i].click(); return; }
+    }
+}
 function triggerToggle() {{
     trigger('_toggle_edicao_ads_');
 }}
@@ -3512,10 +3512,15 @@ body {{ padding-bottom:4px; }}
     </button>
 </div>
 <script>
-function triggerBtn(key) {{
+function triggerBtn(key) {
+    var norm = key.replace(/\s+/g, ' ').trim();
     var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{ if (b.innerText.trim() === key) {{ b.click(); return; }} }}
-}}
+    for (var b of btns) {
+        if ((b.innerText || b.textContent || '').replace(/\s+/g, ' ').trim() === norm) {
+            b.click(); return;
+        }
+    }
+}
 function ajustarAltura() {{
     var h = document.body.scrollHeight;
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -4322,7 +4327,7 @@ function triggerIaAd(uid,idx){{
     var targetText='__ia_ad_'+uid+'__';
     var btns=window.parent.document.querySelectorAll('button');
     for(var b of btns){{
-        var txt=(b.textContent||b.innerText||'').trim();
+        var txt=(b.textContent||b.innerText||'').replace(/\s+/g,' ').trim();
         if(txt===targetText){{var iaBtn=document.getElementById('ia_btn_'+uid);if(iaBtn){{iaBtn.classList.add('loading');iaBtn.textContent='Analisando…';}}b.click();return;}}
     }}
 }}
