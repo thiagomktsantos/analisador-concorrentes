@@ -3844,14 +3844,6 @@ setTimeout(ajustarAltura, 100);
             background-color: #ffffff !important;
             background: #ffffff !important;
         }
-        div[data-testid="stHorizontalBlock"] {
-            background: #f9fafb !important;
-            border: 1px solid #e5e7eb !important;
-            border-top: none !important;
-            border-radius: 0 0 4px 4px !important;
-            padding: 10px 12px !important;
-            gap: 10px !important;
-        }
         </style>
         """, unsafe_allow_html=True)
  
