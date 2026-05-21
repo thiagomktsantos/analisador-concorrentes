@@ -596,7 +596,7 @@ div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"]
 div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
     color: #fff !important; backround-color:#111827 !important; border-bottom: 2px solid #111827 !important;
 }
-div[data-testid="stTabs"] button[role="tab"]:hover { color: #374151 !important; background: transparent !important; }
+
 
 .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
 .sb-logo-sub { font-size:8.4px; color:#3a9fd6; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-align:center; font-family:'DM Sans',sans-serif; }
