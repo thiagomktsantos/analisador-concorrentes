@@ -3849,7 +3849,7 @@ setTimeout(ajustarAltura, 100);
             align-items: center !important;
         }}
 
-        /* ── Wrapper do input ── */
+       /* ── Wrapper do input — idêntico ao select ── */
         .st-key-{filtros_key} div[data-testid="stTextInput"] > div,
         .st-key-{filtros_key} div[data-testid="stTextInput"] > div > div {{
             background-color: #ffffff !important;
@@ -3857,41 +3857,42 @@ setTimeout(ajustarAltura, 100);
             min-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="base-input"] {{
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 43px !important;
+            min-height: 43px !important;
             display: flex !important;
             align-items: center !important;
             padding: 0 !important;
             background-color: #ffffff !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="input-container"] {{
-            height: 44px !important;
-            min-height: 44px !important;
+            height: 43px !important;
+            min-height: 43px !important;
             display: flex !important;
             align-items: center !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
             background-color: #ffffff !important;
             box-shadow: none !important;
-            padding: 0 !important;
+            padding: 0 14px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
-            height: 100% !important;
-            min-height: unset !important;
+            height: 43px !important;
+            min-height: 43px !important;
             border: none !important;
-            border-radius: 8px !important;
-            padding: 0 14px !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
             color: #6b7280 !important;
             box-shadow: none !important;
             background: transparent !important;
-            line-height: normal !important;
+            line-height: 43px !important;
+            outline: none !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #555 !important;
+            color: #6b7280 !important;
         }}
 
         /* ── Wrapper do select ── */
