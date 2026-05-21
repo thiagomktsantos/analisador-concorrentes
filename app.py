@@ -587,7 +587,7 @@ div[data-testid="stTabs"] button[role="tab"] div,
 div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"],
 div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"] p {
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     margin: 0 !important;
     padding: 0 !important;
