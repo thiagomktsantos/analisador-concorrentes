@@ -3845,12 +3845,15 @@ setTimeout(ajustarAltura, 100);
             background-color: #ffffff !important;
             background: #ffffff !important;
         }}
+        .st-key-{filtros_key} {{
+            margin-top: -12px !important;
+        }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
-            background: #f9fafb !important;
+            background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
             border-top: none !important;
-            border-radius: 0 0 8px 8px !important;
-            padding: 10px 12px !important;
+            border-radius: 0 0 12px 12px !important;
+            padding: 10px 14px !important;
             gap: 10px !important;
         }}
         </style>
