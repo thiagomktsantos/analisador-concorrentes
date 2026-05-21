@@ -3399,11 +3399,13 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
 </div>
 <script>
 function trigger(label) {{
-    var norm = label.replace(/\\s+/g, '').toLowerCase();
     var btns = window.parent.document.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {{
-        var txt = (btns[i].textContent || btns[i].innerText || '').replace(/\\s+/g, '').toLowerCase();
-        if (txt === norm) {{ btns[i].click(); return; }}
+        var txt = (btns[i].textContent || btns[i].innerText || '').trim();
+        if (txt === label) {{
+            btns[i].click();
+            return;
+        }}
     }}
 }}
 function triggerToggle() {{
@@ -3415,9 +3417,12 @@ function triggerAba(i) {{
 function ajustarAltura() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = '60px'; break;
-        }} }} catch(e) {{}}
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = '60px';
+                break;
+            }}
+        }} catch(e) {{}}
     }}
 }}
 setTimeout(ajustarAltura, 50);
