@@ -3855,10 +3855,20 @@ setTimeout(ajustarAltura, 100);
             font-family: 'DM Sans', sans-serif !important;
             color: #111827 !important;
         }}
+        .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
+            font-size: 15px !important;
+            font-family: 'DM Sans', sans-serif !important;
+            color: #9ca3af !important;
+        }}
         .st-key-{filtros_key} div[data-baseweb="select"] > div {{
             background-color: #ffffff !important;
             border: 1px solid #e5e7eb !important;
             border-radius: 7px !important;
+            font-size: 15px !important;
+            font-family: 'DM Sans', sans-serif !important;
+            color: #111827 !important;
+        }}
+        .st-key-{filtros_key} div[data-baseweb="select"] span {{
             font-size: 15px !important;
             font-family: 'DM Sans', sans-serif !important;
             color: #111827 !important;
