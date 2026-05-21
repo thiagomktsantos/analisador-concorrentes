@@ -3839,13 +3839,13 @@ setTimeout(ajustarAltura, 100);
         div[data-testid="stTextInput"] input {{
             background-color: #ffffff !important;
             background: #ffffff !important;
-            border: 1.5px solid #b0b7c3 !important;
+            border: 2px solid #e5e7eb !important;
             border-radius: 7px !important;
         }}
         div[data-baseweb="select"] > div:first-child {{
             background-color: #ffffff !important;
             background: #ffffff !important;
-            border: 1.5px solid #b0b7c3 !important;
+            border: 2px solid #e5e7eb !important;
             border-radius: 7px !important;
         }}
         .st-key-{filtros_key} {{
