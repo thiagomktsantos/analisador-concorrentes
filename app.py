@@ -3398,21 +3398,20 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
     </button>
 </div>
 <script>
-function trigger(label) {
-    var norm = label.replace(/\s+/g, '').toLowerCase();
+function trigger(label) {{
+    var norm = label.replace(/\\s+/g, '').toLowerCase();
     var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-        var txt = (btns[i].textContent || btns[i].innerText || '').replace(/\s+/g, '').toLowerCase();
-        console.log('buscando:', norm, '| encontrado:', txt, '| match:', txt === norm);
-        if (txt === norm) { btns[i].click(); return; }
-    }
-}
-function triggerToggle() {
+    for (var i = 0; i < btns.length; i++) {{
+        var txt = (btns[i].textContent || btns[i].innerText || '').replace(/\\s+/g, '').toLowerCase();
+        if (txt === norm) {{ btns[i].click(); return; }}
+    }}
+}}
+function triggerToggle() {{
     trigger('_toggle_edicao_ads_');
-}
-function triggerAba(i) {
+}}
+function triggerAba(i) {{
     trigger('_aba_ads_' + i + '_');
-}
+}}
 function ajustarAltura() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
