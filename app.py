@@ -3453,55 +3453,116 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 """, height=56, scrolling=False)
 
     # ── Painel de edição (expansível) ────────────────────────────────
-    if st.session_state.ads_mostrar_edicao:
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+if st.session_state.ads_mostrar_edicao:
 
-        if empresas_configuradas:
-            ghost_css = "\n".join([
-                f".st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
-                for ci, e in enumerate(empresas_configuradas)
-            ])
-            st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
+        st.markdown("""
+        <style>
+        /* Painel de expansão — visual destacado e estreito */
+        .ads-edit-panel,
+        .ads-edit-panel > div,
+        .ads-edit-panel > div > div,
+        .ads-edit-panel [data-testid="stVerticalBlock"],
+        .ads-edit-panel [data-testid="stHorizontalBlock"],
+        .ads-edit-panel [data-testid="column"],
+        .ads-edit-panel [data-testid="column"] > div,
+        .ads-edit-panel .stElementContainer,
+        .ads-edit-panel .stElementContainer > div {
+            background-color: #eff6ff !important;
+            background: #eff6ff !important;
+        }
+        .ads-edit-panel [data-testid="stVerticalBlockBorderWrapper"] {
+            background: #eff6ff !important;
+            border: 1.5px dashed #93c5fd !important;
+            border-radius: 0 0 14px 14px !important;
+            margin: -6px 32px 0 32px !important;
+            padding: 20px 24px 16px 24px !important;
+            box-shadow: none !important;
+        }
+        /* cards dentro do painel herdam fundo */
+        .ads-edit-panel [data-testid="stVerticalBlockBorderWrapper"]
+            [data-testid="stVerticalBlockBorderWrapper"] {
+            background: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 14px !important;
+            margin: 0 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-            edit_triggers = {}
-            for ci, e in enumerate(empresas_configuradas):
-                sk = safe_key(e["nome"])
-                triggered = st.button(
-                    f"cfg_edit_trigger_{sk}_{ci}",
-                    key=f"cfg_edit_trigger_{sk}_{ci}",
-                )
-                edit_triggers[ci] = triggered
+        with st.container(border=True, key="ads_edit_panel"):
+            st.markdown(f"""
+            <style>
+            .st-key-ads_edit_panel,
+            .st-key-ads_edit_panel > div,
+            .st-key-ads_edit_panel > div > div,
+            .st-key-ads_edit_panel [data-testid="stVerticalBlock"],
+            .st-key-ads_edit_panel [data-testid="stHorizontalBlock"],
+            .st-key-ads_edit_panel [data-testid="column"],
+            .st-key-ads_edit_panel [data-testid="column"] > div,
+            .st-key-ads_edit_panel .stElementContainer,
+            .st-key-ads_edit_panel .stElementContainer > div {{
+                background-color: #eff6ff !important;
+                background: #eff6ff !important;
+            }}
+            .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] {{
+                background: #eff6ff !important;
+                border: 1.5px dashed #93c5fd !important;
+                border-radius: 0 0 14px 14px !important;
+                margin-top: -8px !important;
+                margin-left: 32px !important;
+                margin-right: 32px !important;
+                padding: 20px 24px 16px !important;
+                box-shadow: none !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
 
-            for ci, e in enumerate(empresas_configuradas):
-                if edit_triggers[ci]:
-                    st.session_state.ads_editando_empresa = e["nome"]
-                    st.session_state.ads_onboarding_empresa = None
-                    st.session_state.ads_onboarding_paginas = []
-                    st.rerun()
+            if empresas_configuradas:
+                ghost_css = "\n".join([
+                    f".st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
+                    for ci, e in enumerate(empresas_configuradas)
+                ])
+                st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
 
-            cfg_cols = st.columns(2)
-            for ci, e in enumerate(empresas_configuradas):
-                ck       = e["nome"]
-                sk       = safe_key(ck)
-                is_minha = e["tipo"] == "minha"
-                badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-                badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-                badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-                badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-                ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-                is_editing = (st.session_state.ads_editando_empresa == ck)
-                avatar_html = _avatar_html_empresa(e, size=42)
-                edit_trigger_key = f"cfg_edit_trigger_{sk}_{ci}"
+                edit_triggers = {}
+                for ci, e in enumerate(empresas_configuradas):
+                    sk = safe_key(e["nome"])
+                    triggered = st.button(
+                        f"cfg_edit_trigger_{sk}_{ci}",
+                        key=f"cfg_edit_trigger_{sk}_{ci}",
+                    )
+                    edit_triggers[ci] = triggered
 
-                with cfg_cols[ci % 2]:
-                    if not is_editing:
-                        components.html(f"""
+                for ci, e in enumerate(empresas_configuradas):
+                    if edit_triggers[ci]:
+                        st.session_state.ads_editando_empresa = e["nome"]
+                        st.session_state.ads_onboarding_empresa = None
+                        st.session_state.ads_onboarding_paginas = []
+                        st.rerun()
+
+                cfg_cols = st.columns(2)
+                for ci, e in enumerate(empresas_configuradas):
+                    ck       = e["nome"]
+                    sk       = safe_key(ck)
+                    is_minha = e["tipo"] == "minha"
+                    badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+                    badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+                    badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+                    badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+                    ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+                    is_editing = (st.session_state.ads_editando_empresa == ck)
+                    avatar_html = _avatar_html_empresa(e, size=42)
+                    edit_trigger_key = f"cfg_edit_trigger_{sk}_{ci}"
+
+                    with cfg_cols[ci % 2]:
+                        if not is_editing:
+                            components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 body {{ padding-bottom:4px; }}
-.card {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
+.card {{ background:#ffffff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
 .card-body {{ display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid #f3f4f6; }}
 .info {{ flex:1; min-width:0; }}
 .nome {{ font-size:16px; font-weight:700; color:#111827; margin-bottom:4px; }}
@@ -3563,181 +3624,183 @@ setTimeout(ajustarAltura, 100);
 </script>
 """, height=118, scrolling=False)
 
-                    else:
-                        novo_id_key  = f"_inline_edit_{sk}_{ci}"
-                        buscar_key   = f"buscar_cfg_{sk}_{ci}"
-                        salvar_key   = f"salvar_cfg_{sk}_{ci}"
-                        cancel_key   = f"cancel_edit_{sk}_{ci}"
+                        else:
+                            # ... (keep the existing editing form code unchanged)
+                            novo_id_key  = f"_inline_edit_{sk}_{ci}"
+                            buscar_key   = f"buscar_cfg_{sk}_{ci}"
+                            salvar_key   = f"salvar_cfg_{sk}_{ci}"
+                            cancel_key   = f"cancel_edit_{sk}_{ci}"
 
-                        st.markdown(f"""
-                        <div style='background:#fff;border:1.5px solid #3a9fd6;border-radius:14px;
-                                    overflow:hidden;margin-bottom:4px'>
-                            <div style='display:flex;align-items:center;gap:14px;padding:16px 20px'>
-                                {avatar_html}
-                                <div style='flex:1;min-width:0'>
-                                    <div style='font-size:16px;font-weight:700;color:#111827'>{ck}</div>
-                                    <span style='background:{badge_bg};color:{badge_txt};
-                                                 border:1px solid {badge_brd};padding:2px 10px;
-                                                 border-radius:20px;font-size:11px;font-weight:600'>
-                                        {badge_lbl}
-                                    </span>
+                            st.markdown(f"""
+                            <div style='background:#fff;border:1.5px solid #3a9fd6;border-radius:14px;
+                                        overflow:hidden;margin-bottom:4px'>
+                                <div style='display:flex;align-items:center;gap:14px;padding:16px 20px'>
+                                    {avatar_html}
+                                    <div style='flex:1;min-width:0'>
+                                        <div style='font-size:16px;font-weight:700;color:#111827'>{ck}</div>
+                                        <span style='background:{badge_bg};color:{badge_txt};
+                                                     border:1px solid {badge_brd};padding:2px 10px;
+                                                     border-radius:20px;font-size:11px;font-weight:600'>
+                                            {badge_lbl}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
 
-                        st.markdown(f"""
-                        <style>
-                        .st-key-inline_edit_{sk}_{ci},
-                        .st-key-inline_edit_{sk}_{ci} > div,
-                        .st-key-inline_edit_{sk}_{ci} > div > div,
-                        .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"],
-                        .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"],
-                        .st-key-inline_edit_{sk}_{ci} .stElementContainer,
-                        .st-key-inline_edit_{sk}_{ci} .stElementContainer > div,
-                        .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"],
-                        .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div,
-                        .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] input {{
-                            background-color: #ffffff !important;
-                            background: #ffffff !important;
-                        }}
-                        .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"] {{
-                            border: 1.5px solid #e5e7eb !important;
-                            border-radius: 14px !important;
-                            padding: 16px 20px !important;
-                        }}
-                        .st-key-inline_edit_{sk}_{ci} button[kind="primary"] {{
-                            background: #0780c0 !important;
-                            color: #ffffff !important;
-                            border: none !important;
-                        }}
-                        </style>
-                        """, unsafe_allow_html=True)
+                            st.markdown(f"""
+                            <style>
+                            .st-key-inline_edit_{sk}_{ci},
+                            .st-key-inline_edit_{sk}_{ci} > div,
+                            .st-key-inline_edit_{sk}_{ci} > div > div,
+                            .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"],
+                            .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"],
+                            .st-key-inline_edit_{sk}_{ci} .stElementContainer,
+                            .st-key-inline_edit_{sk}_{ci} .stElementContainer > div,
+                            .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"],
+                            .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div,
+                            .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] input {{
+                                background-color: #ffffff !important;
+                                background: #ffffff !important;
+                            }}
+                            .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"] {{
+                                border: 1.5px solid #e5e7eb !important;
+                                border-radius: 14px !important;
+                                padding: 16px 20px !important;
+                            }}
+                            .st-key-inline_edit_{sk}_{ci} button[kind="primary"] {{
+                                background: #0780c0 !important;
+                                color: #ffffff !important;
+                                border: none !important;
+                            }}
+                            </style>
+                            """, unsafe_allow_html=True)
 
-                        with st.container(border=True, key=f"inline_edit_{sk}_{ci}"):
-                            st.markdown(
-                                "<div style='font-size:11px;font-weight:700;color:#9ca3af;"
-                                "text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px 0'>"
-                                "Nome ou ID numérico da página</div>",
-                                unsafe_allow_html=True,
-                            )
-                            novo_id = st.text_input(
-                                "ID ou nome",
-                                value=ads_id_atual,
-                                key=novo_id_key,
-                                label_visibility="collapsed",
-                                placeholder="Ex: Nome da Página  ou  102803918240129",
-                            )
-                            col_b, col_s, col_c = st.columns([2, 2, 1])
-                            with col_b:
-                                buscar_clicked = st.button("Buscar páginas", key=buscar_key,
-                                                           use_container_width=True, type="primary")
-                            with col_s:
-                                salvar_clicked = st.button("Salvar Página", key=salvar_key,
-                                                           use_container_width=True)
-                            with col_c:
-                                cancel_clicked = st.button("Cancelar", key=cancel_key,
-                                                           use_container_width=True)
+                            with st.container(border=True, key=f"inline_edit_{sk}_{ci}"):
+                                st.markdown(
+                                    "<div style='font-size:11px;font-weight:700;color:#9ca3af;"
+                                    "text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px 0'>"
+                                    "Nome ou ID numérico da página</div>",
+                                    unsafe_allow_html=True,
+                                )
+                                novo_id = st.text_input(
+                                    "ID ou nome",
+                                    value=ads_id_atual,
+                                    key=novo_id_key,
+                                    label_visibility="collapsed",
+                                    placeholder="Ex: Nome da Página  ou  102803918240129",
+                                )
+                                col_b, col_s, col_c = st.columns([2, 2, 1])
+                                with col_b:
+                                    buscar_clicked = st.button("Buscar páginas", key=buscar_key,
+                                                               use_container_width=True, type="primary")
+                                with col_s:
+                                    salvar_clicked = st.button("Salvar Página", key=salvar_key,
+                                                               use_container_width=True)
+                                with col_c:
+                                    cancel_clicked = st.button("Cancelar", key=cancel_key,
+                                                               use_container_width=True)
 
-                        if buscar_clicked and novo_id.strip():
-                            st.session_state.ads_onboarding_empresa = ck
-                            st.session_state.ads_onboarding_termo   = novo_id.strip()
-                            with st.spinner(f"Buscando «{novo_id.strip()}»…"):
-                                paginas = buscar_paginas_facebook(novo_id.strip())
-                            st.session_state.ads_onboarding_paginas = paginas
-                            st.rerun()
+                            if buscar_clicked and novo_id.strip():
+                                st.session_state.ads_onboarding_empresa = ck
+                                st.session_state.ads_onboarding_termo   = novo_id.strip()
+                                with st.spinner(f"Buscando «{novo_id.strip()}»…"):
+                                    paginas = buscar_paginas_facebook(novo_id.strip())
+                                st.session_state.ads_onboarding_paginas = paginas
+                                st.rerun()
 
-                        if salvar_clicked and novo_id.strip():
-                            salvar_ads_id(e, novo_id.strip())
-                            st.session_state.ads_editando_empresa    = None
-                            st.session_state.ads_onboarding_empresa  = None
-                            st.session_state.ads_onboarding_paginas  = []
-                            st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
-                            st.rerun()
+                            if salvar_clicked and novo_id.strip():
+                                salvar_ads_id(e, novo_id.strip())
+                                st.session_state.ads_editando_empresa    = None
+                                st.session_state.ads_onboarding_empresa  = None
+                                st.session_state.ads_onboarding_paginas  = []
+                                st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
+                                st.rerun()
 
-                        if cancel_clicked:
-                            st.session_state.ads_editando_empresa    = None
-                            st.session_state.ads_onboarding_empresa  = None
-                            st.session_state.ads_onboarding_paginas  = []
-                            st.rerun()
+                            if cancel_clicked:
+                                st.session_state.ads_editando_empresa    = None
+                                st.session_state.ads_onboarding_empresa  = None
+                                st.session_state.ads_onboarding_paginas  = []
+                                st.rerun()
 
-                        if (st.session_state.ads_onboarding_empresa == ck
-                                and st.session_state.ads_onboarding_paginas):
-                            _render_paginas_resultado(e, sk, ck)
+                            if (st.session_state.ads_onboarding_empresa == ck
+                                    and st.session_state.ads_onboarding_paginas):
+                                _render_paginas_resultado(e, sk, ck)
 
-        if empresas_sem_config:
-            st.markdown(
-                "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
-                "letter-spacing:0.8px;margin:16px 0 10px 0'>⚠️ Páginas não configuradas</div>",
-                unsafe_allow_html=True,
-            )
-            for e in empresas_sem_config:
-                ck       = e["nome"]
-                sk       = safe_key(ck)
-                is_minha = e["tipo"] == "minha"
-                cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-                av       = gerar_avatar(ck)
-                badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-                badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-                badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-                badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+            if empresas_sem_config:
+                st.markdown(
+                    "<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;"
+                    "letter-spacing:0.8px;margin:16px 0 10px 0'>⚠️ Páginas não configuradas</div>",
+                    unsafe_allow_html=True,
+                )
+                # ... keep the rest of empresas_sem_config loop unchanged ...
+                for e in empresas_sem_config:
+                    ck       = e["nome"]
+                    sk       = safe_key(ck)
+                    is_minha = e["tipo"] == "minha"
+                    cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+                    av       = gerar_avatar(ck)
+                    badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+                    badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+                    badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+                    badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
 
-                st.markdown(f"""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-radius:14px;
-                            padding:14px 18px;display:flex;align-items:center;gap:12px;
-                            margin-bottom:10px'>
-                    <div style='width:42px;height:42px;border-radius:50%;background:{cor};
-                                display:flex;align-items:center;justify-content:center;
-                                font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{av}</div>
-                    <div>
-                        <div style='font-size:15px;font-weight:700;color:#111827'>{ck}</div>
-                        <div style='display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap'>
-                            <span style='background:{badge_bg};color:{badge_txt};
-                                         border:1px solid {badge_brd};padding:2px 8px;
-                                         border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                            <span style='background:#fef9c3;color:#854d0e;border:1px solid #fde68a;
-                                         padding:2px 8px;border-radius:20px;font-size:11px;
-                                         font-weight:600'>⚠️ Não configurado</span>
+                    st.markdown(f"""
+                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:14px;
+                                padding:14px 18px;display:flex;align-items:center;gap:12px;
+                                margin-bottom:10px'>
+                        <div style='width:42px;height:42px;border-radius:50%;background:{cor};
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{av}</div>
+                        <div>
+                            <div style='font-size:15px;font-weight:700;color:#111827'>{ck}</div>
+                            <div style='display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap'>
+                                <span style='background:{badge_bg};color:{badge_txt};
+                                             border:1px solid {badge_brd};padding:2px 8px;
+                                             border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
+                                <span style='background:#fef9c3;color:#854d0e;border:1px solid #fde68a;
+                                             padding:2px 8px;border-radius:20px;font-size:11px;
+                                             font-weight:600'>⚠️ Não configurado</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
 
-                col_inp, col_btn_b, col_btn_s = st.columns([4, 2, 2])
-                with col_inp:
-                    termo_input = st.text_input(
-                        "Nome ou ID da página",
-                        value=ck,
-                        placeholder=f"Ex: {ck}  ou  102803918240129",
-                        key=f"_termo_uncfg_{sk}",
-                        label_visibility="collapsed",
-                    )
-                with col_btn_b:
-                    if st.button("Buscar", key=f"buscar_uncfg_{sk}", use_container_width=True, type="primary"):
-                        if termo_input.strip():
-                            st.session_state.ads_onboarding_empresa = ck
-                            st.session_state.ads_onboarding_termo   = termo_input.strip()
-                            with st.spinner(f"Buscando «{termo_input.strip()}»…"):
-                                paginas = buscar_paginas_facebook(termo_input.strip())
-                            st.session_state.ads_onboarding_paginas = paginas
-                            st.rerun()
-                with col_btn_s:
-                    if st.button("Salvar ID", key=f"salvar_uncfg_{sk}", use_container_width=True):
-                        if termo_input.strip():
-                            salvar_ads_id(e, termo_input.strip())
-                            st.session_state.ads_onboarding_empresa = None
-                            st.session_state.ads_onboarding_paginas = []
-                            st.toast(f"✅ Salvo!", icon="✅")
-                            st.rerun()
+                    col_inp, col_btn_b, col_btn_s = st.columns([4, 2, 2])
+                    with col_inp:
+                        termo_input = st.text_input(
+                            "Nome ou ID da página",
+                            value=ck,
+                            placeholder=f"Ex: {ck}  ou  102803918240129",
+                            key=f"_termo_uncfg_{sk}",
+                            label_visibility="collapsed",
+                        )
+                    with col_btn_b:
+                        if st.button("Buscar", key=f"buscar_uncfg_{sk}", use_container_width=True, type="primary"):
+                            if termo_input.strip():
+                                st.session_state.ads_onboarding_empresa = ck
+                                st.session_state.ads_onboarding_termo   = termo_input.strip()
+                                with st.spinner(f"Buscando «{termo_input.strip()}»…"):
+                                    paginas = buscar_paginas_facebook(termo_input.strip())
+                                st.session_state.ads_onboarding_paginas = paginas
+                                st.rerun()
+                    with col_btn_s:
+                        if st.button("Salvar ID", key=f"salvar_uncfg_{sk}", use_container_width=True):
+                            if termo_input.strip():
+                                salvar_ads_id(e, termo_input.strip())
+                                st.session_state.ads_onboarding_empresa = None
+                                st.session_state.ads_onboarding_paginas = []
+                                st.toast(f"✅ Salvo!", icon="✅")
+                                st.rerun()
 
-                if (st.session_state.ads_onboarding_empresa == ck
-                        and st.session_state.ads_onboarding_paginas is not None):
-                    if not st.session_state.ads_onboarding_paginas:
-                        st.warning("Nenhuma página encontrada. Tente outro nome ou cole o ID numérico.")
-                    else:
-                        _render_paginas_resultado(e, sk, ck)
+                    if (st.session_state.ads_onboarding_empresa == ck
+                            and st.session_state.ads_onboarding_paginas is not None):
+                        if not st.session_state.ads_onboarding_paginas:
+                            st.warning("Nenhuma página encontrada. Tente outro nome ou cole o ID numérico.")
+                        else:
+                            _render_paginas_resultado(e, sk, ck)
 
-                st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+                    st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:12px 0 16px 0'/>", unsafe_allow_html=True)
 
