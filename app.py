@@ -594,8 +594,9 @@ div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"]
     text-transform: uppercase;
 }
 div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-    color: #fff !important; backround-color:#111827 !important; border-bottom: 2px solid #111827 !important;
-}
+        color: #fff !important;
+        background-color: #3a9fd6 !important;
+    }
 
 
 .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
