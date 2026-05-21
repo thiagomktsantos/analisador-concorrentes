@@ -3856,42 +3856,23 @@ setTimeout(ajustarAltura, 100);
             height: 43px !important;
             min-height: 43px !important;
         }}
-        .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="base-input"] {{
-            height: 44px !important;
-            min-height: 44px !important;
-            display: flex !important;
-            align-items: center !important;
-            padding: 0 !important;
+        .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
             background-color: #ffffff !important;
-        }}
-        .st-key-{filtros_key} div[data-testid="stTextInput"] [data-baseweb="input-container"] {{
-            height: 44px !important;
-            min-height: 44px !important;
-            display: flex !important;
-            align-items: center !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
-            background-color: #ffffff !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-        }}
-        .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
-            height: 100% !important;
-            min-height: unset !important;
-            border: none !important;
-            border-radius: 8px !important;
+            height: 43px !important;
+            min-height: 43px !important;
             padding: 0 14px !important;
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #6b7280 !important;
+            color: #000 !important;
             box-shadow: none !important;
-            background: transparent !important;
-            line-height: normal !important;
+            line-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #555 !important;
+            color: #000 !important;
         }}
 
         /* ── Wrapper do select ── */
