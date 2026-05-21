@@ -3705,34 +3705,6 @@ setTimeout(ajustarAltura, 100);
 }})();
 """
  
-    def _copy_block_html(text: str, uid: str, max_chars: int = 80) -> str:
-        if not text:
-            return ""
-        text = text.strip()
-        safe_full = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        if len(text) <= max_chars:
-            display = safe_full.replace("\n", "<br>")
-            return f'<div class="copy-body">{display}</div>'
-        short = safe_full[:max_chars].replace("\n", " ")
-        rest  = safe_full[max_chars:].replace("\n", "<br>")
-        return (
-            f'<div class="copy-body">'
-            f'{short}'
-            f'<span style="color:#9ca3af;font-weight:400;font-size:13px" id="ellipsis_{uid}">... </span>'
-            f'<span id="cm_{uid}" style="display:none">{rest}</span>'
-            f'<button id="cb_{uid}" '
-            f'onclick="var m=document.getElementById(\'cm_{uid}\');'
-            f'var b=document.getElementById(\'cb_{uid}\');'
-            f'var e=document.getElementById(\'ellipsis_{uid}\');'
-            f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}'
-            f'else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" '
-            f'style="background:none;border:none;color:#3a9fd6;font-weight:700;'
-            f'font-size:13px;cursor:pointer;padding:0;margin-left:3px;'
-            f'font-family:DM Sans,sans-serif;white-space:nowrap;vertical-align:baseline">'
-            f'ver mais</button>'
-            f'</div>'
-        )
- 
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
         nome     = emp_item["nome"]
@@ -3862,7 +3834,27 @@ setTimeout(ajustarAltura, 100);
             </div>
         </div>""", unsafe_allow_html=True)
  
-        # Filtros inline (sem st.columns para não quebrar layout dos cards)
+        # ── FIX 1: Filtros com fundo branco explícito ──────────────────
+        st.markdown("""
+        <style>
+        div[data-testid="stTextInput"] input,
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="select"] > div > div,
+        div[data-baseweb="select"] input {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+        }
+        div[data-testid="stHorizontalBlock"] {
+            background: #f9fafb !important;
+            border: 1px solid #e5e7eb !important;
+            border-top: none !important;
+            border-radius: 0 0 4px 4px !important;
+            padding: 10px 12px !important;
+            gap: 10px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+ 
         import unicodedata as _ud
         def _limpar_formato(s):
             return ''.join(c for c in s if _ud.category(c) not in ('So','Sm','Sk','Mn')).strip()
@@ -3977,16 +3969,18 @@ setTimeout(ajustarAltura, 100);
             "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
         }
  
-        # ─── Ghost buttons + CSS para análise IA por ad ───────────────
+        # ── FIX 2: Ghost buttons para análise IA — ocultos via CSS ────
         ghost_ia_css = "\n".join([
             f".st-key-btn_ia_ad_{safe_key(ck)}_{j} {{ display:none !important; }}"
             for j in range(len(ads_f))
         ])
         st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
  
-        # ─── Renderizar cards em 3 colunas usando HTML puro ───────────
-        # Montamos TODOS os cards em um único components.html com grid CSS
-        # Isso evita completamente o conflito de st.columns com iframes
+        # Pré-carregar resultados de IA existentes para injetar dentro do HTML
+        ia_results_por_ad = {}
+        for j in range(len(ads_f)):
+            chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
+            ia_results_por_ad[j] = st.session_state.get(chave_ia_ad, "")
  
         all_cards_html = []
  
@@ -4175,6 +4169,23 @@ function imgFallback_{uid}(img){{
                 else:
                     body_display = f'<div class="copy-body">{body_safe}</div>'
  
+            # ── FIX 2: resultado de IA embutido dentro do card ─────────
+            ia_resultado = ia_results_por_ad.get(j, "")
+            ia_block_html = ""
+            if ia_resultado:
+                ia_safe = ia_resultado.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>")
+                ia_block_html = f"""
+<div class="ia-result-block">
+    <div class="ia-result-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Análise IA
+    </div>
+    <div class="ia-result-body">{ia_safe}</div>
+</div>"""
+ 
             card_html = f"""
 <div class="card" style="opacity:{card_opacity}" id="card_{uid}">
     <div class="status-bar">
@@ -4217,13 +4228,14 @@ function imgFallback_{uid}(img){{
     </div>
     <div class="card-btns">
         {'<a href="' + snap_url + '" target="_blank" class="lib-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ver no Ad Library</a>' if snap_url else '<span class="lib-btn-disabled">Sem link</span>'}
-        <button class="ia-btn" onclick="triggerIaAd('{uid}')">
+        <button class="ia-btn" id="ia_btn_{uid}" onclick="triggerIaAd('{uid}', {j})">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
             </svg>
             Analisar anúncio
         </button>
     </div>
+    {ia_block_html}
 </div>
 <script>
 window.__PLATS_{uid}__ = {plat_js};
@@ -4232,25 +4244,7 @@ window.__PLATS_{uid}__ = {plat_js};
 """
             all_cards_html.append(card_html)
  
-        # CSS base dos cards + grid + modal – tudo num único components.html
         cards_joined = "\n".join(all_cards_html)
- 
-        # IDs únicos para cada ad para callbacks IA
-        ia_callbacks_js = "\n".join([
-            f"""document.addEventListener('DOMContentLoaded', function() {{
-  var el = document.getElementById('ia_result_{safe_key(ck)}_{j}');
-  if (el) {{
-    el.style.display = 'block';
-  }}
-}});"""
-            for j in range(len(ads_f))
-        ])
- 
-        # IA result HTML placeholders
-        ia_results_html = "\n".join([
-            f'<div id="ia_result_{safe_key(ck)}_{j}" style="display:none;grid-column:1;"></div>'
-            for j in range(len(ads_f))
-        ])
  
         components.html(f"""
 <!DOCTYPE html>
@@ -4325,44 +4319,103 @@ body{{padding-bottom:4px;}}
 .lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;}}
 .ia-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#f0fdf4;color:#15803d;border:none;border-top:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;border-left:1px solid #e4e6ea;}}
 .ia-btn:hover{{background:#dcfce7;}}
+.ia-btn.loading{{opacity:0.6;cursor:not-allowed;}}
  
-/* Modal */
+/* FIX 2: Bloco de resultado de IA dentro do card */
+.ia-result-block{{
+    border-top:1px solid #86efac;
+    background:#f0fdf4;
+    padding:12px 14px;
+}}
+.ia-result-header{{
+    display:flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:700;color:#15803d;
+    text-transform:uppercase;letter-spacing:0.5px;
+    margin-bottom:8px;
+}}
+.ia-result-body{{
+    font-size:13px;color:#374151;line-height:1.7;
+    max-height:220px;overflow-y:auto;
+}}
+ 
+/* FIX 3: Modal com tamanho automático, sem scroll, imagem centralizada */
 #modal-overlay{{
-    display:none;position:fixed;inset:0;
-    background:rgba(0,0,0,0.85);
-    z-index:999999;align-items:center;justify-content:center;
-    backdrop-filter:blur(4px);
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.88);
+    z-index:999999;
+    align-items:center;
+    justify-content:center;
+    backdrop-filter:blur(5px);
+    padding:20px;
 }}
 #modal-overlay.open{{display:flex;}}
 #modal-box{{
-    background:#1a1a2e;border-radius:16px;
-    max-width:88vw;max-height:90vh;
-    overflow:hidden;position:relative;
-    display:flex;flex-direction:column;align-items:center;
-    box-shadow:0 24px 80px rgba(0,0,0,0.6);
+    background:#1a1a2e;
+    border-radius:16px;
+    overflow:hidden;
+    position:relative;
+    display:inline-flex;
+    flex-direction:column;
+    align-items:center;
+    box-shadow:0 24px 80px rgba(0,0,0,0.7);
+    max-width:min(88vw, 860px);
+    max-height:90vh;
 }}
 #modal-close{{
-    position:absolute;top:12px;right:14px;
-    background:rgba(255,255,255,0.15);border:none;border-radius:50%;
-    width:36px;height:36px;font-size:18px;color:#fff;cursor:pointer;
-    z-index:10;display:flex;align-items:center;justify-content:center;
-    font-family:sans-serif;
+    position:absolute;
+    top:10px;right:12px;
+    background:rgba(255,255,255,0.18);
+    border:none;border-radius:50%;
+    width:34px;height:34px;
+    font-size:17px;color:#fff;
+    cursor:pointer;z-index:10;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 0.15s;
 }}
-#modal-close:hover{{background:rgba(255,255,255,0.3);}}
-#modal-img{{max-width:80vw;max-height:80vh;object-fit:contain;border-radius:10px;display:block;}}
-#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 32px;}}
+#modal-close:hover{{background:rgba(255,255,255,0.35);}}
+#modal-img{{
+    display:block;
+    /* FIX 3: tamanho automático baseado na imagem real */
+    max-width:min(84vw, 820px);
+    max-height:min(82vh, 820px);
+    width:auto;
+    height:auto;
+    object-fit:contain;
+    border-radius:10px;
+}}
+#modal-video-wrap{{
+    display:flex;flex-direction:column;
+    align-items:center;gap:16px;
+    padding:48px 40px;
+    min-width:320px;
+}}
 #modal-video-btn{{
     display:inline-flex;align-items:center;gap:8px;
-    background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;
-    font-size:15px;font-weight:700;text-decoration:none;
+    background:#1877F2;color:#fff;
+    padding:14px 28px;border-radius:10px;
+    font-size:15px;font-weight:700;
+    text-decoration:none;
     font-family:'DM Sans',sans-serif;
 }}
-#modal-video-thumb{{max-width:70vw;max-height:55vh;object-fit:contain;border-radius:10px;opacity:0.85;}}
+#modal-video-thumb{{
+    max-width:min(70vw, 600px);
+    max-height:min(50vh, 480px);
+    object-fit:contain;
+    border-radius:10px;opacity:0.85;
+    display:block;
+}}
+#modal-loading{{
+    padding:40px;color:rgba(255,255,255,0.6);
+    font-size:14px;font-family:'DM Sans',sans-serif;
+    text-align:center;
+}}
 </style>
 </head>
 <body>
  
-<!-- Modal dentro do mesmo iframe -->
+<!-- FIX 3: Modal aprimorado dentro do mesmo iframe -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">✕</button>
@@ -4375,6 +4428,7 @@ body{{padding-bottom:4px;}}
 </div>
  
 <script>
+// FIX 3: openModal com carregamento assíncrono para tamanho correto
 function openModal(imgSrc, snapUrl, isVideo) {{
     var overlay = document.getElementById('modal-overlay');
     var content = document.getElementById('modal-content');
@@ -4392,8 +4446,7 @@ function openModal(imgSrc, snapUrl, isVideo) {{
         }}
         if (snapUrl) {{
             var btn = document.createElement('a');
-            btn.href = snapUrl;
-            btn.target = '_blank';
+            btn.href = snapUrl; btn.target = '_blank';
             btn.id = 'modal-video-btn';
             btn.innerHTML = '▶ Abrir vídeo no Ad Library';
             wrap.appendChild(btn);
@@ -4404,27 +4457,52 @@ function openModal(imgSrc, snapUrl, isVideo) {{
             wrap.appendChild(msg);
         }}
         content.appendChild(wrap);
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
     }} else {{
-        if (imgSrc) {{
-            var img = document.createElement('img');
-            img.src = imgSrc;
-            img.id = 'modal-img';
-            img.onerror = function() {{
-                this.style.display='none';
-                if (snapUrl) window.open(snapUrl, '_blank');
-            }};
-            content.appendChild(img);
-        }} else if (snapUrl) {{
+        if (!imgSrc && snapUrl) {{
             window.open(snapUrl, '_blank');
             return;
         }}
+        if (!imgSrc) return;
+ 
+        // Mostra loading enquanto carrega
+        var loading = document.createElement('div');
+        loading.id = 'modal-loading';
+        loading.textContent = 'Carregando imagem…';
+        content.appendChild(loading);
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+ 
+        // Pré-carrega a imagem para obter dimensões reais
+        var tmp = new Image();
+        tmp.onload = function() {{
+            content.innerHTML = '';
+            var img = document.createElement('img');
+            img.id = 'modal-img';
+            img.src = imgSrc;
+            // Sem width/height fixos — o CSS max-width/max-height cuida disso
+            content.appendChild(img);
+        }};
+        tmp.onerror = function() {{
+            content.innerHTML = '';
+            if (snapUrl) {{
+                window.open(snapUrl, '_blank');
+                closeModal();
+            }} else {{
+                var msg = document.createElement('div');
+                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center';
+                msg.textContent = 'Imagem não disponível.';
+                content.appendChild(msg);
+            }}
+        }};
+        tmp.src = imgSrc;
     }}
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
 }}
  
 function closeModal() {{
     document.getElementById('modal-overlay').classList.remove('open');
+    document.getElementById('modal-content').innerHTML = '';
     document.body.style.overflow = '';
 }}
  
@@ -4432,14 +4510,17 @@ document.addEventListener('keydown', function(e) {{
     if (e.key === 'Escape') closeModal();
 }});
  
-function triggerIaAd(uid) {{
-    // Extrai o índice do uid: formato safe_key(ck)_j
-    var parts = uid.split('_');
-    var idx = parts[parts.length - 1];
+// FIX 2: triggerIaAd busca o ghost button correto
+function triggerIaAd(uid, idx) {{
     var targetText = '__ia_ad_' + uid + '__';
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        if (b.innerText.trim() === targetText) {{ b.click(); return; }}
+        if (b.innerText.trim() === targetText) {{
+            var iaBtn = document.getElementById('ia_btn_' + uid);
+            if (iaBtn) {{ iaBtn.classList.add('loading'); iaBtn.textContent = 'Analisando…'; }}
+            b.click();
+            return;
+        }}
     }}
 }}
  
@@ -4475,7 +4556,7 @@ setTimeout(syncHeight, 1500);
 </html>
 """, height=600, scrolling=False)
  
-        # Ghost buttons para análise IA por ad
+        # ── Ghost buttons para análise IA por ad ──────────────────────
         for j, ad in enumerate(ads_f):
             uid = f"{safe_key(ck)}_{j}"
             chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
@@ -4519,15 +4600,6 @@ Seja direto e objetivo."""
                         except Exception as ex:
                             st.session_state[chave_ia_ad] = f"Erro: {ex}"
                             st.rerun()
- 
-            if st.session_state.get(chave_ia_ad):
-                st.markdown(f"""
-                <div style='background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
-                            padding:14px 16px;font-size:13px;color:#374151;line-height:1.75;
-                            max-height:260px;overflow-y:auto;margin-bottom:8px'>
-                    {st.session_state[chave_ia_ad].replace(chr(10), "<br>")}
-                </div>
-                """, unsafe_allow_html=True)
  
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
  
