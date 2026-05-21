@@ -3313,7 +3313,7 @@ html, body { background:transparent; overflow:hidden; }
         active_class = "active" if i == aba_ativa else ""
         abas_html_items += f'<button class="aba {active_class}" onclick="triggerAba({i})">{nome}</button>'
 
-components.html(f"""
+    components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -3747,10 +3747,6 @@ setTimeout(ajustarAltura, 100);
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
     # ── Tabs por empresa ──────────────────────────────────────────────
-    aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
-    if empresas_com_dados:
-        render_ads_empresa(empresas_com_dados[aba_idx])
- 
     def _plat_svg_js(uid: str) -> str:
         return f"""
 (function(){{
@@ -3775,33 +3771,33 @@ setTimeout(ajustarAltura, 100);
     }}).join('');
 }})();
 """
- 
+
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
         nome     = emp_item["nome"]
         is_minha = emp_item["tipo"] == "minha"
         cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(emp_item["idx"])
         avatar   = gerar_avatar(nome)
- 
+
         if emp_item["tipo"] == "minha":
             configured_page = emp.get("ads_id","").strip()
         else:
             configured_page = concs[emp_item["idx"]].get("ads_id","").strip()
- 
+
         if ck in st.session_state.ads_erro:
             st.error(f"Erro: {st.session_state.ads_erro[ck]}")
             return
- 
+
         cache_entry = st.session_state.ads_cache.get(ck)
         if not cache_entry:
             st.info("Sem dados. Configure a página e clique em Buscar.")
             return
- 
+
         ads_list_raw = cache_entry["data"]
         ts           = cache_entry["ts"]
         query        = cache_entry.get("query","")
         fresco_aba   = cache_esta_fresco(ts)
- 
+
         if configured_page:
             if configured_page.isdigit():
                 filtered = [a for a in ads_list_raw if str(a.get("page_id","")).strip() == configured_page]
@@ -3818,19 +3814,19 @@ setTimeout(ajustarAltura, 100);
                     ads_list = partial if partial else ads_list_raw
         else:
             ads_list = ads_list_raw
- 
+
         if emp_item["tipo"] == "minha":
             page_pic_empresa = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
         else:
             page_pic_empresa = st.session_state.dados["concorrentes"][emp_item["idx"]].get("ads_page_pic", "") or ""
- 
+
         if not page_pic_empresa:
             for ad in ads_list:
                 p = ad.get("page_profile_picture", "") or ""
                 if p and p.startswith("http"):
                     page_pic_empresa = p
                     break
- 
+
         if page_pic_empresa:
             avatar_empresa_html = (
                 f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;'
@@ -3847,13 +3843,12 @@ setTimeout(ajustarAltura, 100);
                 f'display:flex;align-items:center;justify-content:center;'
                 f'font-size:16px;font-weight:700;color:#fff;flex-shrink:0">{avatar}</div>'
             )
- 
+
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-        fresco_label = f"Atualizado em {ts}" if fresco_aba else f"Cache desatualizado · {ts}"
- 
+
         import urllib.parse as _urlparse
         if configured_page and configured_page.isdigit():
             lib_url = (
@@ -3871,20 +3866,20 @@ setTimeout(ajustarAltura, 100);
             )
         else:
             lib_url = ""
- 
+
         page_display = configured_page if configured_page else "—"
- 
+
         lib_btn_top = ""
         if lib_url:
             lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>'
- 
+
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
                     border-radius:12px 12px 0 0;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
                 {avatar_empresa_html}
                 <div style='flex:1;min-width:0'>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;color:#111827'>{nome}</div>
+                    <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
                     <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
                         <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
                         <span style='color:#d1d5db;font-size:12px'>·</span>
@@ -3902,14 +3897,11 @@ setTimeout(ajustarAltura, 100);
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
- 
-        # ── FIX 1: Filtros com fundo branco e borda ──────────────────
+
         filtros_key = f"filtros_{safe_key(ck)}"
         st.markdown(f"""
         <style>
-        .st-key-{filtros_key} {{
-            margin-top: -16px !important;
-        }}
+        .st-key-{filtros_key} {{ margin-top: -16px !important; }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
             background: #ffffff !important;
             border: 1px solid #e5e7eb !important;
@@ -3918,69 +3910,19 @@ setTimeout(ajustarAltura, 100);
             gap: 10px !important;
             align-items: center !important;
         }}
-
-        /* ── Wrapper do input ── */
-        .st-key-{filtros_key} div[data-testid="stTextInput"] > div,
-        .st-key-{filtros_key} div[data-testid="stTextInput"] > div > div {{
-            background-color: #ffffff !important;
-            height: 43px !important;
-            min-height: 43px !important;
-        }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
             background-color: #ededed !important;
             border-radius: 8px !important;
             height: 43px !important;
-            min-height: 43px !important;
             padding: 0 14px !important;
             font-size: 14px !important;
-            font-family: 'DM Sans', sans-serif !important;
-            color: #000 !important;
-            box-shadow: none !important;
-            line-height: 43px !important;
-        }}
-        .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
-            font-size: 14px !important;
-            font-family: 'DM Sans', sans-serif !important;
-            color: #000 !important;
-        }}
-
-        /* ── Wrapper do select ── */
-        .st-key-{filtros_key} div[data-baseweb="select"] {{
-            height: 43px !important;
-            min-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-baseweb="select"] > div {{
             background-color: #ffffff !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
             height: 43px !important;
-            min-height: 43px !important;
             padding: 0 14px !important;
-            box-shadow: none !important;
-            display: flex !important;
-            align-items: center !important;
-        }}
-        .st-key-{filtros_key} div[data-baseweb="select"] span {{
-            font-size: 14px !important;
-            font-family: 'DM Sans', sans-serif !important;
-            color: #6b7280 !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-        }}
-        .st-key-{filtros_key} div[data-baseweb="select"] svg {{
-            color: #9ca3af !important;
-            flex-shrink: 0 !important;
-        }}
-
-        /* ── Remover borda de foco padrão do Streamlit ── */
-        .st-key-{filtros_key} div[data-testid="stTextInput"] input:focus {{
-            border-color: #3a9fd6 !important;
-            outline: none !important;
-            box-shadow: none !important;
-        }}
-        .st-key-{filtros_key} div[data-baseweb="select"]:focus-within > div {{
-            border-color: #3a9fd6 !important;
         }}
         </style>
         """, unsafe_allow_html=True)
@@ -3993,42 +3935,25 @@ setTimeout(ajustarAltura, 100);
         with st.container(key=filtros_key):
             fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
             with fcol1:
-                busca_texto = st.text_input(
-                    "Pesquisar no copy",
-                    placeholder="Pesquisar no copy…",
-                    key=f"ads_busca_{safe_key(ck)}",
-                    label_visibility="collapsed",
-                )
+                busca_texto = st.text_input("Pesquisar no copy", placeholder="Pesquisar no copy…",
+                    key=f"ads_busca_{safe_key(ck)}", label_visibility="collapsed")
             with fcol2:
-                filtro_fmt = st.selectbox(
-                    "Tipo",
-                    ["Tipo (todos)"] + formatos_disponiveis,
-                    key=f"ads_fmt_{safe_key(ck)}",
-                    label_visibility="collapsed",
-                )
+                filtro_fmt = st.selectbox("Tipo", ["Tipo (todos)"] + formatos_disponiveis,
+                    key=f"ads_fmt_{safe_key(ck)}", label_visibility="collapsed")
             with fcol3:
                 plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-                filtro_plat = st.selectbox(
-                    "Plataforma",
-                    ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
-                    key=f"ads_plat_{safe_key(ck)}",
-                    label_visibility="collapsed",
-                )
+                filtro_plat = st.selectbox("Plataforma", ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
+                    key=f"ads_plat_{safe_key(ck)}", label_visibility="collapsed")
             with fcol4:
-                filtro_status = st.selectbox(
-                    "Status",
-                    ["Status (todos)", "Ativos", "Inativos (histórico)"],
-                    key=f"ads_status_{safe_key(ck)}",
-                    label_visibility="collapsed",
-                )
- 
+                filtro_status = st.selectbox("Status", ["Status (todos)", "Ativos", "Inativos (histórico)"],
+                    key=f"ads_status_{safe_key(ck)}", label_visibility="collapsed")
+
         ads_f = ads_list
         if busca_texto:
-            q     = busca_texto.lower()
-            ads_f = [a for a in ads_f if
-                     q in (a.get("body") or "").lower() or
-                     q in (a.get("title") or "").lower() or
-                     q in (a.get("body_raw") or "").lower()]
+            q = busca_texto.lower()
+            ads_f = [a for a in ads_f if q in (a.get("body") or "").lower()
+                     or q in (a.get("title") or "").lower()
+                     or q in (a.get("body_raw") or "").lower()]
         if filtro_fmt != "Tipo (todos)":
             ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
         if filtro_plat != "Plataforma (todas)":
@@ -4037,18 +3962,18 @@ setTimeout(ajustarAltura, 100);
             ads_f = [a for a in ads_f if a.get("ativo", True)]
         elif filtro_status == "Inativos (histórico)":
             ads_f = [a for a in ads_f if not a.get("ativo", True)]
- 
+
         if not ads_f:
             st.warning("Nenhum anúncio com os filtros aplicados.")
             return
- 
+
         n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
         n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
         n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
         n_dynamic   = sum(1 for a in ads_f if a.get("is_dynamic"))
         n_ativos    = sum(1 for a in ads_f if a.get("ativo", True))
         n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
- 
+
         stats_cards = []
         stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_ativos}</div><div class="stat-lbl stat-lbl-green">Ativos</div></div>')
         if n_inativos > 0:
@@ -4058,37 +3983,34 @@ setTimeout(ajustarAltura, 100);
         stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_carrossel}</div><div class="stat-lbl">Carrossel</div></div>')
         if n_dynamic > 0:
             stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Dinâmicos</div></div>')
- 
-        stats_html = "".join(stats_cards)
- 
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.stats-row {{ display:flex; gap:10px; flex-wrap:wrap; }}
-.stat-card {{ flex:1; min-width:80px; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px; padding:12px 16px; text-align:center; }}
-.stat-lbl-green {{ color:#15803d; }}
-.stat-num {{ font-size:22px; font-weight:800; }}
-.stat-lbl {{ color:#6b7280; font-size:12px; font-weight:600; margin-top:2px; }}
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
+.stats-row{{display:flex;gap:10px;flex-wrap:wrap;}}
+.stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;text-align:center;}}
+.stat-lbl-green{{color:#15803d;}}
+.stat-num{{font-size:22px;font-weight:800;}}
+.stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;margin-top:2px;}}
 </style>
-<div class="stats-row">{stats_html}</div>
+<div class="stats-row">{"".join(stats_cards)}</div>
 <script>
-function ajustarAltura() {{
-    var h = document.body.scrollHeight;
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h + 8) + 'px'; break; }} }} catch(e) {{}}
+function ajustarAltura(){{
+    var h=document.body.scrollHeight;
+    var iframes=window.parent.document.querySelectorAll('iframe');
+    for(var i=0;i<iframes.length;i++){{
+        try{{if(iframes[i].contentWindow===window){{iframes[i].style.height=(h+8)+'px';break;}}}}catch(e){{}}
     }}
 }}
-if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
-setTimeout(ajustarAltura, 100);
+if(window.ResizeObserver)new ResizeObserver(ajustarAltura).observe(document.body);
+setTimeout(ajustarAltura,100);
 </script>
 """, height=60, scrolling=False)
- 
+
         st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
- 
-        # ─── CTA labels ───────────────────────────────────────────────
+
         cta_labels = {
             "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
             "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
@@ -4099,22 +4021,20 @@ setTimeout(ajustarAltura, 100);
             "GET_DIRECTIONS":"Como Chegar","BUY_NOW":"Comprar","DONATE":"Doar",
             "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
         }
- 
-        # ── FIX 2: Ghost buttons para análise IA — ocultos via CSS ────
+
         ghost_ia_css = "\n".join([
             f".st-key-btn_ia_ad_{safe_key(ck)}_{j} {{ display:none !important; }}"
             for j in range(len(ads_f))
         ])
         st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
- 
-        # Pré-carregar resultados de IA existentes para injetar dentro do HTML
+
         ia_results_por_ad = {}
         for j in range(len(ads_f)):
             chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
             ia_results_por_ad[j] = st.session_state.get(chave_ia_ad, "")
- 
+
         all_cards_html = []
- 
+
         for j, ad in enumerate(ads_f):
             snap_url    = ad.get("snapshot_url") or ""
             images      = ad.get("images") or []
@@ -4136,7 +4056,7 @@ setTimeout(ajustarAltura, 100);
             uid         = f"{safe_key(ck)}_{j}"
             page_pic    = ad.get("page_profile_picture") or ""
             microlink_url = _microlink_screenshot(snap_url)
- 
+
             img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
             img_fallbacks = []
             if images_b64 and len(images_b64) > 1:
@@ -4145,7 +4065,7 @@ setTimeout(ajustarAltura, 100);
             if microlink_url:
                 img_fallbacks.append(microlink_url)
             srcs_js = _json.dumps(img_fallbacks)
- 
+
             if videos:
                 if snap_url:
                     _snap_safe = snap_url.replace("'", "\\'")
@@ -4167,12 +4087,12 @@ setTimeout(ajustarAltura, 100);
         </svg>
     </div>
     <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);
                     display:flex;align-items:center;justify-content:center;">
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
         </div>
     </div>
-    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:DM Sans,sans-serif;">▶ VER VÍDEO</div>' if snap_url else ''}
+    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>' if snap_url else ''}
 </div>"""
                 else:
                     media_block = f"""
@@ -4180,25 +4100,20 @@ setTimeout(ajustarAltura, 100);
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
-            <circle cx="27" cy="27" r="20" fill="rgba(255,255,255,0.2)"/>
             <polygon points="22,18 40,27 22,36" fill="white"/>
         </svg>
     </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;font-family:'DM Sans',sans-serif;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
 </div>"""
             elif img_primary:
                 media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal(document.getElementById('mimg_{uid}') ? document.getElementById('mimg_{uid}').src : '{img_primary.replace("'","")}', '{snap_url.replace("'","")}', false)">
+     onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;
          flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-        </svg>
         <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
@@ -4214,137 +4129,83 @@ function imgFallback_{uid}(img){{
 }}
 </script>"""
             else:
-                if microlink_url:
-                    media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal('{microlink_url.replace("'","")}', '{snap_url.replace("'","")}', false)">
-    <img id="mimg_{uid}" src="{microlink_url}" loading="lazy"
-        style="width:100%;height:100%;object-fit:cover;display:block;"
-        onerror="this.style.display='none';document.getElementById('mnomedia_{uid}').style.display='flex'" />
-    <div id="mnomedia_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;
-         flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
-        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">Ver criativo →</span>
-    </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
-                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
-</div>"""
-                else:
-                    _sv = snap_url.replace("'", "")
-                    _nm_onclick = f'onclick="openModal(\'\', \'{_sv}\', false)"' if snap_url else ""
-                    _nm_style   = "cursor:pointer;" if snap_url else ""
-                    _nm_color   = "#3a9fd6" if snap_url else "#c4c4c4"
-                    _nm_label   = "Ver criativo →" if snap_url else "Sem criativo"
-                    media_block = (
-                        f'<div class="media-block no-media-block" {_nm_onclick} style="{_nm_style}">'
-                        f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
-                        f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
-                        f'<polyline points="21 15 16 10 5 21"/>'
-                        f'</svg>'
-                        f'<span style="font-size:12px;color:{_nm_color};font-weight:600;margin-top:8px;">{_nm_label}</span>'
-                        f'</div>'
-                    )
- 
-            cta_display = cta_labels.get(cta.upper() if cta else "", cta)
-            is_ativo    = ad.get("ativo", True)
- 
-            status_dot_html = (
-                '<div class="status-dot">Ativo</div>'
-                if is_ativo else
-                '<div class="status-dot-inactive">Inativo</div>'
-            )
-            card_opacity = "1" if is_ativo else "0.72"
- 
-            baixo_vol_badge = (
-                '<span class="badge-small">Baixo volume</span>'
-            ) if baixo_vol else ""
- 
-            dyn_badge_html = (
-                '<span class="badge-small badge-dyn">Dinâmico</span>'
-            ) if is_dyn else ""
- 
-            if page_pic and page_pic.startswith("http"):
-                page_avatar_html = (
-                    f'<div class="page-avatar" style="overflow:hidden;padding:0">'
-                    f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
-                    f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
+                _sv = snap_url.replace("'", "")
+                _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
+                _nm_color   = "#3a9fd6" if snap_url else "#c4c4c4"
+                _nm_label   = "Ver criativo →" if snap_url else "Sem criativo"
+                media_block = (
+                    f'<div class="media-block no-media-block" {_nm_onclick} style="{"cursor:pointer;" if snap_url else ""}">'
+                    f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
+                    f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
+                    f'<polyline points="21 15 16 10 5 21"/></svg>'
+                    f'<span style="font-size:12px;color:{_nm_color};font-weight:600;margin-top:8px;">{_nm_label}</span>'
                     f'</div>'
                 )
-            else:
-                page_avatar_html = f'<div class="page-avatar">{avatar}</div>'
- 
+
+            cta_display = cta_labels.get(cta.upper() if cta else "", cta)
+            is_ativo    = ad.get("ativo", True)
+            card_opacity = "1" if is_ativo else "0.72"
+
+            status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
+            baixo_vol_badge = '<span class="badge-small">Baixo volume</span>' if baixo_vol else ""
+            dyn_badge_html  = '<span class="badge-small badge-dyn">Dinâmico</span>' if is_dyn else ""
+
+            page_avatar_html = (
+                f'<div class="page-avatar" style="overflow:hidden;padding:0">'
+                f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
+                f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
+                f'</div>'
+            ) if page_pic and page_pic.startswith("http") else f'<div class="page-avatar">{avatar}</div>'
+
             data_inicio_html = (
                 f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
-                if data_inicio else ""
-            )
- 
+            ) if data_inicio else ""
+
             body_safe  = body.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
             title_safe = title.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
             desc_safe  = _truncar(desc, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
- 
-            body_display = ""
-            if body_safe:
-                if len(body_safe) > 80:
-                    short_b = body_safe[:80]
-                    rest_b  = body_safe[80:]
-                    body_display = (
-                        f'<div class="copy-body">{short_b}'
-                        f'<span style="color:#9ca3af;font-size:13px" id="ell_{uid}">... </span>'
-                        f'<span id="cm_{uid}" style="display:none">{rest_b}</span>'
-                        f'<button id="cb_{uid}" onclick="var m=document.getElementById(\'cm_{uid}\');'
-                        f'var b=document.getElementById(\'cb_{uid}\');var e=document.getElementById(\'ell_{uid}\');'
-                        f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}'
-                        f'else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}"'
-                        f' style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;'
-                        f'cursor:pointer;padding:0;margin-left:3px;font-family:DM Sans,sans-serif">ver mais</button></div>'
-                    )
-                else:
-                    body_display = f'<div class="copy-body">{body_safe}</div>'
- 
-            # ── FIX 2: resultado de IA embutido dentro do card ─────────
+
+            if body_safe and len(body_safe) > 80:
+                short_b = body_safe[:80]
+                rest_b  = body_safe[80:]
+                body_display = (
+                    f'<div class="copy-body">{short_b}'
+                    f'<span style="color:#9ca3af;font-size:13px" id="ell_{uid}">... </span>'
+                    f'<span id="cm_{uid}" style="display:none">{rest_b}</span>'
+                    f'<button id="cb_{uid}" onclick="var m=document.getElementById(\'cm_{uid}\');'
+                    f'var b=document.getElementById(\'cb_{uid}\');var e=document.getElementById(\'ell_{uid}\');'
+                    f'if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}'
+                    f'else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}"'
+                    f' style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;cursor:pointer;padding:0;margin-left:3px;">ver mais</button></div>'
+                )
+            elif body_safe:
+                body_display = f'<div class="copy-body">{body_safe}</div>'
+            else:
+                body_display = ""
+
             ia_resultado = ia_results_por_ad.get(j, "")
             ia_block_html = ""
             if ia_resultado:
                 ia_safe = ia_resultado.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>")
                 ia_block_html = f"""
 <div class="ia-result-block">
-    <div class="ia-result-header">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-        </svg>
-        Análise IA
-    </div>
+    <div class="ia-result-header">Análise IA</div>
     <div class="ia-result-body">{ia_safe}</div>
 </div>"""
- 
+
             card_html = f"""
 <div class="card" style="opacity:{card_opacity}" id="card_{uid}">
     <div class="status-bar">
-        <div style="display:flex;align-items:center;gap:6px">
-            {status_dot_html}
-            {baixo_vol_badge}
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-            {dyn_badge_html}
-            {'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}
-        </div>
+        <div style="display:flex;align-items:center;gap:6px">{status_dot_html}{baixo_vol_badge}</div>
+        <div style="display:flex;align-items:center;gap:6px">{dyn_badge_html}{'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}</div>
     </div>
     <div class="meta-info">
         {data_inicio_html}
-        <div class="meta-row">
-            <span class="meta-label">Plataformas:</span>
-            <span id="plat_icons_{uid}" class="plat-icons"></span>
-        </div>
+        <div class="meta-row"><span class="meta-label">Plataformas:</span><span id="plat_icons_{uid}" class="plat-icons"></span></div>
         {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
     </div>
     <div class="copy-section">
-        <div class="page-header">
-            {page_avatar_html}
-            <div style="flex:1;min-width:0">
-                <div class="page-name">{ad.get("page_name") or nome}</div>
-                <div class="page-sponsored">Patrocinado</div>
-            </div>
-        </div>
+        <div class="page-header">{page_avatar_html}<div style="flex:1;min-width:0"><div class="page-name">{ad.get("page_name") or nome}</div><div class="page-sponsored">Patrocinado</div></div></div>
         {body_display}
         {'<div class="copy-title">' + title_safe + '</div>' if title_safe else ''}
         {'<div class="copy-desc">' + desc_safe + '</div>' if desc_safe else ''}
@@ -4353,64 +4214,32 @@ function imgFallback_{uid}(img){{
     {media_block}
     <div class="cta-footer">
         <span class="cta-domain">{ad.get("caption") or (snap_url.replace("https://","").split("/")[0] if snap_url else "")}</span>
-        <a href="{snap_url or '#'}" target="_blank" class="cta-btn" {'style="pointer-events:none;opacity:0.4"' if not snap_url else ''}>
-            {cta_display or "Ver detalhes"}
-        </a>
+        <a href="{snap_url or '#'}" target="_blank" class="cta-btn" {'style="pointer-events:none;opacity:0.4"' if not snap_url else ''}>{cta_display or "Ver detalhes"}</a>
     </div>
     <div class="card-btns">
-        {'<a href="' + snap_url + '" target="_blank" class="lib-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ver no Ad Library</a>' if snap_url else '<span class="lib-btn-disabled">Sem link</span>'}
-        <button class="ia-btn" id="ia_btn_{uid}" onclick="triggerIaAd('{uid}', {j})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-            </svg>
-            Analisar anúncio
-        </button>
+        {'<a href="' + snap_url + '" target="_blank" class="lib-btn">Ver no Ad Library</a>' if snap_url else '<span class="lib-btn-disabled">Sem link</span>'}
+        <button class="ia-btn" id="ia_btn_{uid}" onclick="triggerIaAd('{uid}',{j})">Analisar anúncio</button>
     </div>
     {ia_block_html}
 </div>
 <script>
 window.__PLATS_{uid}__ = {plat_js};
 {_plat_svg_js(uid)}
-</script>
-"""
+</script>"""
             all_cards_html.append(card_html)
- 
+
         cards_joined = "\n".join(all_cards_html)
- 
+
         components.html(f"""
-<!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
-html,body{{background:transparent;font-family:'DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;}}
- 
-/* Grid 3 colunas */
-.ads-grid{{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:16px;
-    align-items:start;
-}}
- 
-/* Card */
-.card{{
-    background:#fff;
-    border:1px solid #dde1e7;
-    border-radius:12px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
-    box-shadow:0 1px 4px rgba(0,0,0,0.06);
-    break-inside:avoid;
-}}
-.status-bar{{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;
-    flex-wrap:wrap;gap:6px;
-}}
+.ads-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}}
+.card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
+.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
 .status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
 .status-dot-inactive{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6b7280;}}
@@ -4419,281 +4248,103 @@ body{{padding-bottom:4px;}}
 .badge-small{{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}}
 .badge-dyn{{background:#f0f9ff;color:#0369a1;border-color:#bae6fd;}}
 .meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
-.meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;font-weight:400;margin-bottom:5px;flex-wrap:wrap;line-height:1.5;}}
+.meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;margin-bottom:5px;flex-wrap:wrap;}}
 .meta-row:last-child{{margin-bottom:0;}}
 .meta-label{{font-size:12px;color:#65676b;font-weight:700;flex-shrink:0;}}
 .plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
-.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:transparent;}}
+.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
 .page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
-.page-name{{font-size:13px;font-weight:700;color:#050505;line-height:1.2;}}
+.page-name{{font-size:13px;font-weight:700;color:#050505;}}
 .page-sponsored{{font-size:11px;color:#65676b;}}
 .copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;min-height:46px;}}
-.copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;line-height:1.4;}}
-.copy-desc{{font-size:12px;color:#65676b;margin-top:3px;line-height:1.4;}}
+.copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;}}
+.copy-desc{{font-size:12px;color:#65676b;margin-top:3px;}}
 .no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;min-height:46px;}}
 .media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:220px;}}
 .img-block{{height:220px;}}
 .video-thumb-block{{height:220px;}}
-.video-block{{height:220px;background:linear-gradient(135deg,#0f1f35 0%,#1a3a5c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
-.video-play-icon{{display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}}
-.video-block:hover .video-play-icon{{transform:scale(1.1);}}
-.no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;border-top:1px solid #f0f2f5;border-bottom:1px solid #f0f2f5;gap:8px;}}
+.video-block{{height:220px;background:linear-gradient(135deg,#0f1f35,#1a3a5c);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
+.video-play-icon{{display:flex;align-items:center;justify-content:center;}}
+.no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:8px;}}
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:10px;min-height:50px;}}
-.cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;letter-spacing:0.3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-.cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-block;transition:background 0.15s;flex-shrink:0;}}
-.cta-btn:hover{{background:#d8dadf;}}
+.cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
 .card-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e4e6ea;}}
-.lib-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:12px;font-weight:700;text-decoration:none;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
-.lib-btn:hover{{background:#166fe5;}}
+.lib-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:12px;font-weight:700;text-decoration:none;}}
 .lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;}}
-.ia-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#f0fdf4;color:#15803d;border:none;border-top:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;border-left:1px solid #e4e6ea;}}
+.ia-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#f0fdf4;color:#15803d;border:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;border-left:1px solid #e4e6ea;}}
 .ia-btn:hover{{background:#dcfce7;}}
-.ia-btn.loading{{opacity:0.6;cursor:not-allowed;}}
- 
-/* FIX 2: Bloco de resultado de IA dentro do card */
-.ia-result-block{{
-    border-top:1px solid #86efac;
-    background:#f0fdf4;
-    padding:12px 14px;
-}}
-.ia-result-header{{
-    display:flex;align-items:center;gap:6px;
-    font-size:11px;font-weight:700;color:#15803d;
-    text-transform:uppercase;letter-spacing:0.5px;
-    margin-bottom:8px;
-}}
-.ia-result-body{{
-    font-size:13px;color:#374151;line-height:1.7;
-    max-height:220px;overflow-y:auto;
-}}
- 
-/* FIX 3: Modal com tamanho automático, sem scroll, imagem centralizada */
-#modal-overlay{{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.88);
-    z-index:999999;
-    align-items:center;
-    justify-content:center;
-    backdrop-filter:blur(5px);
-    padding:20px;
-}}
+.ia-result-block{{border-top:1px solid #86efac;background:#f0fdf4;padding:12px 14px;}}
+.ia-result-header{{font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;margin-bottom:8px;}}
+.ia-result-body{{font-size:13px;color:#374151;line-height:1.7;max-height:220px;overflow-y:auto;}}
+#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
 #modal-overlay.open{{display:flex;}}
-#modal-box{{
-    background:#1a1a2e;
-    border-radius:16px;
-    overflow:hidden;
-    position:relative;
-    display:inline-flex;
-    flex-direction:column;
-    align-items:center;
-    box-shadow:0 24px 80px rgba(0,0,0,0.7);
-    max-width:min(88vw, 860px);
-    max-height:90vh;
-}}
-#modal-close{{
-    position:absolute;
-    top:10px;right:12px;
-    background:rgba(255,255,255,0.18);
-    border:none;border-radius:50%;
-    width:34px;height:34px;
-    font-size:17px;color:#fff;
-    cursor:pointer;z-index:10;
-    display:flex;align-items:center;justify-content:center;
-    transition:background 0.15s;
-}}
-#modal-close:hover{{background:rgba(255,255,255,0.35);}}
-#modal-img{{
-    display:block;
-    /* FIX 3: tamanho automático baseado na imagem real */
-    max-width:min(84vw, 820px);
-    max-height:min(82vh, 820px);
-    width:auto;
-    height:auto;
-    object-fit:contain;
-    border-radius:10px;
-}}
-#modal-video-wrap{{
-    display:flex;flex-direction:column;
-    align-items:center;gap:16px;
-    padding:48px 40px;
-    min-width:320px;
-}}
-#modal-video-btn{{
-    display:inline-flex;align-items:center;gap:8px;
-    background:#1877F2;color:#fff;
-    padding:14px 28px;border-radius:10px;
-    font-size:15px;font-weight:700;
-    text-decoration:none;
-    font-family:'DM Sans',sans-serif;
-}}
-#modal-video-thumb{{
-    max-width:min(70vw, 600px);
-    max-height:min(50vh, 480px);
-    object-fit:contain;
-    border-radius:10px;opacity:0.85;
-    display:block;
-}}
-#modal-loading{{
-    padding:40px;color:rgba(255,255,255,0.6);
-    font-size:14px;font-family:'DM Sans',sans-serif;
-    text-align:center;
-}}
+#modal-box{{background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
+#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
+#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
+#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
+#modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
+#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
 </style>
-</head>
-<body>
- 
-<!-- FIX 3: Modal aprimorado dentro do mesmo iframe -->
+</head><body>
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">✕</button>
         <div id="modal-content"></div>
     </div>
 </div>
- 
-<div class="ads-grid">
-{cards_joined}
-</div>
- 
+<div class="ads-grid">{cards_joined}</div>
 <script>
-// FIX 3: openModal com carregamento assíncrono para tamanho correto
-function openModal(imgSrc, snapUrl, isVideo) {{
-    var overlay = document.getElementById('modal-overlay');
-    var content = document.getElementById('modal-content');
-    content.innerHTML = '';
- 
-    if (isVideo) {{
-        var wrap = document.createElement('div');
-        wrap.id = 'modal-video-wrap';
-        if (imgSrc) {{
-            var thumb = document.createElement('img');
-            thumb.src = imgSrc;
-            thumb.id = 'modal-video-thumb';
-            thumb.onerror = function() {{ this.style.display='none'; }};
-            wrap.appendChild(thumb);
-        }}
-        if (snapUrl) {{
-            var btn = document.createElement('a');
-            btn.href = snapUrl; btn.target = '_blank';
-            btn.id = 'modal-video-btn';
-            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
-            wrap.appendChild(btn);
-        }} else {{
-            var msg = document.createElement('div');
-            msg.style.cssText = 'color:#aaa;font-size:14px;padding:12px';
-            msg.textContent = 'Vídeo não disponível.';
-            wrap.appendChild(msg);
-        }}
-        content.appendChild(wrap);
-        overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }} else {{
-        if (!imgSrc && snapUrl) {{
-            window.open(snapUrl, '_blank');
-            return;
-        }}
-        if (!imgSrc) return;
- 
-        // Mostra loading enquanto carrega
-        var loading = document.createElement('div');
-        loading.id = 'modal-loading';
-        loading.textContent = 'Carregando imagem…';
-        content.appendChild(loading);
-        overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
- 
-        // Pré-carrega a imagem para obter dimensões reais
-        var tmp = new Image();
-        tmp.onload = function() {{
-            content.innerHTML = '';
-            var img = document.createElement('img');
-            img.id = 'modal-img';
-            img.src = imgSrc;
-            // Sem width/height fixos — o CSS max-width/max-height cuida disso
-            content.appendChild(img);
-        }};
-        tmp.onerror = function() {{
-            content.innerHTML = '';
-            if (snapUrl) {{
-                window.open(snapUrl, '_blank');
-                closeModal();
-            }} else {{
-                var msg = document.createElement('div');
-                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center';
-                msg.textContent = 'Imagem não disponível.';
-                content.appendChild(msg);
-            }}
-        }};
-        tmp.src = imgSrc;
+function openModal(imgSrc,snapUrl,isVideo){{
+    var overlay=document.getElementById('modal-overlay');
+    var content=document.getElementById('modal-content');
+    content.innerHTML='';
+    if(isVideo){{
+        var wrap=document.createElement('div');wrap.id='modal-video-wrap';
+        if(imgSrc){{var thumb=document.createElement('img');thumb.src=imgSrc;thumb.id='modal-video-thumb';thumb.style.cssText='max-width:min(70vw,600px);max-height:min(50vh,480px);object-fit:contain;border-radius:10px;display:block;';thumb.onerror=function(){{this.style.display='none';}};wrap.appendChild(thumb);}}
+        if(snapUrl){{var btn=document.createElement('a');btn.href=snapUrl;btn.target='_blank';btn.id='modal-video-btn';btn.innerHTML='▶ Abrir vídeo no Ad Library';wrap.appendChild(btn);}}
+        content.appendChild(wrap);overlay.classList.add('open');
+    }}else{{
+        if(!imgSrc&&snapUrl){{window.open(snapUrl,'_blank');return;}}
+        if(!imgSrc)return;
+        var loading=document.createElement('div');loading.id='modal-loading';loading.textContent='Carregando…';content.appendChild(loading);overlay.classList.add('open');
+        var tmp=new Image();
+        tmp.onload=function(){{content.innerHTML='';var img=document.createElement('img');img.id='modal-img';img.src=imgSrc;content.appendChild(img);}};
+        tmp.onerror=function(){{content.innerHTML='';if(snapUrl){{window.open(snapUrl,'_blank');closeModal();}}else{{var msg=document.createElement('div');msg.style.cssText='color:#aaa;font-size:14px;padding:32px;text-align:center';msg.textContent='Imagem não disponível.';content.appendChild(msg);}}}};
+        tmp.src=imgSrc;
     }}
 }}
- 
-function closeModal() {{
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('modal-content').innerHTML = '';
-    document.body.style.overflow = '';
-}}
- 
-document.addEventListener('keydown', function(e) {{
-    if (e.key === 'Escape') closeModal();
-}});
- 
-// FIX 2: triggerIaAd busca o ghost button correto
-function triggerIaAd(uid, idx) {{
-    var targetText = '__ia_ad_' + uid + '__';
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if (b.innerText.trim() === targetText) {{
-            var iaBtn = document.getElementById('ia_btn_' + uid);
-            if (iaBtn) {{ iaBtn.classList.add('loading'); iaBtn.textContent = 'Analisando…'; }}
-            b.click();
-            return;
-        }}
+function closeModal(){{document.getElementById('modal-overlay').classList.remove('open');document.getElementById('modal-content').innerHTML='';}}
+document.addEventListener('keydown',function(e){{if(e.key==='Escape')closeModal();}});
+function triggerIaAd(uid,idx){{
+    var targetText='__ia_ad_'+uid+'__';
+    var btns=window.parent.document.querySelectorAll('button');
+    for(var b of btns){{
+        var txt=(b.textContent||b.innerText||'').trim();
+        if(txt===targetText){{var iaBtn=document.getElementById('ia_btn_'+uid);if(iaBtn){{iaBtn.classList.add('loading');iaBtn.textContent='Analisando…';}}b.click();return;}}
     }}
 }}
- 
-// Ajustar altura do iframe
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{
-            if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 20) + 'px';
-                frames[i].style.minHeight = 'unset';
-                break;
-            }}
-        }} catch(e) {{}}
-    }}
+function syncHeight(){{
+    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
+    var frames=window.parent.document.querySelectorAll('iframe');
+    for(var i=0;i<frames.length;i++){{try{{if(frames[i].contentWindow===window){{frames[i].style.height=(h+20)+'px';break;}}}}catch(e){{}}}}
 }}
- 
-document.querySelectorAll('img').forEach(function(img) {{
-    img.addEventListener('load', function() {{ setTimeout(syncHeight, 30); }});
-    img.addEventListener('error', function() {{ setTimeout(syncHeight, 30); }});
-}});
-if (window.ResizeObserver) {{
-    new ResizeObserver(syncHeight).observe(document.body);
-}}
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200);
-setTimeout(syncHeight, 600);
-setTimeout(syncHeight, 1500);
-</script>
-</body>
-</html>
+document.querySelectorAll('img').forEach(function(img){{img.addEventListener('load',function(){{setTimeout(syncHeight,30);}});img.addEventListener('error',function(){{setTimeout(syncHeight,30);}});}});
+if(window.ResizeObserver)new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded',syncHeight);
+window.addEventListener('load',syncHeight);
+setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500);
+</script></body></html>
 """, height=600, scrolling=False)
- 
-        # ── Ghost buttons para análise IA por ad ──────────────────────
+
         for j, ad in enumerate(ads_f):
             uid = f"{safe_key(ck)}_{j}"
             chave_ia_ad = f"ia_ad_result_{safe_key(ck)}_{j}"
             if chave_ia_ad not in st.session_state:
                 st.session_state[chave_ia_ad] = ""
- 
+
             if st.button(f"__ia_ad_{uid}__", key=f"btn_ia_ad_{safe_key(ck)}_{j}"):
                 if gemini_model is None:
                     st.session_state[chave_ia_ad] = "Configure GEMINI_API_KEY nos secrets."
@@ -4702,7 +4353,7 @@ setTimeout(syncHeight, 1500);
                         try:
                             prompt_ad_ia = f"""Você é especialista em mídia paga e copywriting.
 Analise este anúncio específico e dê feedback estratégico em português.
- 
+
 Empresa: {nome}
 Formato: {ad.get("formato","")}
 Plataformas: {", ".join(ad.get("plataformas") or [])}
@@ -4710,20 +4361,13 @@ Veiculação: {ad.get("data_inicio","")}
 Título: {ad.get("title","")}
 Copy principal: {ad.get("body","")}
 Descrição: {ad.get("description","")}
- 
+
 Responda com:
 ### Objetivo do Anúncio
-Qual é o objetivo provável deste anúncio?
- 
 ### Análise de Copy
-Pontos fortes e fracos do texto.
- 
 ### Análise de Formato
-O formato escolhido é adequado? Por quê?
- 
-### Sugestões de Melhoria
-2 melhorias concretas que aumentariam a performance.
- 
+### Sugestões de Melhoria (2 concretas)
+
 Seja direto e objetivo."""
                             resp = gemini_model.generate_content(prompt_ad_ia)
                             st.session_state[chave_ia_ad] = resp.text
@@ -4731,14 +4375,13 @@ Seja direto e objetivo."""
                         except Exception as ex:
                             st.session_state[chave_ia_ad] = f"Erro: {ex}"
                             st.rerun()
- 
+
         st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
- 
-        # ── Análise IA geral da empresa ───────────────────────────────
+
         chave_ia = f"ia_ads_{safe_key(ck)}"
         if chave_ia not in st.session_state:
             st.session_state[chave_ia] = ""
- 
+
         resumo_ads = "\n".join([
             f"- [{a['formato']}{'(dinâmico)' if a.get('is_dynamic') else ''}] "
             f"Título: {_truncar(a.get('title',''),60) or '—'} | "
@@ -4746,20 +4389,16 @@ Seja direto e objetivo."""
             f"Impressões: {a['impressoes'] or '—'}"
             for a in ads_f[:15]
         ])
- 
+
         ia_html_content = st.session_state.get(chave_ia,"").replace("\n","<br>")
         if ia_html_content:
             st.markdown(f"""
             <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px'>
                 <div style='padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
-                            text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb'>
-                    Análise Estratégica com IA
-                </div>
-                <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75'>
-                    {ia_html_content}
-                </div>
+                            text-transform:uppercase;border-bottom:1px solid #e5e7eb'>Análise Estratégica com IA</div>
+                <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75'>{ia_html_content}</div>
             </div>""", unsafe_allow_html=True)
- 
+
         col_ia, _ = st.columns([2, 5])
         with col_ia:
             gerar_ia = st.button(
@@ -4768,7 +4407,7 @@ Seja direto e objetivo."""
                 use_container_width=True,
                 type="primary",
             )
- 
+
         if gerar_ia:
             if gemini_model is None:
                 st.session_state[chave_ia] = "Configure GEMINI_API_KEY nos secrets."
@@ -4780,17 +4419,16 @@ Seja direto e objetivo."""
                         n_img = sum(1 for a in ads_f if "Imagem" in a["formato"])
                         prompt_ads = f"""Você é especialista em mídia paga e marketing digital.
 Analise os anúncios de "{nome}" e gere um relatório estratégico completo em português.
- 
+
 Empresa: {nome} | Total: {len(ads_f)} | {n_img} imagens | {n_vid} vídeos | {n_dyn} dinâmicos
- 
+
 Amostra:
 {resumo_ads}
- 
+
 ---
 ### Estratégia de Mídia
 ### Padrões de Copy e Mensagem
 ### Análise de Formatos
-### Uso de Anúncios Dinâmicos
 ### Estimativa de Investimento e Alcance
 ### Pontos de Atenção
 ### Oportunidades Competitivas (3 ações concretas)"""
@@ -4800,7 +4438,9 @@ Amostra:
                     except Exception as ex:
                         st.session_state[chave_ia] = f"Erro: {ex}"
                         st.rerun()
- 
+
+    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
     aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
     if empresas_com_dados:
         render_ads_empresa(empresas_com_dados[aba_idx])
