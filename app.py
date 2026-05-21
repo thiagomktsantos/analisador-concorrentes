@@ -3641,8 +3641,6 @@ setTimeout(ajustarAltura, 100);
         st.info("Configure pelo menos uma empresa acima para buscar anúncios.")
         st.stop()
  
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>", unsafe_allow_html=True)
- 
     query_values = {}
     for e in empresas_configuradas:
         ck = e["nome"]
@@ -3844,6 +3842,7 @@ setTimeout(ajustarAltura, 100);
         div[data-baseweb="select"] input {{
             background-color: #ffffff !important;
             background: #ffffff !important;
+            border: 1.5px solid #c9cdd4 !important;
         }}
         .st-key-{filtros_key} {{
             margin-top: -15px !important;
@@ -3958,7 +3957,7 @@ function ajustarAltura() {{
 if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
 setTimeout(ajustarAltura, 100);
 </script>
-""", height=80, scrolling=False)
+""", height=60, scrolling=False)
  
         st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
  
