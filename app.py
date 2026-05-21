@@ -3282,23 +3282,145 @@ html, body { background:transparent; overflow:hidden; }
     empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
     empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
 
-# ── Linha: label + abas nativas + botão editar ───────────────────
+# ── Barra única: label + abas + botão editar ─────────────────────
     if "ads_mostrar_edicao" not in st.session_state:
         st.session_state.ads_mostrar_edicao = False
+    if "ads_aba_ativa" not in st.session_state:
+        st.session_state.ads_aba_ativa = 0
 
-    col_label, col_btn_editar = st.columns([8, 2])
-    with col_label:
-        st.markdown(
-            "<div style='font-size:11px;font-weight:700;color:#9ca3af;"
-            "text-transform:uppercase;letter-spacing:1px;padding-top:8px'>"
-            "Páginas Configuradas</div>",
-            unsafe_allow_html=True,
-        )
-    with col_btn_editar:
-        label_editar = "✕ Fechar" if st.session_state.ads_mostrar_edicao else "⚙️ Editar Páginas"
-        if st.button(label_editar, key="btn_toggle_edicao_ads", use_container_width=True):
-            st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
+    # Ghost buttons para toggle e troca de aba
+    ghost_barra_css = " ".join([
+        ".st-key-btn_toggle_edicao_ads { display:none !important; }",
+        *[f".st-key-btn_aba_ads_{i} {{ display:none !important; }}" for i in range(len(empresas_configuradas))],
+    ])
+    st.markdown(f"<style>{ghost_barra_css}</style>", unsafe_allow_html=True)
+
+    if st.button("_toggle_edicao_ads_", key="btn_toggle_edicao_ads"):
+        st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
+        st.rerun()
+
+    for i in range(len(empresas_configuradas)):
+        if st.button(f"_aba_ads_{i}_", key=f"btn_aba_ads_{i}"):
+            st.session_state.ads_aba_ativa = i
             st.rerun()
+
+    abas_nomes = [e["nome"] for e in empresas_configuradas]
+    aba_ativa  = st.session_state.ads_aba_ativa
+    editando   = st.session_state.ads_mostrar_edicao
+
+    abas_html_items = ""
+    for i, nome in enumerate(abas_nomes):
+        active_class = "active" if i == aba_ativa else ""
+        abas_html_items += f'<button class="aba {active_class}" onclick="triggerAba({i})">{nome}</button>'
+
+    components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+.barra {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    height:52px;
+    overflow:hidden;
+}}
+.barra-label {{
+    padding:0 18px;
+    font-size:11px;
+    font-weight:700;
+    color:#9ca3af;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    white-space:nowrap;
+    border-right:1px solid #e5e7eb;
+    height:100%;
+    display:flex;
+    align-items:center;
+    flex-shrink:0;
+}}
+.abas-wrap {{
+    display:flex;
+    align-items:center;
+    flex:1;
+    height:100%;
+}}
+.aba {{
+    height:100%;
+    padding:0 24px;
+    font-size:14px;
+    font-weight:600;
+    color:#9ca3af;
+    background:transparent;
+    border:none;
+    border-right:1px solid #f3f4f6;
+    cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+    transition:all 0.15s;
+    white-space:nowrap;
+}}
+.aba:hover {{ color:#374151; background:#f9fafb; }}
+.aba.active {{
+    color:#fff;
+    background:#0e2a47;
+}}
+.btn-editar {{
+    height:36px;
+    margin:0 10px;
+    padding:0 16px;
+    border:1px solid #e5e7eb;
+    border-radius:8px;
+    background:#fff;
+    font-size:13px;
+    font-weight:700;
+    color:#374151;
+    cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+    white-space:nowrap;
+    flex-shrink:0;
+    transition:all 0.15s;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}}
+.btn-editar:hover {{ background:#f3f4f6; border-color:#9ca3af; }}
+.btn-editar.open {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
+</style>
+<div class="barra">
+    <div class="barra-label">Páginas Configuradas</div>
+    <div class="abas-wrap">
+        {abas_html_items}
+    </div>
+    <button class="btn-editar {'open' if editando else ''}" onclick="triggerToggle()">
+        {'✕ Fechar' if editando else '⚙️ Editar Páginas'}
+    </button>
+</div>
+<script>
+function triggerToggle() {{
+    trigger('_toggle_edicao_ads_');
+}}
+function triggerAba(i) {{
+    trigger('_aba_ads_' + i + '_');
+}}
+function trigger(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if (b.innerText.trim() === label) {{ b.click(); return; }}
+    }}
+}}
+function ajustarAltura() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = '60px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+setTimeout(ajustarAltura, 50);
+</script>
+""", height=60, scrolling=False)
 
     # ── Painel de edição (expansível) ────────────────────────────────
     if st.session_state.ads_mostrar_edicao:
@@ -4675,9 +4797,9 @@ Amostra:
                         st.session_state[chave_ia] = f"Erro: {ex}"
                         st.rerun()
  
-    for aba, emp_item in zip(abas_ads, empresas_com_dados):
-        with aba:
-            render_ads_empresa(emp_item)
+    aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
+    if empresas_com_dados:
+        render_ads_empresa(empresas_com_dados[aba_idx])
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
