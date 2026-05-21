@@ -3849,13 +3849,11 @@ setTimeout(ajustarAltura, 100);
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
                 {avatar_empresa_html}
                 <div style='flex:1;min-width:0'>
-                    <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
-                    <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px'>
-                        <span style='font-size:12px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
+                    <div style='font-family:'DM Sans', sans-serif !important;font-size:17px;font-weight:700;color:#111827'>{nome}</div>
+                    <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
+                        <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
                         <span style='color:#d1d5db;font-size:12px'>·</span>
-                        <span style='font-size:12px;color:#6b7280'>{fresco_label}</span>
-                        <span style='color:#d1d5db;font-size:12px'>·</span>
-                        <span style='font-size:12px;color:#6b7280'>Página: {page_display}</span>
+                        <span style='font-size:13px;color:#6b7280'>Página: {page_display}</span>
                     </div>
                 </div>
                 <div style='display:flex;align-items:center;gap:0;flex-shrink:0'>
