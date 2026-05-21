@@ -3865,14 +3865,14 @@ setTimeout(ajustarAltura, 100);
             padding: 0 14px !important;
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #6b7280 !important;
+            color: #000 !important;
             box-shadow: none !important;
             line-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #9ca3af !important;
+            color: #000 !important;
         }}
 
         /* ── Wrapper do select ── */
