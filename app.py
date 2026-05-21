@@ -3856,8 +3856,7 @@ setTimeout(ajustarAltura, 100);
             min-height: 43px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
-            background-color: #ffffff !important;
-            border: 2px solid #e5e7eb !important;
+            background-color: #ededed !important;
             border-radius: 8px !important;
             height: 43px !important;
             min-height: 43px !important;
