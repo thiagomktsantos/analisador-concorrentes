@@ -783,7 +783,7 @@ if not st.session_state.logado:
         font-family: 'DM Sans', sans-serif !important;
         padding: 8px 0 !important;
         color: #9ca3af !important;
-        border-bottom: 2px solid transparent !important;
+        border-radius: 8px 8px 0px 0px !important;
         margin-bottom: -2px !important;
         background: transparent !important;
         box-shadow: none !important;
@@ -792,7 +792,6 @@ if not st.session_state.logado:
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
         color: #fff !important;
-        border-bottom: 2px solid #3a9fd6 !important;
         background-color: #3a9fd6 !important;
     }
     div[data-testid="stTabs"] button[role="tab"]:focus,
