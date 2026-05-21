@@ -3846,7 +3846,7 @@ setTimeout(ajustarAltura, 100);
             background: #ffffff !important;
         }}
         .st-key-{filtros_key} {{
-            margin-top: -12px !important;
+            margin-top: -14px !important;
         }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
             background: #ffffff !important;
