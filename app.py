@@ -3841,61 +3841,77 @@ setTimeout(ajustarAltura, 100);
         }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
             background: #ffffff !important;
-            border: 2px solid #e5e7eb !important;
+            border: 1px solid #e5e7eb !important;
             border-top: none !important;
             border-radius: 0 0 12px 12px !important;
-            padding: 10px 14px !important;
+            padding: 12px 14px !important;
             gap: 10px !important;
             align-items: center !important;
         }}
 
-        /* ── Input de texto ── */
+        /* ── Wrapper do input ── */
+        .st-key-{filtros_key} div[data-testid="stTextInput"] > div,
+        .st-key-{filtros_key} div[data-testid="stTextInput"] > div > div {{
+            background-color: #ffffff !important;
+            height: 44px !important;
+            min-height: 44px !important;
+        }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
             background-color: #ffffff !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
-            height: 42px !important;
-            min-height: 42px !important;
+            height: 44px !important;
+            min-height: 44px !important;
             padding: 0 14px !important;
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #374151 !important;
+            color: #6b7280 !important;
             box-shadow: none !important;
+            line-height: 44px !important;
         }}
         .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
             color: #9ca3af !important;
         }}
-        .st-key-{filtros_key} div[data-testid="stTextInput"] > div {{
-            background-color: #ffffff !important;
-        }}
 
-        /* ── Selects ── */
+        /* ── Wrapper do select ── */
+        .st-key-{filtros_key} div[data-baseweb="select"] {{
+            height: 44px !important;
+            min-height: 44px !important;
+        }}
         .st-key-{filtros_key} div[data-baseweb="select"] > div {{
             background-color: #ffffff !important;
             border: 2px solid #e5e7eb !important;
             border-radius: 8px !important;
-            height: 42px !important;
-            min-height: 42px !important;
+            height: 44px !important;
+            min-height: 44px !important;
             padding: 0 14px !important;
-            font-size: 14px !important;
-            font-family: 'DM Sans', sans-serif !important;
-            color: #374151 !important;
             box-shadow: none !important;
+            display: flex !important;
             align-items: center !important;
         }}
-        .st-key-{filtros_key} div[data-baseweb="select"] span,
-        .st-key-{filtros_key} div[data-baseweb="select"] [data-testid="stSelectboxLabel"] {{
+        .st-key-{filtros_key} div[data-baseweb="select"] span {{
             font-size: 14px !important;
             font-family: 'DM Sans', sans-serif !important;
-            color: #374151 !important;
-            line-height: 42px !important;
+            color: #6b7280 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }}
         .st-key-{filtros_key} div[data-baseweb="select"] svg {{
             color: #9ca3af !important;
-            width: 16px !important;
-            height: 16px !important;
+            flex-shrink: 0 !important;
+        }}
+
+        /* ── Remover borda de foco padrão do Streamlit ── */
+        .st-key-{filtros_key} div[data-testid="stTextInput"] input:focus {{
+            border-color: #3a9fd6 !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }}
+        .st-key-{filtros_key} div[data-baseweb="select"]:focus-within > div {{
+            border-color: #3a9fd6 !important;
         }}
         </style>
         """, unsafe_allow_html=True)
