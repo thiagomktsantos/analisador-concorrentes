@@ -3806,7 +3806,7 @@ setTimeout(ajustarAltura, 100);
             lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1877F2;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Ad Library</a>'
  
         st.markdown(f"""
-        <div style='background:#fff;border:1.5px solid #b0b7c3;border-bottom:none;
+        <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
                     border-radius:12px 12px 0 0;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
                 {avatar_empresa_html}
@@ -3836,19 +3836,24 @@ setTimeout(ajustarAltura, 100);
         filtros_key = f"filtros_{safe_key(ck)}"
         st.markdown(f"""
         <style>
-        div[data-testid="stTextInput"] input,
-        div[data-baseweb="select"] > div,
-        div[data-baseweb="select"] > div > div,
-        div[data-baseweb="select"] input {{
+        div[data-testid="stTextInput"] input {{
             background-color: #ffffff !important;
             background: #ffffff !important;
+            border: 1.5px solid #b0b7c3 !important;
+            border-radius: 7px !important;
+        }}
+        div[data-baseweb="select"] > div:first-child {{
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            border: 1.5px solid #b0b7c3 !important;
+            border-radius: 7px !important;
         }}
         .st-key-{filtros_key} {{
             margin-top: -15px !important;
         }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
             background: #ffffff !important;
-            border: 1.5px solid #b0b7c3 !important;
+            border: 1px solid #e5e7eb !important;
             border-top: none !important;
             border-radius: 0 0 12px 12px !important;
             padding: 10px 14px !important;
