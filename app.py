@@ -791,8 +791,9 @@ if not st.session_state.logado:
         text-align: center !important;
     }
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #3a9fd6 !important;
+        color: #fff !important;
         border-bottom: 2px solid #3a9fd6 !important;
+        background-color: #3a9fd6 !important;
     }
     div[data-testid="stTabs"] button[role="tab"]:focus,
     div[data-testid="stTabs"] button[role="tab"]:focus-visible {
