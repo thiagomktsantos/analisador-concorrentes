@@ -3841,7 +3841,7 @@ setTimeout(ajustarAltura, 100);
         }}
         .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
             background: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
+            border: 2px solid #e5e7eb !important;
             border-top: none !important;
             border-radius: 0 0 12px 12px !important;
             padding: 10px 14px !important;
