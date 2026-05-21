@@ -3453,7 +3453,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 """, height=56, scrolling=False)
 
     # ── Painel de edição (expansível) ────────────────────────────────
-if st.session_state.ads_mostrar_edicao:
+    if st.session_state.ads_mostrar_edicao:
 
         st.markdown("""
         <style>
