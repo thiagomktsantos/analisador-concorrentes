@@ -572,7 +572,7 @@ section.main div[data-testid="stTextArea"] textarea {
 div[data-testid="stTabs"] > div:first-child {
     justify-content: center !important; border-bottom: 2px solid #e5e7eb !important; gap: 0 !important;
 }
-div[data-testid="stTabs"] button[role="tab"] {
+
     font-size: 15px !important;
     font-weight: 600 !important;
     font-family: 'DM Sans', sans-serif !important;
@@ -794,6 +794,7 @@ if not st.session_state.logado:
         color: #fff !important;
         border-bottom: 2px solid #3a9fd6 !important;
         background-color: #3a9fd6 !important;
+        border-radius: 8px 8px 0px 0px !important;
     }
     div[data-testid="stTabs"] button[role="tab"]:focus,
     div[data-testid="stTabs"] button[role="tab"]:focus-visible {
