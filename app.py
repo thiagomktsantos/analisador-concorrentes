@@ -793,7 +793,6 @@ if not st.session_state.logado:
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
         color: #3a9fd6 !important;
         border-bottom: 2px solid #3a9fd6 !important;
-        background: transparent !important;
     }
     div[data-testid="stTabs"] button[role="tab"]:focus,
     div[data-testid="stTabs"] button[role="tab"]:focus-visible {
