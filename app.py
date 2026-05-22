@@ -3508,10 +3508,10 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 background: #eff6ff !important;
                 border: 1.5px dashed #93c5fd !important;
                 border-radius: 0 0 14px 14px !important;
-                margin-top: -8px !important;
+                margin-top: 0px !important;
                 margin-left: 32px !important;
                 margin-right: 32px !important;
-                padding: 8px 16px 8px !important;
+                padding: 0px 16px 12px !important;
                 box-shadow: none !important;
             }}
             </style>
