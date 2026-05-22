@@ -3467,6 +3467,17 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
         padding: 8px 12px !important;
         box-shadow: none !important;
         }
+        .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlock"] > div:first-child,
+        .st-key-ads_edit_panel .stElementContainer:has(> div > div > .stMarkdown:empty),
+        .st-key-ads_edit_panel .stElementContainer:has(> div > .stButton) {
+            height: 0 !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            display: block !important;
+            line-height: 0 !important;
+        }
         .st-key-ads_edit_panel,
         .st-key-ads_edit_panel > div,
         .st-key-ads_edit_panel > div > div,
