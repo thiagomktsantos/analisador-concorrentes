@@ -3538,12 +3538,12 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
         .st-key-ads_edit_panel [data-testid="column"] > div,
         .st-key-ads_edit_panel .stElementContainer,
         .st-key-ads_edit_panel .stElementContainer > div {{
-            background: #77ace2 !important;
+            background: #b9d8f9 !important;
             border:none !important;
         }}
         .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] {{
-            background: #77ace2 !important;
-            border: 1.5px dashed #93c5fd !important;
+            background: #b9d8f9 !important;
+            border: 1.5px dashed #fff !important;
             border-radius: 14px !important;
             margin: 0px !important;
             padding: 0px 16px 0px 16px !important;
