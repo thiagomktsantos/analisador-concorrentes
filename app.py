@@ -3150,9 +3150,8 @@ elif st.session_state.pagina == "ads":
         st.session_state.ads_onboarding_termo = ""
     if "ads_editando_empresa" not in st.session_state:
         st.session_state.ads_editando_empresa = None
-    # Nova chave para controlar aba ativa (anuncios / analise)
     if "ads_aba_conteudo" not in st.session_state:
-        st.session_state.ads_aba_conteudo = {}  # {nome_empresa: "anuncios" | "analise"}
+        st.session_state.ads_aba_conteudo = {}
  
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
@@ -3333,7 +3332,6 @@ html, body { background:transparent; overflow:hidden; }
             st.session_state.ads_aba_ativa = i
             st.rerun()
  
-    # Ghost buttons para trocar aba de conteúdo (anuncios / analise) por empresa
     conteudo_tab_ids = []
     for e in empresas_configuradas:
         sk = safe_key(e["nome"])
@@ -3725,7 +3723,7 @@ setTimeout(ajustarAltura, 100);
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
-    # ── Função plat SVG ──────────────────────────────────────────────
+    # ── função plat SVG ──────────────────────────────────────────────
     def _plat_svg_js(uid: str) -> str:
         return f"""
 (function(){{
@@ -3752,7 +3750,7 @@ setTimeout(ajustarAltura, 100);
 """
  
     # ══════════════════════════════════════════════════════════════════
-    # FUNÇÃO PRINCIPAL: render_ads_empresa — com 2 abas principais
+    # FUNÇÃO PRINCIPAL: render_ads_empresa
     # ══════════════════════════════════════════════════════════════════
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3836,7 +3834,6 @@ setTimeout(ajustarAltura, 100);
         page_display = configured_page if configured_page else "—"
         lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
  
-        # ── Cabeçalho da empresa ──────────────────────────────────────
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
@@ -3861,7 +3858,6 @@ setTimeout(ajustarAltura, 100);
             </div>
         </div>""", unsafe_allow_html=True)
  
-        # ── Barra de abas: Anúncios | Análise de IA ──────────────────
         aba_conteudo_atual = st.session_state.ads_aba_conteudo.get(ck, "anuncios")
  
         components.html(f"""
@@ -3870,28 +3866,14 @@ setTimeout(ajustarAltura, 100);
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
 .tabs-bar {{
-    display: flex;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-bottom: none;
+    display: flex; background: #f9fafb;
+    border: 1px solid #e5e7eb; border-top: none; border-bottom: none;
 }}
 .tab-btn {{
-    flex: 1;
-    padding: 14px 0;
-    font-size: 14px;
-    font-weight: 700;
-    color: #9ca3af;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    border-bottom: 3px solid transparent;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    flex: 1; padding: 14px 0; font-size: 14px; font-weight: 700; color: #9ca3af;
+    background: transparent; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; border-bottom: 3px solid transparent;
+    transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px;
 }}
 .tab-btn:hover {{ color: #374151; background: #f3f4f6; }}
 .tab-btn.active {{ color: #1a2e4a; border-bottom: 3px solid #3a9fd6; background: #fff; font-weight: 800; }}
@@ -3937,7 +3919,6 @@ function triggerTab(sk, tab) {{
         # ════════════════════════════════════════════════════════════
         if aba_conteudo_atual == "anuncios":
  
-            # Filtros
             filtros_key = f"filtros_{sk}"
             st.markdown(f"""
             <style>
@@ -3992,7 +3973,6 @@ function triggerTab(sk, tab) {{
                 st.warning("Nenhum anúncio com os filtros aplicados.")
                 return
  
-            # Stats
             n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
             n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
             n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -4064,7 +4044,21 @@ setTimeout(ajustarAltura,100);
                 cta         = ad.get("cta") or ""
                 uid         = f"{sk}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
-                microlink_url = _microlink_screenshot(snap_url)
+ 
+                # Prepara listas de imagens e vídeos para o modal
+                # Prioridade: images_b64 primeiro, depois URLs originais como fallback
+                modal_imgs = []
+                if images_b64:
+                    modal_imgs.extend(images_b64)
+                for img_url in images:
+                    if img_url not in modal_imgs:
+                        modal_imgs.append(img_url)
+                modal_imgs_js  = _json.dumps(modal_imgs[:6])   # máx 6 imagens
+                modal_videos_js = _json.dumps(videos[:2])       # máx 2 qualidades
+ 
+                snap_safe = snap_url.replace("'", "\\'")
+ 
+                img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
  
                 debug_keys = {
                    "id": ad.get("id", ""),
@@ -4089,31 +4083,18 @@ setTimeout(ajustarAltura,100);
                    "cta": ad.get("cta", ""),
                    "page_profile_picture": (ad.get("page_profile_picture") or "")[:60],
                 }
-
                 debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                 debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
  
-                img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
-                img_fallbacks = []
-                if images_b64 and len(images_b64) > 1:
-                    img_fallbacks.extend(images_b64[1:])
-                img_fallbacks.extend([u for u in images if u not in img_fallbacks])
-                if microlink_url:
-                    img_fallbacks.append(microlink_url)
-                srcs_js = _json.dumps(img_fallbacks)
- 
+                # ── Media block ──────────────────────────────────────
                 if videos:
-                    if snap_url:
-                        _snap_safe = snap_url.replace("'", "\\'")
-                        video_onclick = f"openModal('{video_thumb.replace(chr(39), '')}', '{_snap_safe}', true)"
-                        video_style   = "cursor:pointer;"
-                    else:
-                        video_onclick = ""
-                        video_style   = ""
+                    # Vídeo: thumb clicável que abre modal com player inline
+                    v_onclick = f"openModal('{video_thumb.replace(chr(39),'')}','{snap_safe}',true,{modal_imgs_js},{modal_videos_js})"
                     if video_thumb:
                         media_block = f"""
-<div class="media-block video-thumb-block" onclick="{video_onclick}" style="{video_style}position:relative;">
-    <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
+<div class="media-block video-thumb-block" onclick="{v_onclick}" style="cursor:pointer;position:relative;">
+    <img src="{video_thumb}" loading="lazy"
+         style="width:100%;height:100%;object-fit:cover;display:block;"
          onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
     <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;flex-direction:column;gap:8px">
         <svg width="36" height="36" viewBox="0 0 54 54" fill="none"><circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/><polygon points="22,18 40,27 22,36" fill="white"/></svg>
@@ -4123,43 +4104,42 @@ setTimeout(ajustarAltura,100);
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
         </div>
     </div>
-    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>' if snap_url else ''}
+    <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;pointer-events:none;">▶ ASSISTIR</div>
 </div>"""
                     else:
                         media_block = f"""
-<div class="media-block video-block" onclick="{video_onclick}" style="{video_style}">
+<div class="media-block video-block" onclick="{v_onclick}" style="cursor:pointer;">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
             <polygon points="22,18 40,27 22,36" fill="white"/>
         </svg>
     </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">Clique para assistir</div>
 </div>"""
+ 
                 elif img_primary:
                     media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
+     onclick="openModal('{img_primary.replace(chr(39),'')!s}','{snap_safe}',false,{modal_imgs_js},{modal_videos_js})">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
         <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ampliar</div>
 </div>
 <script>
-var _srcs_{uid}={srcs_js};
-var _idx_{uid}=0;
+var _srcs_{uid}={modal_imgs_js};
+var _idx_{uid}=1;
 function imgFallback_{uid}(img){{
-    _idx_{uid}++;
-    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
+    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}++];}}
     else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
                 else:
-                    _sv = snap_url.replace("'", "")
-                    _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
+                    _nm_onclick = f'onclick="openModal(\'\',\'{snap_safe}\',false,[],[])"' if snap_url else ""
                     _nm_color   = "#3a9fd6" if snap_url else "#c4c4c4"
                     _nm_label   = "Ver criativo →" if snap_url else "Sem criativo"
                     media_block = (
@@ -4251,6 +4231,7 @@ window.__PLATS_{uid}__ = {plat_js};
  
             cards_joined = "\n".join(all_cards_html)
  
+            # ── HTML principal dos cards + MODAL MELHORADO ────────────
             components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4300,71 +4281,475 @@ body{{padding-bottom:4px;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:11px;color:#374151;padding:10px 14px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:200px;overflow-y:auto;border-top:1px solid #fde68a;}}
-#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
-#modal-overlay.open{{display:flex;}}
-#modal-box{{background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
-#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
-#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
-#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
-#modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
-#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
+ 
+/* ══════════════════════════════════════════
+   MODAL MELHORADO — sem scroll, com tabs
+   ══════════════════════════════════════════ */
+#modal-overlay {{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}}
+#modal-overlay.open {{ display: flex; }}
+ 
+#modal-box {{
+    background: #111827;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    width: min(94vw, 540px);
+    max-height: 94vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+}}
+ 
+#modal-header {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}}
+ 
+#modal-tabs {{
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 3px;
+}}
+ 
+.modal-tab {{
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+}}
+.modal-tab:hover {{ color: rgba(255,255,255,0.8); }}
+.modal-tab.active {{
+    background: #ffffff;
+    color: #111827;
+}}
+ 
+#modal-close {{
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    margin-left: 10px;
+}}
+#modal-close:hover {{ background: rgba(255,255,255,0.2); color: #fff; }}
+ 
+/* Área de conteúdo — sem scroll */
+#modal-content-area {{
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow: hidden;
+    position: relative;
+}}
+ 
+/* Painéis */
+.modal-panel {{
+    display: none;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+}}
+.modal-panel.active {{ display: flex; }}
+ 
+/* Feed: imagem em tamanho real */
+#panel-feed img {{
+    max-width: 100%;
+    max-height: calc(94vh - 120px);
+    border-radius: 10px;
+    object-fit: contain;
+    display: block;
+}}
+ 
+/* Preview: moldura de celular quadrada (feed) */
+.phone-frame {{
+    background: #000;
+    border-radius: 28px;
+    border: 6px solid #2d2d2d;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 2px #3d3d3d, 0 20px 60px rgba(0,0,0,0.6);
+    flex-shrink: 0;
+}}
+.phone-frame img, .phone-frame video {{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}}
+.phone-notch {{
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px; height: 8px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    z-index: 10;
+}}
+ 
+/* Labels das tabs de conteúdo */
+.modal-panel-label {{
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 6px;
+}}
+ 
+/* Vídeo */
+.video-player-wrap {{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}}
+.video-player-wrap video {{
+    max-width: 100%;
+    max-height: calc(94vh - 140px);
+    border-radius: 10px;
+    background: #000;
+    display: block;
+}}
+.video-fallback-btn {{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1877F2;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+}}
+ 
+/* Loading spinner */
+.modal-loading {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 40px;
+}}
+.spinner {{
+    width: 32px; height: 32px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #3a9fd6;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}}
+@keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+ 
+/* Fallback sem mídia */
+.modal-no-media {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 40px;
+}}
 </style>
-</head><body>
+</head>
+<body>
+ 
+<!-- ══ MODAL ══ -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
-        <div id="modal-content"></div>
+        <div id="modal-header">
+            <div id="modal-tabs"></div>
+            <button id="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div id="modal-content-area">
+            <div class="modal-loading" id="modal-loading-init">
+                <div class="spinner"></div>
+                <span style="color:rgba(255,255,255,0.4);font-size:13px">Carregando…</span>
+            </div>
+        </div>
     </div>
 </div>
+ 
+<!-- ══ GRID DE CARDS ══ -->
 <div class="ads-grid">{cards_joined}</div>
+ 
 <script>
-function openModal(imgSrc,snapUrl,isVideo){{
-    var overlay=document.getElementById('modal-overlay');
-    var content=document.getElementById('modal-content');
-    content.innerHTML='';
-    if(isVideo){{
-        var wrap=document.createElement('div');wrap.id='modal-video-wrap';
-        if(imgSrc){{var thumb=document.createElement('img');thumb.src=imgSrc;thumb.style.cssText='max-width:min(70vw,600px);max-height:min(50vh,480px);object-fit:contain;border-radius:10px;display:block;';thumb.onerror=function(){{this.style.display='none';}};wrap.appendChild(thumb);}}
-        if(snapUrl){{var btn=document.createElement('a');btn.href=snapUrl;btn.target='_blank';btn.id='modal-video-btn';btn.innerHTML='▶ Abrir vídeo no Ad Library';wrap.appendChild(btn);}}
-        content.appendChild(wrap);overlay.classList.add('open');
-    }}else{{
-        if(!imgSrc&&snapUrl){{window.open(snapUrl,'_blank');return;}}
-        if(!imgSrc)return;
-        var loading=document.createElement('div');loading.id='modal-loading';loading.textContent='Carregando…';content.appendChild(loading);overlay.classList.add('open');
-        var tmp=new Image();
-        tmp.onload=function(){{content.innerHTML='';var img=document.createElement('img');img.id='modal-img';img.src=imgSrc;content.appendChild(img);}};
-        tmp.onerror=function(){{content.innerHTML='';if(snapUrl){{window.open(snapUrl,'_blank');closeModal();}}else{{var msg=document.createElement('div');msg.style.cssText='color:#aaa;font-size:14px;padding:32px;text-align:center';msg.textContent='Imagem não disponível.';content.appendChild(msg);}}}};
-        tmp.src=imgSrc;
+/* ══════════════════════════════════════════
+   MODAL ENGINE
+   ══════════════════════════════════════════ */
+var _M = {{
+    imgs: [], videos: [], snapUrl: '', isVideo: false,
+    tabs: [], activeTab: 'feed'
+}};
+ 
+var TAB_LABELS = {{ feed: '🖼 Feed', preview: '📱 Preview', stories: '⬛ Stories' }};
+ 
+function openModal(imgSrc, snapUrl, isVideo, allImgs, allVideos) {{
+    allImgs   = (allImgs   && allImgs.length)   ? allImgs   : (imgSrc   ? [imgSrc]   : []);
+    allVideos = (allVideos && allVideos.length)  ? allVideos : [];
+ 
+    _M.imgs     = allImgs;
+    _M.videos   = allVideos;
+    _M.snapUrl  = snapUrl || '';
+    _M.isVideo  = !!isVideo;
+ 
+    // Determina tabs disponíveis
+    if (isVideo) {{
+        _M.tabs = allVideos.length ? ['feed', 'preview'] : ['feed'];
+    }} else if (allImgs.length) {{
+        _M.tabs = ['feed', 'preview', 'stories'];
+    }} else {{
+        _M.tabs = ['feed'];
+    }}
+    _M.activeTab = 'feed';
+ 
+    document.getElementById('modal-overlay').classList.add('open');
+    _renderTabs();
+    _renderPanel('feed');
+ 
+    document.addEventListener('keydown', _escHandler);
+}}
+ 
+function _escHandler(e) {{ if (e.key === 'Escape') closeModal(); }}
+ 
+function closeModal() {{
+    document.getElementById('modal-overlay').classList.remove('open');
+    // Para vídeos
+    document.querySelectorAll('#modal-content-area video').forEach(function(v) {{
+        try {{ v.pause(); v.src = ''; }} catch(e) {{}}
+    }});
+    document.getElementById('modal-content-area').innerHTML =
+        '<div class="modal-loading"><div class="spinner"></div>' +
+        '<span style="color:rgba(255,255,255,0.4);font-size:13px">Carregando…</span></div>';
+    document.getElementById('modal-tabs').innerHTML = '';
+    document.removeEventListener('keydown', _escHandler);
+}}
+ 
+function _renderTabs() {{
+    var el = document.getElementById('modal-tabs');
+    el.innerHTML = _M.tabs.map(function(t) {{
+        return '<button class="modal-tab' + (t === _M.activeTab ? ' active' : '') + '" onclick="_switchTab(\'' + t + '\')">' + TAB_LABELS[t] + '</button>';
+    }}).join('');
+}}
+ 
+function _switchTab(tab) {{
+    // Para vídeos antes de trocar
+    document.querySelectorAll('#modal-content-area video').forEach(function(v) {{
+        try {{ v.pause(); }} catch(e) {{}}
+    }});
+    _M.activeTab = tab;
+    _renderTabs();
+    _renderPanel(tab);
+}}
+ 
+function _renderPanel(tab) {{
+    var area = document.getElementById('modal-content-area');
+ 
+    if (_M.isVideo) {{
+        _renderVideoPanel(area, tab);
+    }} else {{
+        _renderImagePanel(area, tab);
     }}
 }}
-function closeModal(){{document.getElementById('modal-overlay').classList.remove('open');document.getElementById('modal-content').innerHTML='';}}
-document.addEventListener('keydown',function(e){{if(e.key==='Escape')closeModal();}});
-function toggleDebug(uid){{
-    var el=document.getElementById('debug_'+uid);
-    if(!el)return;
-    el.style.display=(el.style.display==='none'||el.style.display==='')?'block':'none';
-    setTimeout(syncHeight,50);
+ 
+function _renderImagePanel(area, tab) {{
+    var imgs    = _M.imgs;
+    var snapUrl = _M.snapUrl;
+ 
+    if (!imgs.length && snapUrl) {{
+        window.open(snapUrl, '_blank');
+        closeModal();
+        return;
+    }}
+    if (!imgs.length) {{ area.innerHTML = _noMediaHtml(); return; }}
+ 
+    var src = imgs[0];
+ 
+    if (tab === 'feed') {{
+        // Tamanho real, sem moldura
+        area.innerHTML =
+            '<div class="modal-panel active" id="panel-feed">' +
+            '<img src="' + src + '" id="modal-main-img" style="max-width:100%;max-height:calc(94vh - 120px);border-radius:10px;object-fit:contain;display:block;" />' +
+            '</div>';
+        _attachImgFallback(document.getElementById('modal-main-img'), imgs.slice(1), snapUrl);
+ 
+    }} else if (tab === 'preview') {{
+        // Moldura celular — proporção feed (4:5 aprox)
+        area.innerHTML =
+            '<div class="modal-panel active" style="flex-direction:column;gap:8px">' +
+            '<div class="phone-frame" style="width:220px;height:275px">' +
+            '<div class="phone-notch"></div>' +
+            '<img src="' + src + '" id="modal-prev-img" style="width:100%;height:100%;object-fit:cover;" />' +
+            '</div>' +
+            '<span class="modal-panel-label">Pré-visualização Feed</span>' +
+            '</div>';
+        _attachImgFallback(document.getElementById('modal-prev-img'), imgs.slice(1), snapUrl);
+ 
+    }} else if (tab === 'stories') {{
+        // Moldura celular — proporção stories (9:16)
+        area.innerHTML =
+            '<div class="modal-panel active" style="flex-direction:column;gap:8px">' +
+            '<div class="phone-frame" style="width:185px;height:370px">' +
+            '<div class="phone-notch"></div>' +
+            '<img src="' + src + '" id="modal-stor-img" style="width:100%;height:100%;object-fit:cover;" />' +
+            '</div>' +
+            '<span class="modal-panel-label">Pré-visualização Stories</span>' +
+            '</div>';
+        _attachImgFallback(document.getElementById('modal-stor-img'), imgs.slice(1), snapUrl);
+    }}
 }}
-function syncHeight(){{
-    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
-    var frames=window.parent.document.querySelectorAll('iframe');
-    for(var i=0;i<frames.length;i++){{try{{if(frames[i].contentWindow===window){{frames[i].style.height=(h+20)+'px';break;}}}}catch(e){{}}}}
+ 
+function _renderVideoPanel(area, tab) {{
+    var vids    = _M.videos;
+    var snapUrl = _M.snapUrl;
+    var thumb   = _M.imgs[0] || '';
+ 
+    if (!vids.length) {{
+        // Sem URL de vídeo: mostra thumb + link externo
+        area.innerHTML =
+            '<div class="modal-panel active" style="flex-direction:column;gap:14px">' +
+            (thumb ? '<img src="' + thumb + '" style="max-width:100%;max-height:calc(94vh - 200px);border-radius:10px;object-fit:contain;" />' : '') +
+            (snapUrl ? '<a href="' + snapUrl + '" target="_blank" class="video-fallback-btn">▶ Abrir vídeo no Ad Library</a>' : '<span style="color:rgba(255,255,255,0.3);font-size:13px">Vídeo não disponível</span>') +
+            '</div>';
+        return;
+    }}
+ 
+    var src1 = vids[0] || '';
+    var src2 = vids[1] || '';
+ 
+    var sourceTags = '<source src="' + src1 + '" type="video/mp4">';
+    if (src2 && src2 !== src1) sourceTags += '<source src="' + src2 + '" type="video/mp4">';
+ 
+    var videoEl = '<video controls autoplay playsinline loop ' +
+        'onerror="document.getElementById(\'vfb_err\').style.display=\'flex\'">' +
+        sourceTags + '</video>' +
+        '<div id="vfb_err" style="display:none;flex-direction:column;align-items:center;gap:10px;padding:20px">' +
+        (snapUrl ? '<a href="' + snapUrl + '" target="_blank" class="video-fallback-btn">▶ Abrir no Ad Library</a>' : '<span style="color:rgba(255,255,255,0.4)">Vídeo indisponível</span>') +
+        '</div>';
+ 
+    if (tab === 'feed') {{
+        // Vídeo em tamanho natural
+        area.innerHTML =
+            '<div class="modal-panel active video-player-wrap">' +
+            videoEl +
+            '</div>';
+        var v = area.querySelector('video');
+        if (v) {{ v.style.cssText = 'max-width:100%;max-height:calc(94vh - 140px);border-radius:10px;background:#000;display:block;'; }}
+    }} else {{
+        // Preview: moldura de celular com vídeo
+        area.innerHTML =
+            '<div class="modal-panel active" style="flex-direction:column;gap:8px">' +
+            '<div class="phone-frame" style="width:220px;height:390px">' +
+            '<div class="phone-notch"></div>' +
+            videoEl +
+            '</div>' +
+            '<span class="modal-panel-label">Pré-visualização</span>' +
+            '</div>';
+        var v = area.querySelector('video');
+        if (v) {{ v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;'; }}
+    }}
 }}
-document.querySelectorAll('img').forEach(function(img){{img.addEventListener('load',function(){{setTimeout(syncHeight,30);}});img.addEventListener('error',function(){{setTimeout(syncHeight,30);}});}});
-if(window.ResizeObserver)new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded',syncHeight);
-window.addEventListener('load',syncHeight);
-setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500);
+ 
+function _attachImgFallback(img, fallbacks, snapUrl) {{
+    if (!img) return;
+    var idx = 0;
+    img.onerror = function() {{
+        if (idx < fallbacks.length) {{
+            img.src = fallbacks[idx++];
+        }} else {{
+            img.style.display = 'none';
+            if (snapUrl) {{
+                var btn = document.createElement('a');
+                btn.href = snapUrl; btn.target = '_blank';
+                btn.className = 'video-fallback-btn';
+                btn.textContent = 'Ver no Ad Library →';
+                btn.style.marginTop = '10px';
+                img.parentElement.appendChild(btn);
+            }}
+        }}
+    }};
+}}
+ 
+function _noMediaHtml() {{
+    return '<div class="modal-no-media">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.2">' +
+        '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
+        '<span style="color:rgba(255,255,255,0.3);font-size:13px">Criativo não disponível</span>' +
+        (_M.snapUrl ? '<a href="' + _M.snapUrl + '" target="_blank" class="video-fallback-btn" style="font-size:13px;padding:8px 16px">Abrir no Ad Library →</a>' : '') +
+        '</div>';
+}}
+ 
+/* ══ debug & height sync ══ */
+function toggleDebug(uid) {{
+    var el = document.getElementById('debug_' + uid);
+    if (!el) return;
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+    setTimeout(syncHeight, 50);
+}}
+ 
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 20) + 'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+ 
+document.querySelectorAll('img').forEach(function(img) {{
+    img.addEventListener('load', function() {{ setTimeout(syncHeight, 30); }});
+    img.addEventListener('error', function() {{ setTimeout(syncHeight, 30); }});
+}});
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200);
+setTimeout(syncHeight, 600);
+setTimeout(syncHeight, 1500);
 </script></body></html>
 """, height=600, scrolling=False)
  
         # ════════════════════════════════════════════════════════════
-        # ABA: ANÁLISE DE IA — 3 sub-abas: Individuais | Criativos | Copys
+        # ABA: ANÁLISE DE IA
         # ════════════════════════════════════════════════════════════
         else:
-            ads_f_ia = ads_list  # usa lista sem filtros para análise
+            ads_f_ia = ads_list
  
-            # ── chaves de estado ──────────────────────────────────────
             chave_ia_geral     = f"ia_ads_geral_{sk}"
             chave_ia_criativos = f"ia_ads_criativos_{sk}"
             chave_ia_copys     = f"ia_ads_copys_{sk}"
@@ -4373,13 +4758,11 @@ setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500
                 if ch not in st.session_state:
                     st.session_state[ch] = ""
  
-            # chave por anúncio individual
             for j in range(len(ads_f_ia)):
                 chave_ind = f"ia_ad_result_{sk}_{j}"
                 if chave_ind not in st.session_state:
                     st.session_state[chave_ind] = ""
  
-            # ── ghost buttons para sub-abas e triggers individuais ────
             sub_tab_keys = [
                 f"btn_subtab_{sk}_individuais",
                 f"btn_subtab_{sk}_criativos",
@@ -4410,17 +4793,14 @@ setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500
             ])
             st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
  
-            # sub-aba state
             if f"ads_subtab_{sk}" not in st.session_state:
                 st.session_state[f"ads_subtab_{sk}"] = "individuais"
  
-            # ghost buttons sub-abas
             for tab_name in ["individuais", "criativos", "copys"]:
                 if st.button(f"_subtab_{sk}_{tab_name}_", key=f"btn_subtab_{sk}_{tab_name}"):
                     st.session_state[f"ads_subtab_{sk}"] = tab_name
                     st.rerun()
  
-            # ghost buttons triggers IA geral
             if st.button(f"_ia_geral_{sk}_", key=f"btn_ia_geral_{sk}"):
                 if gemini_model is None:
                     st.session_state[chave_ia_geral] = "Configure GEMINI_API_KEY nos secrets."
@@ -4522,7 +4902,6 @@ Copies coletadas:
                             st.session_state[chave_ia_copys] = f"Erro: {ex}"
                             st.rerun()
  
-            # ghost buttons triggers IA individuais
             for j, ad in enumerate(ads_f_ia):
                 if st.button(f"_ia_ind_{sk}_{j}_", key=f"btn_ia_ind_{sk}_{j}"):
                     chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -4553,11 +4932,8 @@ CTA: {ad.get("cta","")}
                                 st.session_state[chave_ind] = f"Erro: {ex}"
                                 st.rerun()
  
-            # ── Renderiza sub-abas ────────────────────────────────────
             subtab_atual = st.session_state.get(f"ads_subtab_{sk}", "individuais")
  
-            # Monta dados para o HTML
-            # Anúncios individuais - lista resumida
             ind_cards_data = []
             for j, ad in enumerate(ads_f_ia):
                 chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -4586,7 +4962,6 @@ CTA: {ad.get("cta","")}
  
             ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
  
-            # resultados gerais
             geral_html     = st.session_state.get(chave_ia_geral, "").replace("\n","<br>")
             criativos_html = st.session_state.get(chave_ia_criativos, "").replace("\n","<br>")
             copys_html     = st.session_state.get(chave_ia_copys, "").replace("\n","<br>")
@@ -4601,144 +4976,50 @@ CTA: {ad.get("cta","")}
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background: transparent; font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased; overflow: visible;
-}}
+html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow: visible; }}
 body {{ padding-bottom: 8px; }}
- 
-/* ── Sub-tabs ── */
-.subtabs-wrap {{
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-bottom: none;
-    padding: 0 16px;
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid #e5e7eb;
-}}
-.subtab {{
-    padding: 12px 20px;
-    font-size: 13px; font-weight: 700; color: #9ca3af;
-    background: transparent; border: none; cursor: pointer;
-    border-bottom: 3px solid transparent; margin-bottom: -1px;
-    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-    white-space: nowrap;
-}}
+.subtabs-wrap {{ background: #fff; border: 1px solid #e5e7eb; border-top: none; border-bottom: none; padding: 0 16px; display: flex; gap: 0; border-bottom: 1px solid #e5e7eb; }}
+.subtab {{ padding: 12px 20px; font-size: 13px; font-weight: 700; color: #9ca3af; background: transparent; border: none; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; font-family: 'DM Sans', sans-serif; transition: all 0.15s; white-space: nowrap; }}
 .subtab:hover {{ color: #374151; }}
 .subtab.active {{ color: #1a2e4a; border-bottom: 3px solid #3a9fd6; }}
- 
-/* ── Panels ── */
 .panel {{ display: none; padding: 20px 16px; background: #fff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }}
 .panel.active {{ display: block; }}
- 
-/* ── Stats row ── */
 .stats-mini {{ display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }}
-.stat-mini {{
-    flex: 1; min-width: 80px;
-    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;
-    padding: 10px 14px; text-align: center;
-}}
+.stat-mini {{ flex: 1; min-width: 80px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; text-align: center; }}
 .stat-mini-num {{ font-size: 20px; font-weight: 800; color: #111827; }}
 .stat-mini-lbl {{ font-size: 11px; color: #6b7280; font-weight: 600; margin-top: 2px; }}
- 
-/* ── Individal cards ── */
 .ind-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }}
-.ind-card {{
-    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;
-    overflow: hidden; display: flex; flex-direction: column;
-}}
+.ind-card {{ background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }}
 .ind-card-top {{ display: flex; gap: 12px; padding: 14px; border-bottom: 1px solid #f3f4f6; }}
-.ind-thumb {{
-    width: 72px; height: 72px; border-radius: 8px; object-fit: cover;
-    border: 1px solid #e5e7eb; flex-shrink: 0; background: #f3f4f6;
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
-}}
+.ind-thumb {{ width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb; flex-shrink: 0; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; }}
 .ind-thumb img {{ width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }}
 .ind-info {{ flex: 1; min-width: 0; }}
-.ind-fmt {{
-    display: inline-block; background: #eff6ff; color: #1d4ed8;
-    border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; margin-bottom: 5px;
-}}
-.ind-fmt-inativo {{
-    display: inline-block; background: #f3f4f6; color: #6b7280;
-    border: 1px solid #e5e7eb; padding: 2px 8px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; margin-bottom: 5px; margin-left: 4px;
-}}
+.ind-fmt {{ display: inline-block; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 5px; }}
+.ind-fmt-inativo {{ display: inline-block; background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 5px; margin-left: 4px; }}
 .ind-title {{ font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 3px; line-height: 1.4; }}
 .ind-body {{ font-size: 12px; color: #6b7280; line-height: 1.5; }}
 .ind-meta {{ font-size: 11px; color: #9ca3af; margin-top: 4px; }}
-.ind-btn {{
-    width: 100%; padding: 10px 0;
-    border: none; border-top: 1px solid #e5e7eb;
-    background: #fff; font-size: 13px; font-weight: 700; color: #1d4ed8;
-    cursor: pointer; font-family: 'DM Sans', sans-serif;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    transition: background 0.12s;
-}}
+.ind-btn {{ width: 100%; padding: 10px 0; border: none; border-top: 1px solid #e5e7eb; background: #fff; font-size: 13px; font-weight: 700; color: #1d4ed8; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.12s; }}
 .ind-btn:hover {{ background: #eff6ff; }}
 .ind-btn.loading {{ color: #9ca3af; pointer-events: none; }}
-.ind-result {{
-    background: #f0fdf4; border-top: 1px solid #86efac;
-    padding: 12px 14px; font-size: 13px; color: #374151;
-    line-height: 1.7; max-height: 220px; overflow-y: auto;
-}}
-.ind-result-header {{
-    font-size: 11px; font-weight: 800; color: #15803d;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    margin-bottom: 8px;
-}}
- 
-/* ── Geral/Criativos/Copys panels ── */
-.analise-wrap {{
-    background: #f9fafb; border: 1px solid #e5e7eb;
-    border-radius: 10px; overflow: hidden;
-}}
-.analise-header {{
-    padding: 14px 16px; font-size: 13px; font-weight: 800; color: #1a2e4a;
-    text-transform: uppercase; letter-spacing: 0.3px;
-    border-bottom: 1px solid #e5e7eb; background: #fff;
-    display: flex; align-items: center; justify-content: space-between;
-}}
-.analise-body {{
-    padding: 18px 16px; font-size: 14px; color: #374151;
-    line-height: 1.75; background: #fff;
-    min-height: 80px;
-}}
-.analise-empty {{
-    text-align: center; color: #9ca3af; font-size: 14px;
-    padding: 36px 24px;
-    background: #fff;
-}}
-.analise-footer {{
-    padding: 14px 16px; border-top: 1px solid #f3f4f6; background: #f9fafb;
-}}
-.btn-gerar {{
-    padding: 10px 24px; border: 1px solid #3a9fd6; border-radius: 8px;
-    background: #eff6ff; font-size: 14px; font-weight: 700; color: #1d4ed8;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s;
-}}
+.ind-result {{ background: #f0fdf4; border-top: 1px solid #86efac; padding: 12px 14px; font-size: 13px; color: #374151; line-height: 1.7; max-height: 220px; overflow-y: auto; }}
+.ind-result-header {{ font-size: 11px; font-weight: 800; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }}
+.analise-wrap {{ background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }}
+.analise-header {{ padding: 14px 16px; font-size: 13px; font-weight: 800; color: #1a2e4a; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #e5e7eb; background: #fff; display: flex; align-items: center; justify-content: space-between; }}
+.analise-body {{ padding: 18px 16px; font-size: 14px; color: #374151; line-height: 1.75; background: #fff; min-height: 80px; }}
+.analise-empty {{ text-align: center; color: #9ca3af; font-size: 14px; padding: 36px 24px; background: #fff; }}
+.analise-footer {{ padding: 14px 16px; border-top: 1px solid #f3f4f6; background: #f9fafb; }}
+.btn-gerar {{ padding: 10px 24px; border: 1px solid #3a9fd6; border-radius: 8px; background: #eff6ff; font-size: 14px; font-weight: 700; color: #1d4ed8; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }}
 .btn-gerar:hover {{ background: #dbeafe; }}
 </style>
 </head>
 <body>
- 
-<!-- Sub-tabs -->
 <div class="subtabs-wrap">
-    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais', this)">
-        📋 Anúncios Individuais
-    </button>
-    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos', this)">
-        🎨 Criativos
-    </button>
-    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys', this)">
-        ✍️ Copys
-    </button>
+    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais', this)">📋 Anúncios Individuais</button>
+    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos', this)">🎨 Criativos</button>
+    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys', this)">✍️ Copys</button>
 </div>
  
-<!-- Panel: Individuais -->
 <div id="panel-individuais" class="panel {'active' if subtab_atual == 'individuais' else ''}">
     <div class="stats-mini">
         <div class="stat-mini"><div class="stat-mini-num">{n_anuncios}</div><div class="stat-mini-lbl">Total</div></div>
@@ -4749,45 +5030,25 @@ body {{ padding-bottom: 8px; }}
     <div class="ind-grid" id="ind-grid"></div>
 </div>
  
-<!-- Panel: Criativos -->
 <div id="panel-criativos" class="panel {'active' if subtab_atual == 'criativos' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header">
-            <span>🎨 Análise de Criativos</span>
-        </div>
-        <div class="analise-body" id="criativos-body">
-            {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}
-        </div>
-        <div class="analise-footer">
-            <button class="btn-gerar" onclick="triggerGlobal('_ia_criativos_{sk}_')">
-                {'🔄 Nova Análise' if criativos_html else '⚡ Gerar Análise de Criativos'}
-            </button>
-        </div>
+        <div class="analise-header"><span>🎨 Análise de Criativos</span></div>
+        <div class="analise-body">{'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}</div>
+        <div class="analise-footer"><button class="btn-gerar" onclick="triggerGlobal('_ia_criativos_{sk}_')">{'🔄 Nova Análise' if criativos_html else '⚡ Gerar Análise de Criativos'}</button></div>
     </div>
 </div>
  
-<!-- Panel: Copys -->
 <div id="panel-copys" class="panel {'active' if subtab_atual == 'copys' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header">
-            <span>✍️ Análise de Copys</span>
-        </div>
-        <div class="analise-body" id="copys-body">
-            {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}
-        </div>
-        <div class="analise-footer">
-            <button class="btn-gerar" onclick="triggerGlobal('_ia_copys_{sk}_')">
-                {'🔄 Nova Análise' if copys_html else '⚡ Gerar Análise de Copys'}
-            </button>
-        </div>
+        <div class="analise-header"><span>✍️ Análise de Copys</span></div>
+        <div class="analise-body">{'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}</div>
+        <div class="analise-footer"><button class="btn-gerar" onclick="triggerGlobal('_ia_copys_{sk}_')">{'🔄 Nova Análise' if copys_html else '⚡ Gerar Análise de Copys'}</button></div>
     </div>
 </div>
  
 <script>
-// ── dados ────────────────────────────────────────────────────
 var IND_CARDS = {ind_cards_json};
  
-// ── build individual cards ───────────────────────────────────
 function buildIndGrid() {{
     var grid = document.getElementById('ind-grid');
     if (!grid) return;
@@ -4796,40 +5057,27 @@ function buildIndGrid() {{
         var card = document.createElement('div');
         card.className = 'ind-card';
         card.id = 'ind_card_' + d.j;
- 
-        var thumbHtml = d.img_src
-            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
-            : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
- 
+        var thumbHtml = d.img_src ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />' : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
- 
         card.innerHTML =
             '<div class="ind-card-top">' +
-                '<div class="ind-thumb">' + thumbHtml + '</div>' +
-                '<div class="ind-info">' +
-                    '<span class="ind-fmt">' + (d.formato || 'Anúncio') + '</span>' + statusBadge +
-                    '<div class="ind-title">' + (d.title || '—') + '</div>' +
-                    '<div class="ind-body">' + (d.body || '—') + '</div>' +
-                    '<div class="ind-meta">' +
-                        (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '') +
-                        (d.plataformas ? '📱 ' + d.plataformas : '') +
-                    '</div>' +
-                '</div>' +
-            '</div>';
- 
+            '<div class="ind-thumb">' + thumbHtml + '</div>' +
+            '<div class="ind-info">' +
+            '<span class="ind-fmt">' + (d.formato || 'Anúncio') + '</span>' + statusBadge +
+            '<div class="ind-title">' + (d.title || '—') + '</div>' +
+            '<div class="ind-body">' + (d.body || '—') + '</div>' +
+            '<div class="ind-meta">' + (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '') + (d.plataformas ? '📱 ' + d.plataformas : '') + '</div>' +
+            '</div></div>';
         if (d.resultado) {{
             var res = document.createElement('div');
             res.className = 'ind-result';
             res.innerHTML = '<div class="ind-result-header">Análise IA</div>' + d.resultado;
             card.appendChild(res);
         }}
- 
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
-        btn.innerHTML = d.resultado
-            ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.73-8.63"/></svg> Reanalisar'
-            : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Analisar este anúncio';
+        btn.innerHTML = d.resultado ? '🔄 Reanalisar' : '⚡ Analisar este anúncio';
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
@@ -4838,25 +5086,20 @@ function buildIndGrid() {{
             }};
         }})(d.j);
         card.appendChild(btn);
- 
         grid.appendChild(card);
     }});
     syncHeight();
 }}
  
-// ── subtab switching ─────────────────────────────────────────
 function showSubtab(name, el) {{
-    // visually switch tabs
     document.querySelectorAll('.subtab').forEach(function(t) {{ t.classList.remove('active'); }});
     document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
-    // persist via streamlit ghost button
     triggerGlobal('_subtab_{sk}_' + name + '_');
     setTimeout(syncHeight, 100);
 }}
  
-// ── trigger streamlit buttons ────────────────────────────────
 function triggerGlobal(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -4865,21 +5108,14 @@ function triggerGlobal(label) {{
     }}
 }}
  
-// ── height sync ───────────────────────────────────────────────
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try {{
-            if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 20) + 'px';
-                break;
-            }}
-        }} catch(e) {{}}
+        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 20) + 'px'; break; }} }} catch(e) {{}}
     }}
 }}
  
-// ── init ─────────────────────────────────────────────────────
 buildIndGrid();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
