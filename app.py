@@ -3292,11 +3292,15 @@ html, body { background:transparent; overflow:hidden; }
     todos_ids = ["btn_toggle_edicao_ads"] + ids_abas
 
     seletores_diretos = ",".join([f".st-key-{k}" for k in todos_ids])
-    seletores_has = ",".join([
-        f".stElementContainer:has(> div > .st-key-{k})",
-        f".stElementContainer:has(> .st-key-{k})",
-        f"[data-testid='stVerticalBlock'] > div:has(> .stElementContainer > div > .st-key-{k})",
-    ] for k in todos_ids for _ in [None])
+    seletores_has = ",".join(
+        sel
+        for k in todos_ids
+        for sel in [
+            f".stElementContainer:has(> div > .st-key-{k})",
+            f".stElementContainer:has(> .st-key-{k})",
+            f"[data-testid='stVerticalBlock'] > div:has(> .stElementContainer > div > .st-key-{k})",
+        ]
+    )
 
     # Simplificado: zera via :has no nível do stElementContainer
     ghost_css_parts = []
