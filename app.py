@@ -3555,17 +3555,10 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 body {{ padding-bottom:4px; }}
-.card {{
-    background:#ffffff;
-    border:1px solid #e5e7eb;
-    border-radius:14px;
-    overflow:hidden;
-}}
+.card {{ background:#ffffff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
 .card-body {{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    padding:14px 16px;
+    display:flex; align-items:center; gap:14px;
+    padding:14px 16px; border-bottom:1px solid #f3f4f6;
 }}
 .info {{ flex:1; min-width:0; }}
 .nome {{
@@ -3573,24 +3566,24 @@ body {{ padding-bottom:4px; }}
     margin-bottom:4px;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }}
-.badges {{
-    display:flex; align-items:center;
-    gap:6px; flex-wrap:wrap;
-}}
+.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
 .badge {{
-    padding:2px 10px; border-radius:20px;
-    font-size:11px; font-weight:600;
-    background:{badge_bg}; color:{badge_txt};
-    border:1px solid {badge_brd};
+    padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd};
 }}
 .badge-id {{
-    background:#dcfce7; color:#15803d;
-    border:1px solid #86efac;
-    padding:2px 10px; border-radius:20px;
-    font-size:11px; font-weight:600;
-    white-space:nowrap; overflow:hidden;
-    text-overflow:ellipsis; max-width:160px;
+    background:#dcfce7; color:#15803d; border:1px solid #86efac;
+    padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;
 }}
+.edit-btn {{
+    width:100%; padding:10px 0; background:#fff;
+    border:none; font-size:14px; font-weight:600; color:#6b7280;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:all 0.12s ease;
+}}
+.edit-btn:hover {{ background:#f9fafb; color:#111827; }}
 </style>
 <div class="card">
     <div class="card-body">
@@ -3603,8 +3596,25 @@ body {{ padding-bottom:4px; }}
             </div>
         </div>
     </div>
+    <button class="edit-btn" onclick="triggerBtn('{edit_trigger_key}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar página
+    </button>
 </div>
 <script>
+function triggerBtn(key) {{
+    var norm = key.split(/\s+/).join(' ').trim();
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if ((b.innerText || b.textContent || '').split(/\s+/).join(' ').trim() === norm) {{
+            b.click(); return;
+        }}
+    }}
+}}
 function ajustarAltura() {{
     var h = document.body.scrollHeight;
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -3617,7 +3627,7 @@ function ajustarAltura() {{
 if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
 setTimeout(ajustarAltura, 100);
 </script>
-""", height=75, scrolling=False)
+""", height=100, scrolling=False)
 
                         else:
                             # ... (keep the existing editing form code unchanged)
