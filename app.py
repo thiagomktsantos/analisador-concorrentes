@@ -3579,6 +3579,21 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 border: none !important;
                 visibility: hidden !important;
             }}
+                        .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"] > div:first-child {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+            /* Zera o gap do stVerticalBlock raiz do container */
+            .st-key-ads_edit_panel > div[data-testid="stVerticalBlock"] {{
+                gap: 0 !important;
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+            /* Zera padding do bloco intermediário entre container e border wrapper */
+            .st-key-ads_edit_panel > div > div {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
             </style>
             """, unsafe_allow_html=True)
 
