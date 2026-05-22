@@ -3281,19 +3281,27 @@ html, body { background:transparent; overflow:hidden; }
     empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
     empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
 
-# ── Barra única: label + abas + botão editar ─────────────────────
+    # ── Barra única: label + abas + botão editar ─────────────────────
     if "ads_mostrar_edicao" not in st.session_state:
         st.session_state.ads_mostrar_edicao = False
     if "ads_aba_ativa" not in st.session_state:
         st.session_state.ads_aba_ativa = 0
 
-    # Ghost buttons para toggle e troca de aba — FORA do container azul
-    ghost_barra_css = " ".join([
-        ".st-key-btn_toggle_edicao_ads { display:none !important; }",
-        *[f".st-key-btn_aba_ads_{i} {{ display:none !important; }}" for i in range(len(empresas_configuradas))],
-    ])
-    st.markdown(f"<style>{ghost_barra_css}</style>", unsafe_allow_html=True)
-    st.markdown("<div style='height:0;overflow:hidden;position:absolute'>", unsafe_allow_html=True)
+    # Ghost buttons — zerados em todos os níveis de wrapper
+    ghost_barra_css = (
+        ".st-key-btn_toggle_edicao_ads,"
+        + (",".join([f".st-key-btn_aba_ads_{i}" for i in range(len(empresas_configuradas))]) or ".st-key-btn_aba_ads_x")
+        + """{ display:none !important; height:0 !important; min-height:0 !important;
+               max-height:0 !important; padding:0 !important; margin:0 !important;
+               overflow:hidden !important; line-height:0 !important; border:none !important; }"""
+    )
+    ghost_wrapper_css = (
+        ".st-key-btn_toggle_edicao_ads > *,"
+        + (",".join([f".st-key-btn_aba_ads_{i} > *" for i in range(len(empresas_configuradas))]) or ".st-key-btn_aba_ads_x > *")
+        + "{ height:0 !important; min-height:0 !important; overflow:hidden !important; }"
+    )
+    st.markdown(f"<style>{ghost_barra_css}{ghost_wrapper_css}</style>", unsafe_allow_html=True)
+
     if st.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads"):
         st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
         st.rerun()
@@ -3301,7 +3309,6 @@ html, body { background:transparent; overflow:hidden; }
         if st.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}"):
             st.session_state.ads_aba_ativa = i
             st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
     abas_nomes = [e["nome"] for e in empresas_configuradas]
     aba_ativa  = st.session_state.ads_aba_ativa
