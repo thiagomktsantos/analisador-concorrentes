@@ -3546,7 +3546,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             border: 1.5px dashed #93c5fd !important;
             border-radius: 14px !important;
             margin: 0px !important;
-            padding: 16px 16px 20px 16px !important;
+            padding: 16px 16px 28px 16px !important;
             box-shadow: none !important;
         }}
         .st-key-ads_edit_panel .stElementContainer:has(> .stButton),
