@@ -3563,6 +3563,9 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             border: none !important;
             visibility: hidden !important;
         }}
+            .st-key-ads_edit_panel {{
+            margin-top: -1rem !important;
+        }}
         </style>
         """, unsafe_allow_html=True)
 
