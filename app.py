@@ -3436,9 +3436,9 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     gap:6px;
     height:34px;
     padding:0 14px;
-    border:1px solid #e5e7eb;
+    border:none;
     border-radius:7px;
-    background:#fff;
+    background:transparent;
     font-size:13px;
     font-weight:600;
     color:#374151;
@@ -3447,8 +3447,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     white-space:nowrap;
     transition:all 0.12s;
 }}
-.btn-editar:hover {{ background:#f3f4f6; border-color:#d1d5db; }}
-.btn-editar.open {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
+.btn-editar:hover {{ background:#f3f4f6; }}
+.btn-editar.open {{ background:transparent; color:#374151; }}
 .btn-editar svg {{ flex-shrink:0; }}
 </style>
 <div class="barra">
@@ -3565,7 +3565,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
         }}
         .st-key-ads_edit_panel {{
             margin-top: -1.5rem !important;
-            margin-bottom: -1.5rem !important;
+            margin-bottom: -2.5rem !important;
         }}
         </style>
         """, unsafe_allow_html=True)
