@@ -3519,16 +3519,20 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 box-shadow: none !important;
             }}
             
-            /* ADICIONE ISSO — zera os containers dos ghost buttons e markdown */
-            .st-key-ads_edit_panel .stElementContainer:has(> .stMarkdown),
-            .st-key-ads_edit_panel .stElementContainer:has(> .stButton) {{
+            /* zera o stLayoutWrapper wrapper dos ghost buttons também */
+            .st-key-ads_edit_panel .stElementContainer:has(> .stButton),
+            .st-key-ads_edit_panel .stElementContainer:has(> .stButton) *,
+            .st-key-ads_edit_panel div[data-testid="stLayoutWrapper"]:has(.stButton) {{
                 height: 0 !important;
                 min-height: 0 !important;
+                max-height: 0 !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 overflow: hidden !important;
                 line-height: 0 !important;
                 display: block !important;
+                border: none !important;
+                visibility: hidden !important;
             }}
 
             /* Zera também os wrappers dos ghost buttons */
@@ -3546,7 +3550,21 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 
             if empresas_configuradas:
                 ghost_css = "\n".join([
-                    f".st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} {{ display: none !important; }}"
+                    f"""
+                    .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci},
+                    .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div,
+                    .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div > div {{
+                        display: none !important;
+                        height: 0 !important;
+                        min-height: 0 !important;
+                        max-height: 0 !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        overflow: hidden !important;
+                        line-height: 0 !important;
+                        border: none !important;
+                    }}
+                    """
                     for ci, e in enumerate(empresas_configuradas)
                 ])
                 st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
