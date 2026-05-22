@@ -3507,6 +3507,29 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 padding: 16px !important;
                 box-shadow: none !important;
             }}
+            
+            /* ADICIONE ISSO — zera os containers dos ghost buttons e markdown */
+            .st-key-ads_edit_panel .stElementContainer:has(> .stMarkdown),
+            .st-key-ads_edit_panel .stElementContainer:has(> .stButton) {{
+                height: 0 !important;
+                min-height: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: hidden !important;
+                line-height: 0 !important;
+                display: block !important;
+            }}
+
+            /* Zera também os wrappers dos ghost buttons */
+            .st-key-cfg_edit_trigger_Kedu_0,
+            .st-key-cfg_edit_trigger_Isaac_1 {{
+                height: 0 !important;
+                min-height: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: hidden !important;
+                display: block !important;
+            }}
             </style>
             """, unsafe_allow_html=True)
 
@@ -3625,9 +3648,9 @@ function ajustarAltura() {{
     }}
 }}
 if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
-setTimeout(ajustarAltura, 10);
+setTimeout(ajustarAltura, 100);
 </script>
-""", height=10, scrolling=False)
+""", height=100, scrolling=False)
 
                         else:
                             # ... (keep the existing editing form code unchanged)
