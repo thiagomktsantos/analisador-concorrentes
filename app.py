@@ -3443,14 +3443,14 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = '56px';
-            iframes[i].style.marginBottom = '-8px';
+            iframes[i].style.height = '48px';
+            iframes[i].style.marginBottom = '0px';
             break;
         }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=56, scrolling=False)
+""", height=48, scrolling=False)
 
     # ── Painel de edição (expansível) ────────────────────────────────
     if st.session_state.ads_mostrar_edicao:
