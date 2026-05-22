@@ -3455,32 +3455,32 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
     # ── Painel de edição (expansível) ────────────────────────────────
     if st.session_state.ads_mostrar_edicao:
 
-    st.markdown("""
-    <style>
-    .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] {
-        background: #eff6ff !important;
-        border: 1.5px dashed #93c5fd !important;
-        border-radius: 12px !important;
-        margin-top: 4px !important;
-        margin-left: 0px !important;
-        margin-right: 0px !important;
-        padding: 16px 16px 12px !important;
-        box-shadow: none !important;
-    }
-    .st-key-ads_edit_panel,
-    .st-key-ads_edit_panel > div,
-    .st-key-ads_edit_panel > div > div,
-    .st-key-ads_edit_panel [data-testid="stVerticalBlock"],
-    .st-key-ads_edit_panel [data-testid="stHorizontalBlock"],
-    .st-key-ads_edit_panel [data-testid="column"],
-    .st-key-ads_edit_panel [data-testid="column"] > div,
-    .st-key-ads_edit_panel .stElementContainer,
-    .st-key-ads_edit_panel .stElementContainer > div {
+            st.markdown("""
+            <style>
+            .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] {
+            background: #eff6ff !important;
+            border: 1.5px dashed #93c5fd !important;
+            border-radius: 12px !important;
+            margin-top: 4px !important;
+            margin-left: 0px !important;
+            margin-right: 0px !important;
+            padding: 16px 16px 12px !important;
+            box-shadow: none !important;
+            }
+            .st-key-ads_edit_panel,
+            .st-key-ads_edit_panel > div,
+            .st-key-ads_edit_panel > div > div,
+            .st-key-ads_edit_panel [data-testid="stVerticalBlock"],
+            .st-key-ads_edit_panel [data-testid="stHorizontalBlock"],
+            .st-key-ads_edit_panel [data-testid="column"],
+            .st-key-ads_edit_panel [data-testid="column"] > div,
+            .st-key-ads_edit_panel .stElementContainer,
+            .st-key-ads_edit_panel .stElementContainer > div {
         background-color: #eff6ff !important;
         background: #eff6ff !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+            }
+            </style>
+            """, unsafe_allow_html=True)
 
     with st.container(border=True, key="ads_edit_panel"):
             st.markdown(f"""
