@@ -3482,7 +3482,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             </style>
             """, unsafe_allow_html=True)
 
-    with st.container(border=True, key="ads_edit_panel"):
+        with st.container(border=True, key="ads_edit_panel"):
             st.markdown(f"""
             <style>
             .st-key-ads_edit_panel,
