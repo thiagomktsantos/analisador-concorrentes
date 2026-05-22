@@ -3511,7 +3511,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 margin-top: -8px !important;
                 margin-left: 32px !important;
                 margin-right: 32px !important;
-                padding: 20px 24px 16px !important;
+                padding: 8px 16px 8px !important;
                 box-shadow: none !important;
             }}
             </style>
@@ -3563,7 +3563,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 body {{ padding-bottom:4px; }}
 .card {{ background:#ffffff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
-.card-body {{ display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid #f3f4f6; }}
+.card-body {{ display:flex; align-items:center; gap:14px; padding:10px 16px; border-bottom:1px solid #f3f4f6; }}
 .info {{ flex:1; min-width:0; }}
 .nome {{ font-size:16px; font-weight:700; color:#111827; margin-bottom:4px; }}
 .badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
@@ -3622,7 +3622,7 @@ function ajustarAltura() {{
 if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
 setTimeout(ajustarAltura, 100);
 </script>
-""", height=118, scrolling=False)
+""", height=90, scrolling=False)
 
                         else:
                             # ... (keep the existing editing form code unchanged)
