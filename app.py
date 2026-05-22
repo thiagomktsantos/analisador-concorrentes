@@ -3464,7 +3464,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
         margin-top: 4px !important;
         margin-left: 0px !important;
         margin-right: 0px !important;
-        padding: 16px 16px 12px !important;
+        padding: 8px 12px !important;
         box-shadow: none !important;
         }
         .st-key-ads_edit_panel,
@@ -3625,9 +3625,9 @@ function ajustarAltura() {{
     }}
 }}
 if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
-setTimeout(ajustarAltura, 100);
+setTimeout(ajustarAltura, 10);
 </script>
-""", height=100, scrolling=False)
+""", height=10, scrolling=False)
 
                         else:
                             # ... (keep the existing editing form code unchanged)
