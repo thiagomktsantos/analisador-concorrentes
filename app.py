@@ -3511,13 +3511,21 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 background-color: #eff6ff !important;
                 background: #eff6ff !important;
             }}
-            .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] {{
+           .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] {{
                 background: #eff6ff !important;
                 border: 1.5px dashed #93c5fd !important;
                 border-radius: 14px !important;
                 margin: 0px !important;
-                padding: 12px 16px !important;
+                padding: 0px !important;
                 box-shadow: none !important;
+            }}
+            .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"] {{
+                gap: 0rem !important;
+                padding: 12px 16px !important;
+            }}
+            .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"] > div:first-child {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
             }}
             /* Remove gap/padding do wrapper externo do container */
             .stElementContainer:has(> div > .st-key-ads_edit_panel),
