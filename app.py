@@ -3302,23 +3302,31 @@ html, body { background:transparent; overflow:hidden; }
         ]
     )
 
-    # Simplificado: zera via :has no nível do stElementContainer
+    # Ghost buttons — removidos do fluxo com position:absolute
     ghost_css_parts = []
     for k in todos_ids:
         ghost_css_parts.append(f"""
-        .st-key-{k},
-        .st-key-{k} > div,
-        .st-key-{k} button,
-        .stElementContainer:has(.st-key-{k}) {{
-            display: none !important;
-            height: 0 !important;
-            min-height: 0 !important;
-            max-height: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
+        .st-key-{k} {{
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+            width: 1px !important;
+            height: 1px !important;
             overflow: hidden !important;
-            border: none !important;
-            line-height: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }}
+        """)
+    # Zera o wrapper imediato (stElementContainer) que ainda ocupa altura
+    for k in todos_ids:
+        ghost_css_parts.append(f"""
+        .stElementContainer:has(.st-key-{k}) {{
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden !important;
         }}
         """)
     st.markdown(f"<style>{''.join(ghost_css_parts)}</style>", unsafe_allow_html=True)
