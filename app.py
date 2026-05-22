@@ -3287,21 +3287,21 @@ html, body { background:transparent; overflow:hidden; }
     if "ads_aba_ativa" not in st.session_state:
         st.session_state.ads_aba_ativa = 0
 
-    # Ghost buttons para toggle e troca de aba
+    # Ghost buttons para toggle e troca de aba — FORA do container azul
     ghost_barra_css = " ".join([
         ".st-key-btn_toggle_edicao_ads { display:none !important; }",
         *[f".st-key-btn_aba_ads_{i} {{ display:none !important; }}" for i in range(len(empresas_configuradas))],
     ])
     st.markdown(f"<style>{ghost_barra_css}</style>", unsafe_allow_html=True)
-
+    st.markdown("<div style='height:0;overflow:hidden;position:absolute'>", unsafe_allow_html=True)
     if st.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads"):
         st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
         st.rerun()
-
     for i in range(len(empresas_configuradas)):
         if st.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}"):
             st.session_state.ads_aba_ativa = i
             st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
     abas_nomes = [e["nome"] for e in empresas_configuradas]
     aba_ativa  = st.session_state.ads_aba_ativa
@@ -3454,45 +3454,6 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 
     # ── Painel de edição (expansível) ────────────────────────────────
     if st.session_state.ads_mostrar_edicao:
-
-        st.markdown("""
-        <style>
-        .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] {
-        background: #eff6ff !important;
-        border: 1.5px dashed #93c5fd !important;
-        border-radius: 12px !important;
-        margin-top: 4px !important;
-        margin-left: 0px !important;
-        margin-right: 0px !important;
-        padding: 8px 12px !important;
-        box-shadow: none !important;
-        }
-        .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlock"] > div:first-child,
-        .st-key-ads_edit_panel .stElementContainer:has(> div > div > .stMarkdown:empty),
-        .st-key-ads_edit_panel .stElementContainer:has(> div > .stButton) {
-            height: 0 !important;
-            min-height: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            overflow: hidden !important;
-            display: block !important;
-            line-height: 0 !important;
-        }
-        .st-key-ads_edit_panel,
-        .st-key-ads_edit_panel > div,
-        .st-key-ads_edit_panel > div > div,
-        .st-key-ads_edit_panel [data-testid="stVerticalBlock"],
-        .st-key-ads_edit_panel [data-testid="stHorizontalBlock"],
-        .st-key-ads_edit_panel [data-testid="column"],
-        .st-key-ads_edit_panel [data-testid="column"] > div,
-        .st-key-ads_edit_panel .stElementContainer,
-        .st-key-ads_edit_panel .stElementContainer > div {
-        background-color: #eff6ff !important;
-        background: #eff6ff !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
         with st.container(border=True, key="ads_edit_panel"):
             st.markdown(f"""
             <style>
