@@ -3317,16 +3317,21 @@ html, body { background:transparent; overflow:hidden; }
             pointer-events: none !important;
         }}
         """)
-    # Zera o wrapper imediato (stElementContainer) que ainda ocupa altura
+    # Zera o wrapper imediato E o pai dele
     for k in todos_ids:
         ghost_css_parts.append(f"""
-        .stElementContainer:has(.st-key-{k}) {{
-            position: absolute !important;
-            top: -9999px !important;
-            left: -9999px !important;
-            width: 1px !important;
-            height: 1px !important;
+        .stElementContainer:has(.st-key-{k}),
+        .stElementContainer:has(.st-key-{k}) ~ *:first-of-type,
+        div[data-testid="stVerticalBlock"] > div:has(.st-key-{k}) {{
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
             overflow: hidden !important;
+            line-height: 0 !important;
+            border: none !important;
         }}
         """)
     st.markdown(f"<style>{''.join(ghost_css_parts)}</style>", unsafe_allow_html=True)
