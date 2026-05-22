@@ -3853,8 +3853,6 @@ setTimeout(ajustarAltura, 100);
 
                     st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:24px 0 4px 0'/>", unsafe_allow_html=True)
-
     if not empresas_configuradas:
         st.info("Configure pelo menos uma empresa acima para buscar anúncios.")
         st.stop()
