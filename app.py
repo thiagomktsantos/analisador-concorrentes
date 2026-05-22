@@ -3455,7 +3455,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
     # ── Painel de edição (expansível) ────────────────────────────────
     if st.session_state.ads_mostrar_edicao:
 
-        st.markdown("""           # ← 8 espaços (CORRETO)
+        st.markdown("""
         <style>
         .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"] {
         background: #eff6ff !important;
