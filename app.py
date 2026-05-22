@@ -3564,7 +3564,8 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             visibility: hidden !important;
         }}
         .st-key-ads_edit_panel {{
-            margin-top: -1.5rem !important;
+            margin-top: -2.5rem !important;
+            margin-bottom: -2.5rem !important;
         }}
         </style>
         """, unsafe_allow_html=True)
