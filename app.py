@@ -4066,49 +4066,30 @@ setTimeout(ajustarAltura,100);
                 page_pic    = ad.get("page_profile_picture") or ""
                 microlink_url = _microlink_screenshot(snap_url)
  
-                debug_keys = {
-                    "id": ad.get("id",""),
-                    "page_name": page_name,
-                    "page_id": page_id,
-                    "formato": fmt,
-                    "plataformas": plats,
-                    "data_raw": str(start_raw),
-                    "impressoes": imp_str,
-                    "baixo_volume": baixo_volume,
-                    "is_dynamic": is_dyn,
+                 debug_keys = {
+                    "id": ad.get("id", ""),
+                    "page_name": ad.get("page_name", ""),
+                    "page_id": ad.get("page_id", ""),
+                    "formato": ad.get("formato", ""),
+                    "plataformas": ad.get("plataformas", []),
+                    "data_raw": ad.get("data_raw", ""),
+                    "impressoes": ad.get("impressoes", ""),
+                    "baixo_volume": ad.get("baixo_volume", False),
+                    "is_dynamic": ad.get("is_dynamic", False),
                     "ativo": ad.get("ativo", True),
-                    "n_imagens": len(images),
-                    "images_extraidas": images[:3],  # NOVO: mostra as URLs extraídas
-                    "tem_video": bool(videos),
-                    "videos_extraidos": videos[:2],  # NOVO
-                    "tem_video_thumb": bool(video_thumb_url),
-                    "video_thumb_url": video_thumb_url,  # NOVO
-                    "snapshot_url": (ad.get("snapshot_url", "") or "")[:80],
-                    "body_len": len(ad.get("body", "")),
-                    "title_len": len(ad.get("title", "")),
+                    "n_imagens": len(ad.get("images", [])),
+                    "images_extraidas": (ad.get("images") or [])[:3],
+                    "tem_video": bool(ad.get("videos")),
+                    "videos_extraidos": (ad.get("videos") or [])[:2],
+                    "tem_video_thumb": bool(ad.get("video_thumb")),
+                    "video_thumb_url": (ad.get("video_thumb") or "")[:120],
+                    "snapshot_url": (ad.get("snapshot_url") or "")[:80],
+                    "body_len": len(ad.get("body") or ""),
+                    "title_len": len(ad.get("title") or ""),
                     "cta": ad.get("cta", ""),
-                    "page_profile_picture": (ad.get("page_profile_picture", "") or "")[:60],
-    
-                    # NOVO: estrutura do snapshot
-                    "snapshot_keys": list((item.get("snapshot") or {}).keys()),
-                    "cards_count": len((item.get("snapshot") or {}).get("cards") or []),
-                    "card0_keys": list(
-                        ((item.get("snapshot") or {}).get("cards") or [{}])[0].keys()
-                    ) if (item.get("snapshot") or {}).get("cards") else [],
-                    "card0_sample": {
-                        k: str(v)[:120]
-                        for k, v in (
-                            ((item.get("snapshot") or {}).get("cards") or [{}])[0]
-                        ).items()
-                    } if (item.get("snapshot") or {}).get("cards") else {},
-    
-                    # NOVO: campos diretos do item que podem ter imagem
-                    "item_keys_com_url": [
-                        k for k, v in item.items()
-                        if isinstance(v, str) and ("url" in k.lower() or "image" in k.lower() or "thumb" in k.lower() or "photo" in k.lower())
-                    ],
-                    "item_top_level_keys": list(item.keys()),
+                    "page_profile_picture": (ad.get("page_profile_picture") or "")[:60],
                 }
+
                 debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                 debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
  
