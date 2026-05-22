@@ -3594,6 +3594,24 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 padding-top: 0 !important;
                 margin-top: 0 !important;
             }}
+
+                        /* Zera completamente o espaço antes do primeiro filho do stVerticalBlock */
+            .st-key-ads_edit_panel [data-testid="stVerticalBlock"] {{
+                gap: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }}
+            .st-key-ads_edit_panel [data-testid="stVerticalBlock"] > div:has(> .stElementContainer > div > div[data-testid="stMarkdownContainer"]) {{
+                display: none !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }}
+            /* Re-aplica padding apenas no wrapper do border */
+            .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] {{
+                gap: 0.75rem !important;
+                padding: 12px 16px !important;
+            }}
             </style>
             """, unsafe_allow_html=True)
 
