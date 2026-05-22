@@ -3302,13 +3302,20 @@ html, body { background:transparent; overflow:hidden; }
     )
     st.markdown(f"<style>{ghost_barra_css}{ghost_wrapper_css}</style>", unsafe_allow_html=True)
 
-    if st.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads"):
+    _ghost_toggle = st.empty()
+    if _ghost_toggle.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads"):
         st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
+        _ghost_toggle.empty()
         st.rerun()
+    _ghost_toggle.empty()
+
     for i in range(len(empresas_configuradas)):
-        if st.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}"):
+        _ghost_aba = st.empty()
+        if _ghost_aba.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}"):
             st.session_state.ads_aba_ativa = i
+            _ghost_aba.empty()
             st.rerun()
+        _ghost_aba.empty()
 
     abas_nomes = [e["nome"] for e in empresas_configuradas]
     aba_ativa  = st.session_state.ads_aba_ativa
