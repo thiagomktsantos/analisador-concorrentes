@@ -3679,7 +3679,6 @@ setTimeout(ajustarAltura, 100);
 """, height=100, scrolling=False)
 
                         else:
-                            # ... (keep the existing editing form code unchanged)
                             novo_id_key  = f"_inline_edit_{sk}_{ci}"
                             buscar_key   = f"buscar_cfg_{sk}_{ci}"
                             salvar_key   = f"salvar_cfg_{sk}_{ci}"
@@ -3787,7 +3786,6 @@ setTimeout(ajustarAltura, 100);
                     "letter-spacing:0.8px;margin:16px 0 10px 0'>⚠️ Páginas não configuradas</div>",
                     unsafe_allow_html=True,
                 )
-                # ... keep the rest of empresas_sem_config loop unchanged ...
                 for e in empresas_sem_config:
                     ck       = e["nome"]
                     sk       = safe_key(ck)
@@ -3855,6 +3853,8 @@ setTimeout(ajustarAltura, 100);
                             _render_paginas_resultado(e, sk, ck)
 
                     st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+
+            st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
 
     if not empresas_configuradas:
         st.info("Configure pelo menos uma empresa acima para buscar anúncios.")
