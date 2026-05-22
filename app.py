@@ -3287,37 +3287,44 @@ html, body { background:transparent; overflow:hidden; }
     if "ads_aba_ativa" not in st.session_state:
         st.session_state.ads_aba_ativa = 0
 
-    # Ghost buttons — zerados em todos os níveis de wrapper
-    ghost_barra_css = (
-        ".st-key-btn_toggle_edicao_ads,"
-        + (",".join([f".st-key-btn_aba_ads_{i}" for i in range(len(empresas_configuradas))]) or ".st-key-btn_aba_ads_x")
-        + """{ display:none !important; height:0 !important; min-height:0 !important;
-               max-height:0 !important; padding:0 !important; margin:0 !important;
-               overflow:hidden !important; line-height:0 !important; border:none !important; }"""
-    )
-    ghost_wrapper_css = (
-        ".st-key-btn_toggle_edicao_ads > *,"
-        + (",".join([f".st-key-btn_aba_ads_{i} > *" for i in range(len(empresas_configuradas))]) or ".st-key-btn_aba_ads_x > *")
-        + "{ height:0 !important; min-height:0 !important; overflow:hidden !important; }"
-    )
-    st.markdown(f"<style>{ghost_barra_css}{ghost_wrapper_css}</style>", unsafe_allow_html=True)
+    # Ghost buttons — CSS zera o elemento E todos os wrappers pai via :has()
+    ids_abas = [f"btn_aba_ads_{i}" for i in range(len(empresas_configuradas))]
+    todos_ids = ["btn_toggle_edicao_ads"] + ids_abas
 
-    _ghost_toggle = st.empty()
-    _toggle_clicked = _ghost_toggle.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads")
-    _ghost_toggle.empty()
-    if _toggle_clicked:
+    seletores_diretos = ",".join([f".st-key-{k}" for k in todos_ids])
+    seletores_has = ",".join([
+        f".stElementContainer:has(> div > .st-key-{k})",
+        f".stElementContainer:has(> .st-key-{k})",
+        f"[data-testid='stVerticalBlock'] > div:has(> .stElementContainer > div > .st-key-{k})",
+    ] for k in todos_ids for _ in [None])
+
+    # Simplificado: zera via :has no nível do stElementContainer
+    ghost_css_parts = []
+    for k in todos_ids:
+        ghost_css_parts.append(f"""
+        .st-key-{k},
+        .st-key-{k} > div,
+        .st-key-{k} button,
+        .stElementContainer:has(.st-key-{k}) {{
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            border: none !important;
+            line-height: 0 !important;
+        }}
+        """)
+    st.markdown(f"<style>{''.join(ghost_css_parts)}</style>", unsafe_allow_html=True)
+
+    if st.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads"):
         st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
         st.rerun()
 
-    _aba_clicks = []
     for i in range(len(empresas_configuradas)):
-        _ghost_aba = st.empty()
-        _clicked = _ghost_aba.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}")
-        _ghost_aba.empty()
-        _aba_clicks.append(_clicked)
-
-    for i, clicked in enumerate(_aba_clicks):
-        if clicked:
+        if st.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}"):
             st.session_state.ads_aba_ativa = i
             st.rerun()
 
