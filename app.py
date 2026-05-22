@@ -3549,6 +3549,9 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             padding: 0px 16px 0px 16px !important;
             box-shadow: none !important;
         }}
+        .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"] {{
+            padding: 16px !important;
+        }}
         .st-key-ads_edit_panel .stElementContainer:has(> .stButton),
         .st-key-ads_edit_panel .stElementContainer:has(> .stButton) *,
         .st-key-ads_edit_panel div[data-testid="stLayoutWrapper"]:has(.stButton) {{
