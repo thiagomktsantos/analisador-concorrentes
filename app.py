@@ -4523,8 +4523,6 @@ Seja direto e objetivo."""
                             st.session_state[chave_ia_ad] = f"Erro: {ex}"
                             st.rerun()
 
-        st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>", unsafe_allow_html=True)
-
         chave_ia = f"ia_ads_{safe_key(ck)}"
         if chave_ia not in st.session_state:
             st.session_state[chave_ia] = ""
@@ -4537,25 +4535,10 @@ Seja direto e objetivo."""
             for a in ads_f[:15]
         ])
 
-        ia_html_content = st.session_state.get(chave_ia,"").replace("\n","<br>")
-        if ia_html_content:
-            st.markdown(f"""
-            <div style='background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:8px'>
-                <div style='padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
-                            text-transform:uppercase;border-bottom:1px solid #e5e7eb'>Análise Estratégica com IA</div>
-                <div style='padding:16px 18px;font-size:14px;color:#374151;line-height:1.75'>{ia_html_content}</div>
-            </div>""", unsafe_allow_html=True)
+        ia_html_content = st.session_state.get(chave_ia, "").replace("\n", "<br>")
 
-        col_ia, _ = st.columns([2, 5])
-        with col_ia:
-            gerar_ia = st.button(
-                "Nova Análise" if ia_html_content else "Analisar com IA",
-                key=f"btn_ia_ads_{safe_key(ck)}",
-                use_container_width=True,
-                type="primary",
-            )
-
-        if gerar_ia:
+        st.markdown(f"<style>.st-key-btn_ia_geral_{safe_key(ck)} {{ display:none !important; }}</style>", unsafe_allow_html=True)
+        if st.button(f"__ia_geral_{safe_key(ck)}__", key=f"btn_ia_geral_{safe_key(ck)}"):
             if gemini_model is None:
                 st.session_state[chave_ia] = "Configure GEMINI_API_KEY nos secrets."
             else:
@@ -4586,11 +4569,92 @@ Amostra:
                         st.session_state[chave_ia] = f"Erro: {ex}"
                         st.rerun()
 
-    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        ia_painel = ia_html_content if ia_html_content else ""
+        ia_placeholder = "" if ia_html_content else (
+            "<div style='padding:36px 24px;text-align:center;color:#9ca3af;font-size:14px;"
+            "border:1px dashed #d1d5db;border-radius:10px;margin:0 0 16px 0'>"
+            "Clique em <b>Gerar Análise</b> para obter insights estratégicos.</div>"
+        )
+        btn_label_ia = "🔄 Nova Análise" if ia_html_content else "⚡ Gerar Análise"
 
-    aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
-    if empresas_com_dados:
-        render_ads_empresa(empresas_com_dados[aba_idx])
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-top:16px; }}
+.tabs-bar {{ display:flex; border-bottom:1px solid #e5e7eb; background:#f9fafb; padding:0 4px; }}
+.tab {{
+    padding:11px 20px; font-size:14px; font-weight:600; color:#9ca3af;
+    cursor:pointer; border:none; background:transparent;
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    font-family:'DM Sans',sans-serif; transition:color 0.15s; white-space:nowrap;
+}}
+.tab:hover {{ color:#374151; }}
+.tab.active {{ color:#1a2e4a; border-bottom:2px solid #3a9fd6; background:transparent; }}
+.panel {{ display:none; padding:20px 18px; }}
+.panel.active {{ display:block; }}
+.ia-result {{ font-size:14px; color:#374151; line-height:1.75; }}
+.footer {{ padding:14px 18px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
+.btn-gerar {{
+    padding:10px 24px; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}}
+.btn-gerar:hover {{ background:#dbeafe; }}
+.sobre-list {{ padding-left:18px; display:flex; flex-direction:column; gap:6px; font-size:14px; color:#374151; line-height:1.8; }}
+</style>
+<div class="wrap">
+    <div class="tabs-bar">
+        <button class="tab active" onclick="show('resultado',this)">📊 Análise com IA</button>
+        <button class="tab"        onclick="show('sobre',this)">ℹ️ Como funciona</button>
+    </div>
+    <div id="panel-resultado" class="panel active">
+        {('<div class="ia-result">' + ia_painel + '</div>') if ia_painel else ia_placeholder}
+        <div class="footer" style="margin:16px -18px -20px -18px">
+            <button class="btn-gerar" onclick="trigger('__ia_geral_{safe_key(ck)}__')">{btn_label_ia}</button>
+        </div>
+    </div>
+    <div id="panel-sobre" class="panel">
+        <p style="font-size:14px;color:#374151;line-height:1.8;margin-bottom:12px">
+            A análise examina os <b>{len(ads_f)} anúncios</b> carregados para <b>{nome}</b>:
+        </p>
+        <ul class="sobre-list">
+            <li><b>Estratégia de mídia</b> — padrões de veiculação e formatos</li>
+            <li><b>Copy e mensagem</b> — tom de voz, CTAs e promessas recorrentes</li>
+            <li><b>Análise de formatos</b> — mix de imagem, vídeo e carrossel</li>
+            <li><b>Estimativa de alcance</b> — baseada nos dados de impressões</li>
+            <li><b>Oportunidades competitivas</b> — 3 ações concretas</li>
+        </ul>
+    </div>
+</div>
+<script>
+function show(name, el) {{
+    document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
+    document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); p.style.display='none'; }});
+    document.getElementById('panel-' + name).classList.add('active');
+    document.getElementById('panel-' + name).style.display = 'block';
+    el.classList.add('active');
+    syncH();
+}}
+function trigger(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if ((b.textContent||b.innerText||'').split(/\s+/).join(' ').trim() === label) {{ b.click(); return; }}
+    }}
+}}
+function syncH() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h+20)+'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
+setTimeout(syncH,200); setTimeout(syncH,600);
+</script>
+""", height=300, scrolling=False)
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
