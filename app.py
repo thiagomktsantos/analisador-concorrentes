@@ -3495,56 +3495,15 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 """, height=48, scrolling=False)
 
     # ── Painel de edição (expansível) ────────────────────────────────
-    if st.session_state.ads_mostrar_edicao:
-        with st.container(border=True, key="ads_edit_panel"):
-            st.markdown(f"""
-            <style>
-            .st-key-ads_edit_panel,
-            .st-key-ads_edit_panel > div,
-            .st-key-ads_edit_panel > div > div,
-            .st-key-ads_edit_panel [data-testid="stVerticalBlock"],
-            .st-key-ads_edit_panel [data-testid="stHorizontalBlock"],
-            .st-key-ads_edit_panel [data-testid="column"],
-            .st-key-ads_edit_panel [data-testid="column"] > div,
-            .st-key-ads_edit_panel .stElementContainer,
-            .st-key-ads_edit_panel .stElementContainer > div {{
-                background-color: #eff6ff !important;
-                background: #eff6ff !important;
-            }}
-            .st-key-ads_edit_panel > div > div[data-testid="stVerticalBlockBorderWrapper"],
-            .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] {{
-                background: #eff6ff !important;
-                border: 1.5px dashed #93c5fd !important;
-                border-radius: 14px !important;
-                margin: 0px !important;
-                padding: 0px !important;
-                box-shadow: none !important;
-            }}
-            .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] > div {{
-                padding: 0 !important;
-                margin: 0 !important;
-            }}
-            .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"] {{
-                gap: 0.75rem !important;
-                padding: 12px 16px !important;
-                margin-top: 0 !important;
-            }}
-            .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"] > div:first-child,
-            .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] > div > div[data-testid="stVerticalBlock"] > div:first-child > div {{
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-                min-height: 0 !important;
-            }}
-            /* Remove gap/padding do wrapper externo do container */
-            .stElementContainer:has(> div > .st-key-ads_edit_panel),
-            .stElementContainer:has(> .st-key-ads_edit_panel) {{
-                padding: 0 !important;
-                margin: 0 !important;
-            }}
-            /* Zera os ghost buttons dentro do painel */
-            .st-key-ads_edit_panel .stElementContainer:has(> .stButton),
-            .st-key-ads_edit_panel .stElementContainer:has(> .stButton) *,
-            .st-key-ads_edit_panel div[data-testid="stLayoutWrapper"]:has(.stButton) {{
+    # Ghost buttons FORA do container para não gerar espaço interno
+    edit_triggers = {}
+    if st.session_state.ads_mostrar_edicao and empresas_configuradas:
+        ghost_css = "\n".join([
+            f"""
+            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci},
+            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div,
+            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div > div {{
+                display: none !important;
                 height: 0 !important;
                 min-height: 0 !important;
                 max-height: 0 !important;
@@ -3552,51 +3511,30 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
                 margin: 0 !important;
                 overflow: hidden !important;
                 line-height: 0 !important;
-                display: block !important;
                 border: none !important;
-                visibility: hidden !important;
             }}
-            .st-key-cfg_edit_trigger_Kedu_0,
-            .st-key-cfg_edit_trigger_Isaac_1 {{
-                height: 0 !important;
-                min-height: 0 !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                overflow: hidden !important;
-                display: block !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
+            """
+            for ci, e in enumerate(empresas_configuradas)
+        ])
+        st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
+
+        for ci, e in enumerate(empresas_configuradas):
+            sk = safe_key(e["nome"])
+            triggered = st.button(
+                f"cfg_edit_trigger_{sk}_{ci}",
+                key=f"cfg_edit_trigger_{sk}_{ci}",
+            )
+            edit_triggers[ci] = triggered
+
+    if st.session_state.ads_mostrar_edicao:
+        with st.container(border=True, key="ads_edit_panel"):
+            st.markdown(f"""...""", unsafe_allow_html=True)  # seu CSS existente
 
             if empresas_configuradas:
-                ghost_css = "\n".join([
-                    f"""
-                    .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci},
-                    .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div,
-                    .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div > div {{
-                        display: none !important;
-                        height: 0 !important;
-                        min-height: 0 !important;
-                        max-height: 0 !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        overflow: hidden !important;
-                        line-height: 0 !important;
-                        border: none !important;
-                    }}
-                    """
-                    for ci, e in enumerate(empresas_configuradas)
-                ])
-                st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
+                # ghost_css e edit_triggers já definidos acima — REMOVA o bloco que estava aqui
 
-                edit_triggers = {}
                 for ci, e in enumerate(empresas_configuradas):
-                    sk = safe_key(e["nome"])
-                    triggered = st.button(
-                        f"cfg_edit_trigger_{sk}_{ci}",
-                        key=f"cfg_edit_trigger_{sk}_{ci}",
-                    )
-                    edit_triggers[ci] = triggered
+                    if edit_triggers.get(ci):
 
                 for ci, e in enumerate(empresas_configuradas):
                     if edit_triggers[ci]:
