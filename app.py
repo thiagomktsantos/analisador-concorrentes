@@ -3546,7 +3546,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             border: 1.5px dashed #93c5fd !important;
             border-radius: 14px !important;
             margin: 0px !important;
-            padding: 12px 16px !important;
+            padding: 16px 16px 16px 16px !important;
             box-shadow: none !important;
         }}
         .st-key-ads_edit_panel .stElementContainer:has(> .stButton),
@@ -3563,7 +3563,8 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             border: none !important;
             visibility: hidden !important;
         }}
-            .st-key-ads_edit_panel {{
+        .st-key-ads_edit_panel {{
+            margin-top: -1.5rem !important;
             margin-bottom: -1.5rem !important;
         }}
         </style>
