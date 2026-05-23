@@ -3894,7 +3894,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     gap: 8px;
 }}
 .tab-btn:hover {{ color: #374151; background: #f3f4f6; }}
-.tab-btn.active {{ color: #1a2e4a; border-bottom: 3px solid #3a9fd6; background: #fff; font-weight: 800; }}
+.tab-btn.active {{ color: #1a2e4a; border-bottom: 3px solid #3a9fd6; background: #fff; font-weight: 800;border-top: 1px solid #d8d9da; }}
 .tab-sep {{ width: 1px; background: #e5e7eb; align-self: stretch; margin: 8px 0; }}
 </style>
 <div class="tabs-bar">
@@ -4019,7 +4019,7 @@ html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidd
 .stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;text-align:center;}}
 .stat-lbl-green{{color:#15803d;}}
 .stat-num{{font-size:22px;font-weight:800;}}
-.stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;margin-top:2px;}}
+.stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;margin-top:2px;}}
 </style>
 <div class="stats-row">{"".join(stats_cards)}</div>
 <script>
