@@ -3869,7 +3869,6 @@ function triggerTab(sk, tab) {{
             /* ── Search input ── */
             .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
                 background-color: #fafafa !important;
-                border: 1.5px solid #e5e7eb !important;
                 border-radius: 8px !important;
                 height: 40px !important;
                 padding: 0 14px !important;
@@ -3884,14 +3883,14 @@ function triggerTab(sk, tab) {{
                 outline: none !important;
             }}
             .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
-                color: #9ca3af !important;
+                color: #6b7280 !important;
                 font-family: 'DM Sans', sans-serif !important;
             }}
 
             /* ── Selects fundo escuro ── */
             .st-key-{filtros_key} div[data-baseweb="select"] > div {{
                 background-color: #ffffff !important;
-                border: 2px solid #6b7280 !important;
+                border: 2px solid #e5e7eb !important;
                 border-radius: 8px !important;
                 height: 40px !important;
                 min-height: 40px !important;
@@ -3920,14 +3919,14 @@ function triggerTab(sk, tab) {{
             /* Dropdown menu escuro */
             [data-baseweb="popover"] ul,
             [data-baseweb="menu"] {{
-                background: #0e2a47 !important;
-                border: 1px solid #1a3a5c !important;
+                background: #e5e7eb !important;
+                border: 1px solid #ffffff !important;
                 border-radius: 8px !important;
                 font-family: 'DM Sans', sans-serif !important;
             }}
             [data-baseweb="menu"] li,
             [data-baseweb="menu"] [role="option"] {{
-                background: #0e2a47 !important;
+                background: #e5e7eb !important;
                 color: #e2eaf5 !important;
                 font-family: 'DM Sans', sans-serif !important;
                 font-size: 13px !important;
