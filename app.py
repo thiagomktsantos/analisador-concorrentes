@@ -4389,7 +4389,7 @@ body{{padding-bottom:4px;min-height:0;}}
 .page-avatar{{width:30px;height:30px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}}
 .page-name{{font-size:12px;font-weight:700;color:#050505;}}
 .page-sponsored{{font-size:10px;color:#65676b;}}
-.copy-body{{font-size:13px;color:#050505;line-height:1.55;white-space:pre-line;word-break:break-word;min-height:40px;}}
+.copy-body{{font-size:13px;color:#050505;line-height:1.55;white-space:pre-line;word-break:break-word;min-height:40px;padding-top:10px;border-top:2px solid #f3f4f6;}}
 .copy-title{{font-size:13px;font-weight:700;color:#050505;margin-top:10px;padding-top:10px;border-top:2px solid #f3f4f6;}}
 .copy-desc{{font-size:11px;color:#65676b;margin-top:2px;}}
 .no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;padding-top:10px;border-top:2px solid #f3f4f6;}}
