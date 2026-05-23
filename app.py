@@ -1737,7 +1737,640 @@ setTimeout(ajustarAltura, 800);
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
+A correção principal está no bloco CSS do modo edição. As mudanças foram:
+
+Seletores muito mais específicos — em vez de só [data-testid="stVerticalBlockBorderWrapper"] *, agora cada nível do DOM Streamlit (stVerticalBlock, stHorizontalBlock, column, stElementContainer) é explicitamente forçado para background: #ffffff.
+O st.form dentro do st.container ganhou seu próprio bloco de CSS que zera a borda e o padding duplicado, deixando a aparência limpa.
+A seção de Redes Sociais foi envolvida em with st.container(border=True): antes do with st.form(...), garantindo que o card branco envolva o formulário também.
+19:02Claude respondeu: Os cards ainda estão com fundo cinza.Os cards ainda estão com fundo cinza. O problema é que o CSS global do app (o [data-testid="stVerticalBlockBorderWrapper"] * lá no topo) está sobrescrevendo. Precisa de seletores mais específicos e com !important mais forte. Substitua apenas o bloco CSS dentro do if st.session_state.editar_empresa or not tem_dados: por este:
+python        st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+        /* ══ RESET COMPLETO: desfaz o CSS global que força fundo cinza ══ */
+
+        /* Containers com borda (st.container(border=True)) */
+        section.main > div > div > div > div [data-testid="stVerticalBlockBorderWrapper"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 14px !important;
+            padding: 20px 28px !important;
+            margin-bottom: 12px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+        }
+
+        /* Todos os filhos diretos e indiretos dos containers */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] *:not(svg):not(path):not(circle):not(rect):not(line):not(polyline):not(defs):not(stop):not(linearGradient):not(iframe):not(canvas):not(img):not(video) {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        /* stVerticalBlock e stHorizontalBlock dentro dos containers */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        /* Colunas */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        /* Formulário dentro do container */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        /* stElementContainer */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        /* Emotion cache classes (Streamlit interno) */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        /* Inputs */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] input[type="text"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] input[type="password"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] textarea {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 7px !important;
+            font-size: 15px !important;
+            color: #111827 !important;
+        }
+
+        /* Selects */
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 7px !important;
+        }
+
+        /* Esconde botão Editar no modo formulário */
+        .st-key-btn_editar_empresa { display: none !important; }
+        </style>
+        """, unsafe_allow_html=True)
+A chave foi adicionar [class*="st-emotion-cache"] para pegar as classes geradas dinamicamente pelo Streamlit, e usar seletores de descendente mais longos (section.main > div > div > div > div) para ter maior especificidade e vencer o CSS global do app.Você disse: mande o codigo completo da pagina minha empresamande o codigo completo da pagina minha empresa19:02Claude respondeu: Aqui está o código completo da página "Minha Empresa":Aqui está o código completo da página "Minha Empresa":
+python# ---------------------------------------------------
+# HOME — Minha Empresa
+# ---------------------------------------------------
+
+if st.session_state.pagina == "home":
+
+    emp = st.session_state.dados["minha_empresa"]
+    tem_dados = empresa_tem_dados(emp)
+
+    if not tem_dados and not st.session_state.editar_empresa:
+        st.session_state.editar_empresa = True
+
+    if st.session_state.editar_empresa or not tem_dados:
+
+        st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+        section.main > div > div > div > div [data-testid="stVerticalBlockBorderWrapper"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 14px !important;
+            padding: 20px 28px !important;
+            margin-bottom: 12px !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] *:not(svg):not(path):not(circle):not(rect):not(line):not(polyline):not(defs):not(stop):not(linearGradient):not(iframe):not(canvas):not(img):not(video) {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] input[type="text"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] input[type="password"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] textarea {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 7px !important;
+            font-size: 15px !important;
+            color: #111827 !important;
+        }
+
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 7px !important;
+        }
+
+        .st-key-btn_editar_empresa { display: none !important; }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # ── Cabeçalho ──────────────────────────────────────────────
+        h1, h2 = st.columns([7, 3])
+        with h1:
+            components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
+}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
+</style>
+<div class="titulo">Minha Empresa</div>
+<div class="sub">Gerencie as informações e tenha uma visão geral da sua empresa.</div>
+""", height=70)
+
+        with h2:
+            st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
+            btn_editar = st.button(
+                "Editar Empresa",
+                type="primary",
+                use_container_width=True,
+                key="btn_editar_empresa",
+            )
+            if btn_editar:
+                st.session_state.editar_empresa = True
+                st.rerun()
+
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
+            unsafe_allow_html=True,
+        )
+
+        # ── Helpers visuais ────────────────────────────────────────
+        def sec_label(label):
+            st.markdown(
+                f"<div style='font-size:11px;font-weight:700;color:#9ca3af;"
+                f"text-transform:uppercase;letter-spacing:1px;"
+                f"margin-bottom:12px'>{label}</div>",
+                unsafe_allow_html=True,
+            )
+
+        def form_divider():
+            st.markdown(
+                "<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>",
+                unsafe_allow_html=True,
+            )
+
+        # ── Seção: Identificação ───────────────────────────────────
+        with st.container(border=True):
+            sec_label("Identificação")
+            c1, c2 = st.columns(2)
+            emp["nome"] = c1.text_input(
+                "Nome da Empresa",
+                value=emp.get("nome", ""),
+                key="edit_nome",
+                placeholder="Ex: Marketylics",
+            )
+            site_digitado = c2.text_input(
+                "Site",
+                value=emp.get("site", ""),
+                key="edit_site",
+                placeholder="Ex: marketylics.com",
+            )
+            emp["site"] = limpar_site(site_digitado)
+
+        # ── Seção: Setor ───────────────────────────────────────────
+        with st.container(border=True):
+            sec_label("Setor")
+            c3, c4 = st.columns(2)
+            setor_opcoes = list(SUBNICHOS.keys())
+            setor_atual  = emp.get("setor", "Marketing")
+            setor_idx    = setor_opcoes.index(setor_atual) if setor_atual in setor_opcoes else 0
+
+            def on_setor_change():
+                emp["tipo"] = ""
+                st.session_state["_tipo_reset"] = True
+
+            emp["setor"] = c3.selectbox(
+                "Setor",
+                setor_opcoes,
+                index=setor_idx,
+                key="sel_setor",
+                on_change=on_setor_change,
+            )
+
+            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+            tipo_atual = emp.get("tipo", "")
+            tipo_idx   = 0 if st.session_state.get("_tipo_reset") else (
+                subnichos_disponiveis.index(tipo_atual) if tipo_atual in subnichos_disponiveis else 0
+            )
+            st.session_state["_tipo_reset"] = False
+
+            emp["tipo"] = c4.selectbox(
+                "Sub-nicho",
+                subnichos_disponiveis,
+                index=tipo_idx,
+                key="sel_tipo",
+            )
+
+        # ── Seção: Redes Sociais + Localização ────────────────────
+        with st.container(border=True):
+            with st.form("cad_empresa", clear_on_submit=False):
+
+                sec_label("Redes Sociais")
+                c5, c6 = st.columns(2)
+                emp["instagram"] = c5.text_input(
+                    "Instagram",
+                    value=emp.get("instagram", "@"),
+                    placeholder="@suaempresa",
+                )
+                emp["fb_page"] = c6.text_input(
+                    "Facebook",
+                    value=emp.get("fb_page", ""),
+                    placeholder="facebook.com/suaempresa",
+                )
+
+                servicos_text = st.text_input(
+                    "Serviços (separados por vírgula)",
+                    value=", ".join(emp.get("servicos", [])),
+                    placeholder="Ex: SEO, Tráfego Pago, Social Media",
+                )
+                emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
+
+                form_divider()
+
+                sec_label("Localização")
+                loc1, loc2 = st.columns(2)
+                estados      = list(ESTADOS_CIDADES.keys())
+                estado_atual = emp.get("estado", "")
+                estado_index = estados.index(estado_atual) if estado_atual in estados else 0
+                emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
+
+                cidades      = ESTADOS_CIDADES.get(emp["estado"], [])
+                cidade_atual = emp.get("cidade", "")
+                cidade_index = cidades.index(cidade_atual) if cidade_atual in cidades else 0
+                emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
+
+                form_divider()
+
+                col_salvar, col_cancelar = st.columns(2)
+                salvar   = col_salvar.form_submit_button("Salvar",   use_container_width=True)
+                cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
+
+                if cancelar:
+                    if tem_dados:
+                        st.session_state.editar_empresa = False
+                        st.rerun()
+                    else:
+                        st.warning("Preencha pelo menos o nome da empresa para continuar.")
+
+                if salvar:
+                    emp["nome"] = st.session_state.get("edit_nome", emp.get("nome", ""))
+                    emp["site"] = limpar_site(st.session_state.get("edit_site", emp.get("site", "")))
+                    if emp["nome"].strip():
+                        st.session_state.editar_empresa = False
+                        salvar_dados_usuario(st.session_state.user.id)
+                        st.success("Empresa salva com sucesso!")
+                        st.rerun()
+                    else:
+                        st.error("Informe pelo menos o nome da empresa.")
+
+    else:
+        # ── MODO VISUALIZAÇÃO ─────────────────────────────────────
+
+        h1, h2 = st.columns([7, 3])
+        with h1:
+            components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
+}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
+</style>
+<div class="titulo">Minha Empresa</div>
+<div class="sub">Gerencie as informações e tenha uma visão geral da sua empresa.</div>
+""", height=70)
+
+        with h2:
+            st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
+            btn_editar = st.button(
+                "Editar Empresa",
+                type="primary",
+                use_container_width=True,
+                key="btn_editar_empresa",
+            )
+            if btn_editar:
+                st.session_state.editar_empresa = True
+                st.rerun()
+
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
+            unsafe_allow_html=True,
+        )
+
+        cor_empresa = get_minha_empresa_color()
+        avatar      = gerar_avatar(emp["nome"])
+        loc         = emp.get("cidade", "")
+        if emp.get("estado"):
+            loc += (", " if loc else "") + emp["estado"]
+        servicos_html = (
+            "".join([f"<span class='empresa-tag'>{s}</span>" for s in emp.get("servicos", [])])
+            if emp.get("servicos") else "<span style='color:#9ca3af;font-size:14px'>—</span>"
+        )
+
+        components.html(f"""
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+html {{
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}}
+body {{ background: transparent; overflow: hidden; padding-bottom: 2px; }}
+.empresa-card {{
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+}}
+.empresa-card-deco {{
+    position: absolute; top: 0; right: 0;
+    width: 260px; height: 110px;
+    pointer-events: none; opacity: 0.4;
+}}
+.empresa-card-body {{ padding: 24px 28px; }}
+.empresa-top {{
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 20px; padding-bottom: 18px;
+    border-bottom: 1px solid #f3f4f6;
+}}
+.empresa-avatar {{
+    width: 52px; height: 52px; min-width: 52px;
+    border-radius: 50%; background: {cor_empresa};
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
+}}
+.empresa-nome {{
+    font-size: 20px; font-weight: 700; color: #111827;
+    margin-bottom: 2px; letter-spacing: -0.3px;
+}}
+.empresa-sub {{ font-size: 13px; color: #9ca3af; }}
+.empresa-grid {{
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr 1px 1fr;
+    gap: 0;
+}}
+.empresa-divider {{ background: #f0f0f0; margin: 0 24px; align-self: stretch; }}
+.empresa-col {{ padding: 0 4px; }}
+.empresa-sec-title {{
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: #9ca3af; margin-bottom: 14px;
+    padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
+}}
+.empresa-row {{
+    display: flex; align-items: flex-start;
+    gap: 10px; margin-bottom: 12px;
+}}
+.empresa-ico {{
+    width: 36px; height: 36px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 9px;
+}}
+.empresa-ico svg {{ width: 20px; height: 20px; }}
+.empresa-lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 1px; }}
+.empresa-val {{ font-size: 14px; color: #111827; font-weight: 600; }}
+.empresa-tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+.empresa-tag {{
+    background: #eff6ff; color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+}}
+</style>
+</head>
+<body>
+<div class="empresa-card" id="card">
+    <svg class="empresa-card-deco" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMin meet">
+        <path d="M 0 88 C 55 64 110 76 170 50 C 210 34 238 26 260 14" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+        <circle cx="170" cy="50" r="3.5" fill="#60a5fa"/>
+        <circle cx="238" cy="26" r="3.5" fill="#60a5fa"/>
+        <circle cx="254" cy="16" r="4" fill="#3b82f6"/>
+        <rect x="185" y="58" width="11" height="38" rx="3" fill="#93c5fd" opacity="0.5"/>
+        <rect x="202" y="46" width="11" height="50" rx="3" fill="#60a5fa" opacity="0.6"/>
+        <rect x="219" y="33" width="11" height="63" rx="3" fill="#3b82f6" opacity="0.68"/>
+        <rect x="236" y="20" width="11" height="76" rx="3" fill="#2563eb" opacity="0.75"/>
+    </svg>
+    <div class="empresa-card-body">
+        <div class="empresa-top">
+            <div class="empresa-avatar">{avatar}</div>
+            <div>
+                <div class="empresa-nome">{emp['nome']}</div>
+                <div class="empresa-sub">{emp.get('setor','')}{' · ' + emp['tipo'] if emp.get('tipo') else ''}</div>
+            </div>
+        </div>
+        <div class="empresa-grid">
+            <div class="empresa-col">
+                <div class="empresa-sec-title">Presença Digital</div>
+                <div class="empresa-row">
+                    <span class="empresa-ico" style="background:#f3f4f6;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10
+                                     15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Site</span>
+                        <span class="empresa-val">{emp.get('site') or '—'}</span>
+                    </div>
+                </div>
+                <div class="empresa-row">
+                    <span class="empresa-ico" style="background:#fff0f6;">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="ig_emp" x1="0%" y1="100%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#f09433"/>
+                                    <stop offset="25%"  stop-color="#e6683c"/>
+                                    <stop offset="50%"  stop-color="#dc2743"/>
+                                    <stop offset="75%"  stop-color="#cc2366"/>
+                                    <stop offset="100%" stop-color="#bc1888"/>
+                                </linearGradient>
+                            </defs>
+                            <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_emp)"/>
+                            <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Instagram</span>
+                        <span class="empresa-val">{emp.get('instagram') or '—'}</span>
+                    </div>
+                </div>
+                <div class="empresa-row">
+                    <span class="empresa-ico" style="background:#e8f0fe;">
+                        <svg viewBox="0 0 24 24" fill="#1877F2">
+                            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073
+                                     C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047
+                                     V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236
+                                     2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268
+                                     h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Facebook</span>
+                        <span class="empresa-val">{emp.get('fb_page') or '—'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="empresa-divider"></div>
+            <div class="empresa-col">
+                <div class="empresa-sec-title">Localização</div>
+                <div class="empresa-row">
+                    <span class="empresa-ico" style="background:#f3f4f6;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <span class="empresa-lbl">Cidade / Estado</span>
+                        <span class="empresa-val">{loc or '—'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="empresa-divider"></div>
+            <div class="empresa-col">
+                <div class="empresa-sec-title">Serviços</div>
+                <div class="empresa-tags-wrap">{servicos_html}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function ajustarAltura() {{
+    var card = document.getElementById('card');
+    if (!card) return;
+    var h = card.getBoundingClientRect().height;
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var j = 0; j < iframes.length; j++) {{
+        try {{
+            if (iframes[j].contentWindow === window) {{
+                iframes[j].style.height = (h + 8) + 'px';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
+}}
+document.addEventListener('DOMContentLoaded', ajustarAltura);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 300);
+setTimeout(ajustarAltura, 800);
+</script>
+</body>
+</html>
+        """, height=320, scrolling=False)
+
+        st.markdown("""
+        <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
+                    padding:14px 20px;display:flex;align-items:center;gap:16px;
+                    margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
+            <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0'>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12l2 2 4-4" stroke="#3a9fd6" stroke-width="2.2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
+                          stroke="#3a9fd6" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div>
+                <div style='font-size:14px;font-weight:600;color:#0f172a'>
+                    Mantenha suas informações atualizadas
+                </div>
+                <div style='font-size:13px;color:#64748b;margin-top:2px'>
+                    Dados atualizados garantem análises mais precisas e relatórios mais completos.
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 # ---------------------------------------------------
 # PAGINA - CONCORRENTES
 # ---------------------------------------------------
