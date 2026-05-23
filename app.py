@@ -3150,9 +3150,8 @@ elif st.session_state.pagina == "ads":
         st.session_state.ads_onboarding_termo = ""
     if "ads_editando_empresa" not in st.session_state:
         st.session_state.ads_editando_empresa = None
-    # Nova chave para controlar aba ativa (anuncios / analise)
     if "ads_aba_conteudo" not in st.session_state:
-        st.session_state.ads_aba_conteudo = {}  # {nome_empresa: "anuncios" | "analise"}
+        st.session_state.ads_aba_conteudo = {}
  
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
@@ -3333,7 +3332,6 @@ html, body { background:transparent; overflow:hidden; }
             st.session_state.ads_aba_ativa = i
             st.rerun()
  
-    # Ghost buttons para trocar aba de conteúdo (anuncios / analise) por empresa
     conteudo_tab_ids = []
     for e in empresas_configuradas:
         sk = safe_key(e["nome"])
@@ -3752,7 +3750,7 @@ setTimeout(ajustarAltura, 100);
 """
  
     # ══════════════════════════════════════════════════════════════════
-    # FUNÇÃO PRINCIPAL: render_ads_empresa — com 2 abas principais
+    # FUNÇÃO PRINCIPAL: render_ads_empresa
     # ══════════════════════════════════════════════════════════════════
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3836,7 +3834,6 @@ setTimeout(ajustarAltura, 100);
         page_display = configured_page if configured_page else "—"
         lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
  
-        # ── Cabeçalho da empresa ──────────────────────────────────────
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
@@ -3861,7 +3858,6 @@ setTimeout(ajustarAltura, 100);
             </div>
         </div>""", unsafe_allow_html=True)
  
-        # ── Barra de abas: Anúncios | Análise de IA ──────────────────
         aba_conteudo_atual = st.session_state.ads_aba_conteudo.get(ck, "anuncios")
  
         components.html(f"""
@@ -3937,7 +3933,6 @@ function triggerTab(sk, tab) {{
         # ════════════════════════════════════════════════════════════
         if aba_conteudo_atual == "anuncios":
  
-            # Filtros
             filtros_key = f"filtros_{sk}"
             st.markdown(f"""
             <style>
@@ -3992,7 +3987,6 @@ function triggerTab(sk, tab) {{
                 st.warning("Nenhum anúncio com os filtros aplicados.")
                 return
  
-            # Stats
             n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
             n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
             n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -4064,7 +4058,6 @@ setTimeout(ajustarAltura,100);
                 cta         = ad.get("cta") or ""
                 uid         = f"{sk}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
-                microlink_url = _microlink_screenshot(snap_url)
  
                 debug_keys = {
                    "id": ad.get("id", ""),
@@ -4089,7 +4082,6 @@ setTimeout(ajustarAltura,100);
                    "cta": ad.get("cta", ""),
                    "page_profile_picture": (ad.get("page_profile_picture") or "")[:60],
                 }
-
                 debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                 debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
  
@@ -4098,21 +4090,21 @@ setTimeout(ajustarAltura,100);
                 if images_b64 and len(images_b64) > 1:
                     img_fallbacks.extend(images_b64[1:])
                 img_fallbacks.extend([u for u in images if u not in img_fallbacks])
-                if microlink_url:
-                    img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
+                # JSON para o modal — usa URLs originais (não b64) para melhor qualidade
+                # Ordem: images[0]=story, images[1]=preview, images[2]=feed
+                modal_images_list = images[:3] if images else []
+                modal_videos_list = videos[:2] if videos else []
+                modal_images_js = _json.dumps(modal_images_list).replace("\\", "\\\\").replace("'", "\\'")
+                modal_videos_js = _json.dumps(modal_videos_list).replace("\\", "\\\\").replace("'", "\\'")
+                snap_safe = snap_url.replace("'", "").replace('"', "")
+ 
                 if videos:
-                    if snap_url:
-                        _snap_safe = snap_url.replace("'", "\\'")
-                        video_onclick = f"openModal('{video_thumb.replace(chr(39), '')}', '{_snap_safe}', true)"
-                        video_style   = "cursor:pointer;"
-                    else:
-                        video_onclick = ""
-                        video_style   = ""
+                    onclick_modal = f"openModal('{modal_images_js}', '{modal_videos_js}', '{snap_safe}', true)"
                     if video_thumb:
                         media_block = f"""
-<div class="media-block video-thumb-block" onclick="{video_onclick}" style="{video_style}position:relative;">
+<div class="media-block video-thumb-block" onclick="{onclick_modal}" style="cursor:pointer;position:relative;">
     <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
          onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
     <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;flex-direction:column;gap:8px">
@@ -4123,30 +4115,31 @@ setTimeout(ajustarAltura,100);
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
         </div>
     </div>
-    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>' if snap_url else ''}
+    <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>
 </div>"""
                     else:
                         media_block = f"""
-<div class="media-block video-block" onclick="{video_onclick}" style="{video_style}">
+<div class="media-block video-block" onclick="{onclick_modal}" style="cursor:pointer;">
     <div class="video-play-icon">
         <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
             <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
             <polygon points="22,18 40,27 22,36" fill="white"/>
         </svg>
     </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">Clique para ver o vídeo</div>
 </div>"""
                 elif img_primary:
+                    onclick_modal = f"openModal('{modal_images_js}', '[]', '{snap_safe}', false)"
                     media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
+     onclick="{onclick_modal}">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
         <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ver criativo</div>
 </div>
 <script>
 var _srcs_{uid}={srcs_js};
@@ -4159,11 +4152,11 @@ function imgFallback_{uid}(img){{
 </script>"""
                 else:
                     _sv = snap_url.replace("'", "")
-                    _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
-                    _nm_color   = "#3a9fd6" if snap_url else "#c4c4c4"
-                    _nm_label   = "Ver criativo →" if snap_url else "Sem criativo"
+                    _onclick_none = f"openModal('[]', '[]', '{_sv}', false)" if snap_url else ""
+                    _nm_color = "#3a9fd6" if snap_url else "#c4c4c4"
+                    _nm_label = "Ver criativo →" if snap_url else "Sem criativo"
                     media_block = (
-                        f'<div class="media-block no-media-block" {_nm_onclick} style="{"cursor:pointer;" if snap_url else ""}">'
+                        f'<div class="media-block no-media-block" {"onclick=\\"" + _onclick_none + "\\"" if snap_url else ""} style="{"cursor:pointer;" if snap_url else ""}">'
                         f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
                         f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
                         f'<polyline points="21 15 16 10 5 21"/></svg>'
@@ -4300,44 +4293,228 @@ body{{padding-bottom:4px;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:11px;color:#374151;padding:10px 14px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:200px;overflow-y:auto;border-top:1px solid #fde68a;}}
-#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
+ 
+/* ═══════════════════════════════
+   MODAL — VISUALIZAR CRIATIVOS
+   ═══════════════════════════════ */
+#modal-overlay{{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,0.82);z-index:999999;
+    align-items:center;justify-content:center;
+    padding:20px;backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+}}
 #modal-overlay.open{{display:flex;}}
-#modal-box{{background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
-#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
-#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
-#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
-#modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
-#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
+#modal-box{{
+    background:#13172a;border-radius:22px;overflow:hidden;
+    position:relative;display:flex;flex-direction:column;align-items:center;
+    max-width:min(94vw,720px);width:100%;max-height:94vh;
+    box-shadow:0 40px 100px rgba(0,0,0,0.65);
+}}
+.mhdr{{
+    width:100%;display:flex;align-items:center;
+    justify-content:space-between;
+    padding:22px 28px 18px;
+    border-bottom:1px solid rgba(255,255,255,0.07);
+    flex-shrink:0;
+}}
+.mhdr-left .mtitle{{
+    font-size:16px;font-weight:800;color:#fff;
+    letter-spacing:2px;text-transform:uppercase;
+}}
+.mhdr-left .msub{{font-size:12px;color:rgba(255,255,255,0.38);margin-top:3px;}}
+#modal-close{{
+    width:36px;height:36px;border-radius:50%;
+    background:rgba(255,255,255,0.1);border:none;
+    font-size:15px;color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 0.15s;flex-shrink:0;
+}}
+#modal-close:hover{{background:rgba(255,255,255,0.2);}}
+.mtabs{{
+    display:flex;gap:8px;padding:16px 28px 0;
+    width:100%;flex-shrink:0;
+}}
+.mtab{{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:8px 22px;border-radius:30px;
+    font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    border:1.5px solid rgba(255,255,255,0.15);
+    background:transparent;color:rgba(255,255,255,0.4);
+    cursor:pointer;transition:all 0.15s;
+    font-family:'DM Sans',sans-serif;
+}}
+.mtab:hover{{border-color:rgba(255,255,255,0.35);color:rgba(255,255,255,0.75);}}
+.mtab.active{{
+    background:rgba(255,255,255,0.1);
+    border-color:rgba(255,255,255,0.5);
+    color:#fff;
+}}
+.mcreative{{
+    width:100%;flex:1;overflow-y:auto;
+    padding:24px 28px;
+    display:flex;align-items:center;justify-content:center;
+    min-height:220px;
+}}
+.feed-row{{
+    display:flex;gap:28px;align-items:flex-start;
+    justify-content:center;width:100%;flex-wrap:wrap;
+}}
+.dvc-wrap{{
+    display:flex;flex-direction:column;align-items:center;
+    gap:12px;flex:1;min-width:0;max-width:260px;
+}}
+.dvc-label{{
+    font-size:10px;font-weight:800;color:rgba(255,255,255,0.4);
+    text-transform:uppercase;letter-spacing:2px;
+    border:1px solid rgba(255,255,255,0.12);
+    padding:4px 14px;border-radius:20px;
+    display:inline-flex;align-items:center;gap:5px;
+}}
+.phone-story{{
+    width:148px;background:#0a0c1a;
+    border-radius:26px;
+    border:3px solid rgba(255,255,255,0.13);
+    overflow:hidden;aspect-ratio:9/16;
+    box-shadow:0 16px 48px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04);
+    position:relative;
+}}
+.phone-story img,.phone-story video{{
+    width:100%;height:100%;object-fit:cover;display:block;
+}}
+.phone-feed{{
+    width:210px;background:#0a0c1a;
+    border-radius:16px;
+    border:3px solid rgba(255,255,255,0.13);
+    overflow:hidden;
+    box-shadow:0 16px 48px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04);
+    position:relative;
+}}
+.phone-feed img,.phone-feed video{{
+    width:100%;aspect-ratio:1/1;object-fit:cover;display:block;
+}}
+.no-media-modal{{
+    display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;color:rgba(255,255,255,0.25);
+    font-size:14px;padding:48px;text-align:center;width:100%;
+}}
+.mfooter{{
+    width:100%;padding:16px 28px 24px;
+    display:flex;justify-content:center;
+    border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;
+}}
+.mlib-btn{{
+    display:inline-flex;align-items:center;gap:8px;
+    background:#1877F2;color:#fff;
+    padding:12px 28px;border-radius:10px;
+    font-size:14px;font-weight:700;text-decoration:none;
+    transition:background 0.15s;border:none;cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+}}
+.mlib-btn:hover{{background:#1462c4;}}
 </style>
 </head><body>
+ 
+<!-- MODAL VISUALIZAR CRIATIVOS -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
-        <div id="modal-content"></div>
+  <div id="modal-box">
+    <div class="mhdr">
+      <div class="mhdr-left">
+        <div class="mtitle">Visualizar Criativos</div>
+        <div class="msub">Como o anúncio aparece nos dispositivos</div>
+      </div>
+      <button id="modal-close" onclick="closeModal()">✕</button>
     </div>
+    <div class="mtabs">
+      <button class="mtab active" id="tab-feed"  onclick="switchTab('feed')">🖼️ FEED</button>
+      <button class="mtab"        id="tab-story" onclick="switchTab('story')">📱 STORY</button>
+    </div>
+    <div class="mcreative" id="mcreative"></div>
+    <div class="mfooter" id="mfooter" style="display:none">
+      <a id="mlib-link" href="#" target="_blank" class="mlib-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Ver no Meta Ad Library
+      </a>
+    </div>
+  </div>
 </div>
+ 
 <div class="ads-grid">{cards_joined}</div>
+ 
 <script>
-function openModal(imgSrc,snapUrl,isVideo){{
-    var overlay=document.getElementById('modal-overlay');
-    var content=document.getElementById('modal-content');
-    content.innerHTML='';
-    if(isVideo){{
-        var wrap=document.createElement('div');wrap.id='modal-video-wrap';
-        if(imgSrc){{var thumb=document.createElement('img');thumb.src=imgSrc;thumb.style.cssText='max-width:min(70vw,600px);max-height:min(50vh,480px);object-fit:contain;border-radius:10px;display:block;';thumb.onerror=function(){{this.style.display='none';}};wrap.appendChild(thumb);}}
-        if(snapUrl){{var btn=document.createElement('a');btn.href=snapUrl;btn.target='_blank';btn.id='modal-video-btn';btn.innerHTML='▶ Abrir vídeo no Ad Library';wrap.appendChild(btn);}}
-        content.appendChild(wrap);overlay.classList.add('open');
-    }}else{{
-        if(!imgSrc&&snapUrl){{window.open(snapUrl,'_blank');return;}}
-        if(!imgSrc)return;
-        var loading=document.createElement('div');loading.id='modal-loading';loading.textContent='Carregando…';content.appendChild(loading);overlay.classList.add('open');
-        var tmp=new Image();
-        tmp.onload=function(){{content.innerHTML='';var img=document.createElement('img');img.id='modal-img';img.src=imgSrc;content.appendChild(img);}};
-        tmp.onerror=function(){{content.innerHTML='';if(snapUrl){{window.open(snapUrl,'_blank');closeModal();}}else{{var msg=document.createElement('div');msg.style.cssText='color:#aaa;font-size:14px;padding:32px;text-align:center';msg.textContent='Imagem não disponível.';content.appendChild(msg);}}}};
-        tmp.src=imgSrc;
+var _MS = {{ imgs:[], vids:[], snap:'', isVid:false }};
+ 
+function openModal(imgsJson, vidsJson, snap, isVid) {{
+    try {{ _MS.imgs = JSON.parse(imgsJson || '[]'); }} catch(e) {{ _MS.imgs=[]; }}
+    try {{ _MS.vids = JSON.parse(vidsJson || '[]'); }} catch(e) {{ _MS.vids=[]; }}
+    _MS.snap  = snap  || '';
+    _MS.isVid = !!isVid;
+    document.getElementById('tab-feed').classList.add('active');
+    document.getElementById('tab-story').classList.remove('active');
+    var ftr = document.getElementById('mfooter');
+    if (snap) {{ document.getElementById('mlib-link').href = snap; ftr.style.display='flex'; }}
+    else {{ ftr.style.display='none'; }}
+    render('feed');
+    document.getElementById('modal-overlay').classList.add('open');
+}}
+function closeModal() {{
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.querySelectorAll('#mcreative video').forEach(function(v){{v.pause();}});
+}}
+function switchTab(t) {{
+    document.getElementById('tab-feed').classList.toggle('active', t==='feed');
+    document.getElementById('tab-story').classList.toggle('active', t==='story');
+    render(t);
+}}
+function dvcWrap(label, frameClass, inner) {{
+    return '<div class="dvc-wrap"><div class="dvc-label">'+label+'</div><div class="'+frameClass+'">'+inner+'</div></div>';
+}}
+function noMedia() {{
+    return '<div class="no-media-modal">📷<br>Sem mídia disponível'+
+        (_MS.snap?'<br><a href="'+_MS.snap+'" target="_blank" style="color:#60a5fa;margin-top:8px;display:block">Ver no Ad Library →</a>':'')+
+        '</div>';
+}}
+function render(tab) {{
+    var area = document.getElementById('mcreative');
+    var imgs = _MS.imgs;   // [0]=story  [1]=preview  [2]=feed
+    var vids = _MS.vids;   // [0]=hd     [1]=sd
+    var storyImg = imgs[0]||'';
+    var feedImg  = imgs[2]||imgs[1]||imgs[0]||'';
+    var storyVid = vids[0]||'';
+    var feedVid  = vids[1]||vids[0]||'';
+ 
+    if (_MS.isVid) {{
+        if (tab==='feed') {{
+            var h='<div class="feed-row">';
+            if (storyVid) h+=dvcWrap('📱 Story','phone-story','<video src="'+storyVid+'" controls playsinline style="width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>');
+            if (feedVid)  h+=dvcWrap('🖼️ Feed', 'phone-feed', '<video src="'+feedVid+'"  controls playsinline style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#000"></video>');
+            if (!storyVid&&!feedVid) h+=noMedia();
+            h+='</div>';
+            area.innerHTML=h;
+        }} else {{
+            area.innerHTML = storyVid
+                ? '<div class="feed-row">'+dvcWrap('📱 Story','phone-story','<video src="'+storyVid+'" controls playsinline style="width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>')+'</div>'
+                : noMedia();
+        }}
+    }} else {{
+        function mkImg(src,cls,st){{return '<img src="'+src+'" style="'+st+'" onerror="this.style.display=\'none\'" loading="lazy" />';}}
+        if (tab==='feed') {{
+            var h='<div class="feed-row">';
+            if (storyImg) h+=dvcWrap('📱 Story','phone-story',mkImg(storyImg,'','width:100%;height:100%;object-fit:cover;display:block'));
+            if (feedImg)  h+=dvcWrap('🖼️ Feed', 'phone-feed', mkImg(feedImg, '','width:100%;aspect-ratio:1/1;object-fit:cover;display:block'));
+            if (!storyImg&&!feedImg) h+=noMedia();
+            h+='</div>';
+            area.innerHTML=h;
+        }} else {{
+            area.innerHTML = storyImg
+                ? '<div class="feed-row">'+dvcWrap('📱 Story','phone-story',mkImg(storyImg,'','width:100%;height:100%;object-fit:cover;display:block'))+'</div>'
+                : noMedia();
+        }}
     }}
 }}
-function closeModal(){{document.getElementById('modal-overlay').classList.remove('open');document.getElementById('modal-content').innerHTML='';}}
 document.addEventListener('keydown',function(e){{if(e.key==='Escape')closeModal();}});
 function toggleDebug(uid){{
     var el=document.getElementById('debug_'+uid);
@@ -4362,9 +4539,8 @@ setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500
         # ABA: ANÁLISE DE IA — 3 sub-abas: Individuais | Criativos | Copys
         # ════════════════════════════════════════════════════════════
         else:
-            ads_f_ia = ads_list  # usa lista sem filtros para análise
+            ads_f_ia = ads_list
  
-            # ── chaves de estado ──────────────────────────────────────
             chave_ia_geral     = f"ia_ads_geral_{sk}"
             chave_ia_criativos = f"ia_ads_criativos_{sk}"
             chave_ia_copys     = f"ia_ads_copys_{sk}"
@@ -4373,13 +4549,11 @@ setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500
                 if ch not in st.session_state:
                     st.session_state[ch] = ""
  
-            # chave por anúncio individual
             for j in range(len(ads_f_ia)):
                 chave_ind = f"ia_ad_result_{sk}_{j}"
                 if chave_ind not in st.session_state:
                     st.session_state[chave_ind] = ""
  
-            # ── ghost buttons para sub-abas e triggers individuais ────
             sub_tab_keys = [
                 f"btn_subtab_{sk}_individuais",
                 f"btn_subtab_{sk}_criativos",
@@ -4410,17 +4584,14 @@ setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500
             ])
             st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
  
-            # sub-aba state
             if f"ads_subtab_{sk}" not in st.session_state:
                 st.session_state[f"ads_subtab_{sk}"] = "individuais"
  
-            # ghost buttons sub-abas
             for tab_name in ["individuais", "criativos", "copys"]:
                 if st.button(f"_subtab_{sk}_{tab_name}_", key=f"btn_subtab_{sk}_{tab_name}"):
                     st.session_state[f"ads_subtab_{sk}"] = tab_name
                     st.rerun()
  
-            # ghost buttons triggers IA geral
             if st.button(f"_ia_geral_{sk}_", key=f"btn_ia_geral_{sk}"):
                 if gemini_model is None:
                     st.session_state[chave_ia_geral] = "Configure GEMINI_API_KEY nos secrets."
@@ -4522,7 +4693,6 @@ Copies coletadas:
                             st.session_state[chave_ia_copys] = f"Erro: {ex}"
                             st.rerun()
  
-            # ghost buttons triggers IA individuais
             for j, ad in enumerate(ads_f_ia):
                 if st.button(f"_ia_ind_{sk}_{j}_", key=f"btn_ia_ind_{sk}_{j}"):
                     chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -4553,11 +4723,8 @@ CTA: {ad.get("cta","")}
                                 st.session_state[chave_ind] = f"Erro: {ex}"
                                 st.rerun()
  
-            # ── Renderiza sub-abas ────────────────────────────────────
             subtab_atual = st.session_state.get(f"ads_subtab_{sk}", "individuais")
  
-            # Monta dados para o HTML
-            # Anúncios individuais - lista resumida
             ind_cards_data = []
             for j, ad in enumerate(ads_f_ia):
                 chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -4586,7 +4753,6 @@ CTA: {ad.get("cta","")}
  
             ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
  
-            # resultados gerais
             geral_html     = st.session_state.get(chave_ia_geral, "").replace("\n","<br>")
             criativos_html = st.session_state.get(chave_ia_criativos, "").replace("\n","<br>")
             copys_html     = st.session_state.get(chave_ia_copys, "").replace("\n","<br>")
@@ -4606,8 +4772,6 @@ html, body {{
     -webkit-font-smoothing: antialiased; overflow: visible;
 }}
 body {{ padding-bottom: 8px; }}
- 
-/* ── Sub-tabs ── */
 .subtabs-wrap {{
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -4628,12 +4792,8 @@ body {{ padding-bottom: 8px; }}
 }}
 .subtab:hover {{ color: #374151; }}
 .subtab.active {{ color: #1a2e4a; border-bottom: 3px solid #3a9fd6; }}
- 
-/* ── Panels ── */
 .panel {{ display: none; padding: 20px 16px; background: #fff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }}
 .panel.active {{ display: block; }}
- 
-/* ── Stats row ── */
 .stats-mini {{ display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }}
 .stat-mini {{
     flex: 1; min-width: 80px;
@@ -4642,8 +4802,6 @@ body {{ padding-bottom: 8px; }}
 }}
 .stat-mini-num {{ font-size: 20px; font-weight: 800; color: #111827; }}
 .stat-mini-lbl {{ font-size: 11px; color: #6b7280; font-weight: 600; margin-top: 2px; }}
- 
-/* ── Individal cards ── */
 .ind-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }}
 .ind-card {{
     background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;
@@ -4690,8 +4848,6 @@ body {{ padding-bottom: 8px; }}
     text-transform: uppercase; letter-spacing: 0.5px;
     margin-bottom: 8px;
 }}
- 
-/* ── Geral/Criativos/Copys panels ── */
 .analise-wrap {{
     background: #f9fafb; border: 1px solid #e5e7eb;
     border-radius: 10px; overflow: hidden;
@@ -4725,7 +4881,6 @@ body {{ padding-bottom: 8px; }}
 </head>
 <body>
  
-<!-- Sub-tabs -->
 <div class="subtabs-wrap">
     <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais', this)">
         📋 Anúncios Individuais
@@ -4738,7 +4893,6 @@ body {{ padding-bottom: 8px; }}
     </button>
 </div>
  
-<!-- Panel: Individuais -->
 <div id="panel-individuais" class="panel {'active' if subtab_atual == 'individuais' else ''}">
     <div class="stats-mini">
         <div class="stat-mini"><div class="stat-mini-num">{n_anuncios}</div><div class="stat-mini-lbl">Total</div></div>
@@ -4749,13 +4903,10 @@ body {{ padding-bottom: 8px; }}
     <div class="ind-grid" id="ind-grid"></div>
 </div>
  
-<!-- Panel: Criativos -->
 <div id="panel-criativos" class="panel {'active' if subtab_atual == 'criativos' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header">
-            <span>🎨 Análise de Criativos</span>
-        </div>
-        <div class="analise-body" id="criativos-body">
+        <div class="analise-header"><span>🎨 Análise de Criativos</span></div>
+        <div class="analise-body">
             {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
@@ -4766,13 +4917,10 @@ body {{ padding-bottom: 8px; }}
     </div>
 </div>
  
-<!-- Panel: Copys -->
 <div id="panel-copys" class="panel {'active' if subtab_atual == 'copys' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header">
-            <span>✍️ Análise de Copys</span>
-        </div>
-        <div class="analise-body" id="copys-body">
+        <div class="analise-header"><span>✍️ Análise de Copys</span></div>
+        <div class="analise-body">
             {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
@@ -4784,10 +4932,8 @@ body {{ padding-bottom: 8px; }}
 </div>
  
 <script>
-// ── dados ────────────────────────────────────────────────────
 var IND_CARDS = {ind_cards_json};
  
-// ── build individual cards ───────────────────────────────────
 function buildIndGrid() {{
     var grid = document.getElementById('ind-grid');
     if (!grid) return;
@@ -4796,13 +4942,10 @@ function buildIndGrid() {{
         var card = document.createElement('div');
         card.className = 'ind-card';
         card.id = 'ind_card_' + d.j;
- 
         var thumbHtml = d.img_src
             ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
             : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
- 
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
- 
         card.innerHTML =
             '<div class="ind-card-top">' +
                 '<div class="ind-thumb">' + thumbHtml + '</div>' +
@@ -4816,14 +4959,12 @@ function buildIndGrid() {{
                     '</div>' +
                 '</div>' +
             '</div>';
- 
         if (d.resultado) {{
             var res = document.createElement('div');
             res.className = 'ind-result';
             res.innerHTML = '<div class="ind-result-header">Análise IA</div>' + d.resultado;
             card.appendChild(res);
         }}
- 
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
@@ -4838,25 +4979,20 @@ function buildIndGrid() {{
             }};
         }})(d.j);
         card.appendChild(btn);
- 
         grid.appendChild(card);
     }});
     syncHeight();
 }}
  
-// ── subtab switching ─────────────────────────────────────────
 function showSubtab(name, el) {{
-    // visually switch tabs
     document.querySelectorAll('.subtab').forEach(function(t) {{ t.classList.remove('active'); }});
     document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
-    // persist via streamlit ghost button
     triggerGlobal('_subtab_{sk}_' + name + '_');
     setTimeout(syncHeight, 100);
 }}
  
-// ── trigger streamlit buttons ────────────────────────────────
 function triggerGlobal(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -4865,7 +5001,6 @@ function triggerGlobal(label) {{
     }}
 }}
  
-// ── height sync ───────────────────────────────────────────────
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -4879,7 +5014,6 @@ function syncHeight() {{
     }}
 }}
  
-// ── init ─────────────────────────────────────────────────────
 buildIndGrid();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
@@ -4891,7 +5025,6 @@ setTimeout(syncHeight, 1500);
 </body></html>
 """, height=600, scrolling=False)
  
-    # ── Renderiza a aba ativa ────────────────────────────────────────
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
     if empresas_com_dados:
