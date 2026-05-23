@@ -4080,7 +4080,7 @@ setTimeout(ajustarAltura,100);
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
         <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ver criativos</div>
 </div>
 <script>
 var _srcs_{uid}={srcs_js};
@@ -4222,11 +4222,11 @@ body{{padding-bottom:4px;}}
 .media-block{{width:100%;position:relative;overflow:hidden;background:#000;height:180px;}}
 .img-block{{height:180px;background:#f0f2f5;}}
 .video-thumb-block{{height:180px;}}
-.no-media-block{{height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:6px;}}
+.no-media-block{{height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#061e4d;gap:6px;}}
  
-.cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
+.cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#e1e4ea;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
 .cta-domain{{font-size:10px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-.cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
+.cta-btn{{background:#284e73;color:#ffffff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
 .card-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e4e6ea;}}
 .lib-btn{{display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:11px;font-weight:700;text-decoration:none;}}
 .lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:9px 6px;background:#f3f4f6;color:#9ca3af;font-size:11px;font-weight:600;}}
