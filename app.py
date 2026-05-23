@@ -1197,32 +1197,42 @@ if st.session_state.pagina == "home":
         <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
-        /* ── Força fundo branco em TUDO dentro dos containers ── */
+        /* ── Força fundo branco em TODOS os containers da página home ── */
         section.main [data-testid="stVerticalBlockBorderWrapper"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] *:not(svg):not(path):not(circle):not(rect):not(line) {
+        section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
+        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div {
             background: #ffffff !important;
             background-color: #ffffff !important;
         }
+
         section.main [data-testid="stVerticalBlockBorderWrapper"] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
             border: 1px solid #e5e7eb !important;
             border-radius: 14px !important;
             padding: 20px 32px !important;
-            margin-bottom: 0px !important;
+            margin-bottom: 12px !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
 
-        /* ── Formulário ── */
-        section.main div[data-testid="stForm"],
-        section.main div[data-testid="stForm"] *:not(svg):not(path):not(circle):not(rect):not(line) {
+        /* ── Formulário dentro do container ── */
+        section.main div[data-testid="stForm"] {
             background: #ffffff !important;
             background-color: #ffffff !important;
-        }
-        section.main div[data-testid="stForm"] {
-            border: 1px solid #e5e7eb !important;
-            border-radius: 14px !important;
-            padding: 28px 32px !important;
-            margin-bottom: 0px !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            border: none !important;
+            padding: 0 !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
         }
 
         /* ── Inputs ── */
@@ -1252,7 +1262,7 @@ if st.session_state.pagina == "home":
         </style>
         """, unsafe_allow_html=True)
 
-        # ── Cabeçalho igual ao modo visualização ──────────────────
+        # ── Cabeçalho ──────────────────────────────────────────────
         h1, h2 = st.columns([7, 3])
         with h1:
             components.html("""
@@ -1334,8 +1344,6 @@ html, body { background: transparent; overflow: hidden; }
             )
             emp["site"] = limpar_site(site_digitado)
 
-        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-
         # ── Seção: Setor ───────────────────────────────────────────
         with st.container(border=True):
             sec_label("Setor")
@@ -1370,68 +1378,67 @@ html, body { background: transparent; overflow: hidden; }
                 key="sel_tipo",
             )
 
-        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
-
         # ── Seção: Redes Sociais + Localização (dentro do form) ────
-        with st.form("cad_empresa", clear_on_submit=False):
+        with st.container(border=True):
+            with st.form("cad_empresa", clear_on_submit=False):
 
-            sec_label("Redes Sociais")
-            c5, c6 = st.columns(2)
-            emp["instagram"] = c5.text_input(
-                "Instagram",
-                value=emp.get("instagram", "@"),
-                placeholder="@suaempresa",
-            )
-            emp["fb_page"] = c6.text_input(
-                "Facebook",
-                value=emp.get("fb_page", ""),
-                placeholder="facebook.com/suaempresa",
-            )
+                sec_label("Redes Sociais")
+                c5, c6 = st.columns(2)
+                emp["instagram"] = c5.text_input(
+                    "Instagram",
+                    value=emp.get("instagram", "@"),
+                    placeholder="@suaempresa",
+                )
+                emp["fb_page"] = c6.text_input(
+                    "Facebook",
+                    value=emp.get("fb_page", ""),
+                    placeholder="facebook.com/suaempresa",
+                )
 
-            servicos_text = st.text_input(
-                "Serviços (separados por vírgula)",
-                value=", ".join(emp.get("servicos", [])),
-                placeholder="Ex: SEO, Tráfego Pago, Social Media",
-            )
-            emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
+                servicos_text = st.text_input(
+                    "Serviços (separados por vírgula)",
+                    value=", ".join(emp.get("servicos", [])),
+                    placeholder="Ex: SEO, Tráfego Pago, Social Media",
+                )
+                emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
 
-            form_divider()
+                form_divider()
 
-            sec_label("Localização")
-            loc1, loc2 = st.columns(2)
-            estados      = list(ESTADOS_CIDADES.keys())
-            estado_atual = emp.get("estado", "")
-            estado_index = estados.index(estado_atual) if estado_atual in estados else 0
-            emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
+                sec_label("Localização")
+                loc1, loc2 = st.columns(2)
+                estados      = list(ESTADOS_CIDADES.keys())
+                estado_atual = emp.get("estado", "")
+                estado_index = estados.index(estado_atual) if estado_atual in estados else 0
+                emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
 
-            cidades      = ESTADOS_CIDADES.get(emp["estado"], [])
-            cidade_atual = emp.get("cidade", "")
-            cidade_index = cidades.index(cidade_atual) if cidade_atual in cidades else 0
-            emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
+                cidades      = ESTADOS_CIDADES.get(emp["estado"], [])
+                cidade_atual = emp.get("cidade", "")
+                cidade_index = cidades.index(cidade_atual) if cidade_atual in cidades else 0
+                emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
 
-            form_divider()
+                form_divider()
 
-            col_salvar, col_cancelar = st.columns(2)
-            salvar   = col_salvar.form_submit_button("Salvar",   use_container_width=True)
-            cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
+                col_salvar, col_cancelar = st.columns(2)
+                salvar   = col_salvar.form_submit_button("Salvar",   use_container_width=True)
+                cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
 
-            if cancelar:
-                if tem_dados:
-                    st.session_state.editar_empresa = False
-                    st.rerun()
-                else:
-                    st.warning("Preencha pelo menos o nome da empresa para continuar.")
+                if cancelar:
+                    if tem_dados:
+                        st.session_state.editar_empresa = False
+                        st.rerun()
+                    else:
+                        st.warning("Preencha pelo menos o nome da empresa para continuar.")
 
-            if salvar:
-                emp["nome"] = st.session_state.get("edit_nome", emp.get("nome", ""))
-                emp["site"] = limpar_site(st.session_state.get("edit_site", emp.get("site", "")))
-                if emp["nome"].strip():
-                    st.session_state.editar_empresa = False
-                    salvar_dados_usuario(st.session_state.user.id)
-                    st.success("Empresa salva com sucesso!")
-                    st.rerun()
-                else:
-                    st.error("Informe pelo menos o nome da empresa.")
+                if salvar:
+                    emp["nome"] = st.session_state.get("edit_nome", emp.get("nome", ""))
+                    emp["site"] = limpar_site(st.session_state.get("edit_site", emp.get("site", "")))
+                    if emp["nome"].strip():
+                        st.session_state.editar_empresa = False
+                        salvar_dados_usuario(st.session_state.user.id)
+                        st.success("Empresa salva com sucesso!")
+                        st.rerun()
+                    else:
+                        st.error("Informe pelo menos o nome da empresa.")
 
     else:
         # ── MODO VISUALIZAÇÃO (conta com dados) ───────────────────
