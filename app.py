@@ -3996,53 +3996,78 @@ setTimeout(ajustarAltura,100);
                 srcs_js = _json.dumps(img_fallbacks)
  
                 # ── MEDIA BLOCK ───────────────────────────────────────
-                # Para vídeos: usa screenshot do microlink via snapshot_url
-                # Sem canvas, sem CORS, sem spinner infinito
                 if videos:
-                    if snap_url_safe:
-                        thumb_src = f"https://api.microlink.io/?url={snap_url_safe}&screenshot=true&meta=false&embed=screenshot.url"
-                        media_block = f"""
-<div class="media-block video-thumb-block" style="position:relative;cursor:pointer"
-     onclick="openModal('','{snap_url_safe}',true)">
-    <img src="{thumb_src}" loading="lazy"
-         style="width:100%;height:100%;object-fit:cover;display:block"
-         onerror="this.style.display='none';document.getElementById('vfb_{uid}').style.display='flex'" />
-    <div id="vfb_{uid}" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);
-         flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer"
-         onclick="openModal('','{snap_url_safe}',true)">
-        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.15);
-                    display:flex;align-items:center;justify-content:center">
-            <svg width="26" height="26" viewBox="0 0 54 54" fill="none">
-                <polygon points="20,14 44,27 20,40" fill="white"/>
-            </svg>
-        </div>
-        <span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600">▶ Ver vídeo no Ad Library</span>
-    </div>
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
-        <div style="width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,0.50);
+                    # SD primeiro (menor, mais rápido de carregar), HD como fallback
+                    vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
+                    vid_hd = next((v for v in videos if v != vid_sd), "")
+                    vid_primary = vid_sd or vid_hd or videos[0]
+                    vid_fallback = vid_hd if (vid_fallback := vid_hd) and vid_hd != vid_primary else ""
+                    vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
+                    vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
+                    snap_url_safe_vid = snap_url_safe
+ 
+                    media_block = f"""
+<div class="media-block video-thumb-block" style="position:relative;background:#000;cursor:pointer"
+     id="vwrap_{uid}">
+    <video id="vid_{uid}"
+        src="{vid_primary_esc}"
+        style="width:100%;height:100%;object-fit:cover;display:block"
+        preload="metadata"
+        muted
+        playsinline
+        onerror="vidFallback_{uid}(this)">
+    </video>
+    <div id="vid_overlay_{uid}" style="position:absolute;inset:0;display:flex;align-items:center;
+         justify-content:center;pointer-events:none">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);
                     display:flex;align-items:center;justify-content:center;
-                    box-shadow:0 2px 12px rgba(0,0,0,0.4)">
-            <svg width="26" height="26" viewBox="0 0 54 54" fill="none">
-                <polygon points="20,14 44,27 20,40" fill="white"/>
+                    box-shadow:0 2px 12px rgba(0,0,0,0.5)">
+            <svg width="22" height="22" viewBox="0 0 54 54" fill="none">
+                <polygon points="18,12 44,27 18,42" fill="white"/>
             </svg>
         </div>
     </div>
     <div style="position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,0.6);
-                color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;pointer-events:none">▶ VER VÍDEO</div>
-</div>"""
-                    else:
-                        # Sem snapshot_url: fundo escuro com play grande
-                        media_block = f"""
-<div class="media-block video-thumb-block" style="position:relative;background:linear-gradient(135deg,#0f1f35,#1a3a5c);
-     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
-    <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.15);
-                display:flex;align-items:center;justify-content:center">
-        <svg width="26" height="26" viewBox="0 0 54 54" fill="none">
-            <polygon points="20,14 44,27 20,40" fill="white"/>
-        </svg>
-    </div>
-    <span style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600">Sem preview disponível</span>
-</div>"""
+                color:#fff;font-size:10px;font-weight:700;padding:2px 7px;
+                border-radius:4px;pointer-events:none">▶ VER VÍDEO</div>
+</div>
+<script>
+(function(){{
+    var vidEl   = document.getElementById('vid_{uid}');
+    var wrapEl  = document.getElementById('vwrap_{uid}');
+    var fallback = '{vid_fallback_esc}';
+    var snapUrl  = '{snap_url_safe_vid}';
+    var _tried   = false;
+ 
+    function vidFallback_{uid}(v) {{
+        if (!_tried && fallback) {{
+            _tried = true;
+            v.src = fallback;
+        }} else if (snapUrl && wrapEl) {{
+            wrapEl.innerHTML =
+                '<div style="position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);'
+                + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer"'
+                + ' onclick="window.open(\\'' + snapUrl + '\\',\\'_blank\\')">'
+                + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.15);'
+                + 'display:flex;align-items:center;justify-content:center">'
+                + '<svg width="22" height="22" viewBox="0 0 54 54" fill="none">'
+                + '<polygon points="18,12 44,27 18,42" fill="white"/></svg></div>'
+                + '<span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600">▶ Ver no Ad Library</span>'
+                + '</div>';
+        }}
+    }}
+ 
+    // Expõe para o atributo onerror do <video>
+    window['vidFallback_{uid}'] = vidFallback_{uid};
+ 
+    // Clique no card abre modal com reprodução direta
+    if (wrapEl) {{
+        wrapEl.addEventListener('click', function() {{
+            openModal('{vid_primary_esc}', snapUrl, true);
+        }});
+    }}
+}})();
+</script>"""
  
                 elif img_primary:
                     media_block = f"""
@@ -4166,7 +4191,6 @@ window.__PLATS_{uid}__ = {plat_js};
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;}}
  
-/* ── 4 colunas ── */
 .ads-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}}
  
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
@@ -4194,9 +4218,8 @@ body{{padding-bottom:4px;}}
 .copy-desc{{font-size:11px;color:#65676b;margin-top:2px;}}
 .no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;}}
  
-/* ── media blocks ── */
-.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:180px;}}
-.img-block{{height:180px;}}
+.media-block{{width:100%;position:relative;overflow:hidden;background:#000;height:180px;}}
+.img-block{{height:180px;background:#f0f2f5;}}
 .video-thumb-block{{height:180px;}}
 .no-media-block{{height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:6px;}}
  
@@ -4215,9 +4238,10 @@ body{{padding-bottom:4px;}}
 /* ── Modal ── */
 #modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
 #modal-overlay.open{{display:flex;}}
-#modal-box{{background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
+#modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
 #modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
 #modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
+#modal-video{{display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;}}
 #modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
 #modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
 #modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
@@ -4238,31 +4262,61 @@ body{{padding-bottom:4px;}}
  
 <script>
 /* ════ Modal ════ */
-function openModal(imgSrc, snapUrl, isVideo) {{
+function openModal(mediaSrc, snapUrl, isVideo) {{
     var overlay = document.getElementById('modal-overlay');
     var content = document.getElementById('modal-content');
     content.innerHTML = '';
+ 
     if (isVideo) {{
-        var wrap = document.createElement('div');
-        wrap.id = 'modal-video-wrap';
-        if (imgSrc) {{
-            var thumb = document.createElement('img');
-            thumb.src = imgSrc;
-            thumb.style.cssText = 'max-width:min(70vw,600px);max-height:min(50vh,480px);object-fit:contain;border-radius:10px;display:block;';
-            thumb.onerror = function() {{ this.style.display = 'none'; }};
-            wrap.appendChild(thumb);
+        // Verifica se é URL de vídeo direto (mp4 / fbcdn)
+        var isDirectVideo = mediaSrc && (
+            mediaSrc.indexOf('.mp4') !== -1 ||
+            mediaSrc.indexOf('fbcdn.net') !== -1 ||
+            mediaSrc.indexOf('fbcdn') !== -1
+        );
+ 
+        if (isDirectVideo) {{
+            // Reprodução direta no modal
+            var vid = document.createElement('video');
+            vid.id = 'modal-video';
+            vid.src = mediaSrc;
+            vid.controls = true;
+            vid.autoplay = true;
+            vid.playsInline = true;
+            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);'
+                              + 'width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
+            vid.onerror = function() {{
+                // Se o vídeo falhar (CORS/expirado), mostra botão para Ad Library
+                content.innerHTML = '';
+                if (snapUrl) {{
+                    var wrap = document.createElement('div');
+                    wrap.id = 'modal-video-wrap';
+                    var btn = document.createElement('a');
+                    btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
+                    btn.innerHTML = '↗ Abrir no Ad Library';
+                    wrap.appendChild(btn);
+                    content.appendChild(wrap);
+                }}
+            }};
+            content.appendChild(vid);
+        }} else {{
+            // Sem URL direta — mostra botão para Ad Library
+            var wrap = document.createElement('div');
+            wrap.id = 'modal-video-wrap';
+            if (snapUrl) {{
+                var btn = document.createElement('a');
+                btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
+                btn.innerHTML = '↗ Abrir vídeo no Ad Library';
+                wrap.appendChild(btn);
+            }}
+            content.appendChild(wrap);
         }}
-        if (snapUrl) {{
-            var btn = document.createElement('a');
-            btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
-            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
-            wrap.appendChild(btn);
-        }}
-        content.appendChild(wrap);
         overlay.classList.add('open');
+ 
     }} else {{
-        if (!imgSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
-        if (!imgSrc) return;
+        // Imagem
+        if (!mediaSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
+        if (!mediaSrc) return;
         var loading = document.createElement('div');
         loading.id = 'modal-loading'; loading.textContent = 'Carregando…';
         content.appendChild(loading);
@@ -4271,7 +4325,7 @@ function openModal(imgSrc, snapUrl, isVideo) {{
         tmp.onload = function() {{
             content.innerHTML = '';
             var img = document.createElement('img');
-            img.id = 'modal-img'; img.src = imgSrc;
+            img.id = 'modal-img'; img.src = mediaSrc;
             content.appendChild(img);
         }};
         tmp.onerror = function() {{
@@ -4284,10 +4338,13 @@ function openModal(imgSrc, snapUrl, isVideo) {{
                 content.appendChild(msg);
             }}
         }};
-        tmp.src = imgSrc;
+        tmp.src = mediaSrc;
     }}
 }}
+ 
 function closeModal() {{
+    var vid = document.getElementById('modal-video');
+    if (vid) {{ vid.pause(); vid.src = ''; }}
     document.getElementById('modal-overlay').classList.remove('open');
     document.getElementById('modal-content').innerHTML = '';
 }}
@@ -4309,9 +4366,10 @@ function syncHeight() {{
         try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 20) + 'px'; break; }} }} catch(e) {{}}
     }}
 }}
-document.querySelectorAll('img').forEach(function(img) {{
-    img.addEventListener('load',  function() {{ setTimeout(syncHeight, 30); }});
-    img.addEventListener('error', function() {{ setTimeout(syncHeight, 30); }});
+document.querySelectorAll('img,video').forEach(function(el) {{
+    el.addEventListener('load',    function() {{ setTimeout(syncHeight, 30); }});
+    el.addEventListener('loadedmetadata', function() {{ setTimeout(syncHeight, 30); }});
+    el.addEventListener('error',   function() {{ setTimeout(syncHeight, 30); }});
 }});
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
