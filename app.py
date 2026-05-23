@@ -2829,7 +2829,6 @@ elif st.session_state.pagina == "ads":
         return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
  
     def _extract_videos(ad: dict) -> list:
-        """Extrai todas as URLs de vídeo, ordenando SD antes de HD (mais leve para extração de frame)."""
         vids = []
         seen = set()
         snapshot = ad.get("snapshot") or {}
@@ -2844,10 +2843,8 @@ elif st.session_state.pagina == "ads":
             if isinstance(card, dict):
                 for k in ("video_hd_url","video_sd_url","video_url"):
                     add(card.get(k))
-        # adiciona URLs brutas da lista "videos"
         for v in (ad.get("videos") or []):
             add(v)
-        # ordena: SD/360/480 primeiro (mais rápido para extrair frame no browser)
         sd = [u for u in vids if any(x in u.lower() for x in ("sd","360","480","_sd"))]
         hd = [u for u in vids if u not in sd]
         return sd + hd
@@ -2951,7 +2948,7 @@ elif st.session_state.pagina == "ads":
             "caption":             copy["caption"],
             "images":              images,
             "images_b64":          images_b64,
-            "videos":              videos,   # já ordenado SD→HD
+            "videos":              videos,
             "snapshot_url":        snap_url,
             "data_inicio":         start_fmt,
             "data_raw":            str(start_raw),
@@ -3953,7 +3950,7 @@ setTimeout(ajustarAltura,100);
                 snap_url    = ad.get("snapshot_url") or ""
                 images      = ad.get("images") or []
                 images_b64  = ad.get("images_b64") or []
-                videos      = ad.get("videos") or []   # já ordenado SD→HD
+                videos      = ad.get("videos") or []
                 is_dyn      = ad.get("is_dynamic", False)
                 baixo_vol   = ad.get("baixo_volume", False)
                 ad_id       = ad.get("id","")
@@ -3969,9 +3966,7 @@ setTimeout(ajustarAltura,100);
                 uid         = f"{sk}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
  
-                # ── Prepara dados de vídeo para extração client-side ──
-                videos_js   = _json.dumps(videos)  # lista SD→HD já ordenada
-                snap_url_safe = snap_url.replace("'", "").replace('"', "")
+                snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
  
                 debug_keys = {
                    "id": ad.get("id", ""),
@@ -3985,7 +3980,6 @@ setTimeout(ajustarAltura,100);
                    "n_imagens": len(ad.get("images", [])),
                    "tem_video": bool(videos),
                    "n_videos": len(videos),
-                   "video_url_sd": videos[0][:80] if videos else "",
                    "snapshot_url": (snap_url or "")[:80],
                    "body_len": len(body),
                    "title_len": len(title),
@@ -4001,28 +3995,54 @@ setTimeout(ajustarAltura,100);
                 img_fallbacks.extend([u for u in images if u not in img_fallbacks])
                 srcs_js = _json.dumps(img_fallbacks)
  
-                # ── Media block ───────────────────────────────────────
+                # ── MEDIA BLOCK ───────────────────────────────────────
+                # Para vídeos: usa screenshot do microlink via snapshot_url
+                # Sem canvas, sem CORS, sem spinner infinito
                 if videos:
-                    # Thumbnail extraída no browser via JS + canvas
-                    media_block = f"""
-<div class="media-block video-thumb-block" id="vthumb_wrap_{uid}"
-     style="position:relative;background:linear-gradient(135deg,#0f1f35,#1a3a5c);
-            display:flex;align-items:center;justify-content:center">
-    <svg class="spin-anim" width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <circle cx="18" cy="18" r="14" stroke="rgba(255,255,255,0.2)" stroke-width="3" fill="none"/>
-        <path d="M18 4 A14 14 0 0 1 32 18" stroke="white" stroke-width="3"
-              fill="none" stroke-linecap="round"/>
-    </svg>
-</div>
-<script>
-(function(){{
-    var videoUrls_{uid} = {videos_js};
-    var snapUrl_{uid}   = "{snap_url_safe}";
-    setTimeout(function() {{
-        extractVideoThumb('{uid}', videoUrls_{uid}, snapUrl_{uid});
-    }}, {j * 80});   /* escalonado para não disparar tudo ao mesmo tempo */
-}})();
-</script>"""
+                    if snap_url_safe:
+                        thumb_src = f"https://api.microlink.io/?url={snap_url_safe}&screenshot=true&meta=false&embed=screenshot.url"
+                        media_block = f"""
+<div class="media-block video-thumb-block" style="position:relative;cursor:pointer"
+     onclick="openModal('','{snap_url_safe}',true)">
+    <img src="{thumb_src}" loading="lazy"
+         style="width:100%;height:100%;object-fit:cover;display:block"
+         onerror="this.style.display='none';document.getElementById('vfb_{uid}').style.display='flex'" />
+    <div id="vfb_{uid}" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);
+         flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer"
+         onclick="openModal('','{snap_url_safe}',true)">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.15);
+                    display:flex;align-items:center;justify-content:center">
+            <svg width="26" height="26" viewBox="0 0 54 54" fill="none">
+                <polygon points="20,14 44,27 20,40" fill="white"/>
+            </svg>
+        </div>
+        <span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600">▶ Ver vídeo no Ad Library</span>
+    </div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,0.50);
+                    display:flex;align-items:center;justify-content:center;
+                    box-shadow:0 2px 12px rgba(0,0,0,0.4)">
+            <svg width="26" height="26" viewBox="0 0 54 54" fill="none">
+                <polygon points="20,14 44,27 20,40" fill="white"/>
+            </svg>
+        </div>
+    </div>
+    <div style="position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,0.6);
+                color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;pointer-events:none">▶ VER VÍDEO</div>
+</div>"""
+                    else:
+                        # Sem snapshot_url: fundo escuro com play grande
+                        media_block = f"""
+<div class="media-block video-thumb-block" style="position:relative;background:linear-gradient(135deg,#0f1f35,#1a3a5c);
+     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.15);
+                display:flex;align-items:center;justify-content:center">
+        <svg width="26" height="26" viewBox="0 0 54 54" fill="none">
+            <polygon points="20,14 44,27 20,40" fill="white"/>
+        </svg>
+    </div>
+    <span style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:600">Sem preview disponível</span>
+</div>"""
  
                 elif img_primary:
                     media_block = f"""
@@ -4180,10 +4200,6 @@ body{{padding-bottom:4px;}}
 .video-thumb-block{{height:180px;}}
 .no-media-block{{height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:6px;}}
  
-/* ── spinner animado ── */
-@keyframes spin{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}
-.spin-anim{{animation:spin 1s linear infinite;}}
- 
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
 .cta-domain{{font-size:10px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
@@ -4221,112 +4237,6 @@ body{{padding-bottom:4px;}}
 <div class="ads-grid">{cards_joined}</div>
  
 <script>
-/* ════════════════════════════════════════════════════
-   EXTRAÇÃO DE THUMBNAIL DE VÍDEO — CLIENT SIDE
-   As URLs fbcdn.net só funcionam no browser do usuário
-   (são assinadas e bloqueiam requests de servidor).
-   Usamos <video> + <canvas> para capturar o 1º frame.
-   ════════════════════════════════════════════════════ */
- 
-function extractVideoThumb(uid, videoUrls, snapUrl) {{
-    if (!videoUrls || videoUrls.length === 0) {{ showVideoFallback(uid, snapUrl); return; }}
-    var wrap = document.getElementById('vthumb_wrap_' + uid);
-    if (!wrap) return;
-    var tried = 0;
- 
-    function tryUrl(url) {{
-        if (tried >= videoUrls.length) {{ showVideoFallback(uid, snapUrl); return; }}
- 
-        var video = document.createElement('video');
-        video.crossOrigin = 'anonymous';
-        video.muted = true;
-        video.playsInline = true;
-        video.preload = 'metadata';
-        video.style.cssText = 'position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;';
- 
-        var done = false;
- 
-        function onLoaded() {{
-            if (done) return;
-            done = true;
-            try {{
-                var canvas = document.createElement('canvas');
-                canvas.width  = video.videoWidth  || 640;
-                canvas.height = video.videoHeight || 360;
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                renderVideoThumb(uid, dataUrl, snapUrl);
-            }} catch(e) {{
-                /* CORS bloqueou canvas.toDataURL → tenta próxima URL */
-                tried++;
-                tryUrl(videoUrls[tried]);
-            }}
-            video.remove();
-        }}
- 
-        video.addEventListener('loadeddata', onLoaded);
-        video.addEventListener('canplay',    onLoaded);
-        video.addEventListener('error', function() {{
-            if (done) return;
-            done = true;
-            tried++;
-            tryUrl(videoUrls[tried]);
-            video.remove();
-        }});
- 
-        /* timeout de 10s por tentativa */
-        setTimeout(function() {{
-            if (!done) {{
-                done = true;
-                tried++;
-                tryUrl(videoUrls[tried]);
-                video.remove();
-            }}
-        }}, 10000);
- 
-        document.body.appendChild(video);
-        video.src = url;
-        video.load();
-    }}
- 
-    tryUrl(videoUrls[tried]);
-}}
- 
-function renderVideoThumb(uid, dataUrl, snapUrl) {{
-    var wrap = document.getElementById('vthumb_wrap_' + uid);
-    if (!wrap) return;
-    var clickAttr = snapUrl
-        ? 'onclick="openModal(\\'\\'' + ',\\''+snapUrl+'\\''+',true)"'
-        : '';
-    wrap.style.cursor = snapUrl ? 'pointer' : 'default';
-    wrap.innerHTML =
-        '<div style="position:relative;width:100%;height:100%" ' + clickAttr + '>'
-        + '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover;display:block"/>'
-        + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">'
-        + '<div style="width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center">'
-        + '<svg width="18" height="18" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>'
-        + '</div></div>'
-        + (snapUrl ? '<div style="position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">▶ VER VÍDEO</div>' : '')
-        + '</div>';
-    syncHeight();
-}}
- 
-function showVideoFallback(uid, snapUrl) {{
-    var wrap = document.getElementById('vthumb_wrap_' + uid);
-    if (!wrap) return;
-    var clickAttr = snapUrl ? 'onclick="openModal(\\'\\',\\''+snapUrl+'\\',true)"' : '';
-    wrap.innerHTML =
-        '<div style="width:100%;height:100%;background:linear-gradient(135deg,#0f1f35,#1a3a5c);'
-        + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;'
-        + (snapUrl ? 'cursor:pointer" ' + clickAttr : '"')
-        + '>'
-        + '<svg width="40" height="40" viewBox="0 0 54 54" fill="none">'
-        + '<circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>'
-        + '<polygon points="22,18 40,27 22,36" fill="white"/></svg>'
-        + (snapUrl ? '<span style="font-size:11px;color:rgba(255,255,255,0.7)">▶ Ver vídeo no Ad Library</span>' : '')
-        + '</div>';
-}}
- 
 /* ════ Modal ════ */
 function openModal(imgSrc, snapUrl, isVideo) {{
     var overlay = document.getElementById('modal-overlay');
