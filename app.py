@@ -3948,13 +3948,10 @@ function triggerTab(sk, tab) {{
                 width: 40px !important;
                 min-width: 40px !important;
                 max-width: 40px !important;
-                padding: 0 !important;
-                border: none !important;
+                padding: 4px !important;
+                border: 1px solid #e5e7eb !important;
                 border-radius: 8px !important;
-                background: transparent !important;
-                color: #374151 !important;
-                font-size: 20px !important;
-                line-height: 1 !important;
+                background: #ffffff !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -3963,15 +3960,19 @@ function triggerTab(sk, tab) {{
             }}
             .st-key-ads_toggle_cols_{sk} button:hover {{
                 background: #f3f4f6 !important;
-                color: #111827 !important;
-                border: none !important;
+                border-color: #9ca3af !important;
                 box-shadow: none !important;
             }}
             .st-key-ads_toggle_cols_{sk} button:focus,
             .st-key-ads_toggle_cols_{sk} button:active {{
                 box-shadow: none !important;
                 outline: none !important;
-                border: none !important;
+            }}
+            .st-key-ads_toggle_cols_{sk} button img {{
+                width: 24px !important;
+                height: 24px !important;
+                object-fit: contain !important;
+                display: block !important;
             }}
             </style>
             """, unsafe_allow_html=True)
@@ -3982,7 +3983,7 @@ function triggerTab(sk, tab) {{
             formatos_disponiveis = sorted(set(_limpar_formato(a["formato"]) for a in ads_list))
 
             with st.container(key=filtros_key):
-                fcol1, fcol2, fcol3, fcol4, fcol5, fcol6 = st.columns([3, 2, 2, 2, 2, 1])
+                fcol1, fcol2, fcol3, fcol4, fcol5, fcol6 = st.columns([3, 2.5, 2.5, 2.5, 2.5, 0.6])
                 with fcol1:
                     busca_texto = st.text_input(
                         "Pesquisar no copy",
@@ -4020,8 +4021,14 @@ function triggerTab(sk, tab) {{
                         label_visibility="collapsed",
                     )
                 with fcol6:
+                    # Determine which icon to show: if currently 4 cols, show "3-Columns" icon (to switch to 3), and vice versa
+                    icon_url = (
+                        "https://raw.githubusercontent.com/thiagomktsantos/marketylics/4f750a3205deb9b8a618997b3b8e300e3c3bf3f3/images/icons/3-Columns.png"
+                        if n_cols_atual == 4
+                        else "https://raw.githubusercontent.com/thiagomktsantos/marketylics/4f750a3205deb9b8a618997b3b8e300e3c3bf3f3/images/icons/4-Columns.png"
+                    )
                     toggle_cols = st.button(
-                        icon_toggle,
+                        f"![col]({icon_url})",
                         key=f"ads_toggle_cols_{sk}",
                         use_container_width=False,
                         help="Alternar 3/4 colunas",
