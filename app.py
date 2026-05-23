@@ -2646,6 +2646,240 @@ elif st.session_state.pagina == "ads":
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
  
+    # ── Injeta o modal global no documento pai (fora de qualquer iframe) ──────
+    # Isso garante que o modal cobre TODA a tela do Streamlit, não só o iframe.
+    st.markdown("""
+    <script>
+    (function() {
+        if (window.parent.__globalAdModalInjected) return;
+        window.parent.__globalAdModalInjected = true;
+ 
+        // Cria o overlay no documento PAI
+        var doc = window.parent.document;
+ 
+        var style = doc.createElement('style');
+        style.id = 'global-ad-modal-style';
+        style.textContent = `
+            #global-ad-modal-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.88);
+                z-index: 2147483647;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                backdrop-filter: blur(2px);
+            }
+            #global-ad-modal-overlay.open {
+                display: flex;
+            }
+            #global-ad-modal-box {
+                background: #111;
+                border-radius: 16px;
+                overflow: hidden;
+                position: relative;
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+                max-width: min(90vw, 880px);
+                max-height: 92vh;
+            }
+            #global-ad-modal-close {
+                position: absolute;
+                top: 12px;
+                right: 14px;
+                background: rgba(255,255,255,0.18);
+                border: none;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                font-size: 18px;
+                color: #fff;
+                cursor: pointer;
+                z-index: 10;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+            }
+            #global-ad-modal-close:hover { background: rgba(255,255,255,0.28); }
+            #global-ad-modal-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+            #global-ad-modal-content img {
+                display: block;
+                max-width: min(86vw, 840px);
+                max-height: min(88vh, 840px);
+                width: auto;
+                height: auto;
+                object-fit: contain;
+                border-radius: 10px;
+            }
+            #global-ad-modal-content video {
+                display: block;
+                max-width: min(86vw, 840px);
+                max-height: min(88vh, 700px);
+                width: auto;
+                height: auto;
+                border-radius: 10px;
+                background: #000;
+                outline: none;
+            }
+            .global-ad-modal-loading {
+                padding: 48px;
+                color: rgba(255,255,255,0.6);
+                font-size: 15px;
+                font-family: 'DM Sans', sans-serif;
+                text-align: center;
+            }
+            .global-ad-modal-ext {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 18px;
+                padding: 56px 48px;
+                min-width: 320px;
+            }
+            .global-ad-modal-ext a {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                background: #1877F2;
+                color: #fff;
+                padding: 14px 28px;
+                border-radius: 10px;
+                font-size: 15px;
+                font-weight: 700;
+                text-decoration: none;
+                font-family: 'DM Sans', sans-serif;
+            }
+        `;
+        doc.head.appendChild(style);
+ 
+        var overlay = doc.createElement('div');
+        overlay.id = 'global-ad-modal-overlay';
+        overlay.innerHTML = `
+            <div id="global-ad-modal-box">
+                <button id="global-ad-modal-close">✕</button>
+                <div id="global-ad-modal-content"></div>
+            </div>
+        `;
+        doc.body.appendChild(overlay);
+ 
+        // Fecha ao clicar fora ou pressionar Esc
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) window.parent.__closeGlobalAdModal();
+        });
+        doc.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') window.parent.__closeGlobalAdModal();
+        });
+        doc.getElementById('global-ad-modal-close').addEventListener('click', function() {
+            window.parent.__closeGlobalAdModal();
+        });
+    })();
+ 
+    // ── Função global de fechar ──────────────────────────────────────
+    window.parent.__closeGlobalAdModal = function() {
+        var overlay = window.parent.document.getElementById('global-ad-modal-overlay');
+        if (!overlay) return;
+        overlay.classList.remove('open');
+        // Para vídeo se estiver tocando
+        var vid = overlay.querySelector('video');
+        if (vid) { vid.pause(); vid.src = ''; }
+        // Restaura scroll do body pai
+        window.parent.document.body.style.overflow = '';
+        var content = window.parent.document.getElementById('global-ad-modal-content');
+        if (content) content.innerHTML = '';
+    };
+ 
+    // ── Função global de abrir ───────────────────────────────────────
+    window.parent.__openGlobalAdModal = function(mediaSrc, snapUrl, isVideo) {
+        var overlay = window.parent.document.getElementById('global-ad-modal-overlay');
+        var content = window.parent.document.getElementById('global-ad-modal-content');
+        if (!overlay || !content) return;
+ 
+        content.innerHTML = '';
+ 
+        // Trava o scroll do body PAI para o modal ficar exatamente sobre tudo
+        window.parent.document.body.style.overflow = 'hidden';
+        overlay.classList.add('open');
+ 
+        if (isVideo) {
+            var isDirectVideo = mediaSrc && (
+                mediaSrc.indexOf('.mp4') !== -1 ||
+                mediaSrc.indexOf('fbcdn.net') !== -1 ||
+                mediaSrc.indexOf('fbcdn') !== -1
+            );
+            if (isDirectVideo) {
+                var vid = window.parent.document.createElement('video');
+                vid.src = mediaSrc;
+                vid.controls = true;
+                vid.autoplay = true;
+                vid.playsInline = true;
+                vid.muted = false;
+                vid.onerror = function() {
+                    content.innerHTML = '';
+                    if (snapUrl) {
+                        var ext = window.parent.document.createElement('div');
+                        ext.className = 'global-ad-modal-ext';
+                        ext.innerHTML = '<a href="' + snapUrl + '" target="_blank">↗ Abrir no Ad Library</a>';
+                        content.appendChild(ext);
+                    }
+                };
+                content.appendChild(vid);
+            } else {
+                var ext = window.parent.document.createElement('div');
+                ext.className = 'global-ad-modal-ext';
+                if (snapUrl) {
+                    ext.innerHTML = '<a href="' + snapUrl + '" target="_blank">↗ Abrir vídeo no Ad Library</a>';
+                } else {
+                    ext.innerHTML = '<span style="color:rgba(255,255,255,0.5);font-size:14px">Vídeo não disponível</span>';
+                }
+                content.appendChild(ext);
+            }
+        } else {
+            // Imagem
+            if (!mediaSrc && snapUrl) {
+                window.parent.__closeGlobalAdModal();
+                window.open(snapUrl, '_blank');
+                return;
+            }
+            if (!mediaSrc) { window.parent.__closeGlobalAdModal(); return; }
+ 
+            var loading = window.parent.document.createElement('div');
+            loading.className = 'global-ad-modal-loading';
+            loading.textContent = 'Carregando…';
+            content.appendChild(loading);
+ 
+            var tmp = new Image();
+            tmp.onload = function() {
+                content.innerHTML = '';
+                var img = window.parent.document.createElement('img');
+                img.src = mediaSrc;
+                content.appendChild(img);
+            };
+            tmp.onerror = function() {
+                content.innerHTML = '';
+                if (snapUrl) {
+                    window.parent.__closeGlobalAdModal();
+                    window.open(snapUrl, '_blank');
+                } else {
+                    var msg = window.parent.document.createElement('div');
+                    msg.className = 'global-ad-modal-loading';
+                    msg.textContent = 'Imagem não disponível.';
+                    content.appendChild(msg);
+                }
+            };
+            tmp.src = mediaSrc;
+        }
+    };
+    </script>
+    """, unsafe_allow_html=True)
+ 
     def carregar_cache_ads() -> dict:
         if st.session_state.get("ads_cache"):
             return st.session_state.ads_cache
@@ -3966,7 +4200,10 @@ setTimeout(ajustarAltura,100);
                 uid         = f"{sk}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
  
-                snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
+                # Escape seguro para JS — passa como JSON string
+                snap_url_js  = _json.dumps(snap_url)
+                img_primary  = images_b64[0] if images_b64 else (images[0] if images else "")
+                img_primary_js = _json.dumps(img_primary)
  
                 debug_keys = {
                    "id": ad.get("id", ""),
@@ -3988,7 +4225,6 @@ setTimeout(ajustarAltura,100);
                 debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                 debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
  
-                img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
                 img_fallbacks = []
                 if images_b64 and len(images_b64) > 1:
                     img_fallbacks.extend(images_b64[1:])
@@ -3997,27 +4233,26 @@ setTimeout(ajustarAltura,100);
  
                 # ── MEDIA BLOCK ───────────────────────────────────────
                 if videos:
-                    # SD primeiro (menor, mais rápido de carregar), HD como fallback
                     vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
                     vid_hd = next((v for v in videos if v != vid_sd), "")
                     vid_primary = vid_sd or vid_hd or videos[0]
-                    vid_fallback = vid_hd if (vid_fallback := vid_hd) and vid_hd != vid_primary else ""
-                    vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
-                    vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
-                    snap_url_safe_vid = snap_url_safe
+                    vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
+ 
+                    vid_primary_js  = _json.dumps(vid_primary)
+                    vid_fallback_js = _json.dumps(vid_fallback)
  
                     media_block = f"""
 <div class="media-block video-thumb-block" style="position:relative;background:#000;cursor:pointer"
-     id="vwrap_{uid}">
+     id="vwrap_{uid}"
+     onclick="window.parent.__openGlobalAdModal({vid_primary_js}, {snap_url_js}, true)">
     <video id="vid_{uid}"
-        src="{vid_primary_esc}"
-        style="width:100%;height:100%;object-fit:cover;display:block"
+        src="{vid_primary}"
+        style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none"
         preload="metadata"
         muted
-        playsinline
-        onerror="vidFallback_{uid}(this)">
+        playsinline>
     </video>
-    <div id="vid_overlay_{uid}" style="position:absolute;inset:0;display:flex;align-items:center;
+    <div style="position:absolute;inset:0;display:flex;align-items:center;
          justify-content:center;pointer-events:none">
         <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);
                     display:flex;align-items:center;justify-content:center;
@@ -4030,49 +4265,12 @@ setTimeout(ajustarAltura,100);
     <div style="position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,0.6);
                 color:#fff;font-size:10px;font-weight:700;padding:2px 7px;
                 border-radius:4px;pointer-events:none">▶ VER VÍDEO</div>
-</div>
-<script>
-(function(){{
-    var vidEl   = document.getElementById('vid_{uid}');
-    var wrapEl  = document.getElementById('vwrap_{uid}');
-    var fallback = '{vid_fallback_esc}';
-    var snapUrl  = '{snap_url_safe_vid}';
-    var _tried   = false;
- 
-    function vidFallback_{uid}(v) {{
-        if (!_tried && fallback) {{
-            _tried = true;
-            v.src = fallback;
-        }} else if (snapUrl && wrapEl) {{
-            wrapEl.innerHTML =
-                '<div style="position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);'
-                + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer"'
-                + ' onclick="window.open(\\'' + snapUrl + '\\',\\'_blank\\')">'
-                + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.15);'
-                + 'display:flex;align-items:center;justify-content:center">'
-                + '<svg width="22" height="22" viewBox="0 0 54 54" fill="none">'
-                + '<polygon points="18,12 44,27 18,42" fill="white"/></svg></div>'
-                + '<span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600">▶ Ver no Ad Library</span>'
-                + '</div>';
-        }}
-    }}
- 
-    // Expõe para o atributo onerror do <video>
-    window['vidFallback_{uid}'] = vidFallback_{uid};
- 
-    // Clique no card abre modal com reprodução direta
-    if (wrapEl) {{
-        wrapEl.addEventListener('click', function() {{
-            openModal('{vid_primary_esc}', snapUrl, true);
-        }});
-    }}
-}})();
-</script>"""
+</div>"""
  
                 elif img_primary:
                     media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
+     onclick="window.parent.__openGlobalAdModal(document.getElementById('mimg_{uid}') ? document.getElementById('mimg_{uid}').src : {img_primary_js}, {snap_url_js}, false)">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
@@ -4091,8 +4289,7 @@ function imgFallback_{uid}(img){{
 }}
 </script>"""
                 else:
-                    _sv = snap_url.replace("'", "")
-                    _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
+                    _nm_onclick = f'onclick="window.parent.__openGlobalAdModal(\'\', {snap_url_js}, false)"' if snap_url else ""
                     _nm_color   = "#3a9fd6" if snap_url else "#c4c4c4"
                     _nm_label   = "Ver criativo →" if snap_url else "Sem criativo"
                     media_block = (
@@ -4234,122 +4431,11 @@ body{{padding-bottom:4px;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:10px;color:#374151;padding:8px 12px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:180px;overflow-y:auto;border-top:1px solid #fde68a;}}
- 
-/* ── Modal ── */
-#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
-#modal-overlay.open{{display:flex;}}
-#modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
-#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
-#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
-#modal-video{{display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;}}
-#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
-#modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
-#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
 </style>
 </head>
 <body>
- 
-<!-- Modal -->
-<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
-        <div id="modal-content"></div>
-    </div>
-</div>
- 
-<!-- Grid de 4 colunas -->
 <div class="ads-grid">{cards_joined}</div>
- 
 <script>
-/* ════ Modal ════ */
-function openModal(mediaSrc, snapUrl, isVideo) {{
-    var overlay = document.getElementById('modal-overlay');
-    var content = document.getElementById('modal-content');
-    content.innerHTML = '';
- 
-    if (isVideo) {{
-        // Verifica se é URL de vídeo direto (mp4 / fbcdn)
-        var isDirectVideo = mediaSrc && (
-            mediaSrc.indexOf('.mp4') !== -1 ||
-            mediaSrc.indexOf('fbcdn.net') !== -1 ||
-            mediaSrc.indexOf('fbcdn') !== -1
-        );
- 
-        if (isDirectVideo) {{
-            // Reprodução direta no modal
-            var vid = document.createElement('video');
-            vid.id = 'modal-video';
-            vid.src = mediaSrc;
-            vid.controls = true;
-            vid.autoplay = true;
-            vid.playsInline = true;
-            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);'
-                              + 'width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
-            vid.onerror = function() {{
-                // Se o vídeo falhar (CORS/expirado), mostra botão para Ad Library
-                content.innerHTML = '';
-                if (snapUrl) {{
-                    var wrap = document.createElement('div');
-                    wrap.id = 'modal-video-wrap';
-                    var btn = document.createElement('a');
-                    btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
-                    btn.innerHTML = '↗ Abrir no Ad Library';
-                    wrap.appendChild(btn);
-                    content.appendChild(wrap);
-                }}
-            }};
-            content.appendChild(vid);
-        }} else {{
-            // Sem URL direta — mostra botão para Ad Library
-            var wrap = document.createElement('div');
-            wrap.id = 'modal-video-wrap';
-            if (snapUrl) {{
-                var btn = document.createElement('a');
-                btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
-                btn.innerHTML = '↗ Abrir vídeo no Ad Library';
-                wrap.appendChild(btn);
-            }}
-            content.appendChild(wrap);
-        }}
-        overlay.classList.add('open');
- 
-    }} else {{
-        // Imagem
-        if (!mediaSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
-        if (!mediaSrc) return;
-        var loading = document.createElement('div');
-        loading.id = 'modal-loading'; loading.textContent = 'Carregando…';
-        content.appendChild(loading);
-        overlay.classList.add('open');
-        var tmp = new Image();
-        tmp.onload = function() {{
-            content.innerHTML = '';
-            var img = document.createElement('img');
-            img.id = 'modal-img'; img.src = mediaSrc;
-            content.appendChild(img);
-        }};
-        tmp.onerror = function() {{
-            content.innerHTML = '';
-            if (snapUrl) {{ window.open(snapUrl, '_blank'); closeModal(); }}
-            else {{
-                var msg = document.createElement('div');
-                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center';
-                msg.textContent = 'Imagem não disponível.';
-                content.appendChild(msg);
-            }}
-        }};
-        tmp.src = mediaSrc;
-    }}
-}}
- 
-function closeModal() {{
-    var vid = document.getElementById('modal-video');
-    if (vid) {{ vid.pause(); vid.src = ''; }}
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('modal-content').innerHTML = '';
-}}
-document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
- 
 /* ════ Debug ════ */
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
@@ -4785,7 +4871,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
     if empresas_com_dados:
-        render_ads_empresa(empresas_com_dados[aba_idx])
+        render_ads_empresa(empresas_com_dados[aba_idx])])
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
