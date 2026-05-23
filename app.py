@@ -3861,7 +3861,7 @@ function triggerTab(sk, tab) {{
                 border: 1px solid #e5e7eb !important;
                 border-top: none !important;
                 border-radius: 0 0 12px 12px !important;
-                padding: 10px 14px !important;
+                padding: 20px 20px !important;
                 gap: 8px !important;
                 align-items: center !important;
             }}
