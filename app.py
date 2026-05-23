@@ -4124,11 +4124,18 @@ function imgFallback_{uid}(img){{
                     f'<div class="meta-row"><span class="meta-label">Veic. iniciada:</span><span>{data_inicio}</span></div>'
                 ) if data_inicio else ""
  
-                body_safe  = body.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                title_safe = title.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                desc_safe  = _truncar(desc, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                # normaliza quebras de linha múltiplas e espaços no início
+                body_clean  = re.sub(r'\n{2,}', '\n', body.strip())
+                title_clean = title.strip()
+                desc_clean  = desc.strip()
+
+                body_safe  = body_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                title_safe = title_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                desc_safe  = _truncar(desc_clean, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
  
-                if body_safe and len(body_safe) > 80:
+                # usa versão sem tags HTML para contar os 80 chars reais
+                body_plain = body_clean  # texto puro já normalizado
+                if body_safe and len(body_plain) > 80:
                     short_b = body_safe[:80]
                     rest_b  = body_safe[80:]
                     body_display = (
@@ -4215,7 +4222,7 @@ body{{padding-bottom:4px;min-height:0;}}
 .page-name{{font-size:12px;font-weight:700;color:#050505;}}
 .page-sponsored{{font-size:10px;color:#65676b;}}
 .copy-body{{font-size:13px;color:#050505;line-height:1.55;white-space:pre-line;word-break:break-word;min-height:40px;}}
-.copy-title{{font-size:13px;font-weight:700;color:#050505;margin-top:6px;}}
+.copy-title{{font-size:13px;font-weight:700;color:#050505;margin-top:10px;padding-top:10px;border-top:1px solid #f3f4f6;}}
 .copy-desc{{font-size:11px;color:#65676b;margin-top:2px;}}
 .no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;}}
  
