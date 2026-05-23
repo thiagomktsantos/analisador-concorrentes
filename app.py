@@ -4190,7 +4190,7 @@ window.__PLATS_{uid}__ = {plat_js};
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:4px;}}
+body{{padding-bottom:4px;min-height:0;}}
  
 .ads-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}}
  
@@ -4364,7 +4364,11 @@ function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 20) + 'px'; break; }} }} catch(e) {{}}
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 8) + 'px';
+            frames[i].style.minHeight = '0';
+            break;
+        }} }} catch(e) {{}}
     }}
 }}
 document.querySelectorAll('img,video').forEach(function(el) {{
@@ -4378,7 +4382,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=600, scrolling=False)
+""", height=100, scrolling=False)
  
         # ════════════════════════════════════════════════════════════
         # ABA: ANÁLISE DE IA
