@@ -3853,7 +3853,7 @@ function triggerTab(sk, tab) {{
             <style>
             @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
-            .st-key-{filtros_key} {{ margin-top: -16px !important; }}
+            .st-key-{filtros_key} {{ margin-top: -35px !important; }}
 
             /* Row container */
             .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
