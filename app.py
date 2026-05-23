@@ -4155,8 +4155,10 @@ function imgFallback_{uid}(img){{
                     _onclick_none = f"openModal('[]', '[]', '{_sv}', false)" if snap_url else ""
                     _nm_color = "#3a9fd6" if snap_url else "#c4c4c4"
                     _nm_label = "Ver criativo →" if snap_url else "Sem criativo"
+                    _onclick_attr = f'onclick="{_onclick_none}"' if snap_url else ""
+                    _cursor_style = "cursor:pointer;" if snap_url else ""
                     media_block = (
-                        f'<div class="media-block no-media-block" {"onclick=\\"" + _onclick_none + "\\"" if snap_url else ""} style="{"cursor:pointer;" if snap_url else ""}">'
+                        f'<div class="media-block no-media-block" {_onclick_attr} style="{_cursor_style}">'
                         f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
                         f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
                         f'<polyline points="21 15 16 10 5 21"/></svg>'
