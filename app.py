@@ -3666,11 +3666,11 @@ setTimeout(ajustarAltura, 100);
     var C = '#9ca3af';
     var SVGS = {{
         "facebook": '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
-        "instagram": '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
-        "messenger": '<svg width="15" height="15" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
-        "whatsapp":  '<svg width="15" height="15" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
-        "audience_network": '<svg width="15" height="15" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
-        "threads": '<svg width="15" height="15" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
+        "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
+        "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
+        "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
+        "audience_network": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
+        "threads": '<svg width="16" height="16" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
     }};
     var el = document.getElementById('plat_icons_{uid}');
     if (!el) return;
@@ -3682,7 +3682,7 @@ setTimeout(ajustarAltura, 100);
     }}).join('');
 }})();
 """
- 
+
     # ══════════════════════════════════════════════════════════════════
     # FUNÇÃO PRINCIPAL: render_ads_empresa
     # ══════════════════════════════════════════════════════════════════
@@ -3768,7 +3768,6 @@ setTimeout(ajustarAltura, 100);
         page_display = configured_page if configured_page else "—"
         lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
  
-        # ── Cabeçalho da empresa ──────────────────────────────────────
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
@@ -3793,7 +3792,6 @@ setTimeout(ajustarAltura, 100);
             </div>
         </div>""", unsafe_allow_html=True)
  
-        # ── Barra de abas: Anúncios | Análise de IA ──────────────────
         aba_conteudo_atual = st.session_state.ads_aba_conteudo.get(ck, "anuncios")
  
         components.html(f"""
@@ -3840,7 +3838,12 @@ function triggerTab(sk, tab) {{
         # ABA: ANÚNCIOS
         # ════════════════════════════════════════════════════════════
         if aba_conteudo_atual == "anuncios":
- 
+
+            # toggle de colunas (3 ou 4)
+            col_key = f"ads_cols_{sk}"
+            if col_key not in st.session_state:
+                st.session_state[col_key] = 4
+
             filtros_key = f"filtros_{sk}"
             st.markdown(f"""
             <style>
@@ -3858,6 +3861,14 @@ function triggerTab(sk, tab) {{
                 background-color: #ffffff !important; border: 2px solid #e5e7eb !important;
                 border-radius: 8px !important; height: 43px !important; padding: 0 14px !important; font-family:'DM Sans',sans-serif;
             }}
+            .st-key-ads_toggle_cols_{sk} button {{
+                height: 43px !important; font-size: 20px !important;
+                border: 2px solid #e5e7eb !important; border-radius: 8px !important;
+                background: #fff !important; color: #374151 !important;
+            }}
+            .st-key-ads_toggle_cols_{sk} button:hover {{
+                background: #f3f4f6 !important; border-color: #9ca3af !important;
+            }}
             </style>
             """, unsafe_allow_html=True)
  
@@ -3867,7 +3878,7 @@ function triggerTab(sk, tab) {{
             formatos_disponiveis = sorted(set(_limpar_formato(a["formato"]) for a in ads_list))
  
             with st.container(key=filtros_key):
-                fcol1, fcol2, fcol3, fcol4 = st.columns([3, 2, 2, 2])
+                fcol1, fcol2, fcol3, fcol4, fcol5, fcol6 = st.columns([3, 2, 2, 2, 2, 1])
                 with fcol1:
                     busca_texto = st.text_input("Pesquisar no copy", placeholder="Pesquisar no copy…", key=f"ads_busca_{sk}", label_visibility="collapsed")
                 with fcol2:
@@ -3877,7 +3888,20 @@ function triggerTab(sk, tab) {{
                     filtro_plat = st.selectbox("Plataforma", ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas], key=f"ads_plat_{sk}", label_visibility="collapsed")
                 with fcol4:
                     filtro_status = st.selectbox("Status", ["Status (todos)", "Ativos", "Inativos (histórico)"], key=f"ads_status_{sk}", label_visibility="collapsed")
- 
+                with fcol5:
+                    filtro_ordem = st.selectbox("Ordenar", ["Mais recentes", "Mais tempo ativo"], key=f"ads_ordem_{sk}", label_visibility="collapsed")
+                with fcol6:
+                    n_cols_atual = st.session_state.get(col_key, 4)
+                    toggle_cols = st.button(
+                        "▦" if n_cols_atual == 4 else "⊞",
+                        key=f"ads_toggle_cols_{sk}",
+                        use_container_width=True,
+                        help="Alternar 3/4 colunas"
+                    )
+                    if toggle_cols:
+                        st.session_state[col_key] = 3 if n_cols_atual == 4 else 4
+                        st.rerun()
+
             ads_f = ads_list
             if busca_texto:
                 q = busca_texto.lower()
@@ -3890,7 +3914,23 @@ function triggerTab(sk, tab) {{
                 ads_f = [a for a in ads_f if a.get("ativo", True)]
             elif filtro_status == "Inativos (histórico)":
                 ads_f = [a for a in ads_f if not a.get("ativo", True)]
- 
+
+            def _parse_ts(a):
+                raw = str(a.get("data_raw", "") or "").strip()
+                try:
+                    ts = int(raw)
+                    return ts if ts > 10**8 else 0
+                except Exception:
+                    try:
+                        return int(_dt.datetime.strptime(raw[:10], "%Y-%m-%d").timestamp())
+                    except Exception:
+                        return 0
+
+            if filtro_ordem == "Mais recentes":
+                ads_f = sorted(ads_f, key=_parse_ts, reverse=True)
+            else:
+                ads_f = sorted(ads_f, key=_parse_ts, reverse=False)
+
             if not ads_f:
                 st.warning("Nenhum anúncio com os filtros aplicados.")
                 return
@@ -3967,6 +4007,15 @@ setTimeout(ajustarAltura,100);
                 page_pic    = ad.get("page_profile_picture") or ""
  
                 snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
+
+                # normaliza quebras de linha múltiplas
+                body_clean  = re.sub(r'\n{2,}', '\n', body.strip())
+                title_clean = title.strip()
+                desc_clean  = desc.strip()
+
+                body_safe  = body_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                title_safe = title_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                desc_safe  = _truncar(desc_clean, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
  
                 debug_keys = {
                    "id": ad.get("id", ""),
@@ -3995,13 +4044,11 @@ setTimeout(ajustarAltura,100);
                 img_fallbacks.extend([u for u in images if u not in img_fallbacks])
                 srcs_js = _json.dumps(img_fallbacks)
  
-                # ── MEDIA BLOCK ───────────────────────────────────────
                 if videos:
-                    # SD primeiro (menor, mais rápido de carregar), HD como fallback
                     vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
                     vid_hd = next((v for v in videos if v != vid_sd), "")
                     vid_primary = vid_sd or vid_hd or videos[0]
-                    vid_fallback = vid_hd if (vid_fallback := vid_hd) and vid_hd != vid_primary else ""
+                    vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
                     vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
                     vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
                     snap_url_safe_vid = snap_url_safe
@@ -4015,8 +4062,8 @@ setTimeout(ajustarAltura,100);
         preload="metadata"
         muted
         playsinline
-        onerror="vidFallback_{uid}(this)"
-        onloadedmetadata="this.currentTime=2.5">
+        onloadedmetadata="this.currentTime=2.5"
+        onerror="vidFallback_{uid}(this)">
     </video>
     <div id="vid_overlay_{uid}" style="position:absolute;inset:0;display:flex;align-items:center;
          justify-content:center;pointer-events:none">
@@ -4058,10 +4105,8 @@ setTimeout(ajustarAltura,100);
         }}
     }}
  
-    // Expõe para o atributo onerror do <video>
     window['vidFallback_{uid}'] = vidFallback_{uid};
  
-    // Clique no card abre modal com reprodução direta
     if (wrapEl) {{
         wrapEl.addEventListener('click', function() {{
             openModal('{vid_primary_esc}', snapUrl, true);
@@ -4080,7 +4125,7 @@ setTimeout(ajustarAltura,100);
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
         <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ver criativos</div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
 </div>
 <script>
 var _srcs_{uid}={srcs_js};
@@ -4111,7 +4156,6 @@ function imgFallback_{uid}(img){{
  
                 status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
                 baixo_vol_badge = '<span class="badge-small">Baixo volume</span>' if baixo_vol else ""
-                dyn_badge_html  = '<span class="badge-small badge-dyn">Dinâmico</span>' if is_dyn else ""
  
                 page_avatar_html = (
                     f'<div class="page-avatar" style="overflow:hidden;padding:0">'
@@ -4123,19 +4167,8 @@ function imgFallback_{uid}(img){{
                 data_inicio_html = (
                     f'<div class="meta-row"><span class="meta-label">Veic. iniciada:</span><span>{data_inicio}</span></div>'
                 ) if data_inicio else ""
- 
-                # normaliza quebras de linha múltiplas e espaços no início
-                body_clean  = re.sub(r'\n{2,}', '\n', body.strip())
-                title_clean = title.strip()
-                desc_clean  = desc.strip()
 
-                body_safe  = body_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                title_safe = title_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                desc_safe  = _truncar(desc_clean, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
- 
-                # usa versão sem tags HTML para contar os 80 chars reais
-                body_plain = body_clean  # texto puro já normalizado
-                if body_safe and len(body_plain) > 80:
+                if body_safe and len(body_clean) > 80:
                     short_b = body_safe[:80]
                     rest_b  = body_safe[80:]
                     body_display = (
@@ -4191,7 +4224,8 @@ window.__PLATS_{uid}__ = {plat_js};
                 all_cards_html.append(card_html)
  
             cards_joined = "\n".join(all_cards_html)
- 
+            n_cols = st.session_state.get(col_key, 4)
+
             components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4200,7 +4234,7 @@ window.__PLATS_{uid}__ = {plat_js};
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;min-height:0;}}
  
-.ads-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}}
+.ads-grid{{display:grid;grid-template-columns:repeat({n_cols},1fr);gap:12px;align-items:start;}}
  
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:4px;}}
@@ -4210,8 +4244,6 @@ body{{padding-bottom:4px;min-height:0;}}
 .status-dot-inactive::before{{content:'';width:7px;height:7px;border-radius:50%;background:#d1d5db;flex-shrink:0;}}
 .ad-id{{font-size:9px;color:#8a8d91;font-family:monospace;}}
 .badge-small{{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:600;}}
-.badge-dyn{{background:#f0f9ff;color:#0369a1;border-color:#bae6fd;}}
-.dyn-float{{position:absolute;top:12px;right:12px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
 .meta-info{{padding:6px 12px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
 .meta-row{{display:flex;align-items:center;gap:5px;font-size:11px;color:#65676b;margin-bottom:4px;flex-wrap:wrap;}}
 .meta-row:last-child{{margin-bottom:0;}}
@@ -4227,15 +4259,16 @@ body{{padding-bottom:4px;min-height:0;}}
 .copy-title{{font-size:13px;font-weight:700;color:#050505;margin-top:10px;padding-top:10px;border-top:1px solid #f3f4f6;}}
 .copy-desc{{font-size:11px;color:#65676b;margin-top:2px;}}
 .no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;}}
+.dyn-float{{position:absolute;top:10px;right:10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
  
 .media-block{{width:100%;position:relative;overflow:hidden;background:#000;height:180px;}}
 .img-block{{height:180px;background:#f0f2f5;}}
 .video-thumb-block{{height:180px;}}
-.no-media-block{{height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#061e4d;gap:6px;}}
+.no-media-block{{height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:6px;}}
  
-.cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#e1e4ea;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
+.cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
 .cta-domain{{font-size:10px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-.cta-btn{{background:#284e73;color:#ffffff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
+.cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
 .card-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e4e6ea;}}
 .lib-btn{{display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:11px;font-weight:700;text-decoration:none;}}
 .lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:9px 6px;background:#f3f4f6;color:#9ca3af;font-size:11px;font-weight:600;}}
@@ -4245,7 +4278,6 @@ body{{padding-bottom:4px;min-height:0;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:10px;color:#374151;padding:8px 12px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:180px;overflow-y:auto;border-top:1px solid #fde68a;}}
  
-/* ── Modal ── */
 #modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
 #modal-overlay.open{{display:flex;}}
 #modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
@@ -4259,7 +4291,6 @@ body{{padding-bottom:4px;min-height:0;}}
 </head>
 <body>
  
-<!-- Modal -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">✕</button>
@@ -4267,36 +4298,24 @@ body{{padding-bottom:4px;min-height:0;}}
     </div>
 </div>
  
-<!-- Grid de 4 colunas -->
 <div class="ads-grid">{cards_joined}</div>
  
 <script>
-/* ════ Modal ════ */
 function openModal(mediaSrc, snapUrl, isVideo) {{
     var overlay = document.getElementById('modal-overlay');
     var content = document.getElementById('modal-content');
     content.innerHTML = '';
- 
     if (isVideo) {{
-        // Verifica se é URL de vídeo direto (mp4 / fbcdn)
-        var isDirectVideo = mediaSrc && (
-            mediaSrc.indexOf('.mp4') !== -1 ||
-            mediaSrc.indexOf('fbcdn.net') !== -1 ||
-            mediaSrc.indexOf('fbcdn') !== -1
-        );
- 
+        var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
         if (isDirectVideo) {{
-            // Reprodução direta no modal
             var vid = document.createElement('video');
             vid.id = 'modal-video';
             vid.src = mediaSrc;
             vid.controls = true;
             vid.autoplay = true;
             vid.playsInline = true;
-            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);'
-                              + 'width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
+            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
             vid.onerror = function() {{
-                // Se o vídeo falhar (CORS/expirado), mostra botão para Ad Library
                 content.innerHTML = '';
                 if (snapUrl) {{
                     var wrap = document.createElement('div');
@@ -4310,7 +4329,6 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
             }};
             content.appendChild(vid);
         }} else {{
-            // Sem URL direta — mostra botão para Ad Library
             var wrap = document.createElement('div');
             wrap.id = 'modal-video-wrap';
             if (snapUrl) {{
@@ -4322,9 +4340,7 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
             content.appendChild(wrap);
         }}
         overlay.classList.add('open');
- 
     }} else {{
-        // Imagem
         if (!mediaSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
         if (!mediaSrc) return;
         var loading = document.createElement('div');
@@ -4360,7 +4376,6 @@ function closeModal() {{
 }}
 document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
  
-/* ════ Debug ════ */
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
     if (!el) return;
@@ -4368,7 +4383,6 @@ function toggleDebug(uid) {{
     setTimeout(syncHeight, 50);
 }}
  
-/* ════ Altura dinâmica ════ */
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -4392,7 +4406,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </script>
 </body></html>
 """, height=100, scrolling=False)
- 
+
         # ════════════════════════════════════════════════════════════
         # ABA: ANÁLISE DE IA
         # ════════════════════════════════════════════════════════════
@@ -4744,9 +4758,7 @@ function buildIndGrid() {{
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
-        btn.innerHTML = d.resultado
-            ? '🔄 Reanalisar'
-            : '⚡ Analisar este anúncio';
+        btn.innerHTML = d.resultado ? '🔄 Reanalisar' : '⚡ Analisar este anúncio';
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
@@ -4782,7 +4794,11 @@ function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 20) + 'px'; break; }} }} catch(e) {{}}
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 20) + 'px';
+            frames[i].style.minHeight = '0';
+            break;
+        }} }} catch(e) {{}}
     }}
 }}
  
