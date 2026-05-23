@@ -2633,6 +2633,10 @@ setTimeout(ajustarAltura, 600);
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
  
+# ---------------------------------------------------
+# PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
+# ---------------------------------------------------
+ 
 elif st.session_state.pagina == "ads":
  
     import datetime as _dt
@@ -2645,7 +2649,7 @@ elif st.session_state.pagina == "ads":
  
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
- 
+
     # ── Injeta o modal global no documento pai (fora de qualquer iframe) ──────
     # Isso garante que o modal cobre TODA a tela do Streamlit, não só o iframe.
     st.markdown("""
@@ -2653,10 +2657,10 @@ elif st.session_state.pagina == "ads":
     (function() {
         if (window.parent.__globalAdModalInjected) return;
         window.parent.__globalAdModalInjected = true;
- 
+
         // Cria o overlay no documento PAI
         var doc = window.parent.document;
- 
+
         var style = doc.createElement('style');
         style.id = 'global-ad-modal-style';
         style.textContent = `
@@ -2759,7 +2763,7 @@ elif st.session_state.pagina == "ads":
             }
         `;
         doc.head.appendChild(style);
- 
+
         var overlay = doc.createElement('div');
         overlay.id = 'global-ad-modal-overlay';
         overlay.innerHTML = `
@@ -2769,7 +2773,7 @@ elif st.session_state.pagina == "ads":
             </div>
         `;
         doc.body.appendChild(overlay);
- 
+
         // Fecha ao clicar fora ou pressionar Esc
         overlay.addEventListener('click', function(e) {
             if (e.target === overlay) window.parent.__closeGlobalAdModal();
@@ -2781,7 +2785,7 @@ elif st.session_state.pagina == "ads":
             window.parent.__closeGlobalAdModal();
         });
     })();
- 
+
     // ── Função global de fechar ──────────────────────────────────────
     window.parent.__closeGlobalAdModal = function() {
         var overlay = window.parent.document.getElementById('global-ad-modal-overlay');
@@ -2795,19 +2799,19 @@ elif st.session_state.pagina == "ads":
         var content = window.parent.document.getElementById('global-ad-modal-content');
         if (content) content.innerHTML = '';
     };
- 
+
     // ── Função global de abrir ───────────────────────────────────────
     window.parent.__openGlobalAdModal = function(mediaSrc, snapUrl, isVideo) {
         var overlay = window.parent.document.getElementById('global-ad-modal-overlay');
         var content = window.parent.document.getElementById('global-ad-modal-content');
         if (!overlay || !content) return;
- 
+
         content.innerHTML = '';
- 
+
         // Trava o scroll do body PAI para o modal ficar exatamente sobre tudo
         window.parent.document.body.style.overflow = 'hidden';
         overlay.classList.add('open');
- 
+
         if (isVideo) {
             var isDirectVideo = mediaSrc && (
                 mediaSrc.indexOf('.mp4') !== -1 ||
@@ -2849,12 +2853,12 @@ elif st.session_state.pagina == "ads":
                 return;
             }
             if (!mediaSrc) { window.parent.__closeGlobalAdModal(); return; }
- 
+
             var loading = window.parent.document.createElement('div');
             loading.className = 'global-ad-modal-loading';
             loading.textContent = 'Carregando…';
             content.appendChild(loading);
- 
+
             var tmp = new Image();
             tmp.onload = function() {
                 content.innerHTML = '';
@@ -2879,7 +2883,7 @@ elif st.session_state.pagina == "ads":
     };
     </script>
     """, unsafe_allow_html=True)
- 
+
     def carregar_cache_ads() -> dict:
         if st.session_state.get("ads_cache"):
             return st.session_state.ads_cache
@@ -4199,7 +4203,7 @@ setTimeout(ajustarAltura,100);
                 cta         = ad.get("cta") or ""
                 uid         = f"{sk}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
- 
+
                 # Escape seguro para JS — passa como JSON string
                 snap_url_js  = _json.dumps(snap_url)
                 img_primary  = images_b64[0] if images_b64 else (images[0] if images else "")
@@ -4237,10 +4241,10 @@ setTimeout(ajustarAltura,100);
                     vid_hd = next((v for v in videos if v != vid_sd), "")
                     vid_primary = vid_sd or vid_hd or videos[0]
                     vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
- 
+
                     vid_primary_js  = _json.dumps(vid_primary)
                     vid_fallback_js = _json.dumps(vid_fallback)
- 
+
                     media_block = f"""
 <div class="media-block video-thumb-block" style="position:relative;background:#000;cursor:pointer"
      id="vwrap_{uid}"
@@ -4266,7 +4270,7 @@ setTimeout(ajustarAltura,100);
                 color:#fff;font-size:10px;font-weight:700;padding:2px 7px;
                 border-radius:4px;pointer-events:none">▶ VER VÍDEO</div>
 </div>"""
- 
+
                 elif img_primary:
                     media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
@@ -4871,7 +4875,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
     if empresas_com_dados:
-        render_ads_empresa(empresas_com_dados[aba_idx])])
+        render_ads_empresa(empresas_com_dados[aba_idx])
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
