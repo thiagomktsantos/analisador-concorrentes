@@ -3890,15 +3890,15 @@ function triggerTab(sk, tab) {{
 
             /* ── Selects fundo escuro ── */
             .st-key-{filtros_key} div[data-baseweb="select"] > div {{
-                background-color: #0e2a47 !important;
-                border: 1.5px solid #1a3a5c !important;
+                background-color: #ffffff !important;
+                border: 2px solid #6b7280 !important;
                 border-radius: 8px !important;
                 height: 40px !important;
                 min-height: 40px !important;
                 padding: 0 10px !important;
                 font-family: 'DM Sans', sans-serif !important;
-                font-size: 13px !important;
-                color: #e2eaf5 !important;
+                font-size: 14px !important;
+                color: #6b7280 !important;
                 transition: border-color 0.15s !important;
             }}
             .st-key-{filtros_key} div[data-baseweb="select"] > div:hover {{
@@ -3913,8 +3913,8 @@ function triggerTab(sk, tab) {{
                 background-color: transparent !important;
             }}
             .st-key-{filtros_key} div[data-baseweb="select"] svg {{
-                fill: #8aabcc !important;
-                color: #8aabcc !important;
+                fill: #6b7280 !important;
+                color: #6b7280 !important;
             }}
 
             /* Dropdown menu escuro */
