@@ -766,6 +766,7 @@ if not st.session_state.logado:
         font-weight: 700 !important;
         padding: 12px !important;
         width: 100% !important;
+        margin-bottom: 15px;
     }
     div.stFormSubmitButton > button:hover { opacity: 0.9 !important; }
 
