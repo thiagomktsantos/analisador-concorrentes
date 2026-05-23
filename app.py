@@ -3796,7 +3796,7 @@ setTimeout(ajustarAltura, 100);
         aba_conteudo_atual = st.session_state.ads_aba_conteudo.get(ck, "anuncios")
  
         components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
@@ -3995,16 +3995,7 @@ function triggerTab(sk, tab) {{
             cor_av_js   = cor_av
             nome_js     = nome
  
-            # ── ALTURA DINÂMICA ──────────────────────────────────────
-            # Calcula altura baseada no número de anúncios para evitar corte
-            # 3 colunas: ceil(n/3) linhas × ~520px por linha + stats(80) + margem(40)
-            import math as _math
-            n_rows = _math.ceil(len(ads_f) / 3) if ads_f else 1
-            # Cada card tem: status(40) + meta(60) + copy(120) + media(220) + cta(50) + btn(44) = ~534px
-            # + gaps entre rows (16px cada) + stats row (80px) + padding (40px)
-            altura_cards = n_rows * 550 + 16 * (n_rows - 1) + 80 + 60
-            altura_iframe = max(900, min(altura_cards, 12000))
- 
+            # ── FIX: usar postMessage para auto-resize em vez de altura fixa ──
             components.html(f"""
 <!DOCTYPE html>
 <html>
@@ -4013,17 +4004,17 @@ function triggerTab(sk, tab) {{
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:4px;}}
+body{{padding:0 0 16px 0;}}
  
 /* ── STATS ── */
-.stats-row{{display:flex;gap:10px;flex-wrap:wrap;padding:16px 0 4px 0;}}
+.stats-row{{display:flex;gap:10px;flex-wrap:wrap;padding:16px 0 8px 0;}}
 .stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;text-align:center;}}
 .stat-lbl-green{{color:#15803d;}}
 .stat-num{{font-size:22px;font-weight:800;}}
 .stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;margin-top:2px;}}
  
 /* ── GRID ── */
-.ads-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;margin-top:12px;}}
+.ads-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;margin-top:4px;}}
  
 /* ── CARD ── */
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:visible;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
@@ -4438,6 +4429,24 @@ function toggleBody(uid) {{
     if (ell) ell.style.display = open ? 'inline' : 'none';
 }}
  
+// ── FIX: postMessage auto-resize ──
+function notifyHeight() {{
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    window.parent.postMessage({{ type: 'adsGridHeight', height: h + 24 }}, '*');
+    // fallback direto
+    try {{
+        var iframes = window.parent.document.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {{
+            try {{
+                if (iframes[i].contentWindow === window) {{
+                    iframes[i].style.height = (h + 24) + 'px';
+                    break;
+                }}
+            }} catch(e) {{}}
+        }}
+    }} catch(e) {{}}
+}}
+ 
 // ── Init ──
 renderStats();
  
@@ -4449,10 +4458,22 @@ ADS_DATA.forEach(function(ad) {{
     renderPlats('{sk}_' + ad.j, ad.plataformas);
 }});
  
+// Notificar altura após renderizar todos os cards
+notifyHeight();
+setTimeout(notifyHeight, 300);
+setTimeout(notifyHeight, 800);
+setTimeout(notifyHeight, 1500);
+ 
+// ResizeObserver para ajuste dinâmico
+if (window.ResizeObserver) {{
+    var ro = new ResizeObserver(function() {{ notifyHeight(); }});
+    ro.observe(document.body);
+}}
+ 
 </script>
 </body>
 </html>
-""", height=altura_iframe, scrolling=True)
+""", height=600, scrolling=True)
  
         # ════════════════════════════════════════════════════════════
         # ABA: ANÁLISE DE IA
@@ -4679,10 +4700,6 @@ CTA: {ad.get("cta","")}
             n_img2 = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
             n_car2 = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
  
-            # Altura dinâmica para aba de análise
-            n_rows_ia = _math.ceil(len(ind_cards_data) / 2) if ind_cards_data else 1
-            altura_ia = max(700, n_rows_ia * 320 + 200)
- 
             components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -4857,6 +4874,22 @@ function escHtml(s) {{
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }}
  
+function notifyHeight() {{
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    window.parent.postMessage({{ type: 'adsIaHeight', height: h + 24 }}, '*');
+    try {{
+        var iframes = window.parent.document.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {{
+            try {{
+                if (iframes[i].contentWindow === window) {{
+                    iframes[i].style.height = (h + 24) + 'px';
+                    break;
+                }}
+            }} catch(e) {{}}
+        }}
+    }} catch(e) {{}}
+}}
+ 
 function buildIndGrid() {{
     var grid = document.getElementById('ind-grid');
     if (!grid) return;
@@ -4908,6 +4941,7 @@ function buildIndGrid() {{
         card.appendChild(btn);
         grid.appendChild(card);
     }});
+    setTimeout(notifyHeight, 100);
 }}
  
 function showSubtab(name, el) {{
@@ -4916,6 +4950,7 @@ function showSubtab(name, el) {{
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
     triggerGlobal('_subtab_{sk}_' + name + '_');
+    setTimeout(notifyHeight, 100);
 }}
  
 function triggerGlobal(label) {{
@@ -4927,11 +4962,45 @@ function triggerGlobal(label) {{
 }}
  
 buildIndGrid();
+notifyHeight();
+setTimeout(notifyHeight, 300);
+setTimeout(notifyHeight, 800);
+ 
+if (window.ResizeObserver) {{
+    new ResizeObserver(notifyHeight).observe(document.body);
+}}
 </script>
 </body></html>
-""", height=altura_ia, scrolling=True)
+""", height=600, scrolling=True)
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+ 
+    # ── Listener para postMessage de altura ──────────────────────────
+    st.markdown("""
+<script>
+(function() {
+    if (window._adsHeightListenerActive) return;
+    window._adsHeightListenerActive = true;
+    window.addEventListener('message', function(e) {
+        if (!e.data || (e.data.type !== 'adsGridHeight' && e.data.type !== 'adsIaHeight')) return;
+        var targetH = e.data.height;
+        try {
+            var iframes = document.querySelectorAll('iframe');
+            iframes.forEach(function(iframe) {
+                try {
+                    if (iframe.contentWindow === e.source) {
+                        iframe.style.height = targetH + 'px';
+                        iframe.style.minHeight = 'unset';
+                        iframe.style.maxHeight = 'none';
+                    }
+                } catch(err) {}
+            });
+        } catch(err) {}
+    });
+})();
+</script>
+""", unsafe_allow_html=True)
+ 
     aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
     if empresas_com_dados:
         render_ads_empresa(empresas_com_dados[aba_idx])
