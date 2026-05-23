@@ -1183,272 +1183,76 @@ def salvar_cache_ads(dados: dict):
 # ---------------------------------------------------
 
 if st.session_state.pagina == "home":
- 
+
     emp = st.session_state.dados["minha_empresa"]
     tem_dados = empresa_tem_dados(emp)
- 
+
     # ✅ CORREÇÃO: nova conta entra direto no modo edição
     if not tem_dados and not st.session_state.editar_empresa:
         st.session_state.editar_empresa = True
- 
+
     if st.session_state.editar_empresa or not tem_dados:
- 
+
         st.markdown("""
         <style>
-        /* ── Containers com borda (seções do formulário) ── */
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"],
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"],
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTextInput"] > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stSelectbox"],
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stSelectbox"] > div,
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"],
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div {
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+        /* ── Força fundo branco em TUDO dentro dos containers ── */
+        section.main [data-testid="stVerticalBlockBorderWrapper"],
+        section.main [data-testid="stVerticalBlockBorderWrapper"] *:not(svg):not(path):not(circle):not(rect):not(line) {
             background: #ffffff !important;
             background-color: #ffffff !important;
         }
-        html body section.main [data-testid="stVerticalBlockBorderWrapper"] {
+        section.main [data-testid="stVerticalBlockBorderWrapper"] {
             border: 1px solid #e5e7eb !important;
             border-radius: 14px !important;
             padding: 20px 32px !important;
             margin-bottom: 0px !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-            background-color: #ffffff !important;
-            background: #ffffff !important;
         }
- 
-        /* ── Formulário (seção de redes sociais / localização) ── */
-        html body section.main div[data-testid="stForm"],
-        html body section.main div[data-testid="stForm"] > div,
-        html body section.main div[data-testid="stForm"] > div > div,
-        html body section.main div[data-testid="stForm"] [data-testid="stVerticalBlock"],
-        html body section.main div[data-testid="stForm"] [data-testid="stHorizontalBlock"],
-        html body section.main div[data-testid="stForm"] [data-testid="column"],
-        html body section.main div[data-testid="stForm"] [data-testid="column"] > div,
-        html body section.main div[data-testid="stForm"] .stElementContainer,
-        html body section.main div[data-testid="stForm"] .stElementContainer > div,
-        html body section.main div[data-testid="stForm"] div[data-testid="stTextInput"],
-        html body section.main div[data-testid="stForm"] div[data-testid="stTextInput"] > div,
-        html body section.main div[data-testid="stForm"] div[data-testid="stSelectbox"],
-        html body section.main div[data-testid="stForm"] div[data-testid="stSelectbox"] > div,
-        html body section.main div[data-testid="stForm"] [data-baseweb="select"],
-        html body section.main div[data-testid="stForm"] [data-baseweb="select"] > div {
+
+        /* ── Formulário ── */
+        section.main div[data-testid="stForm"],
+        section.main div[data-testid="stForm"] *:not(svg):not(path):not(circle):not(rect):not(line) {
             background: #ffffff !important;
             background-color: #ffffff !important;
         }
-        html body section.main div[data-testid="stForm"] {
-            background: #ffffff !important;
+        section.main div[data-testid="stForm"] {
             border: 1px solid #e5e7eb !important;
             border-radius: 14px !important;
             padding: 28px 32px !important;
             margin-bottom: 0px !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
- 
-        /* ── Inputs e selects dentro do form ── */
-        html body section.main div[data-testid="stTextInput"] input {
+
+        /* ── Inputs ── */
+        section.main input[type="text"],
+        section.main input[type="password"],
+        section.main textarea {
             background: #ffffff !important;
             background-color: #ffffff !important;
             border: 1px solid #e5e7eb !important;
             border-radius: 7px !important;
             font-size: 15px !important;
             color: #111827 !important;
+            font-family: 'DM Sans', sans-serif !important;
         }
-        html body section.main div[data-baseweb="select"] > div {
+
+        /* ── Selects ── */
+        section.main [data-baseweb="select"] > div,
+        section.main [data-baseweb="select"] > div > div {
             background: #ffffff !important;
             background-color: #ffffff !important;
             border: 1px solid #e5e7eb !important;
             border-radius: 7px !important;
         }
- 
+
         /* ── Esconde botão Editar no modo formulário ── */
         .st-key-btn_editar_empresa { display: none !important; }
         </style>
         """, unsafe_allow_html=True)
- 
-        # ── Cabeçalho ──────────────────────────────────────────────
-        h1, h2 = st.columns([7, 3])
-        with h1:
-            st.markdown(
-                "<h1 style='font-size:32px;font-weight:700;color:#1a2e4a;"
-                "text-transform:uppercase;margin:0;"
-                "font-family:\"Animo DEMO\",\"DM Sans\",sans-serif'>"
-                "Minha Empresa</h1>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                "<div style='font-size:14px;color:#6b7280;'>"
-                "Gerencie as informações e tenha uma visão geral da sua empresa.</div>",
-                unsafe_allow_html=True,
-            )
-        with h2:
-            st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
-            btn_editar = st.button(
-                "Editar Empresa",
-                type="primary",
-                use_container_width=True,
-                key="btn_editar_empresa",
-            )
-            if btn_editar:
-                st.session_state.editar_empresa = True
-                st.rerun()
- 
-        st.markdown(
-            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0 20px 0'/>",
-            unsafe_allow_html=True,
-        )
- 
-        # ── Helpers visuais ────────────────────────────────────────
-        def sec_label(label):
-            st.markdown(
-                f"<div style='font-size:11px;font-weight:700;color:#9ca3af;"
-                f"text-transform:uppercase;letter-spacing:1px;"
-                f"margin-bottom:12px'>{label}</div>",
-                unsafe_allow_html=True,
-            )
- 
-        def form_divider():
-            st.markdown(
-                "<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>",
-                unsafe_allow_html=True,
-            )
- 
-        # ── Seção: Identificação ───────────────────────────────────
-        with st.container(border=True):
-            sec_label("Identificação")
-            c1, c2 = st.columns(2)
-            emp["nome"] = c1.text_input(
-                "Nome da Empresa",
-                value=emp.get("nome", ""),
-                key="edit_nome",
-                placeholder="Ex: Marketylics",
-            )
-            site_digitado = c2.text_input(
-                "Site",
-                value=emp.get("site", ""),
-                key="edit_site",
-                placeholder="Ex: marketylics.com",
-            )
-            emp["site"] = limpar_site(site_digitado)
- 
-        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
- 
-        # ── Seção: Setor ───────────────────────────────────────────
-        with st.container(border=True):
-            sec_label("Setor")
-            c3, c4 = st.columns(2)
-            setor_opcoes = list(SUBNICHOS.keys())
-            setor_atual  = emp.get("setor", "Marketing")
-            setor_idx    = setor_opcoes.index(setor_atual) if setor_atual in setor_opcoes else 0
- 
-            def on_setor_change():
-                emp["tipo"] = ""
-                st.session_state["_tipo_reset"] = True
- 
-            emp["setor"] = c3.selectbox(
-                "Setor",
-                setor_opcoes,
-                index=setor_idx,
-                key="sel_setor",
-                on_change=on_setor_change,
-            )
- 
-            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-            tipo_atual = emp.get("tipo", "")
-            tipo_idx   = 0 if st.session_state.get("_tipo_reset") else (
-                subnichos_disponiveis.index(tipo_atual) if tipo_atual in subnichos_disponiveis else 0
-            )
-            st.session_state["_tipo_reset"] = False
- 
-            emp["tipo"] = c4.selectbox(
-                "Sub-nicho",
-                subnichos_disponiveis,
-                index=tipo_idx,
-                key="sel_tipo",
-            )
- 
-        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
- 
-        # ── Seção: Redes Sociais + Localização (dentro do form) ────
-        with st.form("cad_empresa", clear_on_submit=False):
- 
-            sec_label("Redes Sociais")
-            c5, c6 = st.columns(2)
-            emp["instagram"] = c5.text_input(
-                "Instagram",
-                value=emp.get("instagram", "@"),
-                placeholder="@suaempresa",
-            )
-            emp["fb_page"] = c6.text_input(
-                "Facebook",
-                value=emp.get("fb_page", ""),
-                placeholder="facebook.com/suaempresa",
-            )
- 
-            servicos_text = st.text_input(
-                "Serviços (separados por vírgula)",
-                value=", ".join(emp.get("servicos", [])),
-                placeholder="Ex: SEO, Tráfego Pago, Social Media",
-            )
-            emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
- 
-            form_divider()
- 
-            sec_label("Localização")
-            loc1, loc2 = st.columns(2)
-            estados     = list(ESTADOS_CIDADES.keys())
-            estado_atual = emp.get("estado", "")
-            estado_index = estados.index(estado_atual) if estado_atual in estados else 0
-            emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
- 
-            cidades      = ESTADOS_CIDADES.get(emp["estado"], [])
-            cidade_atual = emp.get("cidade", "")
-            cidade_index = cidades.index(cidade_atual) if cidade_atual in cidades else 0
-            emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
- 
-            form_divider()
- 
-            col_salvar, col_cancelar = st.columns(2)
-            salvar   = col_salvar.form_submit_button("Salvar",   use_container_width=True)
-            cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
- 
-            if cancelar:
-                # ✅ CORREÇÃO: só cancela se já tinha dados (nova conta não pode cancelar)
-                if tem_dados:
-                    st.session_state.editar_empresa = False
-                    st.rerun()
-                else:
-                    st.warning("Preencha pelo menos o nome da empresa para continuar.")
- 
-            if salvar:
-                emp["nome"] = st.session_state.get("edit_nome", emp.get("nome", ""))
-                emp["site"] = limpar_site(st.session_state.get("edit_site", emp.get("site", "")))
-                if emp["nome"].strip():
-                    st.session_state.editar_empresa = False
-                    salvar_dados_usuario(st.session_state.user.id)
-                    st.success("Empresa salva com sucesso!")
-                    st.rerun()
-                else:
-                    st.error("Informe pelo menos o nome da empresa.")
- 
-    else:
-        # ── MODO VISUALIZAÇÃO (conta com dados) ───────────────────
- 
-        st.markdown("""
-        <style>
-        .st-key-btn_editar_empresa_hidden { display: none !important; }
-        </style>
-        """, unsafe_allow_html=True)
- 
+
+        # ── Cabeçalho igual ao modo visualização ──────────────────
         h1, h2 = st.columns([7, 3])
         with h1:
             components.html("""
@@ -1479,7 +1283,7 @@ html, body { background: transparent; overflow: hidden; }
 <div class="titulo">Minha Empresa</div>
 <div class="sub">Gerencie as informações e tenha uma visão geral da sua empresa.</div>
 """, height=70)
- 
+
         with h2:
             st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
             btn_editar = st.button(
@@ -1491,12 +1295,195 @@ html, body { background: transparent; overflow: hidden; }
             if btn_editar:
                 st.session_state.editar_empresa = True
                 st.rerun()
- 
+
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
             unsafe_allow_html=True,
         )
- 
+
+        # ── Helpers visuais ────────────────────────────────────────
+        def sec_label(label):
+            st.markdown(
+                f"<div style='font-size:11px;font-weight:700;color:#9ca3af;"
+                f"text-transform:uppercase;letter-spacing:1px;"
+                f"margin-bottom:12px'>{label}</div>",
+                unsafe_allow_html=True,
+            )
+
+        def form_divider():
+            st.markdown(
+                "<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>",
+                unsafe_allow_html=True,
+            )
+
+        # ── Seção: Identificação ───────────────────────────────────
+        with st.container(border=True):
+            sec_label("Identificação")
+            c1, c2 = st.columns(2)
+            emp["nome"] = c1.text_input(
+                "Nome da Empresa",
+                value=emp.get("nome", ""),
+                key="edit_nome",
+                placeholder="Ex: Marketylics",
+            )
+            site_digitado = c2.text_input(
+                "Site",
+                value=emp.get("site", ""),
+                key="edit_site",
+                placeholder="Ex: marketylics.com",
+            )
+            emp["site"] = limpar_site(site_digitado)
+
+        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+
+        # ── Seção: Setor ───────────────────────────────────────────
+        with st.container(border=True):
+            sec_label("Setor")
+            c3, c4 = st.columns(2)
+            setor_opcoes = list(SUBNICHOS.keys())
+            setor_atual  = emp.get("setor", "Marketing")
+            setor_idx    = setor_opcoes.index(setor_atual) if setor_atual in setor_opcoes else 0
+
+            def on_setor_change():
+                emp["tipo"] = ""
+                st.session_state["_tipo_reset"] = True
+
+            emp["setor"] = c3.selectbox(
+                "Setor",
+                setor_opcoes,
+                index=setor_idx,
+                key="sel_setor",
+                on_change=on_setor_change,
+            )
+
+            subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
+            tipo_atual = emp.get("tipo", "")
+            tipo_idx   = 0 if st.session_state.get("_tipo_reset") else (
+                subnichos_disponiveis.index(tipo_atual) if tipo_atual in subnichos_disponiveis else 0
+            )
+            st.session_state["_tipo_reset"] = False
+
+            emp["tipo"] = c4.selectbox(
+                "Sub-nicho",
+                subnichos_disponiveis,
+                index=tipo_idx,
+                key="sel_tipo",
+            )
+
+        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+
+        # ── Seção: Redes Sociais + Localização (dentro do form) ────
+        with st.form("cad_empresa", clear_on_submit=False):
+
+            sec_label("Redes Sociais")
+            c5, c6 = st.columns(2)
+            emp["instagram"] = c5.text_input(
+                "Instagram",
+                value=emp.get("instagram", "@"),
+                placeholder="@suaempresa",
+            )
+            emp["fb_page"] = c6.text_input(
+                "Facebook",
+                value=emp.get("fb_page", ""),
+                placeholder="facebook.com/suaempresa",
+            )
+
+            servicos_text = st.text_input(
+                "Serviços (separados por vírgula)",
+                value=", ".join(emp.get("servicos", [])),
+                placeholder="Ex: SEO, Tráfego Pago, Social Media",
+            )
+            emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
+
+            form_divider()
+
+            sec_label("Localização")
+            loc1, loc2 = st.columns(2)
+            estados      = list(ESTADOS_CIDADES.keys())
+            estado_atual = emp.get("estado", "")
+            estado_index = estados.index(estado_atual) if estado_atual in estados else 0
+            emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
+
+            cidades      = ESTADOS_CIDADES.get(emp["estado"], [])
+            cidade_atual = emp.get("cidade", "")
+            cidade_index = cidades.index(cidade_atual) if cidade_atual in cidades else 0
+            emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
+
+            form_divider()
+
+            col_salvar, col_cancelar = st.columns(2)
+            salvar   = col_salvar.form_submit_button("Salvar",   use_container_width=True)
+            cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
+
+            if cancelar:
+                if tem_dados:
+                    st.session_state.editar_empresa = False
+                    st.rerun()
+                else:
+                    st.warning("Preencha pelo menos o nome da empresa para continuar.")
+
+            if salvar:
+                emp["nome"] = st.session_state.get("edit_nome", emp.get("nome", ""))
+                emp["site"] = limpar_site(st.session_state.get("edit_site", emp.get("site", "")))
+                if emp["nome"].strip():
+                    st.session_state.editar_empresa = False
+                    salvar_dados_usuario(st.session_state.user.id)
+                    st.success("Empresa salva com sucesso!")
+                    st.rerun()
+                else:
+                    st.error("Informe pelo menos o nome da empresa.")
+
+    else:
+        # ── MODO VISUALIZAÇÃO (conta com dados) ───────────────────
+
+        h1, h2 = st.columns([7, 3])
+        with h1:
+            components.html("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+    font-family: 'Animo';
+    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a2e4a;
+    text-transform: uppercase;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.5px;
+}
+.sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #6b7280;
+}
+</style>
+<div class="titulo">Minha Empresa</div>
+<div class="sub">Gerencie as informações e tenha uma visão geral da sua empresa.</div>
+""", height=70)
+
+        with h2:
+            st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
+            btn_editar = st.button(
+                "Editar Empresa",
+                type="primary",
+                use_container_width=True,
+                key="btn_editar_empresa",
+            )
+            if btn_editar:
+                st.session_state.editar_empresa = True
+                st.rerun()
+
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
+            unsafe_allow_html=True,
+        )
+
         cor_empresa = get_minha_empresa_color()
         avatar      = gerar_avatar(emp["nome"])
         loc         = emp.get("cidade", "")
@@ -1506,7 +1493,7 @@ html, body { background: transparent; overflow: hidden; }
             "".join([f"<span class='empresa-tag'>{s}</span>" for s in emp.get("servicos", [])])
             if emp.get("servicos") else "<span style='color:#9ca3af;font-size:14px'>—</span>"
         )
- 
+
         components.html(f"""
 <!DOCTYPE html>
 <html>
@@ -1591,20 +1578,6 @@ body {{
     border: 1px solid #bfdbfe;
     padding: 4px 12px; border-radius: 20px;
     font-size: 13px; font-weight: 500;
-}}
-@media (max-width: 700px) {{
-    .empresa-grid {{ grid-template-columns: 1fr !important; }}
-    .empresa-divider {{ display: none !important; }}
-    .empresa-col {{
-        padding: 16px 0 0 0 !important;
-        border-top: 1px solid #f3f4f6;
-    }}
-    .empresa-col:first-child {{
-        padding-top: 0 !important;
-        border-top: none;
-    }}
-    .empresa-card-deco {{ display: none; }}
-    .empresa-card-body {{ padding: 20px 18px; }}
 }}
 </style>
 </head>
@@ -1732,7 +1705,7 @@ setTimeout(ajustarAltura, 800);
 </body>
 </html>
         """, height=320, scrolling=False)
- 
+
         st.markdown("""
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:14px 20px;display:flex;align-items:center;gap:16px;
@@ -1757,7 +1730,7 @@ setTimeout(ajustarAltura, 800);
             </div>
         </div>
         """, unsafe_allow_html=True)
-
+        
 # ---------------------------------------------------
 # PAGINA - CONCORRENTES
 # ---------------------------------------------------
