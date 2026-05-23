@@ -4255,7 +4255,7 @@ window.__PLATS_{uid}__ = {plat_js};
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;}}
-.ads-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}}
+.ads-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;}}
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
