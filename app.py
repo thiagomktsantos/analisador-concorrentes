@@ -2632,11 +2632,7 @@ setTimeout(ajustarAltura, 600);
 # ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
 # ---------------------------------------------------
- 
-# ---------------------------------------------------
-# PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
-# ---------------------------------------------------
- 
+
 elif st.session_state.pagina == "ads":
  
     import datetime as _dt
@@ -2649,169 +2645,100 @@ elif st.session_state.pagina == "ads":
  
     CACHE_TTL_HORAS = 24
     APIFY_ACTOR_ID  = "curious_coder~facebook-ads-library-scraper"
-
-    # ── Injeta o modal global no documento pai (fora de qualquer iframe) ──────
-    # Isso garante que o modal cobre TODA a tela do Streamlit, não só o iframe.
-    st.markdown("""
-    <script>
-    (function() {
-        if (window.parent.__globalAdModalInjected) return;
-        window.parent.__globalAdModalInjected = true;
-
-        // Cria o overlay no documento PAI
-        var doc = window.parent.document;
-
-        var style = doc.createElement('style');
-        style.id = 'global-ad-modal-style';
-        style.textContent = `
-            #global-ad-modal-overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.88);
-                z-index: 2147483647;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-                backdrop-filter: blur(2px);
-            }
-            #global-ad-modal-overlay.open {
-                display: flex;
-            }
-            #global-ad-modal-box {
-                background: #111;
-                border-radius: 16px;
-                overflow: hidden;
-                position: relative;
-                display: inline-flex;
-                flex-direction: column;
-                align-items: center;
-                max-width: min(90vw, 880px);
-                max-height: 92vh;
-            }
-            #global-ad-modal-close {
-                position: absolute;
-                top: 12px;
-                right: 14px;
-                background: rgba(255,255,255,0.18);
-                border: none;
-                border-radius: 50%;
-                width: 36px;
-                height: 36px;
-                font-size: 18px;
-                color: #fff;
-                cursor: pointer;
-                z-index: 10;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                line-height: 1;
-            }
-            #global-ad-modal-close:hover { background: rgba(255,255,255,0.28); }
-            #global-ad-modal-content {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                width: 100%;
-            }
-            #global-ad-modal-content img {
-                display: block;
-                max-width: min(86vw, 840px);
-                max-height: min(88vh, 840px);
-                width: auto;
-                height: auto;
-                object-fit: contain;
-                border-radius: 10px;
-            }
-            #global-ad-modal-content video {
-                display: block;
-                max-width: min(86vw, 840px);
-                max-height: min(88vh, 700px);
-                width: auto;
-                height: auto;
-                border-radius: 10px;
-                background: #000;
-                outline: none;
-            }
-            .global-ad-modal-loading {
-                padding: 48px;
-                color: rgba(255,255,255,0.6);
-                font-size: 15px;
-                font-family: 'DM Sans', sans-serif;
-                text-align: center;
-            }
-            .global-ad-modal-ext {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 18px;
-                padding: 56px 48px;
-                min-width: 320px;
-            }
-            .global-ad-modal-ext a {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                background: #1877F2;
-                color: #fff;
-                padding: 14px 28px;
-                border-radius: 10px;
-                font-size: 15px;
-                font-weight: 700;
-                text-decoration: none;
-                font-family: 'DM Sans', sans-serif;
-            }
-        `;
-        doc.head.appendChild(style);
-
-        var overlay = doc.createElement('div');
-        overlay.id = 'global-ad-modal-overlay';
-        overlay.innerHTML = `
-            <div id="global-ad-modal-box">
-                <button id="global-ad-modal-close">✕</button>
-                <div id="global-ad-modal-content"></div>
-            </div>
-        `;
-        doc.body.appendChild(overlay);
-
-        // Fecha ao clicar fora ou pressionar Esc
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) window.parent.__closeGlobalAdModal();
-        });
-        doc.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') window.parent.__closeGlobalAdModal();
-        });
-        doc.getElementById('global-ad-modal-close').addEventListener('click', function() {
-            window.parent.__closeGlobalAdModal();
-        });
-    })();
-
-    // ── Função global de fechar ──────────────────────────────────────
-    window.parent.__closeGlobalAdModal = function() {
-        var overlay = window.parent.document.getElementById('global-ad-modal-overlay');
-        if (!overlay) return;
+ 
+    # ── Modal global injetado via components.html (correto) ──────────
+    components.html("""
+<script>
+(function() {
+    var doc = window.parent.document;
+    if (doc.getElementById('global-ad-modal-overlay')) return;
+ 
+    var style = doc.createElement('style');
+    style.id = 'global-ad-modal-style';
+    style.textContent = [
+        '#global-ad-modal-overlay {',
+        '    display: none; position: fixed; inset: 0;',
+        '    background: rgba(0,0,0,0.88); z-index: 2147483647;',
+        '    align-items: center; justify-content: center;',
+        '    padding: 20px; backdrop-filter: blur(2px);',
+        '}',
+        '#global-ad-modal-overlay.open { display: flex; }',
+        '#global-ad-modal-box {',
+        '    background: #111; border-radius: 16px; overflow: hidden;',
+        '    position: relative; display: inline-flex; flex-direction: column;',
+        '    align-items: center; max-width: min(90vw, 880px); max-height: 92vh;',
+        '}',
+        '#global-ad-modal-close {',
+        '    position: absolute; top: 12px; right: 14px;',
+        '    background: rgba(255,255,255,0.18); border: none; border-radius: 50%;',
+        '    width: 36px; height: 36px; font-size: 18px; color: #fff;',
+        '    cursor: pointer; z-index: 10; display: flex;',
+        '    align-items: center; justify-content: center; line-height: 1;',
+        '}',
+        '#global-ad-modal-close:hover { background: rgba(255,255,255,0.28); }',
+        '#global-ad-modal-content {',
+        '    display: flex; flex-direction: column; align-items: center; width: 100%;',
+        '}',
+        '#global-ad-modal-content img {',
+        '    display: block; max-width: min(86vw, 840px); max-height: min(88vh, 840px);',
+        '    width: auto; height: auto; object-fit: contain; border-radius: 10px;',
+        '}',
+        '#global-ad-modal-content video {',
+        '    display: block; max-width: min(86vw, 840px); max-height: min(88vh, 700px);',
+        '    width: auto; height: auto; border-radius: 10px; background: #000; outline: none;',
+        '}',
+        '.global-ad-modal-loading {',
+        '    padding: 48px; color: rgba(255,255,255,0.6);',
+        '    font-size: 15px; font-family: sans-serif; text-align: center;',
+        '}',
+        '.global-ad-modal-ext {',
+        '    display: flex; flex-direction: column; align-items: center;',
+        '    gap: 18px; padding: 56px 48px; min-width: 320px;',
+        '}',
+        '.global-ad-modal-ext a {',
+        '    display: inline-flex; align-items: center; gap: 8px;',
+        '    background: #1877F2; color: #fff; padding: 14px 28px;',
+        '    border-radius: 10px; font-size: 15px; font-weight: 700;',
+        '    text-decoration: none; font-family: sans-serif;',
+        '}'
+    ].join('');
+    doc.head.appendChild(style);
+ 
+    var overlay = doc.createElement('div');
+    overlay.id = 'global-ad-modal-overlay';
+    overlay.innerHTML =
+        '<div id="global-ad-modal-box">' +
+            '<button id="global-ad-modal-close">&#x2715;</button>' +
+            '<div id="global-ad-modal-content"></div>' +
+        '</div>';
+    doc.body.appendChild(overlay);
+ 
+    function closeModal() {
         overlay.classList.remove('open');
-        // Para vídeo se estiver tocando
         var vid = overlay.querySelector('video');
         if (vid) { vid.pause(); vid.src = ''; }
-        // Restaura scroll do body pai
-        window.parent.document.body.style.overflow = '';
-        var content = window.parent.document.getElementById('global-ad-modal-content');
+        doc.body.style.overflow = '';
+        var content = doc.getElementById('global-ad-modal-content');
         if (content) content.innerHTML = '';
-    };
-
-    // ── Função global de abrir ───────────────────────────────────────
+    }
+ 
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeModal();
+    });
+    doc.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+    doc.getElementById('global-ad-modal-close').addEventListener('click', closeModal);
+ 
+    window.parent.__closeGlobalAdModal = closeModal;
+ 
     window.parent.__openGlobalAdModal = function(mediaSrc, snapUrl, isVideo) {
-        var overlay = window.parent.document.getElementById('global-ad-modal-overlay');
-        var content = window.parent.document.getElementById('global-ad-modal-content');
-        if (!overlay || !content) return;
-
+        var content = doc.getElementById('global-ad-modal-content');
+        if (!content) return;
         content.innerHTML = '';
-
-        // Trava o scroll do body PAI para o modal ficar exatamente sobre tudo
-        window.parent.document.body.style.overflow = 'hidden';
+        doc.body.style.overflow = 'hidden';
         overlay.classList.add('open');
-
+ 
         if (isVideo) {
             var isDirectVideo = mediaSrc && (
                 mediaSrc.indexOf('.mp4') !== -1 ||
@@ -2819,7 +2746,7 @@ elif st.session_state.pagina == "ads":
                 mediaSrc.indexOf('fbcdn') !== -1
             );
             if (isDirectVideo) {
-                var vid = window.parent.document.createElement('video');
+                var vid = doc.createElement('video');
                 vid.src = mediaSrc;
                 vid.controls = true;
                 vid.autoplay = true;
@@ -2828,62 +2755,60 @@ elif st.session_state.pagina == "ads":
                 vid.onerror = function() {
                     content.innerHTML = '';
                     if (snapUrl) {
-                        var ext = window.parent.document.createElement('div');
+                        var ext = doc.createElement('div');
                         ext.className = 'global-ad-modal-ext';
-                        ext.innerHTML = '<a href="' + snapUrl + '" target="_blank">↗ Abrir no Ad Library</a>';
+                        ext.innerHTML = '<a href="' + snapUrl + '" target="_blank">&#8599; Abrir no Ad Library</a>';
                         content.appendChild(ext);
                     }
                 };
                 content.appendChild(vid);
             } else {
-                var ext = window.parent.document.createElement('div');
+                var ext = doc.createElement('div');
                 ext.className = 'global-ad-modal-ext';
-                if (snapUrl) {
-                    ext.innerHTML = '<a href="' + snapUrl + '" target="_blank">↗ Abrir vídeo no Ad Library</a>';
-                } else {
-                    ext.innerHTML = '<span style="color:rgba(255,255,255,0.5);font-size:14px">Vídeo não disponível</span>';
-                }
+                ext.innerHTML = snapUrl
+                    ? '<a href="' + snapUrl + '" target="_blank">&#8599; Abrir v\u00eddeo no Ad Library</a>'
+                    : '<span style="color:rgba(255,255,255,0.5);font-size:14px">V\u00eddeo n\u00e3o dispon\u00edvel</span>';
                 content.appendChild(ext);
             }
         } else {
-            // Imagem
             if (!mediaSrc && snapUrl) {
-                window.parent.__closeGlobalAdModal();
+                closeModal();
                 window.open(snapUrl, '_blank');
                 return;
             }
-            if (!mediaSrc) { window.parent.__closeGlobalAdModal(); return; }
-
-            var loading = window.parent.document.createElement('div');
+            if (!mediaSrc) { closeModal(); return; }
+ 
+            var loading = doc.createElement('div');
             loading.className = 'global-ad-modal-loading';
-            loading.textContent = 'Carregando…';
+            loading.textContent = 'Carregando\u2026';
             content.appendChild(loading);
-
+ 
             var tmp = new Image();
             tmp.onload = function() {
                 content.innerHTML = '';
-                var img = window.parent.document.createElement('img');
+                var img = doc.createElement('img');
                 img.src = mediaSrc;
                 content.appendChild(img);
             };
             tmp.onerror = function() {
                 content.innerHTML = '';
                 if (snapUrl) {
-                    window.parent.__closeGlobalAdModal();
+                    closeModal();
                     window.open(snapUrl, '_blank');
                 } else {
-                    var msg = window.parent.document.createElement('div');
+                    var msg = doc.createElement('div');
                     msg.className = 'global-ad-modal-loading';
-                    msg.textContent = 'Imagem não disponível.';
+                    msg.textContent = 'Imagem n\u00e3o dispon\u00edvel.';
                     content.appendChild(msg);
                 }
             };
             tmp.src = mediaSrc;
         }
     };
-    </script>
-    """, unsafe_allow_html=True)
-
+})();
+</script>
+""", height=0, scrolling=False)
+ 
     def carregar_cache_ads() -> dict:
         if st.session_state.get("ads_cache"):
             return st.session_state.ads_cache
@@ -3720,7 +3645,7 @@ body {{ padding-bottom:4px; }}
             <div class="nome">{ck}</div>
             <div class="badges">
                 <span class="badge">{badge_lbl}</span>
-                <span class="badge-id">✅ {ads_id_atual}</span>
+                <span class="badge-id">&#10003; {ads_id_atual}</span>
             </div>
         </div>
     </div>
@@ -3912,7 +3837,7 @@ setTimeout(ajustarAltura, 100);
     }};
     var el = document.getElementById('plat_icons_{uid}');
     if (!el) return;
-    if (!plats || plats.length === 0) {{ el.innerHTML='<span style="color:#9ca3af;font-size:12px">—</span>'; return; }}
+    if (!plats || plats.length === 0) {{ el.innerHTML='<span style="color:#9ca3af;font-size:12px">&#8212;</span>'; return; }}
     el.innerHTML = plats.map(function(p) {{
         var key = p.toLowerCase().replace(' ','_').replace('-','_');
         var svg = SVGS[key] || '';
@@ -4003,10 +3928,9 @@ setTimeout(ajustarAltura, 100);
         else:
             lib_url = ""
  
-        page_display = configured_page if configured_page else "—"
+        page_display = configured_page if configured_page else "&#8212;"
         lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
  
-        # ── Cabeçalho da empresa ──────────────────────────────────────
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
             <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
@@ -4015,7 +3939,7 @@ setTimeout(ajustarAltura, 100);
                     <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
                     <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
                         <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
-                        <span style='color:#d1d5db;font-size:12px'>·</span>
+                        <span style='color:#d1d5db;font-size:12px'>&#183;</span>
                         <span style='font-size:13px;color:#6b7280'>Página: {page_display}</span>
                     </div>
                 </div>
@@ -4031,7 +3955,6 @@ setTimeout(ajustarAltura, 100);
             </div>
         </div>""", unsafe_allow_html=True)
  
-        # ── Barra de abas: Anúncios | Análise de IA ──────────────────
         aba_conteudo_atual = st.session_state.ads_aba_conteudo.get(ck, "anuncios")
  
         components.html(f"""
@@ -4048,12 +3971,12 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 <div class="tabs-bar">
     <button class="tab-btn {'active' if aba_conteudo_atual == 'anuncios' else ''}" onclick="triggerTab('{sk}','anuncios')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        Anúncios
+        An&#250;ncios
     </button>
     <div class="tab-sep"></div>
     <button class="tab-btn {'active' if aba_conteudo_atual == 'analise' else ''}" onclick="triggerTab('{sk}','analise')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-        Análise de IA
+        An&#225;lise de IA
     </button>
 </div>
 <script>
@@ -4143,12 +4066,12 @@ function triggerTab(sk, tab) {{
             stats_cards = []
             stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_ativos}</div><div class="stat-lbl stat-lbl-green">Ativos</div></div>')
             if n_inativos > 0:
-                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#6b7280">{n_inativos}</div><div class="stat-lbl">Histórico inativo</div></div>')
+                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#6b7280">{n_inativos}</div><div class="stat-lbl">Hist&#243;rico inativo</div></div>')
             stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_imagem}</div><div class="stat-lbl">Imagens</div></div>')
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_video}</div><div class="stat-lbl">Vídeos</div></div>')
+            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_video}</div><div class="stat-lbl">V&#237;deos</div></div>')
             stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_carrossel}</div><div class="stat-lbl">Carrossel</div></div>')
             if n_dynamic > 0:
-                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Dinâmicos</div></div>')
+                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Din&#226;micos</div></div>')
  
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -4173,7 +4096,7 @@ setTimeout(ajustarAltura,100);
  
             cta_labels = {
                 "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
-                "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
+                "GET_QUOTE":"Solicitar Or&#231;amento","BOOK_TRAVEL":"Reservar",
                 "WHATSAPP_MESSAGE":"Enviar Mensagem","SEND_WHATSAPP_MESSAGE":"WhatsApp",
                 "MESSAGE_PAGE":"Enviar Mensagem","SHOP_NOW":"Comprar Agora","DOWNLOAD":"Baixar",
                 "WATCH_MORE":"Ver Mais","APPLY_NOW":"Candidatar-se","GET_OFFER":"Ver Oferta",
@@ -4203,8 +4126,7 @@ setTimeout(ajustarAltura,100);
                 cta         = ad.get("cta") or ""
                 uid         = f"{sk}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
-
-                # Escape seguro para JS — passa como JSON string
+ 
                 snap_url_js  = _json.dumps(snap_url)
                 img_primary  = images_b64[0] if images_b64 else (images[0] if images else "")
                 img_primary_js = _json.dumps(img_primary)
@@ -4235,16 +4157,14 @@ setTimeout(ajustarAltura,100);
                 img_fallbacks.extend([u for u in images if u not in img_fallbacks])
                 srcs_js = _json.dumps(img_fallbacks)
  
-                # ── MEDIA BLOCK ───────────────────────────────────────
+                # ── MEDIA BLOCK ─────────────────────────────────────
                 if videos:
                     vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
                     vid_hd = next((v for v in videos if v != vid_sd), "")
                     vid_primary = vid_sd or vid_hd or videos[0]
-                    vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
-
+ 
                     vid_primary_js  = _json.dumps(vid_primary)
-                    vid_fallback_js = _json.dumps(vid_fallback)
-
+ 
                     media_block = f"""
 <div class="media-block video-thumb-block" style="position:relative;background:#000;cursor:pointer"
      id="vwrap_{uid}"
@@ -4268,9 +4188,9 @@ setTimeout(ajustarAltura,100);
     </div>
     <div style="position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,0.6);
                 color:#fff;font-size:10px;font-weight:700;padding:2px 7px;
-                border-radius:4px;pointer-events:none">▶ VER VÍDEO</div>
+                border-radius:4px;pointer-events:none">&#9654; VER V&#205;DEO</div>
 </div>"""
-
+ 
                 elif img_primary:
                     media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
@@ -4279,7 +4199,7 @@ setTimeout(ajustarAltura,100);
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
     <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
-        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
+        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo &rarr;' if snap_url else 'Sem imagem'}</span>
     </div>
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ampliar</div>
 </div>
@@ -4295,7 +4215,7 @@ function imgFallback_{uid}(img){{
                 else:
                     _nm_onclick = f'onclick="window.parent.__openGlobalAdModal(\'\', {snap_url_js}, false)"' if snap_url else ""
                     _nm_color   = "#3a9fd6" if snap_url else "#c4c4c4"
-                    _nm_label   = "Ver criativo →" if snap_url else "Sem criativo"
+                    _nm_label   = "Ver criativo &rarr;" if snap_url else "Sem criativo"
                     media_block = (
                         f'<div class="media-block no-media-block" {_nm_onclick} style="{"cursor:pointer;" if snap_url else ""}">'
                         f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
@@ -4311,7 +4231,7 @@ function imgFallback_{uid}(img){{
  
                 status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
                 baixo_vol_badge = '<span class="badge-small">Baixo volume</span>' if baixo_vol else ""
-                dyn_badge_html  = '<span class="badge-small badge-dyn">Dinâmico</span>' if is_dyn else ""
+                dyn_badge_html  = '<span class="badge-small badge-dyn">Din&#226;mico</span>' if is_dyn else ""
  
                 page_avatar_html = (
                     f'<div class="page-avatar" style="overflow:hidden;padding:0">'
@@ -4351,14 +4271,14 @@ function imgFallback_{uid}(img){{
     <div class="meta-info">
         {data_inicio_html}
         <div class="meta-row"><span class="meta-label">Plataformas:</span><span id="plat_icons_{uid}" class="plat-icons"></span></div>
-        {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
+        {'<div class="meta-row"><span class="meta-label">Impress&#245;es:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
     </div>
     <div class="copy-section">
         <div class="page-header">{page_avatar_html}<div style="flex:1;min-width:0"><div class="page-name">{ad.get("page_name") or nome}</div><div class="page-sponsored">Patrocinado</div></div></div>
         {body_display}
         {'<div class="copy-title">' + title_safe + '</div>' if title_safe else ''}
         {'<div class="copy-desc">' + desc_safe + '</div>' if desc_safe else ''}
-        {'<div class="no-copy">Sem copy disponível.</div>' if not body_safe and not title_safe and not desc_safe else ''}
+        {'<div class="no-copy">Sem copy dispon&#237;vel.</div>' if not body_safe and not title_safe and not desc_safe else ''}
     </div>
     {media_block}
     <div class="cta-footer">
@@ -4367,11 +4287,11 @@ function imgFallback_{uid}(img){{
     </div>
     <div class="card-btns">
         {'<a href="' + snap_url + '" target="_blank" class="lib-btn">Ver no Ad Library</a>' if snap_url else '<span class="lib-btn-disabled">Sem link</span>'}
-        <button class="debug-btn" onclick="toggleDebug('{uid}')">🔍 Debug</button>
+        <button class="debug-btn" onclick="toggleDebug('{uid}')">&#128269; Debug</button>
     </div>
     <div class="debug-block" id="debug_{uid}" style="display:none">
         <div class="debug-header" onclick="toggleDebug('{uid}')">
-            <span>Dados recebidos da API</span><span>fechar ✕</span>
+            <span>Dados recebidos da API</span><span>fechar &#x2715;</span>
         </div>
         <pre class="debug-pre">{debug_json_html}</pre>
     </div>
@@ -4391,9 +4311,7 @@ window.__PLATS_{uid}__ = {plat_js};
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;}}
- 
 .ads-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}}
- 
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:4px;}}
 .status-dot{{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#1aab40;}}
@@ -4418,12 +4336,10 @@ body{{padding-bottom:4px;}}
 .copy-title{{font-size:13px;font-weight:700;color:#050505;margin-top:6px;}}
 .copy-desc{{font-size:11px;color:#65676b;margin-top:2px;}}
 .no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;}}
- 
 .media-block{{width:100%;position:relative;overflow:hidden;background:#000;height:180px;}}
 .img-block{{height:180px;background:#f0f2f5;}}
 .video-thumb-block{{height:180px;}}
 .no-media-block{{height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:6px;}}
- 
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
 .cta-domain{{font-size:10px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
@@ -4440,15 +4356,12 @@ body{{padding-bottom:4px;}}
 <body>
 <div class="ads-grid">{cards_joined}</div>
 <script>
-/* ════ Debug ════ */
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
     if (!el) return;
     el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
     setTimeout(syncHeight, 50);
 }}
- 
-/* ════ Altura dinâmica ════ */
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -4737,16 +4650,16 @@ body {{ padding-bottom:8px; }}
 <body>
  
 <div class="subtabs-wrap">
-    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais',this)">📋 Anúncios Individuais</button>
-    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos',this)">🎨 Criativos</button>
-    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys',this)">✍️ Copys</button>
+    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais',this)">&#128203; An&#250;ncios Individuais</button>
+    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos',this)">&#127912; Criativos</button>
+    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys',this)">&#9997;&#65039; Copys</button>
 </div>
  
 <div id="panel-individuais" class="panel {'active' if subtab_atual == 'individuais' else ''}">
     <div class="stats-mini">
         <div class="stat-mini"><div class="stat-mini-num">{n_anuncios}</div><div class="stat-mini-lbl">Total</div></div>
         <div class="stat-mini"><div class="stat-mini-num">{n_img2}</div><div class="stat-mini-lbl">Imagens</div></div>
-        <div class="stat-mini"><div class="stat-mini-num">{n_vid2}</div><div class="stat-mini-lbl">Vídeos</div></div>
+        <div class="stat-mini"><div class="stat-mini-num">{n_vid2}</div><div class="stat-mini-lbl">V&#237;deos</div></div>
         <div class="stat-mini"><div class="stat-mini-num">{n_car2}</div><div class="stat-mini-lbl">Carrosseis</div></div>
     </div>
     <div class="ind-grid" id="ind-grid"></div>
@@ -4754,13 +4667,13 @@ body {{ padding-bottom:8px; }}
  
 <div id="panel-criativos" class="panel {'active' if subtab_atual == 'criativos' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header"><span>🎨 Análise de Criativos</span></div>
+        <div class="analise-header"><span>&#127912; An&#225;lise de Criativos</span></div>
         <div class="analise-body">
-            {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}
+            {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar An&#225;lise</b> para analisar os criativos dos an&#250;ncios.</div>'}
         </div>
         <div class="analise-footer">
             <button class="btn-gerar" onclick="triggerGlobal('_ia_criativos_{sk}_')">
-                {'🔄 Nova Análise' if criativos_html else '⚡ Gerar Análise de Criativos'}
+                {'&#128260; Nova An&#225;lise' if criativos_html else '&#9889; Gerar An&#225;lise de Criativos'}
             </button>
         </div>
     </div>
@@ -4768,13 +4681,13 @@ body {{ padding-bottom:8px; }}
  
 <div id="panel-copys" class="panel {'active' if subtab_atual == 'copys' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header"><span>✍️ Análise de Copys</span></div>
+        <div class="analise-header"><span>&#9997;&#65039; An&#225;lise de Copys</span></div>
         <div class="analise-body">
-            {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}
+            {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar An&#225;lise</b> para analisar as copies dos an&#250;ncios.</div>'}
         </div>
         <div class="analise-footer">
             <button class="btn-gerar" onclick="triggerGlobal('_ia_copys_{sk}_')">
-                {'🔄 Nova Análise' if copys_html else '⚡ Gerar Análise de Copys'}
+                {'&#128260; Nova An&#225;lise' if copys_html else '&#9889; Gerar An&#225;lise de Copys'}
             </button>
         </div>
     </div>
@@ -4793,8 +4706,8 @@ function buildIndGrid() {{
         card.id = 'ind_card_' + d.j;
  
         var thumbHtml = d.img_src
-            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
-            : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
+            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>&#128247;</span>\'" />'
+            : (d.formato === 'V\u00eddeo' ? '<span>&#127916;</span>' : '<span>&#128247;</span>');
  
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
  
@@ -4802,18 +4715,18 @@ function buildIndGrid() {{
             '<div class="ind-card-top">'
             + '<div class="ind-thumb">' + thumbHtml + '</div>'
             + '<div class="ind-info">'
-            + '<span class="ind-fmt">' + (d.formato || 'Anúncio') + '</span>' + statusBadge
-            + '<div class="ind-title">' + (d.title || '—') + '</div>'
-            + '<div class="ind-body">' + (d.body || '—') + '</div>'
+            + '<span class="ind-fmt">' + (d.formato || 'An\u00fancio') + '</span>' + statusBadge
+            + '<div class="ind-title">' + (d.title || '\u2014') + '</div>'
+            + '<div class="ind-body">' + (d.body || '\u2014') + '</div>'
             + '<div class="ind-meta">'
-            + (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '')
-            + (d.plataformas ? '📱 ' + d.plataformas : '')
+            + (d.data_inicio ? '&#128336; ' + d.data_inicio + ' &nbsp;' : '')
+            + (d.plataformas ? '&#128241; ' + d.plataformas : '')
             + '</div></div></div>';
  
         if (d.resultado) {{
             var res = document.createElement('div');
             res.className = 'ind-result';
-            res.innerHTML = '<div class="ind-result-header">Análise IA</div>' + d.resultado;
+            res.innerHTML = '<div class="ind-result-header">An&#225;lise IA</div>' + d.resultado;
             card.appendChild(res);
         }}
  
@@ -4821,12 +4734,12 @@ function buildIndGrid() {{
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
         btn.innerHTML = d.resultado
-            ? '🔄 Reanalisar'
-            : '⚡ Analisar este anúncio';
+            ? '&#128260; Reanalisar'
+            : '&#9889; Analisar este an\u00FAncio';
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
-                if (b) {{ b.textContent = 'Analisando…'; b.style.color = '#9ca3af'; }}
+                if (b) {{ b.textContent = 'Analisando\u2026'; b.style.color = '#9ca3af'; }}
                 triggerGlobal('_ia_ind_{sk}_' + idx + '_');
             }};
         }})(d.j);
