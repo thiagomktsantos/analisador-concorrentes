@@ -3342,8 +3342,8 @@ html, body { background:transparent; overflow:hidden; }
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 .barra {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; display:flex; align-items:stretch; height:48px; overflow:hidden; }}
-.barra-label {{ display:flex; align-items:center; gap:6px; padding:0 14px; border-right:1px solid #f3f4f6; flex-shrink:0; }}
-.barra-label-txt {{ font-size:12px; font-weight:700; color:#000000; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }}
+.barra-label {{ display:flex; align-items:center; gap:7px; padding:0 14px; border-right:1px solid #f3f4f6; flex-shrink:0; }}
+.barra-label-txt {{ font-size:13px; font-weight:700; color:#000000; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }}
 .abas-wrap {{ display:flex; align-items:center; flex:1; padding:6px 8px; gap:4px; overflow:hidden; }}
 .aba {{ height:36px; padding:0 18px; border-radius:7px; border:1px solid transparent; background:transparent; font-size:14px; font-weight:600; color:#6d6c6c; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap; flex-shrink:0; }}
 .aba:hover {{ background:#f3f4f6; color:#374151; }}
