@@ -3948,7 +3948,7 @@ function triggerTab(sk, tab) {{
                 gap: 10px !important; align-items: center !important;
             }}
             .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
-                background-color: #ededed !important; border-radius: 8px !important;
+                background-color: #fafafa !important; border-radius: 8px !important;
                 height: 43px !important; padding: 0 14px !important; font-family:'DM Sans',sans-serif; font-size: 14px !important;
             }}
             .st-key-{filtros_key} div[data-baseweb="select"] > div {{
