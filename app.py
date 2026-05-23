@@ -621,21 +621,23 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
     background-color: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 12px !important;
 }
-
 [data-testid="stVerticalBlockBorderWrapper"] > div,
 [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-[data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
 [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
-[data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div {
+[data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
+[data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"],
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
+[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div {
+    background: #ffffff !important;
     background-color: #ffffff !important;
 }
 [data-testid="stVerticalBlockBorderWrapper"] iframe,
