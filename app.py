@@ -2719,13 +2719,6 @@ elif st.session_state.pagina == "ads":
         except Exception:
             return ""
  
-    def _microlink_screenshot(snap_url: str) -> str:
-        if not snap_url:
-            return ""
-        import urllib.parse
-        encoded = urllib.parse.quote(snap_url, safe="")
-        return f"https://api.microlink.io/?url={encoded}&screenshot=true&meta=false&embed=screenshot.url"
- 
     def _extract_video_thumbnail(ad: dict) -> str:
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -2951,14 +2944,7 @@ elif st.session_state.pagina == "ads":
                     or item.get("ad_snapshot_url")
                     or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""))
  
-        images_b64 = []
-        if images:
-            b64 = _url_para_base64(images[0])
-            images_b64.append(b64 if b64 else images[0])
-            images_b64.extend(images[1:3])
- 
         video_thumb_url = _extract_video_thumbnail(item) if has_video else ""
-        video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
  
         return {
             "id":                  ad_id,
@@ -2972,9 +2958,8 @@ elif st.session_state.pagina == "ads":
             "cta":                 copy["cta"],
             "caption":             copy["caption"],
             "images":              images,
-            "images_b64":          images_b64,
             "videos":              videos,
-            "video_thumb":         video_thumb_b64 or video_thumb_url,
+            "video_thumb":         video_thumb_url,
             "snapshot_url":        snap_url,
             "data_inicio":         start_fmt,
             "data_raw":            str(start_raw),
@@ -3723,32 +3708,6 @@ setTimeout(ajustarAltura, 100);
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
-    # ── Função plat SVG ──────────────────────────────────────────────
-    def _plat_svg_js(uid: str) -> str:
-        return f"""
-(function(){{
-    var plats={{}};
-    try {{ plats = window.__PLATS_{uid}__; }} catch(e) {{ return; }}
-    var C = '#9ca3af';
-    var SVGS = {{
-        "facebook": '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
-        "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
-        "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
-        "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
-        "audience_network": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
-        "threads": '<svg width="16" height="16" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
-    }};
-    var el = document.getElementById('plat_icons_{uid}');
-    if (!el) return;
-    if (!plats || plats.length === 0) {{ el.innerHTML='<span style="color:#9ca3af;font-size:12px">—</span>'; return; }}
-    el.innerHTML = plats.map(function(p) {{
-        var key = p.toLowerCase().replace(' ','_').replace('-','_');
-        var svg = SVGS[key] || '';
-        return '<span class="plat-badge" title="'+p+'">'+(svg||('<span style="font-size:10px;color:#9ca3af">'+p[0].toUpperCase()+'</span>'))+'</span>';
-    }}).join('');
-}})();
-"""
- 
     # ══════════════════════════════════════════════════════════════════
     # FUNÇÃO PRINCIPAL: render_ads_empresa
     # ══════════════════════════════════════════════════════════════════
@@ -4004,27 +3963,7 @@ function triggerTab(sk, tab) {{
             if n_dynamic > 0:
                 stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Dinâmicos</div></div>')
  
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-*{{margin:0;padding:0;box-sizing:border-box;}}
-html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
-.stats-row{{display:flex;gap:10px;flex-wrap:wrap;padding:16px 0 4px 0;}}
-.stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;text-align:center;}}
-.stat-lbl-green{{color:#15803d;}}
-.stat-num{{font-size:22px;font-weight:800;}}
-.stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;margin-top:2px;}}
-</style>
-<div class="stats-row">{"".join(stats_cards)}</div>
-<script>
-function ajustarAltura(){{var h=document.body.scrollHeight;var iframes=window.parent.document.querySelectorAll('iframe');for(var i=0;i<iframes.length;i++){{try{{if(iframes[i].contentWindow===window){{iframes[i].style.height=(h+8)+'px';break;}}}}catch(e){{}}}}}}
-if(window.ResizeObserver)new ResizeObserver(ajustarAltura).observe(document.body);
-setTimeout(ajustarAltura,100);
-</script>
-""", height=80, scrolling=False)
- 
-            st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
- 
+            # ── Preparar dados dos cards para JSON seguro ──
             cta_labels = {
                 "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
                 "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
@@ -4036,226 +3975,87 @@ setTimeout(ajustarAltura,100);
                 "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
             }
  
-            all_cards_html = []
- 
+            # Serializar TODOS os dados dos anúncios como JSON puro — sem interpolação de strings problemáticas
+            ads_data_for_js = []
             for j, ad in enumerate(ads_f):
-                snap_url    = ad.get("snapshot_url") or ""
-                images      = ad.get("images") or []
-                images_b64  = ad.get("images_b64") or []
-                videos      = ad.get("videos") or []
-                video_thumb = ad.get("video_thumb") or ""
-                is_dyn      = ad.get("is_dynamic", False)
-                baixo_vol   = ad.get("baixo_volume", False)
-                ad_id       = ad.get("id","")
-                ad_id_short = ad_id
-                plats       = ad.get("plataformas") or []
-                plat_js     = _json.dumps([p.lower() for p in plats])
-                data_inicio = ad.get("data_inicio","")
-                impressoes  = ad.get("impressoes","")
-                body        = ad.get("body") or ""
-                title       = ad.get("title") or ""
-                desc        = ad.get("description") or ""
-                cta         = ad.get("cta") or ""
-                uid         = f"{sk}_{j}"
-                page_pic    = ad.get("page_profile_picture") or ""
+                images  = ad.get("images") or []
+                videos  = ad.get("videos") or []
+                cta_raw = ad.get("cta") or ""
+                cta_display = cta_labels.get(cta_raw.upper() if cta_raw else "", cta_raw)
+                body  = ad.get("body") or ""
+                title = ad.get("title") or ""
+                desc  = _truncar(ad.get("description") or "", 120)
  
-                debug_keys = {
-                   "id": ad.get("id", ""),
-                   "page_name": ad.get("page_name", ""),
-                   "page_id": ad.get("page_id", ""),
-                   "formato": ad.get("formato", ""),
-                   "plataformas": ad.get("plataformas", []),
-                   "data_raw": ad.get("data_raw", ""),
-                   "impressoes": ad.get("impressoes", ""),
-                   "baixo_volume": ad.get("baixo_volume", False),
-                   "is_dynamic": ad.get("is_dynamic", False),
-                   "ativo": ad.get("ativo", True),
-                   "n_imagens": len(ad.get("images", [])),
-                   "images_extraidas": (ad.get("images") or [])[:3],
-                   "tem_video": bool(ad.get("videos")),
-                   "videos_extraidos": (ad.get("videos") or [])[:2],
-                   "tem_video_thumb": bool(ad.get("video_thumb")),
-                   "video_thumb_url": (ad.get("video_thumb") or "")[:120],
-                   "snapshot_url": (ad.get("snapshot_url") or "")[:80],
-                   "body_len": len(ad.get("body") or ""),
-                   "title_len": len(ad.get("title") or ""),
-                   "cta": ad.get("cta", ""),
-                   "page_profile_picture": (ad.get("page_profile_picture") or "")[:60],
-                }
-                debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
-                debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
- 
-                img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
+                # Imagem primária: preferir b64 se disponível, senão URL
+                img_b64_list = ad.get("images_b64") or []
+                img_primary = img_b64_list[0] if img_b64_list else (images[0] if images else "")
                 img_fallbacks = []
-                if images_b64 and len(images_b64) > 1:
-                    img_fallbacks.extend(images_b64[1:])
+                if img_b64_list and len(img_b64_list) > 1:
+                    img_fallbacks.extend(img_b64_list[1:])
                 img_fallbacks.extend([u for u in images if u not in img_fallbacks])
-                srcs_js = _json.dumps(img_fallbacks)
  
-                # JSON para o modal — usa URLs originais (não b64) para melhor qualidade
-                # Ordem: images[0]=story, images[1]=preview, images[2]=feed
-                modal_images_list = images[:3] if images else []
-                modal_videos_list = videos[:2] if videos else []
-                modal_images_js = _json.dumps(modal_images_list).replace("\\", "\\\\").replace("'", "\\'")
-                modal_videos_js = _json.dumps(modal_videos_list).replace("\\", "\\\\").replace("'", "\\'")
-                snap_safe = snap_url.replace("'", "").replace('"', "")
+                video_thumb = ad.get("video_thumb") or ""
  
-                if videos:
-                    onclick_modal = f"openModal('{modal_images_js}', '{modal_videos_js}', '{snap_safe}', true)"
-                    if video_thumb:
-                        media_block = f"""
-<div class="media-block video-thumb-block" onclick="{onclick_modal}" style="cursor:pointer;position:relative;">
-    <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
-         onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
-    <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;flex-direction:column;gap:8px">
-        <svg width="36" height="36" viewBox="0 0 54 54" fill="none"><circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/><polygon points="22,18 40,27 22,36" fill="white"/></svg>
-    </div>
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">
-            <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
-        </div>
-    </div>
-    <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>
-</div>"""
-                    else:
-                        media_block = f"""
-<div class="media-block video-block" onclick="{onclick_modal}" style="cursor:pointer;">
-    <div class="video-play-icon">
-        <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
-            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
-            <polygon points="22,18 40,27 22,36" fill="white"/>
-        </svg>
-    </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">Clique para ver o vídeo</div>
-</div>"""
-                elif img_primary:
-                    onclick_modal = f"openModal('{modal_images_js}', '[]', '{snap_safe}', false)"
-                    media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="{onclick_modal}">
-    <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
-        style="width:100%;height:100%;object-fit:cover;display:block;"
-        onerror="imgFallback_{uid}(this)" />
-    <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
-        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
-    </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">Ver criativo</div>
-</div>
-<script>
-var _srcs_{uid}={srcs_js};
-var _idx_{uid}=0;
-function imgFallback_{uid}(img){{
-    _idx_{uid}++;
-    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
-    else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
-}}
-</script>"""
-                else:
-                    _sv = snap_url.replace("'", "")
-                    _onclick_none = f"openModal('[]', '[]', '{_sv}', false)" if snap_url else ""
-                    _nm_color = "#3a9fd6" if snap_url else "#c4c4c4"
-                    _nm_label = "Ver criativo →" if snap_url else "Sem criativo"
-                    _onclick_attr = f'onclick="{_onclick_none}"' if snap_url else ""
-                    _cursor_style = "cursor:pointer;" if snap_url else ""
-                    media_block = (
-                        f'<div class="media-block no-media-block" {_onclick_attr} style="{_cursor_style}">'
-                        f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
-                        f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
-                        f'<polyline points="21 15 16 10 5 21"/></svg>'
-                        f'<span style="font-size:12px;color:{_nm_color};font-weight:600;margin-top:8px;">{_nm_label}</span>'
-                        f'</div>'
-                    )
+                ads_data_for_js.append({
+                    "j":            j,
+                    "id":           ad.get("id", ""),
+                    "page_name":    ad.get("page_name") or nome,
+                    "page_pic":     ad.get("page_profile_picture") or "",
+                    "body":         body,
+                    "title":        title,
+                    "desc":         desc,
+                    "cta":          cta_display,
+                    "caption":      ad.get("caption") or "",
+                    "images":       images[:3],
+                    "img_primary":  img_primary,
+                    "img_fallbacks": img_fallbacks[:4],
+                    "videos":       videos[:2],
+                    "video_thumb":  video_thumb,
+                    "snap_url":     ad.get("snapshot_url") or "",
+                    "data_inicio":  ad.get("data_inicio") or "",
+                    "impressoes":   ad.get("impressoes") or "",
+                    "plataformas":  [p.lower() for p in (ad.get("plataformas") or [])],
+                    "formato":      ad.get("formato") or "",
+                    "is_dynamic":   bool(ad.get("is_dynamic")),
+                    "baixo_volume": bool(ad.get("baixo_volume")),
+                    "ativo":        bool(ad.get("ativo", True)),
+                    "is_video":     bool(videos),
+                })
  
-                cta_display = cta_labels.get(cta.upper() if cta else "", cta)
-                is_ativo    = ad.get("ativo", True)
-                card_opacity = "1" if is_ativo else "0.72"
+            # JSON seguro — usado no script, não interpolado diretamente em HTML de atributos
+            ads_json_str = _json.dumps(ads_data_for_js, ensure_ascii=False)
+            stats_json   = _json.dumps({
+                "n_ativos": n_ativos, "n_inativos": n_inativos,
+                "n_imagem": n_imagem, "n_video": n_video,
+                "n_carrossel": n_carrossel, "n_dynamic": n_dynamic,
+            }, ensure_ascii=False)
  
-                status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
-                baixo_vol_badge = '<span class="badge-small">Baixo volume</span>' if baixo_vol else ""
-                dyn_badge_html  = '<span class="badge-small badge-dyn">Dinâmico</span>' if is_dyn else ""
- 
-                page_avatar_html = (
-                    f'<div class="page-avatar" style="overflow:hidden;padding:0">'
-                    f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
-                    f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
-                    f'</div>'
-                ) if page_pic and page_pic.startswith("http") else f'<div class="page-avatar">{avatar}</div>'
- 
-                data_inicio_html = (
-                    f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
-                ) if data_inicio else ""
- 
-                body_safe  = body.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                title_safe = title.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                desc_safe  = _truncar(desc, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
- 
-                if body_safe and len(body_safe) > 80:
-                    short_b = body_safe[:80]
-                    rest_b  = body_safe[80:]
-                    body_display = (
-                        f'<div class="copy-body">{short_b}'
-                        f'<span style="color:#9ca3af;font-size:13px" id="ell_{uid}">... </span>'
-                        f'<span id="cm_{uid}" style="display:none">{rest_b}</span>'
-                        f'<button id="cb_{uid}" onclick="var m=document.getElementById(\'cm_{uid}\');var b=document.getElementById(\'cb_{uid}\');var e=document.getElementById(\'ell_{uid}\');if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;cursor:pointer;padding:0;margin-left:3px;">ver mais</button></div>'
-                    )
-                elif body_safe:
-                    body_display = f'<div class="copy-body">{body_safe}</div>'
-                else:
-                    body_display = ""
- 
-                card_html = f"""
-<div class="card" style="opacity:{card_opacity}" id="card_{uid}">
-    <div class="status-bar">
-        <div style="display:flex;align-items:center;gap:6px">{status_dot_html}{baixo_vol_badge}</div>
-        <div style="display:flex;align-items:center;gap:6px">{dyn_badge_html}{'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}</div>
-    </div>
-    <div class="meta-info">
-        {data_inicio_html}
-        <div class="meta-row"><span class="meta-label">Plataformas:</span><span id="plat_icons_{uid}" class="plat-icons"></span></div>
-        {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
-    </div>
-    <div class="copy-section">
-        <div class="page-header">{page_avatar_html}<div style="flex:1;min-width:0"><div class="page-name">{ad.get("page_name") or nome}</div><div class="page-sponsored">Patrocinado</div></div></div>
-        {body_display}
-        {'<div class="copy-title">' + title_safe + '</div>' if title_safe else ''}
-        {'<div class="copy-desc">' + desc_safe + '</div>' if desc_safe else ''}
-        {'<div class="no-copy">Sem copy disponível.</div>' if not body_safe and not title_safe and not desc_safe else ''}
-    </div>
-    {media_block}
-    <div class="cta-footer">
-        <span class="cta-domain">{ad.get("caption") or (snap_url.replace("https://","").split("/")[0] if snap_url else "")}</span>
-        <a href="{snap_url or '#'}" target="_blank" class="cta-btn" {'style="pointer-events:none;opacity:0.4"' if not snap_url else ''}>{cta_display or "Ver detalhes"}</a>
-    </div>
-    <div class="card-btns">
-        {'<a href="' + snap_url + '" target="_blank" class="lib-btn">Ver no Ad Library</a>' if snap_url else '<span class="lib-btn-disabled">Sem link</span>'}
-        <button class="debug-btn" onclick="toggleDebug('{uid}')">🔍 Debug</button>
-    </div>
-    <div class="debug-block" id="debug_{uid}" style="display:none">
-        <div class="debug-header" onclick="toggleDebug('{uid}')">
-            <span>Dados recebidos da API</span>
-            <span>fechar ✕</span>
-        </div>
-        <pre class="debug-pre">{debug_json_html}</pre>
-    </div>
-</div>
-<script>
-window.__PLATS_{uid}__ = {plat_js};
-{_plat_svg_js(uid)}
-</script>"""
-                all_cards_html.append(card_html)
- 
-            cards_joined = "\n".join(all_cards_html)
+            cor_av_js   = cor_av
+            nome_js     = nome
  
             components.html(f"""
-<!DOCTYPE html><html><head>
+<!DOCTYPE html>
+<html>
+<head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;}}
-.ads-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;}}
-.card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
-.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
+ 
+/* ── STATS ── */
+.stats-row{{display:flex;gap:10px;flex-wrap:wrap;padding:16px 0 4px 0;}}
+.stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;text-align:center;}}
+.stat-lbl-green{{color:#15803d;}}
+.stat-num{{font-size:22px;font-weight:800;}}
+.stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;margin-top:2px;}}
+ 
+/* ── GRID ── */
+.ads-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start;margin-top:12px;}}
+ 
+/* ── CARD ── */
+.card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:visible;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
+.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;border-radius:12px 12px 0 0;}}
 .status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
 .status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
 .status-dot-inactive{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6b7280;}}
@@ -4271,37 +4071,35 @@ body{{padding-bottom:4px;}}
 .plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
-.page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
+.page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av_js};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}}
+.page-avatar img{{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;}}
 .page-name{{font-size:13px;font-weight:700;color:#050505;}}
 .page-sponsored{{font-size:11px;color:#65676b;}}
 .copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;min-height:46px;}}
 .copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;}}
 .copy-desc{{font-size:12px;color:#65676b;margin-top:3px;}}
 .no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;min-height:46px;}}
-.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:220px;}}
-.img-block{{height:220px;}}
-.video-thumb-block{{height:220px;}}
-.video-block{{height:220px;background:linear-gradient(135deg,#0f1f35,#1a3a5c);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
-.video-play-icon{{display:flex;align-items:center;justify-content:center;}}
-.no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:8px;}}
+.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:220px;cursor:pointer;}}
+.media-block img{{width:100%;height:100%;object-fit:cover;display:block;}}
+.video-overlay{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}}
+.play-btn{{width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;}}
+.video-label{{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;}}
+.no-media{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:8px;}}
+.view-badge{{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;}}
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:10px;min-height:50px;}}
 .cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
 .card-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e4e6ea;}}
 .lib-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:12px;font-weight:700;text-decoration:none;}}
 .lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;}}
-.debug-btn{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#fffbeb;color:#92400e;border:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;border-left:1px solid #e4e6ea;}}
-.debug-btn:hover{{background:#fef3c7;}}
-.debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
-.debug-header{{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
-.debug-pre{{font-family:monospace;font-size:11px;color:#374151;padding:10px 14px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:200px;overflow-y:auto;border-top:1px solid #fde68a;}}
+.ver-mais-btn{{background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;cursor:pointer;padding:0;margin-left:3px;font-family:'DM Sans',sans-serif;}}
  
-/* ═══════════════════════════════
-   MODAL — VISUALIZAR CRIATIVOS
-   ═══════════════════════════════ */
+/* ══════════════════════════════
+   MODAL VISUALIZAR CRIATIVOS
+   ══════════════════════════════ */
 #modal-overlay{{
     display:none;position:fixed;inset:0;
-    background:rgba(0,0,0,0.82);z-index:999999;
+    background:rgba(0,0,0,0.82);z-index:2147483647;
     align-items:center;justify-content:center;
     padding:20px;backdrop-filter:blur(8px);
     -webkit-backdrop-filter:blur(8px);
@@ -4310,7 +4108,7 @@ body{{padding-bottom:4px;}}
 #modal-box{{
     background:#13172a;border-radius:22px;overflow:hidden;
     position:relative;display:flex;flex-direction:column;align-items:center;
-    max-width:min(94vw,720px);width:100%;max-height:94vh;
+    max-width:min(94vw,720px);width:100%;max-height:90vh;
     box-shadow:0 40px 100px rgba(0,0,0,0.65);
 }}
 .mhdr{{
@@ -4320,10 +4118,7 @@ body{{padding-bottom:4px;}}
     border-bottom:1px solid rgba(255,255,255,0.07);
     flex-shrink:0;
 }}
-.mhdr-left .mtitle{{
-    font-size:16px;font-weight:800;color:#fff;
-    letter-spacing:2px;text-transform:uppercase;
-}}
+.mhdr-left .mtitle{{font-size:16px;font-weight:800;color:#fff;letter-spacing:2px;text-transform:uppercase;}}
 .mhdr-left .msub{{font-size:12px;color:rgba(255,255,255,0.38);margin-top:3px;}}
 #modal-close{{
     width:36px;height:36px;border-radius:50%;
@@ -4333,91 +4128,39 @@ body{{padding-bottom:4px;}}
     transition:background 0.15s;flex-shrink:0;
 }}
 #modal-close:hover{{background:rgba(255,255,255,0.2);}}
-.mtabs{{
-    display:flex;gap:8px;padding:16px 28px 0;
-    width:100%;flex-shrink:0;
-}}
+.mtabs{{display:flex;gap:8px;padding:16px 28px 0;width:100%;flex-shrink:0;}}
 .mtab{{
     display:inline-flex;align-items:center;gap:7px;
     padding:8px 22px;border-radius:30px;
     font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
     border:1.5px solid rgba(255,255,255,0.15);
     background:transparent;color:rgba(255,255,255,0.4);
-    cursor:pointer;transition:all 0.15s;
-    font-family:'DM Sans',sans-serif;
+    cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;
 }}
 .mtab:hover{{border-color:rgba(255,255,255,0.35);color:rgba(255,255,255,0.75);}}
-.mtab.active{{
-    background:rgba(255,255,255,0.1);
-    border-color:rgba(255,255,255,0.5);
-    color:#fff;
-}}
+.mtab.active{{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.5);color:#fff;}}
 .mcreative{{
     width:100%;flex:1;overflow-y:auto;
     padding:24px 28px;
     display:flex;align-items:center;justify-content:center;
     min-height:220px;
 }}
-.feed-row{{
-    display:flex;gap:28px;align-items:flex-start;
-    justify-content:center;width:100%;flex-wrap:wrap;
-}}
-.dvc-wrap{{
-    display:flex;flex-direction:column;align-items:center;
-    gap:12px;flex:1;min-width:0;max-width:260px;
-}}
-.dvc-label{{
-    font-size:10px;font-weight:800;color:rgba(255,255,255,0.4);
-    text-transform:uppercase;letter-spacing:2px;
-    border:1px solid rgba(255,255,255,0.12);
-    padding:4px 14px;border-radius:20px;
-    display:inline-flex;align-items:center;gap:5px;
-}}
-.phone-story{{
-    width:148px;background:#0a0c1a;
-    border-radius:26px;
-    border:3px solid rgba(255,255,255,0.13);
-    overflow:hidden;aspect-ratio:9/16;
-    box-shadow:0 16px 48px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04);
-    position:relative;
-}}
-.phone-story img,.phone-story video{{
-    width:100%;height:100%;object-fit:cover;display:block;
-}}
-.phone-feed{{
-    width:210px;background:#0a0c1a;
-    border-radius:16px;
-    border:3px solid rgba(255,255,255,0.13);
-    overflow:hidden;
-    box-shadow:0 16px 48px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04);
-    position:relative;
-}}
-.phone-feed img,.phone-feed video{{
-    width:100%;aspect-ratio:1/1;object-fit:cover;display:block;
-}}
-.no-media-modal{{
-    display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:14px;color:rgba(255,255,255,0.25);
-    font-size:14px;padding:48px;text-align:center;width:100%;
-}}
-.mfooter{{
-    width:100%;padding:16px 28px 24px;
-    display:flex;justify-content:center;
-    border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;
-}}
-.mlib-btn{{
-    display:inline-flex;align-items:center;gap:8px;
-    background:#1877F2;color:#fff;
-    padding:12px 28px;border-radius:10px;
-    font-size:14px;font-weight:700;text-decoration:none;
-    transition:background 0.15s;border:none;cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-}}
+.feed-row{{display:flex;gap:28px;align-items:flex-start;justify-content:center;width:100%;flex-wrap:wrap;}}
+.dvc-wrap{{display:flex;flex-direction:column;align-items:center;gap:12px;flex:1;min-width:0;max-width:260px;}}
+.dvc-label{{font-size:10px;font-weight:800;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:2px;border:1px solid rgba(255,255,255,0.12);padding:4px 14px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;}}
+.phone-story{{width:148px;background:#0a0c1a;border-radius:26px;border:3px solid rgba(255,255,255,0.13);overflow:hidden;aspect-ratio:9/16;box-shadow:0 16px 48px rgba(0,0,0,0.6);position:relative;}}
+.phone-story img,.phone-story video{{width:100%;height:100%;object-fit:cover;display:block;}}
+.phone-feed{{width:210px;background:#0a0c1a;border-radius:16px;border:3px solid rgba(255,255,255,0.13);overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,0.6);position:relative;}}
+.phone-feed img,.phone-feed video{{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;}}
+.no-media-modal{{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:rgba(255,255,255,0.25);font-size:14px;padding:48px;text-align:center;width:100%;}}
+.mfooter{{width:100%;padding:16px 28px 24px;display:flex;justify-content:center;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;}}
+.mlib-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;transition:background 0.15s;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}}
 .mlib-btn:hover{{background:#1462c4;}}
 </style>
-</head><body>
+</head>
+<body>
  
-<!-- MODAL VISUALIZAR CRIATIVOS -->
+<!-- MODAL -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
   <div id="modal-box">
     <div class="mhdr">
@@ -4444,101 +4187,352 @@ body{{padding-bottom:4px;}}
   </div>
 </div>
  
-<div class="ads-grid">{cards_joined}</div>
+<!-- STATS + GRID serão injetados pelo JS -->
+<div id="stats-container"></div>
+<div class="ads-grid" id="ads-grid"></div>
  
 <script>
-var _MS = {{ imgs:[], vids:[], snap:'', isVid:false }};
+// ── Dados serializados de forma segura ──
+var ADS_DATA   = {ads_json_str};
+var STATS_DATA = {stats_json};
+var COR_AV     = {_json.dumps(cor_av_js)};
+var NOME_EMP   = {_json.dumps(nome_js)};
  
-function openModal(imgsJson, vidsJson, snap, isVid) {{
-    try {{ _MS.imgs = JSON.parse(imgsJson || '[]'); }} catch(e) {{ _MS.imgs=[]; }}
-    try {{ _MS.vids = JSON.parse(vidsJson || '[]'); }} catch(e) {{ _MS.vids=[]; }}
-    _MS.snap  = snap  || '';
-    _MS.isVid = !!isVid;
+// ── Plataformas SVG ──
+var C = '#9ca3af';
+var PLAT_SVGS = {{
+    "facebook":  '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
+    "instagram": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
+    "messenger": '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
+    "whatsapp":  '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
+    "audience_network": '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
+    "threads":   '<svg width="14" height="14" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
+}};
+ 
+// ── Estado do modal ──
+var _MS = {{ ad: null, tab: 'feed' }};
+ 
+function openModal(idx) {{
+    _MS.ad  = ADS_DATA[idx];
+    _MS.tab = 'feed';
     document.getElementById('tab-feed').classList.add('active');
     document.getElementById('tab-story').classList.remove('active');
-    var ftr = document.getElementById('mfooter');
-    if (snap) {{ document.getElementById('mlib-link').href = snap; ftr.style.display='flex'; }}
-    else {{ ftr.style.display='none'; }}
-    render('feed');
+    var snap = _MS.ad.snap_url || '';
+    var ftr  = document.getElementById('mfooter');
+    if (snap) {{
+        document.getElementById('mlib-link').href = snap;
+        ftr.style.display = 'flex';
+    }} else {{
+        ftr.style.display = 'none';
+    }}
+    renderModal('feed');
     document.getElementById('modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
 }}
+ 
 function closeModal() {{
     document.getElementById('modal-overlay').classList.remove('open');
-    document.querySelectorAll('#mcreative video').forEach(function(v){{v.pause();}});
+    document.body.style.overflow = '';
+    document.querySelectorAll('#mcreative video').forEach(function(v) {{ v.pause(); }});
 }}
-function switchTab(t) {{
-    document.getElementById('tab-feed').classList.toggle('active', t==='feed');
-    document.getElementById('tab-story').classList.toggle('active', t==='story');
-    render(t);
-}}
-function dvcWrap(label, frameClass, inner) {{
-    return '<div class="dvc-wrap"><div class="dvc-label">'+label+'</div><div class="'+frameClass+'">'+inner+'</div></div>';
-}}
-function noMedia() {{
-    return '<div class="no-media-modal">📷<br>Sem mídia disponível'+
-        (_MS.snap?'<br><a href="'+_MS.snap+'" target="_blank" style="color:#60a5fa;margin-top:8px;display:block">Ver no Ad Library →</a>':'')+
-        '</div>';
-}}
-function render(tab) {{
-    var area = document.getElementById('mcreative');
-    var imgs = _MS.imgs;   // [0]=story  [1]=preview  [2]=feed
-    var vids = _MS.vids;   // [0]=hd     [1]=sd
-    var storyImg = imgs[0]||'';
-    var feedImg  = imgs[2]||imgs[1]||imgs[0]||'';
-    var storyVid = vids[0]||'';
-    var feedVid  = vids[1]||vids[0]||'';
  
-    if (_MS.isVid) {{
-        if (tab==='feed') {{
-            var h='<div class="feed-row">';
-            if (storyVid) h+=dvcWrap('📱 Story','phone-story','<video src="'+storyVid+'" controls playsinline style="width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>');
-            if (feedVid)  h+=dvcWrap('🖼️ Feed', 'phone-feed', '<video src="'+feedVid+'"  controls playsinline style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#000"></video>');
-            if (!storyVid&&!feedVid) h+=noMedia();
-            h+='</div>';
-            area.innerHTML=h;
+function switchTab(t) {{
+    _MS.tab = t;
+    document.getElementById('tab-feed').classList.toggle('active',  t === 'feed');
+    document.getElementById('tab-story').classList.toggle('active', t === 'story');
+    renderModal(t);
+}}
+ 
+function dvcWrap(label, cls, inner) {{
+    return '<div class="dvc-wrap"><div class="dvc-label">' + label + '</div><div class="' + cls + '">' + inner + '</div></div>';
+}}
+ 
+function noMedia(snap) {{
+    var link = snap ? '<br><a href="' + snap + '" target="_blank" style="color:#60a5fa;margin-top:8px;display:block">Ver no Ad Library →</a>' : '';
+    return '<div class="no-media-modal">📷<br>Sem mídia disponível' + link + '</div>';
+}}
+ 
+function mkImg(src, st) {{
+    return '<img src="' + src + '" style="' + st + '" onerror="this.style.display=\'none\'" loading="lazy" />';
+}}
+ 
+function renderModal(tab) {{
+    var ad   = _MS.ad;
+    var area = document.getElementById('mcreative');
+    if (!ad) {{ area.innerHTML = noMedia(''); return; }}
+ 
+    var imgs  = ad.images  || [];
+    var vids  = ad.videos  || [];
+    var snap  = ad.snap_url || '';
+ 
+    // imgs[0]=story, imgs[1]=preview, imgs[2]=feed
+    var storyImg = imgs[0] || '';
+    var feedImg  = imgs[2] || imgs[1] || imgs[0] || '';
+    var storyVid = vids[0] || '';
+    var feedVid  = vids[1] || vids[0] || '';
+ 
+    var h = '';
+    if (ad.is_video) {{
+        if (tab === 'feed') {{
+            h = '<div class="feed-row">';
+            if (storyVid) h += dvcWrap('📱 Story', 'phone-story', '<video src="' + storyVid + '" controls playsinline style="width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>');
+            if (feedVid)  h += dvcWrap('🖼️ Feed',  'phone-feed',  '<video src="' + feedVid  + '" controls playsinline style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#000"></video>');
+            if (!storyVid && !feedVid) h += noMedia(snap);
+            h += '</div>';
         }} else {{
-            area.innerHTML = storyVid
-                ? '<div class="feed-row">'+dvcWrap('📱 Story','phone-story','<video src="'+storyVid+'" controls playsinline style="width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>')+'</div>'
-                : noMedia();
+            h = storyVid
+                ? '<div class="feed-row">' + dvcWrap('📱 Story', 'phone-story', '<video src="' + storyVid + '" controls playsinline style="width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>') + '</div>'
+                : noMedia(snap);
         }}
     }} else {{
-        function mkImg(src,cls,st){{return '<img src="'+src+'" style="'+st+'" onerror="this.style.display=\'none\'" loading="lazy" />';}}
-        if (tab==='feed') {{
-            var h='<div class="feed-row">';
-            if (storyImg) h+=dvcWrap('📱 Story','phone-story',mkImg(storyImg,'','width:100%;height:100%;object-fit:cover;display:block'));
-            if (feedImg)  h+=dvcWrap('🖼️ Feed', 'phone-feed', mkImg(feedImg, '','width:100%;aspect-ratio:1/1;object-fit:cover;display:block'));
-            if (!storyImg&&!feedImg) h+=noMedia();
-            h+='</div>';
-            area.innerHTML=h;
+        if (tab === 'feed') {{
+            h = '<div class="feed-row">';
+            if (storyImg) h += dvcWrap('📱 Story', 'phone-story', mkImg(storyImg, 'width:100%;height:100%;object-fit:cover;display:block'));
+            if (feedImg)  h += dvcWrap('🖼️ Feed',  'phone-feed',  mkImg(feedImg,  'width:100%;aspect-ratio:1/1;object-fit:cover;display:block'));
+            if (!storyImg && !feedImg) h += noMedia(snap);
+            h += '</div>';
         }} else {{
-            area.innerHTML = storyImg
-                ? '<div class="feed-row">'+dvcWrap('📱 Story','phone-story',mkImg(storyImg,'','width:100%;height:100%;object-fit:cover;display:block'))+'</div>'
-                : noMedia();
+            h = storyImg
+                ? '<div class="feed-row">' + dvcWrap('📱 Story', 'phone-story', mkImg(storyImg, 'width:100%;height:100%;object-fit:cover;display:block')) + '</div>'
+                : noMedia(snap);
         }}
     }}
+    area.innerHTML = h;
 }}
-document.addEventListener('keydown',function(e){{if(e.key==='Escape')closeModal();}});
-function toggleDebug(uid){{
-    var el=document.getElementById('debug_'+uid);
-    if(!el)return;
-    el.style.display=(el.style.display==='none'||el.style.display==='')?'block':'none';
-    setTimeout(syncHeight,50);
+ 
+document.addEventListener('keydown', function(e) {{
+    if (e.key === 'Escape') closeModal();
+}});
+ 
+// ── Render stats ──
+function renderStats() {{
+    var s = STATS_DATA;
+    var html = '<div class="stats-row">';
+    html += '<div class="stat-card"><div class="stat-num" style="color:#111827">' + s.n_ativos + '</div><div class="stat-lbl stat-lbl-green">Ativos</div></div>';
+    if (s.n_inativos > 0) html += '<div class="stat-card"><div class="stat-num" style="color:#6b7280">' + s.n_inativos + '</div><div class="stat-lbl">Histórico inativo</div></div>';
+    html += '<div class="stat-card"><div class="stat-num" style="color:#111827">' + s.n_imagem + '</div><div class="stat-lbl">Imagens</div></div>';
+    html += '<div class="stat-card"><div class="stat-num" style="color:#111827">' + s.n_video + '</div><div class="stat-lbl">Vídeos</div></div>';
+    html += '<div class="stat-card"><div class="stat-num" style="color:#111827">' + s.n_carrossel + '</div><div class="stat-lbl">Carrossel</div></div>';
+    if (s.n_dynamic > 0) html += '<div class="stat-card"><div class="stat-num" style="color:#111827">' + s.n_dynamic + '</div><div class="stat-lbl">Dinâmicos</div></div>';
+    html += '</div>';
+    document.getElementById('stats-container').innerHTML = html;
 }}
-function syncHeight(){{
-    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
-    var frames=window.parent.document.querySelectorAll('iframe');
-    for(var i=0;i<frames.length;i++){{try{{if(frames[i].contentWindow===window){{frames[i].style.height=(h+20)+'px';break;}}}}catch(e){{}}}}
+ 
+// ── Render plataformas ──
+function renderPlats(uid, plats) {{
+    var el = document.getElementById('plat_' + uid);
+    if (!el) return;
+    if (!plats || plats.length === 0) {{ el.innerHTML = '<span style="color:#9ca3af;font-size:12px">—</span>'; return; }}
+    el.innerHTML = plats.map(function(p) {{
+        var svg = PLAT_SVGS[p] || '<span style="font-size:10px;color:#9ca3af">' + (p[0]||'').toUpperCase() + '</span>';
+        return '<span class="plat-badge" title="' + p + '">' + svg + '</span>';
+    }}).join('');
 }}
-document.querySelectorAll('img').forEach(function(img){{img.addEventListener('load',function(){{setTimeout(syncHeight,30);}});img.addEventListener('error',function(){{setTimeout(syncHeight,30);}});}});
-if(window.ResizeObserver)new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded',syncHeight);
-window.addEventListener('load',syncHeight);
-setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500);
-</script></body></html>
+ 
+// ── Render cards ──
+function escHtml(s) {{
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}}
+ 
+function buildCard(ad) {{
+    var j   = ad.j;
+    var uid = '{sk}_' + j;
+ 
+    /* STATUS */
+    var statusHtml = ad.ativo
+        ? '<div class="status-dot">Ativo</div>'
+        : '<div class="status-dot-inactive">Inativo</div>';
+    var baixoHtml  = ad.baixo_volume  ? '<span class="badge-small">Baixo volume</span>' : '';
+    var dynHtml    = ad.is_dynamic    ? '<span class="badge-small badge-dyn">Dinâmico</span>' : '';
+    var idHtml     = ad.id            ? '<span class="ad-id">ID: ' + escHtml(ad.id) + '</span>' : '';
+ 
+    /* META */
+    var dataHtml  = ad.data_inicio ? '<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>' + escHtml(ad.data_inicio) + '</span></div>' : '';
+    var impHtml   = ad.impressoes  ? '<div class="meta-row"><span class="meta-label">Impressões:</span><span>' + escHtml(ad.impressoes) + '</span></div>' : '';
+ 
+    /* PAGE AVATAR */
+    var pagePicHtml = ad.page_pic
+        ? '<div class="page-avatar"><img src="' + escHtml(ad.page_pic) + '" onerror="this.parentElement.style.background=COR_AV;this.outerHTML=\\'\\'" /></div>'
+        : '<div class="page-avatar">' + escHtml(NOME_EMP.slice(0,2).toUpperCase()) + '</div>';
+ 
+    /* COPY */
+    var bodyEsc  = escHtml(ad.body);
+    var titleEsc = escHtml(ad.title);
+    var descEsc  = escHtml(ad.desc);
+    var bodyHtml = '';
+    if (bodyEsc.length > 80) {{
+        bodyHtml = '<div class="copy-body">' + bodyEsc.slice(0,80) +
+            '<span id="ell_' + uid + '" style="color:#9ca3af;font-size:13px">... </span>' +
+            '<span id="cm_'  + uid + '" style="display:none">' + bodyEsc.slice(80) + '</span>' +
+            '<button class="ver-mais-btn" id="cb_' + uid + '" onclick="toggleBody(\'' + uid + '\')" >ver mais</button></div>';
+    }} else if (bodyEsc) {{
+        bodyHtml = '<div class="copy-body">' + bodyEsc + '</div>';
+    }}
+    var titleHtml = titleEsc ? '<div class="copy-title">' + titleEsc + '</div>' : '';
+    var descHtml  = descEsc  ? '<div class="copy-desc">'  + descEsc  + '</div>' : '';
+    var noCopy    = (!bodyEsc && !titleEsc && !descEsc) ? '<div class="no-copy">Sem copy disponível.</div>' : '';
+ 
+    /* MEDIA */
+    var mediaHtml = '';
+    if (ad.is_video) {{
+        if (ad.video_thumb) {{
+            mediaHtml =
+                '<div class="media-block" onclick="openModal(' + j + ')">' +
+                '<img src="' + escHtml(ad.video_thumb) + '" style="width:100%;height:100%;object-fit:cover;display:block"' +
+                ' onerror="this.style.display=\'none\'" />' +
+                '<div class="video-overlay"><div class="play-btn"><svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg></div></div>' +
+                '<div class="video-label">▶ VER VÍDEO</div>' +
+                '</div>';
+        }} else {{
+            mediaHtml =
+                '<div class="media-block" style="background:linear-gradient(135deg,#0f1f35,#1a3a5c);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px" onclick="openModal(' + j + ')">' +
+                '<svg width="48" height="48" viewBox="0 0 54 54" fill="none"><circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/><polygon points="22,18 40,27 22,36" fill="white"/></svg>' +
+                '<div style="font-size:11px;color:rgba(255,255,255,0.75)">Clique para ver o vídeo</div>' +
+                '</div>';
+        }}
+    }} else if (ad.img_primary) {{
+        mediaHtml =
+            '<div class="media-block" id="mwrap_' + uid + '" onclick="openModal(' + j + ')">' +
+            '<img id="mimg_' + uid + '" src="' + escHtml(ad.img_primary) + '" style="width:100%;height:100%;object-fit:cover;display:block"' +
+            ' onerror="imgFallback(\'' + uid + '\')" loading="lazy" />' +
+            '<div id="merr_' + uid + '" style="display:none;position:absolute;inset:0;background:#f9fafb;align-items:center;justify-content:center;flex-direction:column;gap:8px">' +
+            '<span style="font-size:12px;color:#3a9fd6;font-weight:600">Ver criativo →</span></div>' +
+            '<div class="view-badge">Ver criativo</div>' +
+            '</div>';
+    }} else if (ad.snap_url) {{
+        mediaHtml =
+            '<div class="media-block no-media" onclick="openModal(' + j + ')">' +
+            '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
+            '<span style="font-size:12px;color:#3a9fd6;font-weight:600;margin-top:8px">Ver criativo →</span>' +
+            '</div>';
+    }} else {{
+        mediaHtml =
+            '<div class="media-block no-media">' +
+            '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
+            '<span style="font-size:12px;color:#c4c4c4;font-weight:600;margin-top:8px">Sem criativo</span>' +
+            '</div>';
+    }}
+ 
+    /* CTA FOOTER */
+    var domainDisp = escHtml(ad.caption || (ad.snap_url || '').replace('https://','').split('/')[0]);
+    var ctaDisp    = escHtml(ad.cta || 'Ver detalhes');
+    var ctaHtml    = ad.snap_url
+        ? '<a href="' + escHtml(ad.snap_url) + '" target="_blank" class="cta-btn">' + ctaDisp + '</a>'
+        : '<span class="cta-btn" style="opacity:0.4;pointer-events:none">' + ctaDisp + '</span>';
+ 
+    /* BOTTOM BUTTONS */
+    var libHtml = ad.snap_url
+        ? '<a href="' + escHtml(ad.snap_url) + '" target="_blank" class="lib-btn">Ver no Ad Library</a>'
+        : '<span class="lib-btn-disabled">Sem link</span>';
+ 
+    var opacity = ad.ativo ? '1' : '0.72';
+ 
+    return (
+        '<div class="card" style="opacity:' + opacity + '" id="card_' + uid + '">' +
+ 
+        '<div class="status-bar">' +
+        '<div style="display:flex;align-items:center;gap:6px">' + statusHtml + baixoHtml + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px">' + dynHtml + idHtml + '</div>' +
+        '</div>' +
+ 
+        '<div class="meta-info">' + dataHtml +
+        '<div class="meta-row"><span class="meta-label">Plataformas:</span><span id="plat_' + uid + '" class="plat-icons"></span></div>' +
+        impHtml + '</div>' +
+ 
+        '<div class="copy-section">' +
+        '<div class="page-header">' + pagePicHtml +
+        '<div><div class="page-name">' + escHtml(ad.page_name) + '</div><div class="page-sponsored">Patrocinado</div></div>' +
+        '</div>' +
+        bodyHtml + titleHtml + descHtml + noCopy +
+        '</div>' +
+ 
+        mediaHtml +
+ 
+        '<div class="cta-footer"><span class="cta-domain">' + domainDisp + '</span>' + ctaHtml + '</div>' +
+ 
+        '<div class="card-btns">' + libHtml + '<span class="lib-btn-disabled" style="background:#fff;border-radius:0 0 10px 0;border-left:1px solid #e4e6ea"></span></div>' +
+ 
+        '</div>'
+    );
+}}
+ 
+var _fallbackIdx = {{}};
+function imgFallback(uid) {{
+    var ad  = ADS_DATA.find(function(a) {{ return '{sk}_' + a.j === uid; }});
+    if (!ad) return;
+    var idx = (_fallbackIdx[uid] || 0) + 1;
+    _fallbackIdx[uid] = idx;
+    var srcs = ad.img_fallbacks || [];
+    var img  = document.getElementById('mimg_' + uid);
+    if (idx < srcs.length && img) {{
+        img.src = srcs[idx];
+    }} else {{
+        if (img) img.style.display = 'none';
+        var err = document.getElementById('merr_' + uid);
+        if (err) err.style.display = 'flex';
+    }}
+}}
+ 
+function toggleBody(uid) {{
+    var cm  = document.getElementById('cm_'  + uid);
+    var cb  = document.getElementById('cb_'  + uid);
+    var ell = document.getElementById('ell_' + uid);
+    if (!cm) return;
+    var open = cm.style.display !== 'none';
+    cm.style.display  = open ? 'none'   : 'inline';
+    cb.textContent    = open ? 'ver mais': 'ver menos';
+    if (ell) ell.style.display = open ? 'inline' : 'none';
+}}
+ 
+// ── Sincronizar altura do iframe ──
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight,
+                     document.body.offsetHeight, document.documentElement.offsetHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{
+            if (frames[i].contentWindow === window) {{
+                frames[i].style.height = (h + 24) + 'px';
+                frames[i].style.minHeight = 'unset';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
+}}
+ 
+// ── Init ──
+renderStats();
+ 
+var grid = document.getElementById('ads-grid');
+ADS_DATA.forEach(function(ad) {{
+    var div = document.createElement('div');
+    div.innerHTML = buildCard(ad);
+    grid.appendChild(div.firstChild);
+    // render plataformas após inserção
+    renderPlats('{sk}_' + ad.j, ad.plataformas);
+}});
+ 
+// Imagens: sync após carregar
+document.querySelectorAll('img').forEach(function(img) {{
+    img.addEventListener('load',  function() {{ setTimeout(syncHeight, 30); }});
+    img.addEventListener('error', function() {{ setTimeout(syncHeight, 30); }});
+}});
+ 
+if (window.ResizeObserver) {{
+    new ResizeObserver(syncHeight).observe(document.body);
+}}
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 300);
+setTimeout(syncHeight, 800);
+setTimeout(syncHeight, 2000);
+</script>
+</body>
+</html>
 """, height=600, scrolling=False)
  
         # ════════════════════════════════════════════════════════════
-        # ABA: ANÁLISE DE IA — 3 sub-abas: Individuais | Criativos | Copys
+        # ABA: ANÁLISE DE IA
         # ════════════════════════════════════════════════════════════
         else:
             ads_f_ia = ads_list
@@ -4634,7 +4628,7 @@ Amostra dos anúncios:
                     st.session_state[chave_ia_criativos] = "Configure GEMINI_API_KEY nos secrets."
                 else:
                     resumo_criativos = "\n".join([
-                        f"- [{a['formato']}] Plataformas: {', '.join(a.get('plataformas',[]))} | Thumb: {'sim' if a.get('video_thumb') or a.get('images') else 'não'} | Título: {_truncar(a.get('title',''),60) or '—'}"
+                        f"- [{a['formato']}] Plataformas: {', '.join(a.get('plataformas',[]))} | Título: {_truncar(a.get('title',''),60) or '—'}"
                         for a in ads_f_ia[:15]
                     ])
                     n_vid = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
@@ -4732,9 +4726,7 @@ CTA: {ad.get("cta","")}
                 chave_ind = f"ia_ad_result_{sk}_{j}"
                 resultado = st.session_state.get(chave_ind, "")
                 img_src = ""
-                if ad.get("images_b64"):
-                    img_src = ad["images_b64"][0]
-                elif ad.get("images"):
+                if ad.get("images"):
                     img_src = ad["images"][0]
                 elif ad.get("video_thumb"):
                     img_src = ad["video_thumb"]
@@ -4811,11 +4803,12 @@ body {{ padding-bottom: 8px; }}
 }}
 .ind-card-top {{ display: flex; gap: 12px; padding: 14px; border-bottom: 1px solid #f3f4f6; }}
 .ind-thumb {{
-    width: 72px; height: 72px; border-radius: 8px; object-fit: cover;
+    width: 72px; height: 72px; border-radius: 8px;
     border: 1px solid #e5e7eb; flex-shrink: 0; background: #f3f4f6;
     display: flex; align-items: center; justify-content: center; font-size: 20px;
+    overflow: hidden;
 }}
-.ind-thumb img {{ width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }}
+.ind-thumb img {{ width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block; }}
 .ind-info {{ flex: 1; min-width: 0; }}
 .ind-fmt {{
     display: inline-block; background: #eff6ff; color: #1d4ed8;
@@ -4839,7 +4832,6 @@ body {{ padding-bottom: 8px; }}
     transition: background 0.12s;
 }}
 .ind-btn:hover {{ background: #eff6ff; }}
-.ind-btn.loading {{ color: #9ca3af; pointer-events: none; }}
 .ind-result {{
     background: #f0fdf4; border-top: 1px solid #86efac;
     padding: 12px 14px; font-size: 13px; color: #374151;
@@ -4858,7 +4850,6 @@ body {{ padding-bottom: 8px; }}
     padding: 14px 16px; font-size: 13px; font-weight: 800; color: #1a2e4a;
     text-transform: uppercase; letter-spacing: 0.3px;
     border-bottom: 1px solid #e5e7eb; background: #fff;
-    display: flex; align-items: center; justify-content: space-between;
 }}
 .analise-body {{
     padding: 18px 16px; font-size: 14px; color: #374151;
@@ -4867,8 +4858,7 @@ body {{ padding-bottom: 8px; }}
 }}
 .analise-empty {{
     text-align: center; color: #9ca3af; font-size: 14px;
-    padding: 36px 24px;
-    background: #fff;
+    padding: 36px 24px; background: #fff;
 }}
 .analise-footer {{
     padding: 14px 16px; border-top: 1px solid #f3f4f6; background: #f9fafb;
@@ -4907,7 +4897,7 @@ body {{ padding-bottom: 8px; }}
  
 <div id="panel-criativos" class="panel {'active' if subtab_atual == 'criativos' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header"><span>🎨 Análise de Criativos</span></div>
+        <div class="analise-header">🎨 Análise de Criativos</div>
         <div class="analise-body">
             {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}
         </div>
@@ -4921,7 +4911,7 @@ body {{ padding-bottom: 8px; }}
  
 <div id="panel-copys" class="panel {'active' if subtab_atual == 'copys' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header"><span>✍️ Análise de Copys</span></div>
+        <div class="analise-header">✍️ Análise de Copys</div>
         <div class="analise-body">
             {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}
         </div>
@@ -4936,6 +4926,10 @@ body {{ padding-bottom: 8px; }}
 <script>
 var IND_CARDS = {ind_cards_json};
  
+function escHtml(s) {{
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}}
+ 
 function buildIndGrid() {{
     var grid = document.getElementById('ind-grid');
     if (!grid) return;
@@ -4944,29 +4938,33 @@ function buildIndGrid() {{
         var card = document.createElement('div');
         card.className = 'ind-card';
         card.id = 'ind_card_' + d.j;
+ 
         var thumbHtml = d.img_src
-            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
+            ? '<img src="' + escHtml(d.img_src) + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
             : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
+ 
         card.innerHTML =
             '<div class="ind-card-top">' +
                 '<div class="ind-thumb">' + thumbHtml + '</div>' +
                 '<div class="ind-info">' +
-                    '<span class="ind-fmt">' + (d.formato || 'Anúncio') + '</span>' + statusBadge +
-                    '<div class="ind-title">' + (d.title || '—') + '</div>' +
-                    '<div class="ind-body">' + (d.body || '—') + '</div>' +
+                    '<span class="ind-fmt">' + escHtml(d.formato || 'Anúncio') + '</span>' + statusBadge +
+                    '<div class="ind-title">' + escHtml(d.title || '—') + '</div>' +
+                    '<div class="ind-body">' + escHtml(d.body || '—') + '</div>' +
                     '<div class="ind-meta">' +
-                        (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '') +
-                        (d.plataformas ? '📱 ' + d.plataformas : '') +
+                        (d.data_inicio ? '🕒 ' + escHtml(d.data_inicio) + ' &nbsp;' : '') +
+                        (d.plataformas ? '📱 ' + escHtml(d.plataformas) : '') +
                     '</div>' +
                 '</div>' +
             '</div>';
+ 
         if (d.resultado) {{
             var res = document.createElement('div');
             res.className = 'ind-result';
             res.innerHTML = '<div class="ind-result-header">Análise IA</div>' + d.resultado;
             card.appendChild(res);
         }}
+ 
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
@@ -4976,7 +4974,7 @@ function buildIndGrid() {{
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
-                if (b) {{ b.className = 'ind-btn loading'; b.textContent = 'Analisando…'; }}
+                if (b) {{ b.className = 'ind-btn'; b.style.color = '#9ca3af'; b.style.pointerEvents = 'none'; b.textContent = 'Analisando…'; }}
                 triggerGlobal('_ia_ind_{sk}_' + idx + '_');
             }};
         }})(d.j);
@@ -5004,12 +5002,16 @@ function triggerGlobal(label) {{
 }}
  
 function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var h = Math.max(
+        document.body.scrollHeight, document.documentElement.scrollHeight,
+        document.body.offsetHeight, document.documentElement.offsetHeight
+    );
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{
             if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 20) + 'px';
+                frames[i].style.height = (h + 24) + 'px';
+                frames[i].style.minHeight = 'unset';
                 break;
             }}
         }} catch(e) {{}}
