@@ -4184,7 +4184,7 @@ function imgFallback_{uid}(img){{
                 ) if page_pic and page_pic.startswith("http") else f'<div class="page-avatar">{avatar}</div>'
  
                 data_inicio_html = (
-                    f'<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>{data_inicio}</span></div>'
+                    f'<div class="meta-row"><span class="meta-label">Veic. iniciada:</span><span>{data_inicio}</span></div>'
                 ) if data_inicio else ""
  
                 body_safe  = body.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
