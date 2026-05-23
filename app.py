@@ -4153,14 +4153,15 @@ function imgFallback_{uid}(img){{
 <div class="card" style="opacity:{card_opacity}" id="card_{uid}">
     <div class="status-bar">
         <div style="display:flex;align-items:center;gap:6px">{status_dot_html}{baixo_vol_badge}</div>
-        <div style="display:flex;align-items:center;gap:6px">{dyn_badge_html}{'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}</div>
+        <div style="display:flex;align-items:center;gap:6px">{'<span class="ad-id">ID: ' + ad_id_short + '</span>' if ad_id_short else ''}</div>
     </div>
     <div class="meta-info">
         {data_inicio_html}
         <div class="meta-row"><span class="meta-label">Plataformas:</span><span id="plat_icons_{uid}" class="plat-icons"></span></div>
         {'<div class="meta-row"><span class="meta-label">Impressões:</span>&nbsp;' + impressoes + '</div>' if impressoes else ''}
     </div>
-    <div class="copy-section">
+    <div class="copy-section" style="position:relative">
+        {'<div class="dyn-float">Dinâmico</div>' if is_dyn else ''}
         <div class="page-header">{page_avatar_html}<div style="flex:1;min-width:0"><div class="page-name">{ad.get("page_name") or nome}</div><div class="page-sponsored">Patrocinado</div></div></div>
         {body_display}
         {'<div class="copy-title">' + title_safe + '</div>' if title_safe else ''}
@@ -4210,6 +4211,7 @@ body{{padding-bottom:4px;min-height:0;}}
 .ad-id{{font-size:9px;color:#8a8d91;font-family:monospace;}}
 .badge-small{{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:600;}}
 .badge-dyn{{background:#f0f9ff;color:#0369a1;border-color:#bae6fd;}}
+.dyn-float{{position:absolute;top:12px;right:12px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
 .meta-info{{padding:6px 12px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
 .meta-row{{display:flex;align-items:center;gap:5px;font-size:11px;color:#65676b;margin-bottom:4px;flex-wrap:wrap;}}
 .meta-row:last-child{{margin-bottom:0;}}
