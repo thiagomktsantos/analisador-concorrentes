@@ -1187,10 +1187,15 @@ if st.session_state.pagina == "home":
     emp = st.session_state.dados["minha_empresa"]
     tem_dados = empresa_tem_dados(emp)
  
-    if not tem_dados or st.session_state.editar_empresa:
+    # ✅ CORREÇÃO: nova conta entra direto no modo edição
+    if not tem_dados and not st.session_state.editar_empresa:
+        st.session_state.editar_empresa = True
+ 
+    if st.session_state.editar_empresa or not tem_dados:
  
         st.markdown("""
         <style>
+        /* ── Containers com borda (seções do formulário) ── */
         html body section.main [data-testid="stVerticalBlockBorderWrapper"],
         html body section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
         html body section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
@@ -1220,6 +1225,8 @@ if st.session_state.pagina == "home":
             background-color: #ffffff !important;
             background: #ffffff !important;
         }
+ 
+        /* ── Formulário (seção de redes sociais / localização) ── */
         html body section.main div[data-testid="stForm"],
         html body section.main div[data-testid="stForm"] > div,
         html body section.main div[data-testid="stForm"] > div > div,
@@ -1246,16 +1253,29 @@ if st.session_state.pagina == "home":
             margin-bottom: 0px !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
-        </style>
-        """, unsafe_allow_html=True)
  
-        st.markdown("""
-        <style>
-        @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
+        /* ── Inputs e selects dentro do form ── */
+        html body section.main div[data-testid="stTextInput"] input {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 7px !important;
+            font-size: 15px !important;
+            color: #111827 !important;
+        }
+        html body section.main div[data-baseweb="select"] > div {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 7px !important;
+        }
+ 
+        /* ── Esconde botão Editar no modo formulário ── */
         .st-key-btn_editar_empresa { display: none !important; }
         </style>
         """, unsafe_allow_html=True)
  
+        # ── Cabeçalho ──────────────────────────────────────────────
         h1, h2 = st.columns([7, 3])
         with h1:
             st.markdown(
@@ -1287,6 +1307,7 @@ if st.session_state.pagina == "home":
             unsafe_allow_html=True,
         )
  
+        # ── Helpers visuais ────────────────────────────────────────
         def sec_label(label):
             st.markdown(
                 f"<div style='font-size:11px;font-weight:700;color:#9ca3af;"
@@ -1301,20 +1322,33 @@ if st.session_state.pagina == "home":
                 unsafe_allow_html=True,
             )
  
+        # ── Seção: Identificação ───────────────────────────────────
         with st.container(border=True):
             sec_label("Identificação")
             c1, c2 = st.columns(2)
-            emp["nome"] = c1.text_input("Nome da Empresa", value=emp["nome"], key="edit_nome")
-            site_digitado = c2.text_input("Site", value=emp["site"], key="edit_site")
+            emp["nome"] = c1.text_input(
+                "Nome da Empresa",
+                value=emp.get("nome", ""),
+                key="edit_nome",
+                placeholder="Ex: Marketylics",
+            )
+            site_digitado = c2.text_input(
+                "Site",
+                value=emp.get("site", ""),
+                key="edit_site",
+                placeholder="Ex: marketylics.com",
+            )
             emp["site"] = limpar_site(site_digitado)
  
         st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
+        # ── Seção: Setor ───────────────────────────────────────────
         with st.container(border=True):
             sec_label("Setor")
             c3, c4 = st.columns(2)
             setor_opcoes = list(SUBNICHOS.keys())
-            setor_idx = setor_opcoes.index(emp["setor"]) if emp["setor"] in setor_opcoes else 0
+            setor_atual  = emp.get("setor", "Marketing")
+            setor_idx    = setor_opcoes.index(setor_atual) if setor_atual in setor_opcoes else 0
  
             def on_setor_change():
                 emp["tipo"] = ""
@@ -1329,8 +1363,9 @@ if st.session_state.pagina == "home":
             )
  
             subnichos_disponiveis = SUBNICHOS.get(emp["setor"], [])
-            tipo_idx = 0 if st.session_state.get("_tipo_reset") else (
-                subnichos_disponiveis.index(emp["tipo"]) if emp["tipo"] in subnichos_disponiveis else 0
+            tipo_atual = emp.get("tipo", "")
+            tipo_idx   = 0 if st.session_state.get("_tipo_reset") else (
+                subnichos_disponiveis.index(tipo_atual) if tipo_atual in subnichos_disponiveis else 0
             )
             st.session_state["_tipo_reset"] = False
  
@@ -1343,16 +1378,26 @@ if st.session_state.pagina == "home":
  
         st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
  
+        # ── Seção: Redes Sociais + Localização (dentro do form) ────
         with st.form("cad_empresa", clear_on_submit=False):
  
             sec_label("Redes Sociais")
             c5, c6 = st.columns(2)
-            emp["instagram"] = c5.text_input("Instagram", value=emp["instagram"])
-            emp["fb_page"]   = c6.text_input("Facebook",  value=emp["fb_page"])
+            emp["instagram"] = c5.text_input(
+                "Instagram",
+                value=emp.get("instagram", "@"),
+                placeholder="@suaempresa",
+            )
+            emp["fb_page"] = c6.text_input(
+                "Facebook",
+                value=emp.get("fb_page", ""),
+                placeholder="facebook.com/suaempresa",
+            )
  
             servicos_text = st.text_input(
                 "Serviços (separados por vírgula)",
-                value=", ".join(emp["servicos"]),
+                value=", ".join(emp.get("servicos", [])),
+                placeholder="Ex: SEO, Tráfego Pago, Social Media",
             )
             emp["servicos"] = [s.strip() for s in servicos_text.split(",") if s.strip()]
  
@@ -1360,11 +1405,14 @@ if st.session_state.pagina == "home":
  
             sec_label("Localização")
             loc1, loc2 = st.columns(2)
-            estados = list(ESTADOS_CIDADES.keys())
-            estado_index = estados.index(emp["estado"]) if emp["estado"] in estados else 0
+            estados     = list(ESTADOS_CIDADES.keys())
+            estado_atual = emp.get("estado", "")
+            estado_index = estados.index(estado_atual) if estado_atual in estados else 0
             emp["estado"] = loc1.selectbox("Estado", estados, index=estado_index)
-            cidades = ESTADOS_CIDADES.get(emp["estado"], [])
-            cidade_index = cidades.index(emp["cidade"]) if emp["cidade"] in cidades else 0
+ 
+            cidades      = ESTADOS_CIDADES.get(emp["estado"], [])
+            cidade_atual = emp.get("cidade", "")
+            cidade_index = cidades.index(cidade_atual) if cidade_atual in cidades else 0
             emp["cidade"] = loc2.selectbox("Cidade", cidades, index=cidade_index)
  
             form_divider()
@@ -1374,12 +1422,16 @@ if st.session_state.pagina == "home":
             cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
  
             if cancelar:
-                st.session_state.editar_empresa = False
-                st.rerun()
+                # ✅ CORREÇÃO: só cancela se já tinha dados (nova conta não pode cancelar)
+                if tem_dados:
+                    st.session_state.editar_empresa = False
+                    st.rerun()
+                else:
+                    st.warning("Preencha pelo menos o nome da empresa para continuar.")
  
             if salvar:
-                emp["nome"] = st.session_state.get("edit_nome", emp["nome"])
-                emp["site"] = limpar_site(st.session_state.get("edit_site", emp["site"]))
+                emp["nome"] = st.session_state.get("edit_nome", emp.get("nome", ""))
+                emp["site"] = limpar_site(st.session_state.get("edit_site", emp.get("site", "")))
                 if emp["nome"].strip():
                     st.session_state.editar_empresa = False
                     salvar_dados_usuario(st.session_state.user.id)
@@ -1389,6 +1441,7 @@ if st.session_state.pagina == "home":
                     st.error("Informe pelo menos o nome da empresa.")
  
     else:
+        # ── MODO VISUALIZAÇÃO (conta com dados) ───────────────────
  
         st.markdown("""
         <style>
@@ -1445,13 +1498,13 @@ html, body { background: transparent; overflow: hidden; }
         )
  
         cor_empresa = get_minha_empresa_color()
-        avatar = gerar_avatar(emp["nome"])
-        loc = emp["cidade"] or ""
-        if emp["estado"]:
+        avatar      = gerar_avatar(emp["nome"])
+        loc         = emp.get("cidade", "")
+        if emp.get("estado"):
             loc += (", " if loc else "") + emp["estado"]
         servicos_html = (
-            "".join([f"<span class='empresa-tag'>{s}</span>" for s in emp["servicos"]])
-            if emp["servicos"] else "<span style='color:#9ca3af;font-size:14px'>—</span>"
+            "".join([f"<span class='empresa-tag'>{s}</span>" for s in emp.get("servicos", [])])
+            if emp.get("servicos") else "<span style='color:#9ca3af;font-size:14px'>—</span>"
         )
  
         components.html(f"""
@@ -1572,7 +1625,7 @@ body {{
             <div class="empresa-avatar">{avatar}</div>
             <div>
                 <div class="empresa-nome">{emp['nome']}</div>
-                <div class="empresa-sub">{emp['setor']}{' · ' + emp['tipo'] if emp['tipo'] else ''}</div>
+                <div class="empresa-sub">{emp.get('setor','')}{' · ' + emp['tipo'] if emp.get('tipo') else ''}</div>
             </div>
         </div>
         <div class="empresa-grid">
@@ -1590,7 +1643,7 @@ body {{
                     </span>
                     <div>
                         <span class="empresa-lbl">Site</span>
-                        <span class="empresa-val">{emp['site'] or '—'}</span>
+                        <span class="empresa-val">{emp.get('site') or '—'}</span>
                     </div>
                 </div>
                 <div class="empresa-row">
@@ -1612,7 +1665,7 @@ body {{
                     </span>
                     <div>
                         <span class="empresa-lbl">Instagram</span>
-                        <span class="empresa-val">{emp['instagram'] or '—'}</span>
+                        <span class="empresa-val">{emp.get('instagram') or '—'}</span>
                     </div>
                 </div>
                 <div class="empresa-row">
@@ -1627,7 +1680,7 @@ body {{
                     </span>
                     <div>
                         <span class="empresa-lbl">Facebook</span>
-                        <span class="empresa-val">{emp['fb_page'] or '—'}</span>
+                        <span class="empresa-val">{emp.get('fb_page') or '—'}</span>
                     </div>
                 </div>
             </div>
@@ -1658,7 +1711,7 @@ body {{
 </div>
 <script>
 function ajustarAltura() {{
-    var card = document.querySelector('.card');
+    var card = document.getElementById('card');
     if (!card) return;
     var h = card.getBoundingClientRect().height;
     var iframes = window.parent.document.querySelectorAll('iframe');
