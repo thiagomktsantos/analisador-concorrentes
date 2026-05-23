@@ -2700,25 +2700,6 @@ elif st.session_state.pagina == "ads":
         except Exception:
             return False
  
-    def _url_para_base64(url: str) -> str:
-        if not url or not url.startswith("http"):
-            return ""
-        try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://www.facebook.com/",
-            }
-            r = requests.get(url, headers=headers, timeout=10, stream=True)
-            if r.status_code != 200:
-                return ""
-            ct = r.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-            if not ct.startswith("image/"):
-                ct = "image/jpeg"
-            data = _b64.b64encode(r.content).decode("utf-8")
-            return f"data:{ct};base64,{data}"
-        except Exception:
-            return ""
- 
     def _extract_video_thumbnail(ad: dict) -> str:
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -3615,9 +3596,6 @@ setTimeout(ajustarAltura, 100);
                                 st.session_state.ads_onboarding_paginas  = []
                                 st.rerun()
  
-                            if (st.session_state.ads_onboarding_empresa == ck and st.session_state.ads_onboarding_paginas):
-                                _render_paginas_resultado(e, sk, ck)
- 
             if empresas_sem_config:
                 st.markdown("<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;margin:16px 0 10px 0'>⚠️ Páginas não configuradas</div>", unsafe_allow_html=True)
                 for e in empresas_sem_config:
@@ -3668,8 +3646,6 @@ setTimeout(ajustarAltura, 100);
                     if (st.session_state.ads_onboarding_empresa == ck and st.session_state.ads_onboarding_paginas is not None):
                         if not st.session_state.ads_onboarding_paginas:
                             st.warning("Nenhuma página encontrada. Tente outro nome ou cole o ID numérico.")
-                        else:
-                            _render_paginas_resultado(e, sk, ck)
  
                     st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
  
@@ -3953,17 +3929,6 @@ function triggerTab(sk, tab) {{
             n_ativos    = sum(1 for a in ads_f if a.get("ativo", True))
             n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
  
-            stats_cards = []
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_ativos}</div><div class="stat-lbl stat-lbl-green">Ativos</div></div>')
-            if n_inativos > 0:
-                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#6b7280">{n_inativos}</div><div class="stat-lbl">Histórico inativo</div></div>')
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_imagem}</div><div class="stat-lbl">Imagens</div></div>')
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_video}</div><div class="stat-lbl">Vídeos</div></div>')
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_carrossel}</div><div class="stat-lbl">Carrossel</div></div>')
-            if n_dynamic > 0:
-                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Dinâmicos</div></div>')
- 
-            # ── Preparar dados dos cards para JSON seguro ──
             cta_labels = {
                 "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
                 "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
@@ -3975,7 +3940,6 @@ function triggerTab(sk, tab) {{
                 "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
             }
  
-            # Serializar TODOS os dados dos anúncios como JSON puro — sem interpolação de strings problemáticas
             ads_data_for_js = []
             for j, ad in enumerate(ads_f):
                 images  = ad.get("images") or []
@@ -3986,7 +3950,6 @@ function triggerTab(sk, tab) {{
                 title = ad.get("title") or ""
                 desc  = _truncar(ad.get("description") or "", 120)
  
-                # Imagem primária: preferir b64 se disponível, senão URL
                 img_b64_list = ad.get("images_b64") or []
                 img_primary = img_b64_list[0] if img_b64_list else (images[0] if images else "")
                 img_fallbacks = []
@@ -4022,7 +3985,6 @@ function triggerTab(sk, tab) {{
                     "is_video":     bool(videos),
                 })
  
-            # JSON seguro — usado no script, não interpolado diretamente em HTML de atributos
             ads_json_str = _json.dumps(ads_data_for_js, ensure_ascii=False)
             stats_json   = _json.dumps({
                 "n_ativos": n_ativos, "n_inativos": n_inativos,
@@ -4032,6 +3994,16 @@ function triggerTab(sk, tab) {{
  
             cor_av_js   = cor_av
             nome_js     = nome
+ 
+            # ── ALTURA DINÂMICA ──────────────────────────────────────
+            # Calcula altura baseada no número de anúncios para evitar corte
+            # 3 colunas: ceil(n/3) linhas × ~520px por linha + stats(80) + margem(40)
+            import math as _math
+            n_rows = _math.ceil(len(ads_f) / 3) if ads_f else 1
+            # Cada card tem: status(40) + meta(60) + copy(120) + media(220) + cta(50) + btn(44) = ~534px
+            # + gaps entre rows (16px cada) + stats row (80px) + padding (40px)
+            altura_cards = n_rows * 550 + 16 * (n_rows - 1) + 80 + 60
+            altura_iframe = max(900, min(altura_cards, 12000))
  
             components.html(f"""
 <!DOCTYPE html>
@@ -4094,9 +4066,7 @@ body{{padding-bottom:4px;}}
 .lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;}}
 .ver-mais-btn{{background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;cursor:pointer;padding:0;margin-left:3px;font-family:'DM Sans',sans-serif;}}
  
-/* ══════════════════════════════
-   MODAL VISUALIZAR CRIATIVOS
-   ══════════════════════════════ */
+/* ══ MODAL ══ */
 #modal-overlay{{
     display:none;position:fixed;inset:0;
     background:rgba(0,0,0,0.82);z-index:2147483647;
@@ -4187,18 +4157,15 @@ body{{padding-bottom:4px;}}
   </div>
 </div>
  
-<!-- STATS + GRID serão injetados pelo JS -->
 <div id="stats-container"></div>
 <div class="ads-grid" id="ads-grid"></div>
  
 <script>
-// ── Dados serializados de forma segura ──
 var ADS_DATA   = {ads_json_str};
 var STATS_DATA = {stats_json};
 var COR_AV     = {_json.dumps(cor_av_js)};
 var NOME_EMP   = {_json.dumps(nome_js)};
  
-// ── Plataformas SVG ──
 var C = '#9ca3af';
 var PLAT_SVGS = {{
     "facebook":  '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
@@ -4206,10 +4173,8 @@ var PLAT_SVGS = {{
     "messenger": '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
     "whatsapp":  '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
     "audience_network": '<svg width="14" height="14" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
-    "threads":   '<svg width="14" height="14" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
 }};
  
-// ── Estado do modal ──
 var _MS = {{ ad: null, tab: 'feed' }};
  
 function openModal(idx) {{
@@ -4265,7 +4230,6 @@ function renderModal(tab) {{
     var vids  = ad.videos  || [];
     var snap  = ad.snap_url || '';
  
-    // imgs[0]=story, imgs[1]=preview, imgs[2]=feed
     var storyImg = imgs[0] || '';
     var feedImg  = imgs[2] || imgs[1] || imgs[0] || '';
     var storyVid = vids[0] || '';
@@ -4304,7 +4268,6 @@ document.addEventListener('keydown', function(e) {{
     if (e.key === 'Escape') closeModal();
 }});
  
-// ── Render stats ──
 function renderStats() {{
     var s = STATS_DATA;
     var html = '<div class="stats-row">';
@@ -4318,7 +4281,6 @@ function renderStats() {{
     document.getElementById('stats-container').innerHTML = html;
 }}
  
-// ── Render plataformas ──
 function renderPlats(uid, plats) {{
     var el = document.getElementById('plat_' + uid);
     if (!el) return;
@@ -4329,7 +4291,6 @@ function renderPlats(uid, plats) {{
     }}).join('');
 }}
  
-// ── Render cards ──
 function escHtml(s) {{
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }}
@@ -4338,7 +4299,6 @@ function buildCard(ad) {{
     var j   = ad.j;
     var uid = '{sk}_' + j;
  
-    /* STATUS */
     var statusHtml = ad.ativo
         ? '<div class="status-dot">Ativo</div>'
         : '<div class="status-dot-inactive">Inativo</div>';
@@ -4346,16 +4306,13 @@ function buildCard(ad) {{
     var dynHtml    = ad.is_dynamic    ? '<span class="badge-small badge-dyn">Dinâmico</span>' : '';
     var idHtml     = ad.id            ? '<span class="ad-id">ID: ' + escHtml(ad.id) + '</span>' : '';
  
-    /* META */
     var dataHtml  = ad.data_inicio ? '<div class="meta-row"><span class="meta-label">Veiculação iniciada:</span><span>' + escHtml(ad.data_inicio) + '</span></div>' : '';
     var impHtml   = ad.impressoes  ? '<div class="meta-row"><span class="meta-label">Impressões:</span><span>' + escHtml(ad.impressoes) + '</span></div>' : '';
  
-    /* PAGE AVATAR */
     var pagePicHtml = ad.page_pic
         ? '<div class="page-avatar"><img src="' + escHtml(ad.page_pic) + '" onerror="this.parentElement.style.background=COR_AV;this.outerHTML=\\'\\'" /></div>'
         : '<div class="page-avatar">' + escHtml(NOME_EMP.slice(0,2).toUpperCase()) + '</div>';
  
-    /* COPY */
     var bodyEsc  = escHtml(ad.body);
     var titleEsc = escHtml(ad.title);
     var descEsc  = escHtml(ad.desc);
@@ -4372,7 +4329,6 @@ function buildCard(ad) {{
     var descHtml  = descEsc  ? '<div class="copy-desc">'  + descEsc  + '</div>' : '';
     var noCopy    = (!bodyEsc && !titleEsc && !descEsc) ? '<div class="no-copy">Sem copy disponível.</div>' : '';
  
-    /* MEDIA */
     var mediaHtml = '';
     if (ad.is_video) {{
         if (ad.video_thumb) {{
@@ -4413,14 +4369,12 @@ function buildCard(ad) {{
             '</div>';
     }}
  
-    /* CTA FOOTER */
     var domainDisp = escHtml(ad.caption || (ad.snap_url || '').replace('https://','').split('/')[0]);
     var ctaDisp    = escHtml(ad.cta || 'Ver detalhes');
     var ctaHtml    = ad.snap_url
         ? '<a href="' + escHtml(ad.snap_url) + '" target="_blank" class="cta-btn">' + ctaDisp + '</a>'
         : '<span class="cta-btn" style="opacity:0.4;pointer-events:none">' + ctaDisp + '</span>';
  
-    /* BOTTOM BUTTONS */
     var libHtml = ad.snap_url
         ? '<a href="' + escHtml(ad.snap_url) + '" target="_blank" class="lib-btn">Ver no Ad Library</a>'
         : '<span class="lib-btn-disabled">Sem link</span>';
@@ -4484,22 +4438,6 @@ function toggleBody(uid) {{
     if (ell) ell.style.display = open ? 'inline' : 'none';
 }}
  
-// ── Sincronizar altura do iframe ──
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight,
-                     document.body.offsetHeight, document.documentElement.offsetHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{
-            if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 24) + 'px';
-                frames[i].style.minHeight = 'unset';
-                break;
-            }}
-        }} catch(e) {{}}
-    }}
-}}
- 
 // ── Init ──
 renderStats();
  
@@ -4508,28 +4446,13 @@ ADS_DATA.forEach(function(ad) {{
     var div = document.createElement('div');
     div.innerHTML = buildCard(ad);
     grid.appendChild(div.firstChild);
-    // render plataformas após inserção
     renderPlats('{sk}_' + ad.j, ad.plataformas);
 }});
  
-// Imagens: sync após carregar
-document.querySelectorAll('img').forEach(function(img) {{
-    img.addEventListener('load',  function() {{ setTimeout(syncHeight, 30); }});
-    img.addEventListener('error', function() {{ setTimeout(syncHeight, 30); }});
-}});
- 
-if (window.ResizeObserver) {{
-    new ResizeObserver(syncHeight).observe(document.body);
-}}
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 300);
-setTimeout(syncHeight, 800);
-setTimeout(syncHeight, 2000);
 </script>
 </body>
 </html>
-""", height=600, scrolling=False)
+""", height=altura_iframe, scrolling=True)
  
         # ════════════════════════════════════════════════════════════
         # ABA: ANÁLISE DE IA
@@ -4756,6 +4679,10 @@ CTA: {ad.get("cta","")}
             n_img2 = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
             n_car2 = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
  
+            # Altura dinâmica para aba de análise
+            n_rows_ia = _math.ceil(len(ind_cards_data) / 2) if ind_cards_data else 1
+            altura_ia = max(700, n_rows_ia * 320 + 200)
+ 
             components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -4974,14 +4901,13 @@ function buildIndGrid() {{
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
-                if (b) {{ b.className = 'ind-btn'; b.style.color = '#9ca3af'; b.style.pointerEvents = 'none'; b.textContent = 'Analisando…'; }}
+                if (b) {{ b.style.color = '#9ca3af'; b.style.pointerEvents = 'none'; b.textContent = 'Analisando…'; }}
                 triggerGlobal('_ia_ind_{sk}_' + idx + '_');
             }};
         }})(d.j);
         card.appendChild(btn);
         grid.appendChild(card);
     }});
-    syncHeight();
 }}
  
 function showSubtab(name, el) {{
@@ -4990,7 +4916,6 @@ function showSubtab(name, el) {{
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
     triggerGlobal('_subtab_{sk}_' + name + '_');
-    setTimeout(syncHeight, 100);
 }}
  
 function triggerGlobal(label) {{
@@ -5001,33 +4926,10 @@ function triggerGlobal(label) {{
     }}
 }}
  
-function syncHeight() {{
-    var h = Math.max(
-        document.body.scrollHeight, document.documentElement.scrollHeight,
-        document.body.offsetHeight, document.documentElement.offsetHeight
-    );
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{
-            if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 24) + 'px';
-                frames[i].style.minHeight = 'unset';
-                break;
-            }}
-        }} catch(e) {{}}
-    }}
-}}
- 
 buildIndGrid();
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200);
-setTimeout(syncHeight, 600);
-setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=600, scrolling=False)
+""", height=altura_ia, scrolling=True)
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
