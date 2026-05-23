@@ -4015,7 +4015,8 @@ setTimeout(ajustarAltura,100);
         preload="metadata"
         muted
         playsinline
-        onerror="vidFallback_{uid}(this)">
+        onerror="vidFallback_{uid}(this)"
+        onloadedmetadata="this.currentTime=2.5">
     </video>
     <div id="vid_overlay_{uid}" style="position:absolute;inset:0;display:flex;align-items:center;
          justify-content:center;pointer-events:none">
