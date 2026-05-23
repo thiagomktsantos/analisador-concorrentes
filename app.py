@@ -3245,7 +3245,7 @@ html, body { background:transparent; overflow:hidden; }
                     unsafe_allow_html=True,
                 )
 
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 16px 0'/>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 0px 0'/>", unsafe_allow_html=True)
 
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
