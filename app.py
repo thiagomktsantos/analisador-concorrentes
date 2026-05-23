@@ -2716,29 +2716,6 @@ elif st.session_state.pagina == "ads":
         except Exception:
             return ""
  
-    def _microlink_screenshot(snap_url: str) -> str:
-        if not snap_url:
-            return ""
-        import urllib.parse
-        encoded = urllib.parse.quote(snap_url, safe="")
-        return f"https://api.microlink.io/?url={encoded}&screenshot=true&meta=false&embed=screenshot.url"
- 
-    def _extract_video_thumbnail(ad: dict) -> str:
-        snapshot = ad.get("snapshot") or {}
-        cards    = snapshot.get("cards") or []
-        for k in ("thumbnail_url", "preview_image_url", "image_url", "original_image_url"):
-            v = ad.get(k) or snapshot.get(k) or ""
-            if v and v.startswith("http"):
-                return v
-        for card in cards:
-            if not isinstance(card, dict):
-                continue
-            for k in ("thumbnail_url", "preview_image_url", "image_url"):
-                v = card.get(k, "")
-                if v and v.startswith("http"):
-                    return v
-        return ""
- 
     def _truncar(txt, n=160):
         if not txt:
             return ""
@@ -2852,6 +2829,7 @@ elif st.session_state.pagina == "ads":
         return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
  
     def _extract_videos(ad: dict) -> list:
+        """Extrai todas as URLs de vídeo, ordenando SD antes de HD (mais leve para extração de frame)."""
         vids = []
         seen = set()
         snapshot = ad.get("snapshot") or {}
@@ -2866,7 +2844,13 @@ elif st.session_state.pagina == "ads":
             if isinstance(card, dict):
                 for k in ("video_hd_url","video_sd_url","video_url"):
                     add(card.get(k))
-        return vids
+        # adiciona URLs brutas da lista "videos"
+        for v in (ad.get("videos") or []):
+            add(v)
+        # ordena: SD/360/480 primeiro (mais rápido para extrair frame no browser)
+        sd = [u for u in vids if any(x in u.lower() for x in ("sd","360","480","_sd"))]
+        hd = [u for u in vids if u not in sd]
+        return sd + hd
  
     def _normalizar_item_apify(item: dict) -> dict:
         snapshot = item.get("snapshot") or {}
@@ -2954,9 +2938,6 @@ elif st.session_state.pagina == "ads":
             images_b64.append(b64 if b64 else images[0])
             images_b64.extend(images[1:3])
  
-        video_thumb_url = _extract_video_thumbnail(item) if has_video else ""
-        video_thumb_b64 = _url_para_base64(video_thumb_url) if video_thumb_url else ""
- 
         return {
             "id":                  ad_id,
             "page_name":           page_name,
@@ -2970,8 +2951,7 @@ elif st.session_state.pagina == "ads":
             "caption":             copy["caption"],
             "images":              images,
             "images_b64":          images_b64,
-            "videos":              videos,
-            "video_thumb":         video_thumb_b64 or video_thumb_url,
+            "videos":              videos,   # já ordenado SD→HD
             "snapshot_url":        snap_url,
             "data_inicio":         start_fmt,
             "data_raw":            str(start_raw),
@@ -3147,9 +3127,8 @@ elif st.session_state.pagina == "ads":
         st.session_state.ads_onboarding_termo = ""
     if "ads_editando_empresa" not in st.session_state:
         st.session_state.ads_editando_empresa = None
-    # Nova chave para controlar aba ativa (anuncios / analise)
     if "ads_aba_conteudo" not in st.session_state:
-        st.session_state.ads_aba_conteudo = {}  # {nome_empresa: "anuncios" | "analise"}
+        st.session_state.ads_aba_conteudo = {}
  
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
@@ -3293,30 +3272,18 @@ html, body { background:transparent; overflow:hidden; }
     for k in todos_ids:
         ghost_css_parts.append(f"""
         .st-key-{k} {{
-            position: absolute !important;
-            top: -9999px !important;
-            left: -9999px !important;
-            width: 1px !important;
-            height: 1px !important;
-            overflow: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
+            position: absolute !important; top: -9999px !important; left: -9999px !important;
+            width: 1px !important; height: 1px !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important;
         }}
         """)
     for k in todos_ids:
         ghost_css_parts.append(f"""
         .stElementContainer:has(.st-key-{k}),
-        .stElementContainer:has(.st-key-{k}) ~ *:first-of-type,
         div[data-testid="stVerticalBlock"] > div:has(.st-key-{k}) {{
-            display: none !important;
-            height: 0 !important;
-            min-height: 0 !important;
-            max-height: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            overflow: hidden !important;
-            line-height: 0 !important;
-            border: none !important;
+            display: none !important; height: 0 !important; min-height: 0 !important;
+            max-height: 0 !important; padding: 0 !important; margin: 0 !important;
+            overflow: hidden !important; line-height: 0 !important; border: none !important;
         }}
         """)
     st.markdown(f"<style>{''.join(ghost_css_parts)}</style>", unsafe_allow_html=True)
@@ -3330,7 +3297,6 @@ html, body { background:transparent; overflow:hidden; }
             st.session_state.ads_aba_ativa = i
             st.rerun()
  
-    # Ghost buttons para trocar aba de conteúdo (anuncios / analise) por empresa
     conteudo_tab_ids = []
     for e in empresas_configuradas:
         sk = safe_key(e["nome"])
@@ -3380,7 +3346,6 @@ html, body { background:transparent; overflow:hidden; }
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 .barra {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; display:flex; align-items:stretch; height:48px; overflow:hidden; }}
 .barra-label {{ display:flex; align-items:center; gap:6px; padding:0 14px; border-right:1px solid #f3f4f6; flex-shrink:0; }}
-.barra-label-icon {{ width:16px;height:16px;opacity:0.4;flex-shrink:0; }}
 .barra-label-txt {{ font-size:12px; font-weight:700; color:#000000; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }}
 .abas-wrap {{ display:flex; align-items:center; flex:1; padding:6px 8px; gap:4px; overflow:hidden; }}
 .aba {{ height:36px; padding:0 18px; border-radius:7px; border:1px solid transparent; background:transparent; font-size:14px; font-weight:600; color:#6d6c6c; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap; flex-shrink:0; }}
@@ -3389,11 +3354,10 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .btn-wrap {{ display:flex; align-items:center; padding:0 10px; border-left:1px solid #f3f4f6; flex-shrink:0; }}
 .btn-editar {{ display:flex; align-items:center; gap:6px; height:34px; padding:0 14px; border:none; border-radius:7px; background:transparent; font-size:13px; font-weight:600; color:#374151; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; transition:all 0.12s; }}
 .btn-editar:hover {{ background:#f3f4f6; }}
-.btn-editar svg {{ flex-shrink:0; }}
 </style>
 <div class="barra">
     <div class="barra-label">
-        <svg class="barra-label-icon" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
         </svg>
@@ -3401,7 +3365,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     </div>
     <div class="abas-wrap">{abas_html_items}</div>
     <div class="btn-wrap">
-        <button class="btn-editar {'open' if editando else ''}" onclick="triggerToggle()">
+        <button class="btn-editar" onclick="triggerToggle()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
@@ -3433,9 +3397,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
     if st.session_state.ads_mostrar_edicao and empresas_configuradas:
         ghost_css = "\n".join([
             f"""
-            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci},
-            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div,
-            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} > div > div {{
+            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} {{
                 display: none !important; height: 0 !important; min-height: 0 !important;
                 max-height: 0 !important; padding: 0 !important; margin: 0 !important;
                 overflow: hidden !important; line-height: 0 !important; border: none !important;
@@ -3465,8 +3427,7 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
             padding: 0px 16px 0px 16px !important; box-shadow: none !important;
         }}
         .st-key-ads_edit_panel .stElementContainer:has(> .stButton),
-        .st-key-ads_edit_panel .stElementContainer:has(> .stButton) *,
-        .st-key-ads_edit_panel div[data-testid="stLayoutWrapper"]:has(.stButton) {{
+        .st-key-ads_edit_panel .stElementContainer:has(> .stButton) * {{
             height: 0 !important; min-height: 0 !important; max-height: 0 !important;
             padding: 0 !important; margin: 0 !important; overflow: hidden !important;
             line-height: 0 !important; display: block !important; border: none !important;
@@ -3538,10 +3499,9 @@ body {{ padding-bottom:4px; }}
 </div>
 <script>
 function triggerBtn(key) {{
-    var norm = key.split(/\s+/).join(' ').trim();
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        if ((b.innerText || b.textContent || '').split(/\s+/).join(' ').trim() === norm) {{ b.click(); return; }}
+        if ((b.innerText || b.textContent || '').split(/\s+/).join(' ').trim() === key) {{ b.click(); return; }}
     }}
 }}
 function ajustarAltura() {{
@@ -3572,28 +3532,6 @@ setTimeout(ajustarAltura, 100);
                                     </div>
                                 </div>
                             </div>
-                            """, unsafe_allow_html=True)
- 
-                            st.markdown(f"""
-                            <style>
-                            .st-key-inline_edit_{sk}_{ci}, .st-key-inline_edit_{sk}_{ci} > div,
-                            .st-key-inline_edit_{sk}_{ci} > div > div,
-                            .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"],
-                            .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlock"],
-                            .st-key-inline_edit_{sk}_{ci} .stElementContainer,
-                            .st-key-inline_edit_{sk}_{ci} .stElementContainer > div,
-                            .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"],
-                            .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] > div,
-                            .st-key-inline_edit_{sk}_{ci} div[data-testid="stTextInput"] input {{
-                                background-color: #ffffff !important; background: #ffffff !important;
-                            }}
-                            .st-key-inline_edit_{sk}_{ci} [data-testid="stVerticalBlockBorderWrapper"] {{
-                                border: 1.5px solid #e5e7eb !important; border-radius: 14px !important; padding: 16px 20px !important;
-                            }}
-                            .st-key-inline_edit_{sk}_{ci} button[kind="primary"] {{
-                                background: #0780c0 !important; color: #ffffff !important; border: none !important;
-                            }}
-                            </style>
                             """, unsafe_allow_html=True)
  
                             with st.container(border=True, key=f"inline_edit_{sk}_{ci}"):
@@ -3722,7 +3660,7 @@ setTimeout(ajustarAltura, 100);
  
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
  
-    # ── Função plat SVG ──────────────────────────────────────────────
+    # ── Plataformas SVG JS ──────────────────────────────────────────
     def _plat_svg_js(uid: str) -> str:
         return f"""
 (function(){{
@@ -3731,11 +3669,11 @@ setTimeout(ajustarAltura, 100);
     var C = '#9ca3af';
     var SVGS = {{
         "facebook": '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+C+'"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
-        "instagram": '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
-        "messenger": '<svg width="15" height="15" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
-        "whatsapp":  '<svg width="15" height="15" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
-        "audience_network": '<svg width="15" height="15" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
-        "threads": '<svg width="15" height="15" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
+        "instagram": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="'+C+'"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>',
+        "messenger": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.4l3.131 3.259L19.752 8.4l-6.561 6.563z"/></svg>',
+        "whatsapp":  '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
+        "audience_network": '<svg width="16" height="16" viewBox="0 0 24 24" fill="'+C+'"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>',
+        "threads": '<svg width="16" height="16" viewBox="0 0 192 192" fill="'+C+'"><path d="M141.537 88.988a66.667 66.667 0 00-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.63-43.966 16.133-57.317C56.954 24.425 74.204 17.11 97.013 16.94c22.975.17 40.526 7.52 52.171 21.847 5.71 7.026 10.015 15.86 12.853 26.162l16.147-4.308c-3.44-12.68-8.853-23.606-16.219-32.668C147.036 9.607 125.202.195 97.07 0h-.113C68.882.195 47.292 9.642 32.788 28.08 19.882 44.485 13.224 67.315 13.001 96v.027c.224 28.686 6.882 51.516 19.788 67.92C47.292 182.358 68.882 191.805 96.957 192h.114c24.92-.173 42.433-6.695 56.854-21.101 18.941-18.925 18.352-42.444 12.139-56.924-4.51-10.507-13.192-19.01-24.527-24.987zm-45.458 43.051c-10.443.588-21.287-4.098-26.698-11.76-3.28-4.626-3.27-9.498.028-13.062 3.853-4.194 10.08-6.386 17.537-6.386.799 0 1.609.024 2.427.074 9.335.539 16.788 3.712 20.91 8.931 2.653 3.367 3.604 7.573 2.733 12.094-1.765 9.151-10.228 9.867-16.937 10.109z"/></svg>'
     }};
     var el = document.getElementById('plat_icons_{uid}');
     if (!el) return;
@@ -3749,7 +3687,7 @@ setTimeout(ajustarAltura, 100);
 """
  
     # ══════════════════════════════════════════════════════════════════
-    # FUNÇÃO PRINCIPAL: render_ads_empresa — com 2 abas principais
+    # FUNÇÃO PRINCIPAL: render_ads_empresa
     # ══════════════════════════════════════════════════════════════════
     def render_ads_empresa(emp_item):
         ck       = emp_item["nome"]
@@ -3866,48 +3804,20 @@ setTimeout(ajustarAltura, 100);
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.tabs-bar {{
-    display: flex;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-bottom: none;
-}}
-.tab-btn {{
-    flex: 1;
-    padding: 14px 0;
-    font-size: 14px;
-    font-weight: 700;
-    color: #9ca3af;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    border-bottom: 3px solid transparent;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}}
-.tab-btn:hover {{ color: #374151; background: #f3f4f6; }}
-.tab-btn.active {{ color: #1a2e4a; border-bottom: 3px solid #3a9fd6; background: #fff; font-weight: 800;border-top: 1px solid #d8d9da; }}
-.tab-sep {{ width: 1px; background: #e5e7eb; align-self: stretch; margin: 8px 0; }}
+.tabs-bar {{ display:flex; background:#f9fafb; border:1px solid #e5e7eb; border-top:none; border-bottom:none; }}
+.tab-btn {{ flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af; background:transparent; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }}
+.tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
+.tab-btn.active {{ color:#1a2e4a; border-bottom:3px solid #3a9fd6; background:#fff; font-weight:800; border-top:1px solid #d8d9da; }}
+.tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
 </style>
 <div class="tabs-bar">
-    <button class="tab-btn {'active' if aba_conteudo_atual == 'anuncios' else ''}"
-            onclick="triggerTab('{sk}', 'anuncios')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
+    <button class="tab-btn {'active' if aba_conteudo_atual == 'anuncios' else ''}" onclick="triggerTab('{sk}','anuncios')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         Anúncios
     </button>
     <div class="tab-sep"></div>
-    <button class="tab-btn {'active' if aba_conteudo_atual == 'analise' else ''}"
-            onclick="triggerTab('{sk}', 'analise')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-        </svg>
+    <button class="tab-btn {'active' if aba_conteudo_atual == 'analise' else ''}" onclick="triggerTab('{sk}','analise')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
         Análise de IA
     </button>
 </div>
@@ -3916,7 +3826,7 @@ function triggerTab(sk, tab) {{
     var label = '_tab_' + sk + '_' + tab + '_';
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -3934,7 +3844,6 @@ function triggerTab(sk, tab) {{
         # ════════════════════════════════════════════════════════════
         if aba_conteudo_atual == "anuncios":
  
-            # Filtros
             filtros_key = f"filtros_{sk}"
             st.markdown(f"""
             <style>
@@ -3989,7 +3898,6 @@ function triggerTab(sk, tab) {{
                 st.warning("Nenhum anúncio com os filtros aplicados.")
                 return
  
-            # Stats
             n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
             n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
             n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
@@ -4045,8 +3953,7 @@ setTimeout(ajustarAltura,100);
                 snap_url    = ad.get("snapshot_url") or ""
                 images      = ad.get("images") or []
                 images_b64  = ad.get("images_b64") or []
-                videos      = ad.get("videos") or []
-                video_thumb = ad.get("video_thumb") or ""
+                videos      = ad.get("videos") or []   # já ordenado SD→HD
                 is_dyn      = ad.get("is_dynamic", False)
                 baixo_vol   = ad.get("baixo_volume", False)
                 ad_id       = ad.get("id","")
@@ -4061,32 +3968,29 @@ setTimeout(ajustarAltura,100);
                 cta         = ad.get("cta") or ""
                 uid         = f"{sk}_{j}"
                 page_pic    = ad.get("page_profile_picture") or ""
-                microlink_url = _microlink_screenshot(snap_url)
+ 
+                # ── Prepara dados de vídeo para extração client-side ──
+                videos_js   = _json.dumps(videos)  # lista SD→HD já ordenada
+                snap_url_safe = snap_url.replace("'", "").replace('"', "")
  
                 debug_keys = {
                    "id": ad.get("id", ""),
                    "page_name": ad.get("page_name", ""),
-                   "page_id": ad.get("page_id", ""),
                    "formato": ad.get("formato", ""),
                    "plataformas": ad.get("plataformas", []),
                    "data_raw": ad.get("data_raw", ""),
                    "impressoes": ad.get("impressoes", ""),
-                   "baixo_volume": ad.get("baixo_volume", False),
                    "is_dynamic": ad.get("is_dynamic", False),
                    "ativo": ad.get("ativo", True),
                    "n_imagens": len(ad.get("images", [])),
-                   "images_extraidas": (ad.get("images") or [])[:3],
-                   "tem_video": bool(ad.get("videos")),
-                   "videos_extraidos": (ad.get("videos") or [])[:2],
-                   "tem_video_thumb": bool(ad.get("video_thumb")),
-                   "video_thumb_url": (ad.get("video_thumb") or "")[:120],
-                   "snapshot_url": (ad.get("snapshot_url") or "")[:80],
-                   "body_len": len(ad.get("body") or ""),
-                   "title_len": len(ad.get("title") or ""),
-                   "cta": ad.get("cta", ""),
-                   "page_profile_picture": (ad.get("page_profile_picture") or "")[:60],
+                   "tem_video": bool(videos),
+                   "n_videos": len(videos),
+                   "video_url_sd": videos[0][:80] if videos else "",
+                   "snapshot_url": (snap_url or "")[:80],
+                   "body_len": len(body),
+                   "title_len": len(title),
+                   "cta": cta,
                 }
-
                 debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                 debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
  
@@ -4095,44 +3999,31 @@ setTimeout(ajustarAltura,100);
                 if images_b64 and len(images_b64) > 1:
                     img_fallbacks.extend(images_b64[1:])
                 img_fallbacks.extend([u for u in images if u not in img_fallbacks])
-                if microlink_url:
-                    img_fallbacks.append(microlink_url)
                 srcs_js = _json.dumps(img_fallbacks)
  
+                # ── Media block ───────────────────────────────────────
                 if videos:
-                    if snap_url:
-                        _snap_safe = snap_url.replace("'", "\\'")
-                        video_onclick = f"openModal('{video_thumb.replace(chr(39), '')}', '{_snap_safe}', true)"
-                        video_style   = "cursor:pointer;"
-                    else:
-                        video_onclick = ""
-                        video_style   = ""
-                    if video_thumb:
-                        media_block = f"""
-<div class="media-block video-thumb-block" onclick="{video_onclick}" style="{video_style}position:relative;">
-    <img src="{video_thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"
-         onerror="this.style.display='none';document.getElementById('vfallback_{uid}').style.display='flex'" />
-    <div id="vfallback_{uid}" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);align-items:center;justify-content:center;flex-direction:column;gap:8px">
-        <svg width="36" height="36" viewBox="0 0 54 54" fill="none"><circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/><polygon points="22,18 40,27 22,36" fill="white"/></svg>
-    </div>
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">
-            <svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>
-        </div>
-    </div>
-    {'<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">▶ VER VÍDEO</div>' if snap_url else ''}
-</div>"""
-                    else:
-                        media_block = f"""
-<div class="media-block video-block" onclick="{video_onclick}" style="{video_style}">
-    <div class="video-play-icon">
-        <svg width="48" height="48" viewBox="0 0 54 54" fill="none">
-            <circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>
-            <polygon points="22,18 40,27 22,36" fill="white"/>
-        </svg>
-    </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:8px;">{'Clique para ver o vídeo' if snap_url else 'Vídeo'}</div>
-</div>"""
+                    # Thumbnail extraída no browser via JS + canvas
+                    media_block = f"""
+<div class="media-block video-thumb-block" id="vthumb_wrap_{uid}"
+     style="position:relative;background:linear-gradient(135deg,#0f1f35,#1a3a5c);
+            display:flex;align-items:center;justify-content:center">
+    <svg class="spin-anim" width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="14" stroke="rgba(255,255,255,0.2)" stroke-width="3" fill="none"/>
+        <path d="M18 4 A14 14 0 0 1 32 18" stroke="white" stroke-width="3"
+              fill="none" stroke-linecap="round"/>
+    </svg>
+</div>
+<script>
+(function(){{
+    var videoUrls_{uid} = {videos_js};
+    var snapUrl_{uid}   = "{snap_url_safe}";
+    setTimeout(function() {{
+        extractVideoThumb('{uid}', videoUrls_{uid}, snapUrl_{uid});
+    }}, {j * 80});   /* escalonado para não disparar tudo ao mesmo tempo */
+}})();
+</script>"""
+ 
                 elif img_primary:
                     media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
@@ -4234,8 +4125,7 @@ function imgFallback_{uid}(img){{
     </div>
     <div class="debug-block" id="debug_{uid}" style="display:none">
         <div class="debug-header" onclick="toggleDebug('{uid}')">
-            <span>Dados recebidos da API</span>
-            <span>fechar ✕</span>
+            <span>Dados recebidos da API</span><span>fechar ✕</span>
         </div>
         <pre class="debug-pre">{debug_json_html}</pre>
     </div>
@@ -4255,48 +4145,58 @@ window.__PLATS_{uid}__ = {plat_js};
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;}}
-.ads-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;}}
+ 
+/* ── 4 colunas ── */
+.ads-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}}
+ 
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
-.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:6px;}}
-.status-dot{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#1aab40;}}
-.status-dot::before{{content:'';width:8px;height:8px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
-.status-dot-inactive{{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6b7280;}}
-.status-dot-inactive::before{{content:'';width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0;}}
-.ad-id{{font-size:10px;color:#8a8d91;font-family:monospace;}}
-.badge-small{{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}}
+.status-bar{{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:4px;}}
+.status-dot{{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#1aab40;}}
+.status-dot::before{{content:'';width:7px;height:7px;border-radius:50%;background:#1aab40;flex-shrink:0;}}
+.status-dot-inactive{{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#6b7280;}}
+.status-dot-inactive::before{{content:'';width:7px;height:7px;border-radius:50%;background:#d1d5db;flex-shrink:0;}}
+.ad-id{{font-size:9px;color:#8a8d91;font-family:monospace;}}
+.badge-small{{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:600;}}
 .badge-dyn{{background:#f0f9ff;color:#0369a1;border-color:#bae6fd;}}
-.meta-info{{padding:8px 14px 10px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
-.meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;margin-bottom:5px;flex-wrap:wrap;}}
+.meta-info{{padding:6px 12px 8px;border-bottom:1px solid #f0f2f5;background:#fafbfc;}}
+.meta-row{{display:flex;align-items:center;gap:5px;font-size:11px;color:#65676b;margin-bottom:4px;flex-wrap:wrap;}}
 .meta-row:last-child{{margin-bottom:0;}}
-.meta-label{{font-size:12px;color:#65676b;font-weight:700;flex-shrink:0;}}
-.plat-icons{{display:flex;align-items:center;gap:1px;flex-wrap:wrap;}}
-.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;}}
-.copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
-.page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
-.page-avatar{{width:34px;height:34px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}}
-.page-name{{font-size:13px;font-weight:700;color:#050505;}}
-.page-sponsored{{font-size:11px;color:#65676b;}}
-.copy-body{{font-size:14px;color:#050505;line-height:1.65;white-space:pre-line;word-break:break-word;min-height:46px;}}
-.copy-title{{font-size:14px;font-weight:700;color:#050505;margin-top:8px;}}
-.copy-desc{{font-size:12px;color:#65676b;margin-top:3px;}}
-.no-copy{{font-size:13px;color:#bcc0c4;font-style:italic;min-height:46px;}}
-.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:220px;}}
-.img-block{{height:220px;}}
-.video-thumb-block{{height:220px;}}
-.video-block{{height:220px;background:linear-gradient(135deg,#0f1f35,#1a3a5c);display:flex;flex-direction:column;align-items:center;justify-content:center;}}
-.video-play-icon{{display:flex;align-items:center;justify-content:center;}}
-.no-media-block{{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:8px;}}
-.cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:10px;min-height:50px;}}
-.cta-domain{{font-size:11px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-.cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
+.meta-label{{font-size:11px;color:#65676b;font-weight:700;flex-shrink:0;}}
+.plat-icons{{display:flex;align-items:center;gap:2px;flex-wrap:wrap;}}
+.plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;}}
+.copy-section{{padding:10px 12px 8px;border-bottom:1px solid #f0f2f5;}}
+.page-header{{display:flex;align-items:center;gap:8px;margin-bottom:8px;}}
+.page-avatar{{width:30px;height:30px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}}
+.page-name{{font-size:12px;font-weight:700;color:#050505;}}
+.page-sponsored{{font-size:10px;color:#65676b;}}
+.copy-body{{font-size:13px;color:#050505;line-height:1.55;white-space:pre-line;word-break:break-word;min-height:40px;}}
+.copy-title{{font-size:13px;font-weight:700;color:#050505;margin-top:6px;}}
+.copy-desc{{font-size:11px;color:#65676b;margin-top:2px;}}
+.no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;}}
+ 
+/* ── media blocks ── */
+.media-block{{width:100%;position:relative;overflow:hidden;background:#f0f2f5;height:180px;}}
+.img-block{{height:180px;}}
+.video-thumb-block{{height:180px;}}
+.no-media-block{{height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f7f8fa;gap:6px;}}
+ 
+/* ── spinner animado ── */
+@keyframes spin{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}
+.spin-anim{{animation:spin 1s linear infinite;}}
+ 
+.cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
+.cta-domain{{font-size:10px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
 .card-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e4e6ea;}}
-.lib-btn{{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:12px;font-weight:700;text-decoration:none;}}
-.lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#f3f4f6;color:#9ca3af;font-size:12px;font-weight:600;}}
-.debug-btn{{display:flex;align-items:center;justify-content:center;padding:11px 8px;background:#fffbeb;color:#92400e;border:none;border-radius:0 0 10px 0;font-size:12px;font-weight:700;cursor:pointer;border-left:1px solid #e4e6ea;}}
+.lib-btn{{display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;background:#1877F2;color:#fff;border:none;border-radius:0 0 0 10px;font-size:11px;font-weight:700;text-decoration:none;}}
+.lib-btn-disabled{{display:flex;align-items:center;justify-content:center;padding:9px 6px;background:#f3f4f6;color:#9ca3af;font-size:11px;font-weight:600;}}
+.debug-btn{{display:flex;align-items:center;justify-content:center;padding:9px 6px;background:#fffbeb;color:#92400e;border:none;border-radius:0 0 10px 0;font-size:11px;font-weight:700;cursor:pointer;border-left:1px solid #e4e6ea;}}
 .debug-btn:hover{{background:#fef3c7;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
-.debug-header{{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
-.debug-pre{{font-family:monospace;font-size:11px;color:#374151;padding:10px 14px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:200px;overflow-y:auto;border-top:1px solid #fde68a;}}
+.debug-header{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
+.debug-pre{{font-family:monospace;font-size:10px;color:#374151;padding:8px 12px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:180px;overflow-y:auto;border-top:1px solid #fde68a;}}
+ 
+/* ── Modal ── */
 #modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
 #modal-overlay.open{{display:flex;}}
 #modal-box{{background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
@@ -4306,62 +4206,217 @@ body{{padding-bottom:4px;}}
 #modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
 #modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
 </style>
-</head><body>
+</head>
+<body>
+ 
+<!-- Modal -->
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">✕</button>
         <div id="modal-content"></div>
     </div>
 </div>
+ 
+<!-- Grid de 4 colunas -->
 <div class="ads-grid">{cards_joined}</div>
+ 
 <script>
-function openModal(imgSrc,snapUrl,isVideo){{
-    var overlay=document.getElementById('modal-overlay');
-    var content=document.getElementById('modal-content');
-    content.innerHTML='';
-    if(isVideo){{
-        var wrap=document.createElement('div');wrap.id='modal-video-wrap';
-        if(imgSrc){{var thumb=document.createElement('img');thumb.src=imgSrc;thumb.style.cssText='max-width:min(70vw,600px);max-height:min(50vh,480px);object-fit:contain;border-radius:10px;display:block;';thumb.onerror=function(){{this.style.display='none';}};wrap.appendChild(thumb);}}
-        if(snapUrl){{var btn=document.createElement('a');btn.href=snapUrl;btn.target='_blank';btn.id='modal-video-btn';btn.innerHTML='▶ Abrir vídeo no Ad Library';wrap.appendChild(btn);}}
-        content.appendChild(wrap);overlay.classList.add('open');
-    }}else{{
-        if(!imgSrc&&snapUrl){{window.open(snapUrl,'_blank');return;}}
-        if(!imgSrc)return;
-        var loading=document.createElement('div');loading.id='modal-loading';loading.textContent='Carregando…';content.appendChild(loading);overlay.classList.add('open');
-        var tmp=new Image();
-        tmp.onload=function(){{content.innerHTML='';var img=document.createElement('img');img.id='modal-img';img.src=imgSrc;content.appendChild(img);}};
-        tmp.onerror=function(){{content.innerHTML='';if(snapUrl){{window.open(snapUrl,'_blank');closeModal();}}else{{var msg=document.createElement('div');msg.style.cssText='color:#aaa;font-size:14px;padding:32px;text-align:center';msg.textContent='Imagem não disponível.';content.appendChild(msg);}}}};
-        tmp.src=imgSrc;
+/* ════════════════════════════════════════════════════
+   EXTRAÇÃO DE THUMBNAIL DE VÍDEO — CLIENT SIDE
+   As URLs fbcdn.net só funcionam no browser do usuário
+   (são assinadas e bloqueiam requests de servidor).
+   Usamos <video> + <canvas> para capturar o 1º frame.
+   ════════════════════════════════════════════════════ */
+ 
+function extractVideoThumb(uid, videoUrls, snapUrl) {{
+    if (!videoUrls || videoUrls.length === 0) {{ showVideoFallback(uid, snapUrl); return; }}
+    var wrap = document.getElementById('vthumb_wrap_' + uid);
+    if (!wrap) return;
+    var tried = 0;
+ 
+    function tryUrl(url) {{
+        if (tried >= videoUrls.length) {{ showVideoFallback(uid, snapUrl); return; }}
+ 
+        var video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.style.cssText = 'position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;';
+ 
+        var done = false;
+ 
+        function onLoaded() {{
+            if (done) return;
+            done = true;
+            try {{
+                var canvas = document.createElement('canvas');
+                canvas.width  = video.videoWidth  || 640;
+                canvas.height = video.videoHeight || 360;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                renderVideoThumb(uid, dataUrl, snapUrl);
+            }} catch(e) {{
+                /* CORS bloqueou canvas.toDataURL → tenta próxima URL */
+                tried++;
+                tryUrl(videoUrls[tried]);
+            }}
+            video.remove();
+        }}
+ 
+        video.addEventListener('loadeddata', onLoaded);
+        video.addEventListener('canplay',    onLoaded);
+        video.addEventListener('error', function() {{
+            if (done) return;
+            done = true;
+            tried++;
+            tryUrl(videoUrls[tried]);
+            video.remove();
+        }});
+ 
+        /* timeout de 10s por tentativa */
+        setTimeout(function() {{
+            if (!done) {{
+                done = true;
+                tried++;
+                tryUrl(videoUrls[tried]);
+                video.remove();
+            }}
+        }}, 10000);
+ 
+        document.body.appendChild(video);
+        video.src = url;
+        video.load();
+    }}
+ 
+    tryUrl(videoUrls[tried]);
+}}
+ 
+function renderVideoThumb(uid, dataUrl, snapUrl) {{
+    var wrap = document.getElementById('vthumb_wrap_' + uid);
+    if (!wrap) return;
+    var clickAttr = snapUrl
+        ? 'onclick="openModal(\\'\\'' + ',\\''+snapUrl+'\\''+',true)"'
+        : '';
+    wrap.style.cursor = snapUrl ? 'pointer' : 'default';
+    wrap.innerHTML =
+        '<div style="position:relative;width:100%;height:100%" ' + clickAttr + '>'
+        + '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover;display:block"/>'
+        + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">'
+        + '<div style="width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center">'
+        + '<svg width="18" height="18" viewBox="0 0 54 54" fill="none"><polygon points="18,14 42,27 18,40" fill="white"/></svg>'
+        + '</div></div>'
+        + (snapUrl ? '<div style="position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,0.6);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;">▶ VER VÍDEO</div>' : '')
+        + '</div>';
+    syncHeight();
+}}
+ 
+function showVideoFallback(uid, snapUrl) {{
+    var wrap = document.getElementById('vthumb_wrap_' + uid);
+    if (!wrap) return;
+    var clickAttr = snapUrl ? 'onclick="openModal(\\'\\',\\''+snapUrl+'\\',true)"' : '';
+    wrap.innerHTML =
+        '<div style="width:100%;height:100%;background:linear-gradient(135deg,#0f1f35,#1a3a5c);'
+        + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;'
+        + (snapUrl ? 'cursor:pointer" ' + clickAttr : '"')
+        + '>'
+        + '<svg width="40" height="40" viewBox="0 0 54 54" fill="none">'
+        + '<circle cx="27" cy="27" r="27" fill="rgba(255,255,255,0.15)"/>'
+        + '<polygon points="22,18 40,27 22,36" fill="white"/></svg>'
+        + (snapUrl ? '<span style="font-size:11px;color:rgba(255,255,255,0.7)">▶ Ver vídeo no Ad Library</span>' : '')
+        + '</div>';
+}}
+ 
+/* ════ Modal ════ */
+function openModal(imgSrc, snapUrl, isVideo) {{
+    var overlay = document.getElementById('modal-overlay');
+    var content = document.getElementById('modal-content');
+    content.innerHTML = '';
+    if (isVideo) {{
+        var wrap = document.createElement('div');
+        wrap.id = 'modal-video-wrap';
+        if (imgSrc) {{
+            var thumb = document.createElement('img');
+            thumb.src = imgSrc;
+            thumb.style.cssText = 'max-width:min(70vw,600px);max-height:min(50vh,480px);object-fit:contain;border-radius:10px;display:block;';
+            thumb.onerror = function() {{ this.style.display = 'none'; }};
+            wrap.appendChild(thumb);
+        }}
+        if (snapUrl) {{
+            var btn = document.createElement('a');
+            btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
+            btn.innerHTML = '▶ Abrir vídeo no Ad Library';
+            wrap.appendChild(btn);
+        }}
+        content.appendChild(wrap);
+        overlay.classList.add('open');
+    }} else {{
+        if (!imgSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
+        if (!imgSrc) return;
+        var loading = document.createElement('div');
+        loading.id = 'modal-loading'; loading.textContent = 'Carregando…';
+        content.appendChild(loading);
+        overlay.classList.add('open');
+        var tmp = new Image();
+        tmp.onload = function() {{
+            content.innerHTML = '';
+            var img = document.createElement('img');
+            img.id = 'modal-img'; img.src = imgSrc;
+            content.appendChild(img);
+        }};
+        tmp.onerror = function() {{
+            content.innerHTML = '';
+            if (snapUrl) {{ window.open(snapUrl, '_blank'); closeModal(); }}
+            else {{
+                var msg = document.createElement('div');
+                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center';
+                msg.textContent = 'Imagem não disponível.';
+                content.appendChild(msg);
+            }}
+        }};
+        tmp.src = imgSrc;
     }}
 }}
-function closeModal(){{document.getElementById('modal-overlay').classList.remove('open');document.getElementById('modal-content').innerHTML='';}}
-document.addEventListener('keydown',function(e){{if(e.key==='Escape')closeModal();}});
-function toggleDebug(uid){{
-    var el=document.getElementById('debug_'+uid);
-    if(!el)return;
-    el.style.display=(el.style.display==='none'||el.style.display==='')?'block':'none';
-    setTimeout(syncHeight,50);
+function closeModal() {{
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.getElementById('modal-content').innerHTML = '';
 }}
-function syncHeight(){{
-    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
-    var frames=window.parent.document.querySelectorAll('iframe');
-    for(var i=0;i<frames.length;i++){{try{{if(frames[i].contentWindow===window){{frames[i].style.height=(h+20)+'px';break;}}}}catch(e){{}}}}
+document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
+ 
+/* ════ Debug ════ */
+function toggleDebug(uid) {{
+    var el = document.getElementById('debug_' + uid);
+    if (!el) return;
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+    setTimeout(syncHeight, 50);
 }}
-document.querySelectorAll('img').forEach(function(img){{img.addEventListener('load',function(){{setTimeout(syncHeight,30);}});img.addEventListener('error',function(){{setTimeout(syncHeight,30);}});}});
-if(window.ResizeObserver)new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded',syncHeight);
-window.addEventListener('load',syncHeight);
-setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500);
-</script></body></html>
+ 
+/* ════ Altura dinâmica ════ */
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 20) + 'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+document.querySelectorAll('img').forEach(function(img) {{
+    img.addEventListener('load',  function() {{ setTimeout(syncHeight, 30); }});
+    img.addEventListener('error', function() {{ setTimeout(syncHeight, 30); }});
+}});
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1500);
+</script>
+</body></html>
 """, height=600, scrolling=False)
  
         # ════════════════════════════════════════════════════════════
-        # ABA: ANÁLISE DE IA — 3 sub-abas: Individuais | Criativos | Copys
+        # ABA: ANÁLISE DE IA
         # ════════════════════════════════════════════════════════════
         else:
-            ads_f_ia = ads_list  # usa lista sem filtros para análise
+            ads_f_ia = ads_list
  
-            # ── chaves de estado ──────────────────────────────────────
             chave_ia_geral     = f"ia_ads_geral_{sk}"
             chave_ia_criativos = f"ia_ads_criativos_{sk}"
             chave_ia_copys     = f"ia_ads_copys_{sk}"
@@ -4370,13 +4425,11 @@ setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500
                 if ch not in st.session_state:
                     st.session_state[ch] = ""
  
-            # chave por anúncio individual
             for j in range(len(ads_f_ia)):
                 chave_ind = f"ia_ad_result_{sk}_{j}"
                 if chave_ind not in st.session_state:
                     st.session_state[chave_ind] = ""
  
-            # ── ghost buttons para sub-abas e triggers individuais ────
             sub_tab_keys = [
                 f"btn_subtab_{sk}_individuais",
                 f"btn_subtab_{sk}_criativos",
@@ -4407,17 +4460,14 @@ setTimeout(syncHeight,200);setTimeout(syncHeight,600);setTimeout(syncHeight,1500
             ])
             st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
  
-            # sub-aba state
             if f"ads_subtab_{sk}" not in st.session_state:
                 st.session_state[f"ads_subtab_{sk}"] = "individuais"
  
-            # ghost buttons sub-abas
             for tab_name in ["individuais", "criativos", "copys"]:
                 if st.button(f"_subtab_{sk}_{tab_name}_", key=f"btn_subtab_{sk}_{tab_name}"):
                     st.session_state[f"ads_subtab_{sk}"] = tab_name
                     st.rerun()
  
-            # ghost buttons triggers IA geral
             if st.button(f"_ia_geral_{sk}_", key=f"btn_ia_geral_{sk}"):
                 if gemini_model is None:
                     st.session_state[chave_ia_geral] = "Configure GEMINI_API_KEY nos secrets."
@@ -4458,7 +4508,7 @@ Amostra dos anúncios:
                     st.session_state[chave_ia_criativos] = "Configure GEMINI_API_KEY nos secrets."
                 else:
                     resumo_criativos = "\n".join([
-                        f"- [{a['formato']}] Plataformas: {', '.join(a.get('plataformas',[]))} | Thumb: {'sim' if a.get('video_thumb') or a.get('images') else 'não'} | Título: {_truncar(a.get('title',''),60) or '—'}"
+                        f"- [{a['formato']}] Plataformas: {', '.join(a.get('plataformas',[]))} | Título: {_truncar(a.get('title',''),60) or '—'}"
                         for a in ads_f_ia[:15]
                     ])
                     n_vid = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
@@ -4519,7 +4569,6 @@ Copies coletadas:
                             st.session_state[chave_ia_copys] = f"Erro: {ex}"
                             st.rerun()
  
-            # ghost buttons triggers IA individuais
             for j, ad in enumerate(ads_f_ia):
                 if st.button(f"_ia_ind_{sk}_{j}_", key=f"btn_ia_ind_{sk}_{j}"):
                     chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -4550,11 +4599,8 @@ CTA: {ad.get("cta","")}
                                 st.session_state[chave_ind] = f"Erro: {ex}"
                                 st.rerun()
  
-            # ── Renderiza sub-abas ────────────────────────────────────
             subtab_atual = st.session_state.get(f"ads_subtab_{sk}", "individuais")
  
-            # Monta dados para o HTML
-            # Anúncios individuais - lista resumida
             ind_cards_data = []
             for j, ad in enumerate(ads_f_ia):
                 chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -4564,12 +4610,9 @@ CTA: {ad.get("cta","")}
                     img_src = ad["images_b64"][0]
                 elif ad.get("images"):
                     img_src = ad["images"][0]
-                elif ad.get("video_thumb"):
-                    img_src = ad["video_thumb"]
                 resultado_html = resultado.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado else ""
                 ind_cards_data.append({
                     "j": j,
-                    "uid": f"{sk}_{j}",
                     "formato": ad.get("formato",""),
                     "title": _truncar(ad.get("title",""), 80),
                     "body": _truncar(ad.get("body",""), 120),
@@ -4583,7 +4626,6 @@ CTA: {ad.get("cta","")}
  
             ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
  
-            # resultados gerais
             geral_html     = st.session_state.get(chave_ia_geral, "").replace("\n","<br>")
             criativos_html = st.session_state.get(chave_ia_criativos, "").replace("\n","<br>")
             copys_html     = st.session_state.get(chave_ia_copys, "").replace("\n","<br>")
@@ -4598,144 +4640,50 @@ CTA: {ad.get("cta","")}
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background: transparent; font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased; overflow: visible;
-}}
-body {{ padding-bottom: 8px; }}
- 
-/* ── Sub-tabs ── */
-.subtabs-wrap {{
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-bottom: none;
-    padding: 0 16px;
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid #e5e7eb;
-}}
-.subtab {{
-    padding: 12px 20px;
-    font-size: 13px; font-weight: 700; color: #9ca3af;
-    background: transparent; border: none; cursor: pointer;
-    border-bottom: 3px solid transparent; margin-bottom: -1px;
-    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-    white-space: nowrap;
-}}
-.subtab:hover {{ color: #374151; }}
-.subtab.active {{ color: #1a2e4a; border-bottom: 3px solid #3a9fd6; }}
- 
-/* ── Panels ── */
-.panel {{ display: none; padding: 20px 16px; background: #fff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }}
-.panel.active {{ display: block; }}
- 
-/* ── Stats row ── */
-.stats-mini {{ display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }}
-.stat-mini {{
-    flex: 1; min-width: 80px;
-    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;
-    padding: 10px 14px; text-align: center;
-}}
-.stat-mini-num {{ font-size: 20px; font-weight: 800; color: #111827; }}
-.stat-mini-lbl {{ font-size: 11px; color: #6b7280; font-weight: 600; margin-top: 2px; }}
- 
-/* ── Individal cards ── */
-.ind-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }}
-.ind-card {{
-    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;
-    overflow: hidden; display: flex; flex-direction: column;
-}}
-.ind-card-top {{ display: flex; gap: 12px; padding: 14px; border-bottom: 1px solid #f3f4f6; }}
-.ind-thumb {{
-    width: 72px; height: 72px; border-radius: 8px; object-fit: cover;
-    border: 1px solid #e5e7eb; flex-shrink: 0; background: #f3f4f6;
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
-}}
-.ind-thumb img {{ width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }}
-.ind-info {{ flex: 1; min-width: 0; }}
-.ind-fmt {{
-    display: inline-block; background: #eff6ff; color: #1d4ed8;
-    border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; margin-bottom: 5px;
-}}
-.ind-fmt-inativo {{
-    display: inline-block; background: #f3f4f6; color: #6b7280;
-    border: 1px solid #e5e7eb; padding: 2px 8px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; margin-bottom: 5px; margin-left: 4px;
-}}
-.ind-title {{ font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 3px; line-height: 1.4; }}
-.ind-body {{ font-size: 12px; color: #6b7280; line-height: 1.5; }}
-.ind-meta {{ font-size: 11px; color: #9ca3af; margin-top: 4px; }}
-.ind-btn {{
-    width: 100%; padding: 10px 0;
-    border: none; border-top: 1px solid #e5e7eb;
-    background: #fff; font-size: 13px; font-weight: 700; color: #1d4ed8;
-    cursor: pointer; font-family: 'DM Sans', sans-serif;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    transition: background 0.12s;
-}}
-.ind-btn:hover {{ background: #eff6ff; }}
-.ind-btn.loading {{ color: #9ca3af; pointer-events: none; }}
-.ind-result {{
-    background: #f0fdf4; border-top: 1px solid #86efac;
-    padding: 12px 14px; font-size: 13px; color: #374151;
-    line-height: 1.7; max-height: 220px; overflow-y: auto;
-}}
-.ind-result-header {{
-    font-size: 11px; font-weight: 800; color: #15803d;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    margin-bottom: 8px;
-}}
- 
-/* ── Geral/Criativos/Copys panels ── */
-.analise-wrap {{
-    background: #f9fafb; border: 1px solid #e5e7eb;
-    border-radius: 10px; overflow: hidden;
-}}
-.analise-header {{
-    padding: 14px 16px; font-size: 13px; font-weight: 800; color: #1a2e4a;
-    text-transform: uppercase; letter-spacing: 0.3px;
-    border-bottom: 1px solid #e5e7eb; background: #fff;
-    display: flex; align-items: center; justify-content: space-between;
-}}
-.analise-body {{
-    padding: 18px 16px; font-size: 14px; color: #374151;
-    line-height: 1.75; background: #fff;
-    min-height: 80px;
-}}
-.analise-empty {{
-    text-align: center; color: #9ca3af; font-size: 14px;
-    padding: 36px 24px;
-    background: #fff;
-}}
-.analise-footer {{
-    padding: 14px 16px; border-top: 1px solid #f3f4f6; background: #f9fafb;
-}}
-.btn-gerar {{
-    padding: 10px 24px; border: 1px solid #3a9fd6; border-radius: 8px;
-    background: #eff6ff; font-size: 14px; font-weight: 700; color: #1d4ed8;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s;
-}}
-.btn-gerar:hover {{ background: #dbeafe; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+.subtabs-wrap {{ background:#fff; border:1px solid #e5e7eb; border-top:none; border-bottom:none; padding:0 16px; display:flex; gap:0; border-bottom:1px solid #e5e7eb; }}
+.subtab {{ padding:12px 20px; font-size:13px; font-weight:700; color:#9ca3af; background:transparent; border:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1px; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap; }}
+.subtab:hover {{ color:#374151; }}
+.subtab.active {{ color:#1a2e4a; border-bottom:3px solid #3a9fd6; }}
+.panel {{ display:none; padding:20px 16px; background:#fff; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 12px 12px; }}
+.panel.active {{ display:block; }}
+.stats-mini {{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }}
+.stat-mini {{ flex:1; min-width:80px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; text-align:center; }}
+.stat-mini-num {{ font-size:20px; font-weight:800; color:#111827; }}
+.stat-mini-lbl {{ font-size:11px; color:#6b7280; font-weight:600; margin-top:2px; }}
+.ind-grid {{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }}
+.ind-card {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }}
+.ind-card-top {{ display:flex; gap:12px; padding:14px; border-bottom:1px solid #f3f4f6; }}
+.ind-thumb {{ width:72px; height:72px; border-radius:8px; object-fit:cover; border:1px solid #e5e7eb; flex-shrink:0; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-size:20px; overflow:hidden; }}
+.ind-thumb img {{ width:100%; height:100%; object-fit:cover; border-radius:8px; }}
+.ind-info {{ flex:1; min-width:0; }}
+.ind-fmt {{ display:inline-block; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; margin-bottom:5px; }}
+.ind-fmt-inativo {{ display:inline-block; background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; margin-bottom:5px; margin-left:4px; }}
+.ind-title {{ font-size:13px; font-weight:700; color:#111827; margin-bottom:3px; line-height:1.4; }}
+.ind-body {{ font-size:12px; color:#6b7280; line-height:1.5; }}
+.ind-meta {{ font-size:11px; color:#9ca3af; margin-top:4px; }}
+.ind-btn {{ width:100%; padding:10px 0; border:none; border-top:1px solid #e5e7eb; background:#fff; font-size:13px; font-weight:700; color:#1d4ed8; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:6px; transition:background 0.12s; }}
+.ind-btn:hover {{ background:#eff6ff; }}
+.ind-result {{ background:#f0fdf4; border-top:1px solid #86efac; padding:12px 14px; font-size:13px; color:#374151; line-height:1.7; max-height:220px; overflow-y:auto; }}
+.ind-result-header {{ font-size:11px; font-weight:800; color:#15803d; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }}
+.analise-wrap {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }}
+.analise-header {{ padding:14px 16px; font-size:13px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.3px; border-bottom:1px solid #e5e7eb; background:#fff; display:flex; align-items:center; justify-content:space-between; }}
+.analise-body {{ padding:18px 16px; font-size:14px; color:#374151; line-height:1.75; background:#fff; min-height:80px; }}
+.analise-empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:36px 24px; background:#fff; }}
+.analise-footer {{ padding:14px 16px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
+.btn-gerar {{ padding:10px 24px; border:1px solid #3a9fd6; border-radius:8px; background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }}
+.btn-gerar:hover {{ background:#dbeafe; }}
 </style>
 </head>
 <body>
  
-<!-- Sub-tabs -->
 <div class="subtabs-wrap">
-    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais', this)">
-        📋 Anúncios Individuais
-    </button>
-    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos', this)">
-        🎨 Criativos
-    </button>
-    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys', this)">
-        ✍️ Copys
-    </button>
+    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais',this)">📋 Anúncios Individuais</button>
+    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos',this)">🎨 Criativos</button>
+    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys',this)">✍️ Copys</button>
 </div>
  
-<!-- Panel: Individuais -->
 <div id="panel-individuais" class="panel {'active' if subtab_atual == 'individuais' else ''}">
     <div class="stats-mini">
         <div class="stat-mini"><div class="stat-mini-num">{n_anuncios}</div><div class="stat-mini-lbl">Total</div></div>
@@ -4746,13 +4694,10 @@ body {{ padding-bottom: 8px; }}
     <div class="ind-grid" id="ind-grid"></div>
 </div>
  
-<!-- Panel: Criativos -->
 <div id="panel-criativos" class="panel {'active' if subtab_atual == 'criativos' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header">
-            <span>🎨 Análise de Criativos</span>
-        </div>
-        <div class="analise-body" id="criativos-body">
+        <div class="analise-header"><span>🎨 Análise de Criativos</span></div>
+        <div class="analise-body">
             {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
@@ -4763,13 +4708,10 @@ body {{ padding-bottom: 8px; }}
     </div>
 </div>
  
-<!-- Panel: Copys -->
 <div id="panel-copys" class="panel {'active' if subtab_atual == 'copys' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header">
-            <span>✍️ Análise de Copys</span>
-        </div>
-        <div class="analise-body" id="copys-body">
+        <div class="analise-header"><span>✍️ Análise de Copys</span></div>
+        <div class="analise-body">
             {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
@@ -4781,10 +4723,8 @@ body {{ padding-bottom: 8px; }}
 </div>
  
 <script>
-// ── dados ────────────────────────────────────────────────────
 var IND_CARDS = {ind_cards_json};
  
-// ── build individual cards ───────────────────────────────────
 function buildIndGrid() {{
     var grid = document.getElementById('ind-grid');
     if (!grid) return;
@@ -4801,18 +4741,16 @@ function buildIndGrid() {{
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
  
         card.innerHTML =
-            '<div class="ind-card-top">' +
-                '<div class="ind-thumb">' + thumbHtml + '</div>' +
-                '<div class="ind-info">' +
-                    '<span class="ind-fmt">' + (d.formato || 'Anúncio') + '</span>' + statusBadge +
-                    '<div class="ind-title">' + (d.title || '—') + '</div>' +
-                    '<div class="ind-body">' + (d.body || '—') + '</div>' +
-                    '<div class="ind-meta">' +
-                        (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '') +
-                        (d.plataformas ? '📱 ' + d.plataformas : '') +
-                    '</div>' +
-                '</div>' +
-            '</div>';
+            '<div class="ind-card-top">'
+            + '<div class="ind-thumb">' + thumbHtml + '</div>'
+            + '<div class="ind-info">'
+            + '<span class="ind-fmt">' + (d.formato || 'Anúncio') + '</span>' + statusBadge
+            + '<div class="ind-title">' + (d.title || '—') + '</div>'
+            + '<div class="ind-body">' + (d.body || '—') + '</div>'
+            + '<div class="ind-meta">'
+            + (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '')
+            + (d.plataformas ? '📱 ' + d.plataformas : '')
+            + '</div></div></div>';
  
         if (d.resultado) {{
             var res = document.createElement('div');
@@ -4825,12 +4763,12 @@ function buildIndGrid() {{
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
         btn.innerHTML = d.resultado
-            ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.73-8.63"/></svg> Reanalisar'
-            : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Analisar este anúncio';
+            ? '🔄 Reanalisar'
+            : '⚡ Analisar este anúncio';
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
-                if (b) {{ b.className = 'ind-btn loading'; b.textContent = 'Analisando…'; }}
+                if (b) {{ b.textContent = 'Analisando…'; b.style.color = '#9ca3af'; }}
                 triggerGlobal('_ia_ind_{sk}_' + idx + '_');
             }};
         }})(d.j);
@@ -4841,54 +4779,41 @@ function buildIndGrid() {{
     syncHeight();
 }}
  
-// ── subtab switching ─────────────────────────────────────────
 function showSubtab(name, el) {{
-    // visually switch tabs
     document.querySelectorAll('.subtab').forEach(function(t) {{ t.classList.remove('active'); }});
     document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
-    // persist via streamlit ghost button
     triggerGlobal('_subtab_{sk}_' + name + '_');
     setTimeout(syncHeight, 100);
 }}
  
-// ── trigger streamlit buttons ────────────────────────────────
 function triggerGlobal(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
  
-// ── height sync ───────────────────────────────────────────────
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try {{
-            if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 20) + 'px';
-                break;
-            }}
-        }} catch(e) {{}}
+        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 20) + 'px'; break; }} }} catch(e) {{}}
     }}
 }}
  
-// ── init ─────────────────────────────────────────────────────
 buildIndGrid();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200);
-setTimeout(syncHeight, 600);
-setTimeout(syncHeight, 1500);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
 """, height=600, scrolling=False)
  
-    # ── Renderiza a aba ativa ────────────────────────────────────────
+    # ── Renderiza empresa da aba ativa ───────────────────────────────
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
     aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
     if empresas_com_dados:
