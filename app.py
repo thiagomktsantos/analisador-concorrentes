@@ -4272,7 +4272,7 @@ body{{padding-bottom:4px;}}
 .meta-row{{display:flex;align-items:center;gap:6px;font-size:12px;color:#65676b;margin-bottom:5px;flex-wrap:wrap;}}
 .meta-row:last-child{{margin-bottom:0;}}
 .meta-label{{font-size:12px;color:#65676b;font-weight:700;flex-shrink:0;}}
-.plat-icons{{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}}
+.plat-icons{{display:flex;align-items:center;gap:2px;flex-wrap:wrap;}}
 .plat-badge{{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;}}
 .copy-section{{padding:12px 14px 10px;border-bottom:1px solid #f0f2f5;}}
 .page-header{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
