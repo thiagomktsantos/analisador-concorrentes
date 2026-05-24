@@ -621,25 +621,38 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 
 /* ─────────────────────────────────────────────────────
    CONTAINERS COM BORDA — fundo branco FORÇADO
-   Seletor universal * garante que qualquer classe
-   dinâmica do Streamlit (st-emotion-cache-*) seja
-   sobrescrita independente de profundidade no DOM
    ───────────────────────────────────────────────────── */
-section.main [data-testid="stVerticalBlockBorderWrapper"] {
+section.main [data-testid="stVerticalBlockBorderWrapper"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [class^="st-emotion-cache-"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [class*=" st-emotion-cache-"] {
     background: #ffffff !important;
     background-color: #ffffff !important;
+}
+
+section.main [data-testid="stVerticalBlockBorderWrapper"] {
     border: 1px solid #e5e7eb !important;
     border-radius: 14px !important;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
 }
 
-/* Força branco em TODOS os descendentes, exceto elementos visuais e de input */
-section.main [data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(video):not(input):not(textarea):not(select):not(option) {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-}
-
-/* Inputs e selects mantêm estilo próprio */
 section.main [data-testid="stVerticalBlockBorderWrapper"] input,
 section.main [data-testid="stVerticalBlockBorderWrapper"] textarea {
     background: #ffffff !important;
@@ -657,7 +670,6 @@ section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"
     border-radius: 7px !important;
 }
 
-/* Elementos visuais permanecem transparentes */
 section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
 section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
 section.main [data-testid="stVerticalBlockBorderWrapper"] img,
