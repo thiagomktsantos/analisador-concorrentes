@@ -1345,7 +1345,26 @@ if st.session_state.pagina == "home":
         box-shadow: none !important;
         padding: 0 !important;
     }
-    .st-key-btn_editar_empresa { display: none !important; }
+    .st-key-btn_editar_empresa_ghost {
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+    }
+    .stElementContainer:has(.st-key-btn_editar_empresa_ghost) {
+        display: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1375,15 +1394,6 @@ html, body { background: transparent; overflow: hidden; }
 
         with h2:
             st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
-            btn_editar = st.button(
-                "Editar Empresa",
-                type="primary",
-                use_container_width=True,
-                key="btn_editar_empresa",
-            )
-            if btn_editar:
-                st.session_state.editar_empresa = True
-                st.rerun()
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
@@ -1518,6 +1528,11 @@ html, body { background: transparent; overflow: hidden; }
     else:
         # ── MODO VISUALIZAÇÃO ─────────────────────────────────────
 
+        # Botão ghost oculto — processado pelo Streamlit
+        if st.button("_editar_empresa_", key="btn_editar_empresa_ghost"):
+            st.session_state.editar_empresa = True
+            st.rerun()
+
         h1, h2 = st.columns([7, 3])
         with h1:
             components.html("""
@@ -1542,15 +1557,56 @@ html, body { background: transparent; overflow: hidden; }
 
         with h2:
             st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
-            btn_editar = st.button(
-                "✏️ Editar Empresa",
-                type="primary",
-                use_container_width=True,
-                key="btn_editar_empresa",
-            )
-            if btn_editar:
-                st.session_state.editar_empresa = True
-                st.rerun()
+            components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; font-family: 'DM Sans', sans-serif; }
+.btn {
+    width: 100%;
+    padding: 10px 16px;
+    background: #0780c0;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s;
+    min-height: 40px;
+    box-sizing: border-box;
+}
+.btn:hover { background: #065f9e; }
+</style>
+<button class="btn" onclick="triggerEditar()">
+    ✏️ Editar Empresa
+</button>
+<script>
+function triggerEditar() {
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === '_editar_empresa_') { b.click(); return; }
+    }
+}
+(function() {
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {
+        try {
+            if (iframes[i].contentWindow === window) {
+                iframes[i].style.height = '46px';
+                break;
+            }
+        } catch(e) {}
+    }
+})();
+</script>
+""", height=46, scrolling=False)
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
