@@ -621,8 +621,9 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 
 /* ─────────────────────────────────────────────────────
    CONTAINERS COM BORDA — fundo branco FORÇADO
-   Usa section.main para ganhar especificidade sobre
-   os estilos dinâmicos do Streamlit (st-emotion-cache)
+   Seletor universal * garante que qualquer classe
+   dinâmica do Streamlit (st-emotion-cache-*) seja
+   sobrescrita independente de profundidade no DOM
    ───────────────────────────────────────────────────── */
 section.main [data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
@@ -631,61 +632,32 @@ section.main [data-testid="stVerticalBlockBorderWrapper"] {
     border-radius: 14px !important;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
 }
-section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
+
+/* Força branco em TODOS os descendentes, exceto elementos visuais e de input */
+section.main [data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(video):not(input):not(textarea):not(select):not(option) {
     background: #ffffff !important;
     background-color: #ffffff !important;
 }
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
+
+/* Inputs e selects mantêm estilo próprio */
+section.main [data-testid="stVerticalBlockBorderWrapper"] input,
+section.main [data-testid="stVerticalBlockBorderWrapper"] textarea {
     background: #ffffff !important;
     background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 7px !important;
+    font-size: 15px !important;
+    color: #111827 !important;
 }
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div > div {
+
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div {
     background: #ffffff !important;
     background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 7px !important;
 }
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-}
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div > div {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-}
-section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm > div > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stVerticalBlock"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stHorizontalBlock"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stLayoutWrapper"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stLayoutWrapper"] > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="column"],
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="column"] > div,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm .stElementContainer,
-section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm .stElementContainer > div {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-}
-section.main [data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"] {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-}
+
+/* Elementos visuais permanecem transparentes */
 section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
 section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
 section.main [data-testid="stVerticalBlockBorderWrapper"] img,
@@ -1237,62 +1209,51 @@ if st.session_state.pagina == "home":
     if not tem_dados and not st.session_state.editar_empresa:
         st.session_state.editar_empresa = True
  
+    # CSS global da página home — fundo branco FORÇADO em todos os containers
+    st.markdown("""
+    <style>
+    section.main [data-testid="stVerticalBlockBorderWrapper"] {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 14px !important;
+        padding: 20px 28px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    }
+    section.main [data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(video):not(input):not(textarea):not(select) {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+    }
+    section.main [data-testid="stVerticalBlockBorderWrapper"] input,
+    section.main [data-testid="stVerticalBlockBorderWrapper"] textarea {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 7px !important;
+        font-size: 15px !important;
+        color: #111827 !important;
+    }
+    section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 7px !important;
+    }
+    section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
+    section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
+    section.main [data-testid="stVerticalBlockBorderWrapper"] img,
+    section.main [data-testid="stVerticalBlockBorderWrapper"] svg,
+    section.main [data-testid="stVerticalBlockBorderWrapper"] video {
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+    .st-key-btn_editar_empresa { display: none !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
     if st.session_state.editar_empresa or not tem_dados:
- 
-        st.markdown("""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
- 
-        section.main [data-testid="stVerticalBlockBorderWrapper"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-        }
- 
-        section.main [data-testid="stVerticalBlockBorderWrapper"] {
-            border: 1px solid #e5e7eb !important;
-            border-radius: 14px !important;
-            padding: 20px 28px !important;
-            margin-bottom: 12px !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-        }
- 
-        section.main [data-testid="stVerticalBlockBorderWrapper"] input[type="text"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] input[type="password"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] textarea {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 7px !important;
-            font-size: 15px !important;
-            color: #111827 !important;
-        }
- 
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 7px !important;
-        }
- 
-        .st-key-btn_editar_empresa { display: none !important; }
-        </style>
-        """, unsafe_allow_html=True)
- 
+
         # ── Cabeçalho ──────────────────────────────────────────────
         h1, h2 = st.columns([7, 3])
         with h1:
@@ -1464,38 +1425,7 @@ html, body { background: transparent; overflow: hidden; }
  
     else:
         # ── MODO VISUALIZAÇÃO ─────────────────────────────────────
- 
-        st.markdown("""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
- 
-        section.main [data-testid="stVerticalBlockBorderWrapper"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"],
-        section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-        }
- 
-        section.main [data-testid="stVerticalBlockBorderWrapper"] {
-            border: 1px solid #e5e7eb !important;
-            border-radius: 14px !important;
-            padding: 20px 28px !important;
-            margin-bottom: 12px !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
- 
+
         h1, h2 = st.columns([7, 3])
         with h1:
             components.html("""
