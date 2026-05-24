@@ -1345,7 +1345,8 @@ if st.session_state.pagina == "home":
         box-shadow: none !important;
         padding: 0 !important;
     }
-    .st-key-btn_editar_empresa_ghost {
+    .st-key-btn_home_editar_ghost,
+    .stElementContainer:has(.st-key-btn_home_editar_ghost) {
         position: fixed !important;
         top: -9999px !important;
         left: -9999px !important;
@@ -1355,15 +1356,7 @@ if st.session_state.pagina == "home":
         opacity: 0 !important;
         pointer-events: none !important;
         visibility: hidden !important;
-    }
-    .stElementContainer:has(.st-key-btn_editar_empresa_ghost) {
-        display: none !important;
-        height: 0 !important;
-        min-height: 0 !important;
-        max-height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
+        display: block !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -1528,8 +1521,8 @@ html, body { background: transparent; overflow: hidden; }
     else:
         # ── MODO VISUALIZAÇÃO ─────────────────────────────────────
 
-        # Botão ghost oculto — processado pelo Streamlit
-        if st.button("_editar_empresa_", key="btn_editar_empresa_ghost"):
+        # Botão ghost — oculto via CSS, acionado pelo HTML abaixo
+        if st.button("Editar Empresa", key="btn_home_editar_ghost"):
             st.session_state.editar_empresa = True
             st.rerun()
 
@@ -1589,9 +1582,12 @@ html, body { background: transparent; overflow: hidden; font-family: 'DM Sans', 
 <script>
 function triggerEditar() {
     var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === '_editar_empresa_') { b.click(); return; }
+    for (var i = 0; i < btns.length; i++) {
+        var txt = (btns[i].textContent || btns[i].innerText || '').trim();
+        if (txt === 'Editar Empresa') {
+            btns[i].click();
+            return;
+        }
     }
 }
 (function() {
