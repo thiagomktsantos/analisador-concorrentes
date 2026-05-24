@@ -694,6 +694,44 @@ button[data-testid="baseButton-secondary"][kind="secondary"]:has(~ *) {
 </style>
 """, unsafe_allow_html=True)
 
+# ── Força fundo branco via JavaScript — bypass garantido do st-emotion-cache ──
+components.html("""
+<script>
+(function() {
+    var TAGS_IGNORADAS = ['iframe','canvas','img','svg','video','input','textarea','select','option'];
+
+    function forcarBranco() {
+        var containers = window.parent.document.querySelectorAll(
+            '[data-testid="stVerticalBlockBorderWrapper"], ' +
+            '[data-testid="stVerticalBlockBorderWrapper"] *'
+        );
+        containers.forEach(function(el) {
+            if (TAGS_IGNORADAS.indexOf(el.tagName.toLowerCase()) === -1) {
+                el.style.setProperty('background', '#ffffff', 'important');
+                el.style.setProperty('background-color', '#ffffff', 'important');
+            }
+        });
+    }
+
+    forcarBranco();
+    setTimeout(forcarBranco, 200);
+    setTimeout(forcarBranco, 500);
+    setTimeout(forcarBranco, 1000);
+    setTimeout(forcarBranco, 2000);
+
+    var observer = new MutationObserver(function() {
+        forcarBranco();
+    });
+
+    observer.observe(window.parent.document.body, {
+        childList: true,
+        subtree: true,
+        attributes: false
+    });
+})();
+</script>
+""", height=0)
+
 # ---------------------------------------------------
 # CARD HELPERS
 # ---------------------------------------------------
