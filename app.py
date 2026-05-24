@@ -1259,10 +1259,8 @@ if st.session_state.pagina == "home":
     if not tem_dados and not st.session_state.editar_empresa:
         st.session_state.editar_empresa = True
 
-    # CSS específico da página home usando keys dos containers
     st.markdown("""
     <style>
-    /* Identificação */
     .st-key-card_identificacao,
     .st-key-card_identificacao > div,
     .st-key-card_identificacao > div > div,
@@ -1282,8 +1280,6 @@ if st.session_state.pagina == "home":
         margin-bottom: 12px !important;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
     }
-
-    /* Setor */
     .st-key-card_setor,
     .st-key-card_setor > div,
     .st-key-card_setor > div > div,
@@ -1303,8 +1299,6 @@ if st.session_state.pagina == "home":
         margin-bottom: 12px !important;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
     }
-
-    /* Redes Sociais */
     .st-key-card_redes,
     .st-key-card_redes > div,
     .st-key-card_redes > div > div,
@@ -1327,8 +1321,6 @@ if st.session_state.pagina == "home":
         margin-bottom: 12px !important;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
     }
-
-    /* Inputs e selects dentro dos cards */
     .st-key-card_identificacao input,
     .st-key-card_setor input,
     .st-key-card_redes input,
@@ -1340,7 +1332,6 @@ if st.session_state.pagina == "home":
         border: 1px solid #e5e7eb !important;
         border-radius: 7px !important;
     }
-
     .st-key-card_identificacao [data-baseweb="select"] > div,
     .st-key-card_setor [data-baseweb="select"] > div,
     .st-key-card_redes [data-baseweb="select"] > div {
@@ -1349,21 +1340,17 @@ if st.session_state.pagina == "home":
         border: 1px solid #e5e7eb !important;
         border-radius: 7px !important;
     }
-
-    /* Remove borda padrão do stForm dentro do card */
     .st-key-card_redes div[data-testid="stForm"] {
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
     }
-
     .st-key-btn_editar_empresa { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
     if st.session_state.editar_empresa or not tem_dados:
 
-        # ── Cabeçalho ──────────────────────────────────────────────
         h1, h2 = st.columns([7, 3])
         with h1:
             components.html("""
@@ -1417,7 +1404,6 @@ html, body { background: transparent; overflow: hidden; }
                 unsafe_allow_html=True,
             )
 
-        # ── Card Identificação ─────────────────────────────────────
         with st.container(key="card_identificacao"):
             sec_label("Identificação")
             c1, c2 = st.columns(2)
@@ -1435,7 +1421,6 @@ html, body { background: transparent; overflow: hidden; }
             )
             emp["site"] = limpar_site(site_digitado)
 
-        # ── Card Setor ─────────────────────────────────────────────
         with st.container(key="card_setor"):
             sec_label("Setor")
             c3, c4 = st.columns(2)
@@ -1469,7 +1454,6 @@ html, body { background: transparent; overflow: hidden; }
                 key="sel_tipo",
             )
 
-        # ── Card Redes Sociais + Localização ───────────────────────
         with st.container(key="card_redes"):
             with st.form("cad_empresa", clear_on_submit=False):
 
@@ -1559,7 +1543,7 @@ html, body { background: transparent; overflow: hidden; }
         with h2:
             st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
             btn_editar = st.button(
-                "Editar Empresa",
+                "✏️ Editar Empresa",
                 type="primary",
                 use_container_width=True,
                 key="btn_editar_empresa",
