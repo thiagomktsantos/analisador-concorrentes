@@ -620,38 +620,79 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 }
 
 /* ─────────────────────────────────────────────────────
-   CONTAINERS COM BORDA — fundo branco em todos os filhos
+   CONTAINERS COM BORDA — fundo branco FORÇADO
+   Usa section.main para ganhar especificidade sobre
+   os estilos dinâmicos do Streamlit (st-emotion-cache)
    ───────────────────────────────────────────────────── */
-[data-testid="stVerticalBlockBorderWrapper"] {
+section.main [data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 14px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
     background: #ffffff !important;
     background-color: #ffffff !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"] > div,
-[data-testid="stVerticalBlockBorderWrapper"] > div > div,
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"],
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div,
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div > div,
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
-[data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
-[data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
-[data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
-[data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"],
-[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
-[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
-[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div {
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
     background: #ffffff !important;
     background-color: #ffffff !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"] iframe,
-[data-testid="stVerticalBlockBorderWrapper"] canvas,
-[data-testid="stVerticalBlockBorderWrapper"] img {
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div > div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stElementContainer > div > div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] > div > div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm > div > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stVerticalBlock"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stHorizontalBlock"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stLayoutWrapper"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="stLayoutWrapper"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="column"],
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm [data-testid="column"] > div,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm .stElementContainer,
+section.main [data-testid="stVerticalBlockBorderWrapper"] .stForm .stElementContainer > div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] [class*="st-emotion-cache"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] iframe,
+section.main [data-testid="stVerticalBlockBorderWrapper"] canvas,
+section.main [data-testid="stVerticalBlockBorderWrapper"] img,
+section.main [data-testid="stVerticalBlockBorderWrapper"] svg,
+section.main [data-testid="stVerticalBlockBorderWrapper"] video {
     background: transparent !important;
-}
-[data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect):not(line):not(polyline):not(defs):not(stop):not(linearGradient) {
-    background-color: #ffffff !important;
+    background-color: transparent !important;
 }
 
 button[data-testid="baseButton-secondary"][kind="secondary"]:has(~ *) {
