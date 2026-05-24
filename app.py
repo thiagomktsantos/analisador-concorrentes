@@ -591,10 +591,9 @@ div[data-testid="stTabs"] button[role="tab"] [data-testid="stMarkdownContainer"]
     text-transform: uppercase;
 }
 div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #fff !important;
-        background-color: #3a9fd6 !important;
-    }
-
+    color: #fff !important;
+    background-color: #3a9fd6 !important;
+}
 
 .sb-logo { padding:22px 18px 16px; border-bottom:1px solid #1e2530; margin-bottom:8px; }
 .sb-logo-sub { font-size:8.4px; color:#3a9fd6; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-align:center; font-family:'DM Sans',sans-serif; }
@@ -620,6 +619,9 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
     display: none !important;
 }
 
+/* ─────────────────────────────────────────────────────
+   CONTAINERS COM BORDA — fundo branco em todos os filhos
+   ───────────────────────────────────────────────────── */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #ffffff !important;
     background-color: #ffffff !important;
@@ -628,6 +630,9 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 [data-testid="stVerticalBlockBorderWrapper"] > div > div,
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"],
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div,
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stLayoutWrapper"] > div > div,
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"],
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div,
 [data-testid="stVerticalBlockBorderWrapper"] [data-testid="column"] > div > div,
@@ -645,8 +650,7 @@ div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
 [data-testid="stVerticalBlockBorderWrapper"] img {
     background: transparent !important;
 }
-
-[data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect) {
+[data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect):not(line):not(polyline):not(defs):not(stop):not(linearGradient) {
     background-color: #ffffff !important;
 }
 
@@ -662,13 +666,6 @@ button[data-testid="baseButton-secondary"][kind="secondary"]:has(~ *) {
     margin: 0 !important;
     padding: 0 !important;
 }
-[data-testid="stVerticalBlockBorderWrapper"],
-[data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect):not(line):not(polyline) {
-    background-color: #ffffff !important;
-}
-section.main [data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
 </style>
 """, unsafe_allow_html=True)
 
