@@ -662,6 +662,13 @@ button[data-testid="baseButton-secondary"][kind="secondary"]:has(~ *) {
     margin: 0 !important;
     padding: 0 !important;
 }
+[data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stVerticalBlockBorderWrapper"] *:not(iframe):not(canvas):not(img):not(svg):not(path):not(circle):not(rect):not(line):not(polyline) {
+    background-color: #ffffff !important;
+}
+section.main [data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
 </style>
 """, unsafe_allow_html=True)
 
