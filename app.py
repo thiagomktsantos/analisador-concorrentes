@@ -3494,7 +3494,7 @@ function triggerTab(label) {{
     }}
 }})();
 </script>
-""", height=108, scrolling=False)
+""", height=90, scrolling=False)
 
     st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
