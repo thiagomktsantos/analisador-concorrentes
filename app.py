@@ -3507,7 +3507,7 @@ function triggerTab(label) {{
     <style>
     /* Remove espaço entre nav-bar e conteúdo seguinte */
     section.main .block-container > div > div:has(> iframe) + div {
-        margin-top: -16px !important;
+        margin-top: -32px !important;
     }
     </style>
     """, unsafe_allow_html=True)
