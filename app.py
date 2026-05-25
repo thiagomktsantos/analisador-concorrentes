@@ -3491,7 +3491,13 @@ function triggerTab(label) {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '90px'; break; }} }} catch(e) {{}}
+        try {
+          if (iframes[i].contentWindow === window) {
+            iframes[i].style.height = '90px';
+            iframes[i].style.marginTop = '-15px';
+            break;
+          }
+        } catch(e) {}
     }}
 }})();
 </script>
