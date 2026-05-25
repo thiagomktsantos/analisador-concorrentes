@@ -4126,6 +4126,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     border:1px solid #e5e7eb;
     border-radius:16px;
     overflow:hidden;
+    margin-bottom:0;
 }}
 
 /* ── Grid de cards de empresa ── */
@@ -4347,7 +4348,7 @@ function syncHeight() {{
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 12) + 'px'; break;
+            frames[i].style.height = (h + 2) + 'px'; break;
         }} }} catch(e) {{}}
     }}
 }}
