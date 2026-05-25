@@ -2688,10 +2688,6 @@ setTimeout(ajustarAltura, 600);
  
     components.html(analises_html, height=60, scrolling=False)
 
-# ---------------------------------------------------
-# PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
-# ---------------------------------------------------
-
 elif st.session_state.pagina == "ads":
 
     import datetime as _dt
@@ -3262,7 +3258,6 @@ html, body { background: transparent; overflow: hidden; }
 """, height=65)
 
     with h2_col:
-        # Botão buscar sempre visível no cabeçalho
         gerar_btn_ads_header = st.button(
             "Buscar / Atualizar Anúncios",
             type="primary",
@@ -3281,37 +3276,23 @@ html, body { background: transparent; overflow: hidden; }
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 16px 0'/>", unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════
-    # GHOST BUTTONS — navegação principal (COMPLETAMENTE OCULTOS)
+    # GHOST BUTTONS — navegação principal
     # ══════════════════════════════════════════════════════════════════
 
-    # CSS para ocultar TODOS os ghost buttons desta página
     st.markdown("""
     <style>
-    /* Ocultar ghost buttons de navegação principal */
     .st-key-_ads_ghost_tab_configuracao_,
     .st-key-_ads_ghost_tab_empresas_,
     .st-key-_ads_ghost_tab_analise_ {
-        position: fixed !important;
-        top: -9999px !important;
-        left: -9999px !important;
-        width: 0 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        visibility: hidden !important;
-        display: none !important;
+        position: fixed !important; top: -9999px !important; left: -9999px !important;
+        width: 0 !important; height: 0 !important; overflow: hidden !important;
+        opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; display: none !important;
     }
     .stElementContainer:has(.st-key-_ads_ghost_tab_configuracao_),
     .stElementContainer:has(.st-key-_ads_ghost_tab_empresas_),
     .stElementContainer:has(.st-key-_ads_ghost_tab_analise_) {
-        display: none !important;
-        height: 0 !important;
-        min-height: 0 !important;
-        max-height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
+        display: none !important; height: 0 !important; min-height: 0 !important;
+        max-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -3327,7 +3308,6 @@ html, body { background: transparent; overflow: hidden; }
         st.session_state.ads_main_tab = "analise"
         st.rerun()
 
-    # Ghost para lápis de empresa
     lapiz_ghost_css_parts = []
     for ci, e in enumerate(todas_empresas):
         sk = safe_key(e["nome"])
@@ -3349,15 +3329,14 @@ html, body { background: transparent; overflow: hidden; }
     lapiz_triggers = {}
     for ci, e in enumerate(todas_empresas):
         sk = safe_key(e["nome"])
-        lapiz_key = f"_ads_lapiz_{sk}_{ci}_"
-        if st.button(f"lapiz_{sk}", key=lapiz_key.strip('_')):
+        lapiz_key = f"_ads_lapiz_{sk}_{ci}_".strip('_')
+        if st.button(f"lapiz_{sk}", key=lapiz_key):
             st.session_state.ads_main_tab = "configuracao"
             st.session_state.ads_config_empresa_selecionada = e["nome"]
             st.session_state.ads_editando_empresa = e["nome"]
             st.rerun()
         lapiz_triggers[ci] = lapiz_key
 
-    # ── Calcular dados
     main_tab = st.session_state.ads_main_tab
     empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
     empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
@@ -3365,7 +3344,6 @@ html, body { background: transparent; overflow: hidden; }
     n_configuradas = len(empresas_configuradas)
     n_sem_config   = len(empresas_sem_config)
 
-    # ── Processar busca do cabeçalho
     if gerar_btn_ads_header:
         query_values_header = {}
         for e in todas_empresas:
@@ -3525,7 +3503,6 @@ function triggerTab(label) {{
     # ══════════════════════════════════════════════════════════════════
     if main_tab == "configuracao":
 
-        # Ghost buttons para salvar/buscar/cancelar por empresa
         config_action_css_parts = []
         for ci, e in enumerate(todas_empresas):
             sk = safe_key(e["nome"])
@@ -3555,7 +3532,6 @@ function triggerTab(label) {{
                 else:
                     config_actions[f"{action}_{ci}"] = False
 
-        # Campos de input por empresa (ocultos)
         config_inputs = {}
         input_css_parts = []
         for ci, e in enumerate(todas_empresas):
@@ -3579,7 +3555,6 @@ function triggerTab(label) {{
                 label_visibility="collapsed"
             )
 
-        # Processar ações
         for ci, e in enumerate(todas_empresas):
             novo_id = config_inputs.get(ci, "").strip()
 
@@ -3608,7 +3583,6 @@ function triggerTab(label) {{
                 st.session_state.ads_config_empresa_selecionada = None
                 st.rerun()
 
-        # Ghost select de página
         if st.session_state.ads_onboarding_paginas:
             pg_select_css = []
             for pi in range(len(st.session_state.ads_onboarding_paginas[:8])):
@@ -3628,7 +3602,6 @@ function triggerTab(label) {{
                 else:
                     pg_triggers[pi] = False
 
-        # Processar seleção de página
         if pg_triggers and st.session_state.ads_onboarding_empresa:
             ck_on = st.session_state.ads_onboarding_empresa
             e_on  = next((x for x in todas_empresas if x["nome"] == ck_on), None)
@@ -3645,7 +3618,6 @@ function triggerTab(label) {{
                         st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
                         st.rerun()
 
-        # ── Renderizar cards de configuração
         config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
         editando_empresa = st.session_state.ads_editando_empresa
 
@@ -3662,9 +3634,9 @@ function triggerTab(label) {{
                 "cor": cor,
                 "avatar": gerar_avatar(e["nome"]),
                 "badge_lbl": "Minha Empresa" if is_minha else "Concorrente",
-                "badge_bg":  "#eff6ff" if is_minha else "#f3f4f6",
-                "badge_txt": "#1d4ed8" if is_minha else "#6b7280",
-                "badge_brd": "#bfdbfe" if is_minha else "#e5e7eb",
+                "badge_bg":  "#e8f5e9" if is_minha else "#e3f2fd",
+                "badge_txt": "#2e7d32" if is_minha else "#1565c0",
+                "badge_dot": "#2e7d32" if is_minha else "#1565c0",
             })
 
         empresas_json = _json.dumps(empresas_json_list, ensure_ascii=False)
@@ -3697,7 +3669,7 @@ body {{ padding-bottom:8px; }}
     border-bottom:1px solid #f3f4f6;
 }}
 .cards-grid {{
-    display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:24px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px;
 }}
 .card {{
     background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;
@@ -3708,53 +3680,54 @@ body {{ padding-bottom:8px; }}
     box-shadow:0 0 0 3px rgba(58,159,214,0.12);
 }}
 .card-header {{
-    display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid #f3f4f6;
+    display:flex; align-items:center; gap:12px; padding:16px 18px;
 }}
-.avatar {{
-    width:42px; height:42px; border-radius:50%;
+.icon-wrap {{
+    width:42px; height:42px; border-radius:10px;
+    background:#f3f4f6;
     display:flex; align-items:center; justify-content:center;
-    font-size:15px; font-weight:700; color:#fff; flex-shrink:0;
+    flex-shrink:0;
 }}
+.icon-wrap svg {{ width:22px; height:22px; }}
 .card-info {{ flex:1; min-width:0; }}
-.card-nome {{ font-size:15px; font-weight:700; color:#111827; }}
+.card-nome {{ font-size:14px; font-weight:700; color:#111827; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .badge {{
-    display:inline-block; padding:2px 8px; border-radius:20px;
-    font-size:11px; font-weight:600; margin-top:3px;
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:600;
 }}
-.card-body {{ padding:14px 18px; }}
+.badge-dot {{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }}
+.pencil-btn {{
+    width:32px; height:32px; border:1px solid #e5e7eb; border-radius:8px;
+    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:#9ca3af; transition:all 0.12s; flex-shrink:0;
+}}
+.pencil-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.pencil-btn svg {{ width:14px; height:14px; }}
 .id-row {{
     display:flex; align-items:center; gap:8px;
-    background:#f0fdf4; border:1px solid #86efac;
-    border-radius:8px; padding:8px 12px; margin-bottom:12px;
+    background:#f0fdf4; border-top:1px solid #86efac;
+    padding:8px 18px;
 }}
 .id-dot {{ width:8px; height:8px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
-.id-val {{ font-size:13px; font-weight:600; color:#15803d; font-family:monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+.id-val {{ font-size:12px; font-weight:600; color:#15803d; font-family:monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
 .no-config-row {{
     display:flex; align-items:center; gap:8px;
-    background:#fffbeb; border:1px solid #fde68a;
-    border-radius:8px; padding:8px 12px; margin-bottom:12px;
+    background:#fffbeb; border-top:1px solid #fde68a;
+    padding:8px 18px;
 }}
 .no-config-dot {{ width:8px; height:8px; border-radius:50%; background:#f59e0b; flex-shrink:0; }}
-.no-config-val {{ font-size:13px; font-weight:600; color:#92400e; }}
-.btn-editar {{
-    width:100%; padding:10px; border:1px solid #e5e7eb;
-    border-radius:8px; background:#fff;
-    font-size:14px; font-weight:700; color:#374151;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    transition:all 0.15s;
-}}
-.btn-editar:hover {{ background:#f3f4f6; border-color:#9ca3af; }}
-.edit-form {{ display:none; padding:14px 18px; border-top:1px solid #f3f4f6; }}
+.no-config-val {{ font-size:12px; font-weight:600; color:#92400e; }}
+.edit-form {{ display:none; padding:14px 18px; border-top:1px solid #f3f4f6; background:#fafbfc; }}
 .edit-form.open {{ display:block; }}
 .input-label {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }}
 .input-field {{
     width:100%; padding:10px 14px; border:1.5px solid #e5e7eb;
     border-radius:8px; font-size:14px; font-family:'DM Sans',sans-serif;
-    color:#111827; outline:none; transition:border-color 0.15s; background:#fafafa;
+    color:#111827; outline:none; transition:border-color 0.15s; background:#fff;
     margin-bottom:10px;
 }}
-.input-field:focus {{ border-color:#3a9fd6; background:#fff; }}
+.input-field:focus {{ border-color:#3a9fd6; }}
 .btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }}
 .btn-buscar {{
     padding:10px; border:none; border-radius:8px;
@@ -3836,27 +3809,34 @@ function buildCards() {{
         var card = document.createElement('div');
         card.className = 'card';
         card.id = 'card_' + e.ci;
+
         var idBlock = hasId
             ? '<div class="id-row"><div class="id-dot"></div><div class="id-val">' + e.ads_id + '</div></div>'
             : '<div class="no-config-row"><div class="no-config-dot"></div><div class="no-config-val">Não configurado</div></div>';
+
         card.innerHTML =
             '<div class="card-header">'
-            + '<div class="avatar" style="background:' + e.cor + '">' + e.avatar + '</div>'
+            + '<div class="icon-wrap">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'
+            + '<polyline points="9 22 9 12 15 12 15 22"/>'
+            + '</svg>'
+            + '</div>'
             + '<div class="card-info">'
             + '<div class="card-nome">' + e.nome + '</div>'
-            + '<span class="badge" style="background:' + e.badge_bg + ';color:' + e.badge_txt + ';border:1px solid ' + e.badge_brd + '">' + e.badge_lbl + '</span>'
+            + '<span class="badge" style="background:' + e.badge_bg + ';color:' + e.badge_txt + '">'
+            + '<span class="badge-dot" style="background:' + e.badge_dot + '"></span>'
+            + e.badge_lbl
+            + '</span>'
             + '</div>'
-            + '<button onclick="toggleForm(' + e.ci + ')" title="Editar" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#9ca3af;transition:all 0.12s;display:flex;align-items:center" onmouseover="this.style.background=\'#f3f4f6\';this.style.color=\'#374151\'" onmouseout="this.style.background=\'none\';this.style.color=\'#9ca3af\'">'
-            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+            + '<button class="pencil-btn" onclick="toggleForm(' + e.ci + ')" title="Editar">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
+            + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
+            + '</svg>'
             + '</button>'
             + '</div>'
-            + '<div class="card-body">'
             + idBlock
-            + '<button class="btn-editar" onclick="toggleForm(' + e.ci + ')">'
-            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
-            + 'Editar configuração'
-            + '</button>'
-            + '</div>'
             + '<div class="edit-form" id="form_' + e.ci + '">'
             + '<div class="input-label">Nome ou ID numérico da página</div>'
             + '<input class="input-field" id="inp_' + e.ci + '" type="text" value="' + (e.ads_id || '') + '" placeholder="Ex: Nome da Página  ou  102803918240129" oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
@@ -3875,7 +3855,7 @@ function buildCards() {{
             + '</div>';
         grid.appendChild(card);
     }});
-    // Abrir form da empresa selecionada automaticamente
+
     var selectedEmpresa = "{config_empresa_selecionada or ''}";
     var editandoEmpresa = "{editando_empresa or ''}";
     var targetNome = selectedEmpresa || editandoEmpresa;
@@ -3917,19 +3897,6 @@ function getSkByIndex(ci) {{
 
 function syncInputToSt(ci, val) {{
     var keyPattern = 'cfg_input_' + getSkByIndex(ci) + '_' + ci;
-    var stInputs = window.parent.document.querySelectorAll('input');
-    stInputs.forEach(function(inp) {{
-        var container = inp.closest('[data-testid="stTextInput"]');
-        if (container) {{
-            var wrapper = container.closest('[class*="st-key-' + keyPattern + '"]');
-            if (wrapper || (inp.getAttribute('aria-label') || '').includes(keyPattern)) {{
-                var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                setter.call(inp, val);
-                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
-            }}
-        }}
-    }});
-    // Fallback: try by id pattern in parent document
     var allInputs = window.parent.document.querySelectorAll('input[id*="' + keyPattern + '"]');
     allInputs.forEach(function(inp) {{
         var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -3960,7 +3927,7 @@ function triggerSelectPg(pi) {{
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -4006,11 +3973,10 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
             query_values[ck] = ads_id_salvo
 
-        # ── Barra de abas de empresas ─────────────────────────────────
+        # ── Ghost buttons para abas de empresa ───────────────────────
         if "ads_aba_ativa" not in st.session_state:
             st.session_state.ads_aba_ativa = 0
 
-        # Ghost buttons para abas de empresa
         aba_ghost_css = []
         for i in range(len(empresas_configuradas)):
             k = f"btn_aba_ads_{i}"
@@ -4033,88 +3999,319 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                 st.session_state.ads_aba_ativa = i
                 st.rerun()
 
-        abas_nomes = [e["nome"] for e in empresas_configuradas]
-        aba_ativa  = min(st.session_state.ads_aba_ativa, len(abas_nomes) - 1)
+        aba_ativa = min(st.session_state.ads_aba_ativa, len(empresas_configuradas) - 1)
 
-        abas_items_html = ""
-        for i, nome in enumerate(abas_nomes):
-            active_class = "active" if i == aba_ativa else ""
-            abas_items_html += f'<button class="aba-btn {active_class}" onclick="triggerAba({i})">{nome}</button>'
+        # ── Montar JSON dos cards de empresa ─────────────────────────
+        cards_empresa_json_list = []
+        for i, e in enumerate(empresas_configuradas):
+            is_minha = e["tipo"] == "minha"
+            cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            av       = gerar_avatar(e["nome"])
+            ads_id   = emp.get("ads_id","") if is_minha else concs[e["idx"]].get("ads_id","")
+            cache_e  = st.session_state.ads_cache.get(e["nome"], {})
+            n_ads    = len(cache_e.get("data", []))
+            n_ativos = sum(1 for a in cache_e.get("data", []) if a.get("ativo", True))
+            ts       = cache_e.get("ts", "")
+            cards_empresa_json_list.append({
+                "i":        i,
+                "nome":     e["nome"],
+                "avatar":   av,
+                "cor":      cor_av,
+                "is_minha": is_minha,
+                "ativo":    i == aba_ativa,
+                "ads_id":   ads_id,
+                "n_ads":    n_ads,
+                "n_ativos": n_ativos,
+                "ts":       ts,
+                "badge_lbl": "Minha Empresa" if is_minha else "Concorrente",
+                "badge_bg":  "#e8f5e9" if is_minha else "#e3f2fd",
+                "badge_txt": "#2e7d32" if is_minha else "#1565c0",
+                "badge_dot": "#2e7d32" if is_minha else "#1565c0",
+            })
+
+        cards_empresa_json = _json.dumps(cards_empresa_json_list, ensure_ascii=False)
 
         components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.barra {{
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+.wrap {{
+    display:flex; align-items:center; gap:0;
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    display:flex; align-items:stretch; height:48px; overflow:hidden;
+    height:56px; padding:0 8px; overflow:hidden;
 }}
-.barra-label {{
-    display:flex; align-items:center; gap:7px;
-    padding:0 14px; border-right:1px solid #f3f4f6; flex-shrink:0;
+.label-section {{
+    display:flex; align-items:center; gap:6px;
+    padding:0 14px 0 8px;
+    border-right:1px solid #f3f4f6;
+    height:100%; flex-shrink:0;
 }}
-.barra-label-txt {{
-    font-size:12px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:1.2px; white-space:nowrap;
+.label-icon {{ color:#9ca3af; }}
+.label-txt {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1px; white-space:nowrap;
 }}
-.abas-wrap {{ display:flex; align-items:center; flex:1; padding:6px 8px; gap:4px; overflow:hidden; }}
-.aba-btn {{
-    height:36px; padding:0 18px; border-radius:7px; border:1px solid transparent;
-    background:transparent; font-size:14px; font-weight:600; color:#6b7280;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap;
+.tabs-section {{
+    display:flex; align-items:center; gap:4px;
+    flex:1; padding:6px 6px; overflow:hidden;
 }}
-.aba-btn:hover {{ background:#f3f4f6; color:#374151; }}
-.aba-btn.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
-.right-wrap {{
-    display:flex; align-items:center; padding:0 10px;
-    border-left:1px solid #f3f4f6; flex-shrink:0; gap:4px;
+.tab-card {{
+    display:flex; align-items:center; gap:8px;
+    padding:5px 12px 5px 6px;
+    border-radius:8px; border:none;
+    cursor:pointer; white-space:nowrap;
+    height:40px; transition:all 0.15s;
+    background:transparent;
+    font-family:'DM Sans',sans-serif;
 }}
-.lapiz-btn {{
-    width:30px; height:30px; border:1px solid #e5e7eb; border-radius:7px;
+.tab-card:hover {{ background:#f3f4f6; }}
+.tab-card.active {{ background:#0e2a47; }}
+.tab-avatar {{
+    width:28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.tab-nome {{
+    font-size:13px; font-weight:600; color:#6b7280;
+}}
+.tab-card.active .tab-nome {{ color:#fff; }}
+.settings-section {{
+    display:flex; align-items:center; padding:0 8px;
+    border-left:1px solid #f3f4f6; height:100%; flex-shrink:0;
+}}
+.settings-btn {{
+    width:32px; height:32px; border:1px solid #e5e7eb; border-radius:8px;
     background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
     color:#9ca3af; transition:all 0.12s;
 }}
-.lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.settings-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
 </style>
-<div class="barra">
-    <div class="barra-label">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+</head>
+<body>
+<div class="wrap">
+    <div class="label-section">
+        <svg class="label-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
         </svg>
-        <span class="barra-label-txt">Páginas configuradas</span>
+        <span class="label-txt">Páginas configuradas</span>
     </div>
-    <div class="abas-wrap">{abas_items_html}</div>
-    <div class="right-wrap">
-        <button class="lapiz-btn" onclick="triggerTab('tab_cfg')" title="Gerenciar configurações">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="tabs-section" id="tabs-wrap"></div>
+    <div class="settings-section">
+        <button class="settings-btn" onclick="triggerBtn('tab_cfg')" title="Configurações">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                         a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                         A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                         l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                         A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                         l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                         a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                         l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                         a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
         </button>
     </div>
 </div>
 <script>
-function triggerAba(i) {{ triggerBtn('aba_ads_' + i); }}
-function triggerTab(label) {{ triggerBtn(label); }}
+var CARDS = {cards_empresa_json};
+
+function buildTabs() {{
+    var wrap = document.getElementById('tabs-wrap');
+    wrap.innerHTML = '';
+    CARDS.forEach(function(c) {{
+        var btn = document.createElement('button');
+        btn.className = 'tab-card' + (c.ativo ? ' active' : '');
+        btn.innerHTML =
+            '<div class="tab-avatar" style="background:' + c.cor + '">' + c.avatar + '</div>'
+            + '<span class="tab-nome">' + c.nome + '</span>';
+        btn.onclick = function() {{ triggerBtn('aba_ads_' + c.i); }};
+        wrap.appendChild(btn);
+    }});
+}}
+
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
+
+buildTabs();
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '48px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '56px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=48, scrolling=False)
+</body></html>
+""", height=56, scrolling=False)
 
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
+        # ── Cards das empresas configuradas ───────────────────────────
+        components.html(f"""
+<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
+body {{ padding-bottom:4px; }}
+.grid {{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+}}
+.card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    overflow:hidden; transition:border-color 0.15s, box-shadow 0.15s;
+    cursor:pointer;
+}}
+.card:hover {{ border-color:#3a9fd6; box-shadow:0 2px 12px rgba(58,159,214,0.1); }}
+.card.active {{
+    border-color:#0e2a47;
+    box-shadow:0 4px 20px rgba(14,42,71,0.15);
+}}
+.card-header {{
+    display:flex; align-items:center; gap:12px; padding:16px 18px;
+}}
+.icon-wrap {{
+    width:42px; height:42px; border-radius:10px;
+    background:#f3f4f6;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+}}
+.icon-wrap svg {{ width:22px; height:22px; }}
+.card-info {{ flex:1; min-width:0; }}
+.card-nome {{
+    font-size:14px; font-weight:700; color:#111827;
+    margin-bottom:4px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.badge {{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:600;
+}}
+.badge-dot {{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }}
+.pencil-btn {{
+    width:32px; height:32px; border:1px solid #e5e7eb; border-radius:8px;
+    background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#9ca3af; transition:all 0.12s; flex-shrink:0;
+}}
+.pencil-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.pencil-btn svg {{ width:14px; height:14px; }}
+.card-stats {{
+    display:grid; grid-template-columns:1fr 1fr;
+    border-top:1px solid #f3f4f6;
+}}
+.stat {{
+    padding:10px 16px; text-align:center;
+}}
+.stat:first-child {{ border-right:1px solid #f3f4f6; }}
+.stat-num {{ font-size:20px; font-weight:800; color:#111827; line-height:1; }}
+.stat-lbl {{ font-size:11px; color:#6b7280; font-weight:600; margin-top:3px; text-transform:uppercase; letter-spacing:0.4px; }}
+.card-footer {{
+    border-top:1px solid #f3f4f6;
+    padding:8px 16px;
+    display:flex; align-items:center; gap:6px;
+}}
+.ts-dot {{ width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
+.ts-txt {{ font-size:11px; color:#6b7280; }}
+.no-ts-dot {{ width:6px; height:6px; border-radius:50%; background:#f59e0b; flex-shrink:0; }}
+</style>
+</head>
+<body>
+<div class="grid" id="cards-grid"></div>
+<script>
+var CARDS = {cards_empresa_json};
+
+function buildCards() {{
+    var grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+    CARDS.forEach(function(c) {{
+        var card = document.createElement('div');
+        card.className = 'card' + (c.ativo ? ' active' : '');
+        card.onclick = function() {{ triggerBtn('aba_ads_' + c.i); }};
+
+        var footerHtml = c.ts
+            ? '<div class="card-footer"><div class="ts-dot"></div><span class="ts-txt">Última busca: ' + c.ts + '</span></div>'
+            : '<div class="card-footer"><div class="no-ts-dot"></div><span class="ts-txt">Sem dados — clique em Buscar</span></div>';
+
+        card.innerHTML =
+            '<div class="card-header">'
+            + '<div class="icon-wrap">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'
+            + '<polyline points="9 22 9 12 15 12 15 22"/>'
+            + '</svg>'
+            + '</div>'
+            + '<div class="card-info">'
+            + '<div class="card-nome">' + c.nome + '</div>'
+            + '<span class="badge" style="background:' + c.badge_bg + ';color:' + c.badge_txt + '">'
+            + '<span class="badge-dot" style="background:' + c.badge_dot + '"></span>'
+            + c.badge_lbl
+            + '</span>'
+            + '</div>'
+            + '<button class="pencil-btn" onclick="event.stopPropagation();triggerLapiz(\'' + c.nome + '\')" title="Editar configuração">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
+            + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
+            + '</svg>'
+            + '</button>'
+            + '</div>'
+            + '<div class="card-stats">'
+            + '<div class="stat"><div class="stat-num">' + c.n_ads + '</div><div class="stat-lbl">Total</div></div>'
+            + '<div class="stat"><div class="stat-num">' + c.n_ativos + '</div><div class="stat-lbl">Ativos</div></div>'
+            + '</div>'
+            + footerHtml;
+
+        grid.appendChild(card);
+    }});
+    syncHeight();
+}}
+
+function triggerLapiz(nome) {{
+    var sk = nome.replace(/[^a-zA-Z0-9_]/g, '_');
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === 'lapiz_' + sk) {{ b.click(); return; }}
+    }}
+}}
+
+function triggerBtn(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 8) + 'px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+
+buildCards();
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+setTimeout(syncHeight, 200);
+</script>
+</body></html>
+""", height=100, scrolling=False)
+
+        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
         # ── Sub-abas de conteúdo por empresa ─────────────────────────
         conteudo_tab_ghost_css = []
@@ -4256,9 +4453,9 @@ function triggerBtn(label) {{
                     f'<div style="width:44px;height:44px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">{avatar}</div>'
                 )
 
-            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_bg  = "#e8f5e9" if is_minha else "#e3f2fd"
+            badge_txt = "#2e7d32" if is_minha else "#1565c0"
+            badge_dot = "#2e7d32" if is_minha else "#1565c0"
             badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
 
             import urllib.parse as _urlparse
@@ -4278,8 +4475,11 @@ function triggerBtn(label) {{
                     {avatar_empresa_html}
                     <div style='flex:1;min-width:0'>
                         <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
-                        <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
-                            <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
+                        <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:3px'>
+                            <span style='display:inline-flex;align-items:center;gap:5px;background:{badge_bg};color:{badge_txt};padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600'>
+                                <span style='width:6px;height:6px;border-radius:50%;background:{badge_dot}'></span>
+                                {badge_lbl}
+                            </span>
                             <span style='color:#d1d5db;font-size:12px'>·</span>
                             <span style='font-size:13px;color:#6b7280'>Página: {page_display}</span>
                         </div>
@@ -4338,7 +4538,6 @@ function triggerTab(sk, tab) {{
 </script>
 """, height=52, scrolling=False)
 
-            # ── ABA: ANÚNCIOS ─────────────────────────────────────────
             if aba_conteudo_atual == "anuncios":
 
                 col_key = f"ads_cols_{sk}"
@@ -4369,7 +4568,6 @@ function triggerTab(sk, tab) {{
                     font-family: 'DM Sans', sans-serif !important;
                     font-size: 14px !important;
                     color: #111827 !important;
-                    transition: border-color 0.15s !important;
                 }}
                 .st-key-{filtros_key} div[data-baseweb="select"] > div {{
                     background-color: #ffffff !important;
@@ -4381,7 +4579,6 @@ function triggerTab(sk, tab) {{
                     font-family: 'DM Sans', sans-serif !important;
                     font-size: 14px !important;
                     color: #6b7280 !important;
-                    transition: border-color 0.15s !important;
                 }}
                 .st-key-ads_toggle_cols_{sk} button {{
                     height: 40px !important;
@@ -4948,7 +5145,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </body></html>
 """, height=100, scrolling=False)
 
-            # ── ABA: ANÁLISE DE IA ────────────────────────────────────
             else:
                 ads_f_ia = ads_list
 
@@ -4965,7 +5161,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
                     if chave_ind not in st.session_state:
                         st.session_state[chave_ind] = ""
 
-                # Ghost buttons para análise IA
                 ia_ghost_keys = (
                     [f"btn_subtab_{sk}_individuais", f"btn_subtab_{sk}_criativos", f"btn_subtab_{sk}_copys"]
                     + [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
@@ -5326,10 +5521,8 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </body></html>
 """, height=600, scrolling=False)
 
-        # ── Renderiza empresa da aba ativa ───────────────────────────
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
-        # Filtrar para empresas que têm dados no cache
         empresas_com_dados = [
             e for e in empresas_configuradas
             if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
@@ -5456,7 +5649,7 @@ body {{ padding-bottom:8px; }}
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
