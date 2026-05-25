@@ -2688,6 +2688,10 @@ setTimeout(ajustarAltura, 600);
  
     components.html(analises_html, height=60, scrolling=False)
 
+# ---------------------------------------------------
+# PAGINA - ADS 
+# ---------------------------------------------------
+
 elif st.session_state.pagina == "ads":
 
     import datetime as _dt
@@ -3232,7 +3236,7 @@ elif st.session_state.pagina == "ads":
         return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
 
     # ══════════════════════════════════════════════════════════════════
-    # CABEÇALHO DA PÁGINA
+    # CABEÇALHO
     # ══════════════════════════════════════════════════════════════════
 
     h1_col, h2_col = st.columns([7, 3])
@@ -3273,7 +3277,7 @@ html, body { background: transparent; overflow: hidden; }
                     unsafe_allow_html=True,
                 )
 
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 16px 0'/>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 12px 0'/>", unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════
     # GHOST BUTTONS — navegação principal
@@ -3489,7 +3493,7 @@ function triggerTab(label) {{
 </script>
 """, height=108, scrolling=False)
 
-    st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
@@ -3871,7 +3875,7 @@ function buildCards() {{
 
 function getPaginasHtml(nomeEmpresa) {{
     if (!PAGINAS || PAGINAS.length === 0 || PAGINAS_EMPRESA !== nomeEmpresa) return '';
-    var html = '<div class="paginas-wrap"><div class="paginas-title">📋 Páginas encontradas — clique para selecionar</div>';
+    var html = '<div class="paginas-wrap"><div class="paginas-title">Páginas encontradas — clique para selecionar</div>';
     PAGINAS.forEach(function(pg) {{
         var thumb = pg.profile_picture
             ? '<img src="' + pg.profile_picture + '" onerror="this.outerHTML=\'<span>' + (pg.nome[0]||'P') + '</span>\'" />'
@@ -3973,7 +3977,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
             query_values[ck] = ads_id_salvo
 
-        # ── Ghost buttons para abas de empresa ───────────────────────
         if "ads_aba_ativa" not in st.session_state:
             st.session_state.ads_aba_ativa = 0
 
@@ -4001,7 +4004,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 
         aba_ativa = min(st.session_state.ads_aba_ativa, len(empresas_configuradas) - 1)
 
-        # ── Montar JSON dos cards de empresa ─────────────────────────
         cards_empresa_json_list = []
         for i, e in enumerate(empresas_configuradas):
             is_minha = e["tipo"] == "minha"
@@ -4012,11 +4014,13 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             n_ads    = len(cache_e.get("data", []))
             n_ativos = sum(1 for a in cache_e.get("data", []) if a.get("ativo", True))
             ts       = cache_e.get("ts", "")
+            page_pic_tab = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
             cards_empresa_json_list.append({
                 "i":        i,
                 "nome":     e["nome"],
                 "avatar":   av,
                 "cor":      cor_av,
+                "page_pic": page_pic_tab,
                 "is_minha": is_minha,
                 "ativo":    i == aba_ativa,
                 "ads_id":   ads_id,
@@ -4031,6 +4035,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 
         cards_empresa_json = _json.dumps(cards_empresa_json_list, ensure_ascii=False)
 
+        # ── BARRA DE ABAS POR EMPRESA ─────────────────────────────────
         components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -4038,51 +4043,59 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
 .wrap {{
-    display:flex; align-items:center; gap:0;
+    display:flex; align-items:center;
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    height:56px; padding:0 8px; overflow:hidden;
-}}
-.label-section {{
-    display:flex; align-items:center; gap:6px;
-    padding:0 14px 0 8px;
-    border-right:1px solid #f3f4f6;
-    height:100%; flex-shrink:0;
-}}
-.label-icon {{ color:#9ca3af; }}
-.label-txt {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1px; white-space:nowrap;
+    height:52px; padding:0 6px; overflow:hidden;
 }}
 .tabs-section {{
-    display:flex; align-items:center; gap:4px;
-    flex:1; padding:6px 6px; overflow:hidden;
+    display:flex; align-items:center; gap:3px;
+    flex:1; padding:4px; overflow:hidden;
 }}
 .tab-card {{
-    display:flex; align-items:center; gap:8px;
-    padding:5px 12px 5px 6px;
+    display:flex; align-items:center; gap:7px;
+    padding:4px 10px 4px 5px;
     border-radius:8px; border:none;
     cursor:pointer; white-space:nowrap;
-    height:40px; transition:all 0.15s;
+    height:42px; transition:all 0.15s;
     background:transparent;
     font-family:'DM Sans',sans-serif;
+    flex-shrink:0;
 }}
 .tab-card:hover {{ background:#f3f4f6; }}
 .tab-card.active {{ background:#0e2a47; }}
 .tab-avatar {{
-    width:28px; height:28px; border-radius:50%;
+    width:26px; height:26px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; color:#fff; flex-shrink:0;
+    font-size:10px; font-weight:700; color:#fff; flex-shrink:0;
+    overflow:hidden;
+}}
+.tab-avatar img {{
+    width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;
+}}
+.tab-nome-wrap {{
+    display:flex; flex-direction:column; align-items:flex-start; gap:1px;
 }}
 .tab-nome {{
-    font-size:13px; font-weight:600; color:#6b7280;
+    font-size:12px; font-weight:600; color:#6b7280; line-height:1.2;
 }}
 .tab-card.active .tab-nome {{ color:#fff; }}
+.tab-badge {{
+    font-size:9px; font-weight:700;
+    padding:0px 6px; border-radius:20px;
+    display:inline-block; line-height:1.6;
+}}
+.tab-card.active .tab-badge {{
+    background:rgba(255,255,255,0.15);
+    color:rgba(255,255,255,0.75);
+}}
+.tab-badge-minha {{ background:#e8f5e9; color:#2e7d32; }}
+.tab-badge-conc  {{ background:#e3f2fd; color:#1565c0; }}
 .settings-section {{
-    display:flex; align-items:center; padding:0 8px;
+    display:flex; align-items:center; padding:0 6px;
     border-left:1px solid #f3f4f6; height:100%; flex-shrink:0;
 }}
 .settings-btn {{
-    width:32px; height:32px; border:1px solid #e5e7eb; border-radius:8px;
+    width:30px; height:30px; border:1px solid #e5e7eb; border-radius:8px;
     background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
     color:#9ca3af; transition:all 0.12s;
 }}
@@ -4091,18 +4104,10 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-
 </head>
 <body>
 <div class="wrap">
-    <div class="label-section">
-        <svg class="label-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-        </svg>
-        <span class="label-txt">Páginas configuradas</span>
-    </div>
     <div class="tabs-section" id="tabs-wrap"></div>
     <div class="settings-section">
         <button class="settings-btn" onclick="triggerBtn('tab_cfg')" title="Configurações">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
@@ -4127,9 +4132,26 @@ function buildTabs() {{
     CARDS.forEach(function(c) {{
         var btn = document.createElement('button');
         btn.className = 'tab-card' + (c.ativo ? ' active' : '');
-        btn.innerHTML =
-            '<div class="tab-avatar" style="background:' + c.cor + '">' + c.avatar + '</div>'
-            + '<span class="tab-nome">' + c.nome + '</span>';
+
+        var avatarHtml;
+        if (c.page_pic && c.page_pic.startsWith('http')) {{
+            avatarHtml = '<div class="tab-avatar" style="background:' + c.cor + '">'
+                + '<img src="' + c.page_pic + '" '
+                + 'onerror="this.style.display=\'none\';this.parentElement.textContent=\'' + c.avatar + '\'" />'
+                + '</div>';
+        }} else {{
+            avatarHtml = '<div class="tab-avatar" style="background:' + c.cor + '">' + c.avatar + '</div>';
+        }}
+
+        var badgeClass = c.is_minha ? 'tab-badge tab-badge-minha' : 'tab-badge tab-badge-conc';
+        var badgeLabel = c.is_minha ? 'Minha Empresa' : 'Concorrente';
+
+        btn.innerHTML = avatarHtml
+            + '<div class="tab-nome-wrap">'
+            + '<span class="tab-nome">' + c.nome + '</span>'
+            + '<span class="' + badgeClass + '">' + badgeLabel + '</span>'
+            + '</div>';
+
         btn.onclick = function() {{ triggerBtn('aba_ads_' + c.i); }};
         wrap.appendChild(btn);
     }});
@@ -4147,16 +4169,16 @@ buildTabs();
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '56px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '52px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
 </body></html>
-""", height=56, scrolling=False)
+""", height=52, scrolling=False)
 
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        st.markdown("<div style='height:6px'/>", unsafe_allow_html=True)
 
-        # ── Cards das empresas configuradas ───────────────────────────
+        # ── CARDS DE EMPRESA ──────────────────────────────────────────
         components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -4311,7 +4333,7 @@ setTimeout(syncHeight, 200);
 </body></html>
 """, height=100, scrolling=False)
 
-        st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
         # ── Sub-abas de conteúdo por empresa ─────────────────────────
         conteudo_tab_ghost_css = []
@@ -4342,7 +4364,6 @@ setTimeout(syncHeight, 200);
                     st.session_state.ads_aba_conteudo[ck] = tab_name
                     st.rerun()
 
-        # ── Dados e helpers ──────────────────────────────────────────
         empresas_com_dados = [
             e for e in todas_empresas
             if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
@@ -4358,7 +4379,6 @@ setTimeout(syncHeight, 200);
             """, unsafe_allow_html=True)
             st.stop()
 
-        # ── Plataformas SVG JS ────────────────────────────────────────
         def _plat_svg_js(uid: str) -> str:
             return f"""
 (function(){{
@@ -4384,9 +4404,6 @@ setTimeout(syncHeight, 200);
 }})();
 """
 
-        # ══════════════════════════════════════════════════════════════
-        # FUNÇÃO PRINCIPAL: render_ads_empresa
-        # ══════════════════════════════════════════════════════════════
         def render_ads_empresa(emp_item):
             ck       = emp_item["nome"]
             nome     = emp_item["nome"]
@@ -5400,9 +5417,9 @@ body {{ padding-bottom:8px; }}
 </head>
 <body>
 <div class="subtabs-wrap">
-    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais',this)">📋 Anúncios Individuais</button>
-    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos',this)">🎨 Criativos</button>
-    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys',this)">✍️ Copys</button>
+    <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais',this)">Anúncios Individuais</button>
+    <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos',this)">Criativos</button>
+    <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys',this)">Copys</button>
 </div>
 <div id="panel-individuais" class="panel {'active' if subtab_atual == 'individuais' else ''}">
     <div class="stats-mini">
@@ -5415,26 +5432,26 @@ body {{ padding-bottom:8px; }}
 </div>
 <div id="panel-criativos" class="panel {'active' if subtab_atual == 'criativos' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header"><span>🎨 Análise de Criativos</span></div>
+        <div class="analise-header"><span>Análise de Criativos</span></div>
         <div class="analise-body">
             {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
             <button class="btn-gerar" onclick="triggerGlobal('ia_criativos_{sk}')">
-                {'🔄 Nova Análise' if criativos_html else '⚡ Gerar Análise de Criativos'}
+                {'Gerar Nova Análise' if criativos_html else 'Gerar Análise de Criativos'}
             </button>
         </div>
     </div>
 </div>
 <div id="panel-copys" class="panel {'active' if subtab_atual == 'copys' else ''}">
     <div class="analise-wrap">
-        <div class="analise-header"><span>✍️ Análise de Copys</span></div>
+        <div class="analise-header"><span>Análise de Copys</span></div>
         <div class="analise-body">
             {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
             <button class="btn-gerar" onclick="triggerGlobal('ia_copys_{sk}')">
-                {'🔄 Nova Análise' if copys_html else '⚡ Gerar Análise de Copys'}
+                {'Gerar Nova Análise' if copys_html else 'Gerar Análise de Copys'}
             </button>
         </div>
     </div>
@@ -5473,7 +5490,7 @@ function buildIndGrid() {{
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
-        btn.innerHTML = d.resultado ? '🔄 Reanalisar' : '⚡ Analisar este anúncio';
+        btn.innerHTML = d.resultado ? 'Reanalisar' : 'Analisar este anúncio';
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
@@ -5541,7 +5558,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
             render_ads_empresa(empresas_com_dados[aba_idx])
 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: ANÁLISE DE IA (resumo comparativo)
+    # ABA: ANÁLISE DE IA
     # ══════════════════════════════════════════════════════════════════
     elif main_tab == "analise":
 
@@ -5632,7 +5649,7 @@ body {{ padding-bottom:8px; }}
 <div class="wrap">
     <div class="hdr">
         <div>
-            <div class="hdr-title">✨ Análise Competitiva de Anúncios</div>
+            <div class="hdr-title">Análise Competitiva de Anúncios</div>
             <div class="hdr-sub">Comparativo inteligente de todas as empresas configuradas</div>
         </div>
     </div>
@@ -5641,7 +5658,7 @@ body {{ padding-bottom:8px; }}
     </div>
     <div class="footer">
         <button class="btn-gerar" onclick="triggerBtn('ia_comparativo')">
-            {'🔄 Regerar Análise' if comp_html else '⚡ Gerar Análise Comparativa'}
+            {'Regerar Análise' if comp_html else 'Gerar Análise Comparativa'}
         </button>
     </div>
 </div>
