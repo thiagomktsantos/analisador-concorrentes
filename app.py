@@ -3277,7 +3277,7 @@ html, body { background: transparent; overflow: hidden; }
                     unsafe_allow_html=True,
                 )
 
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 16px 0'/>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 12px 0'/>", unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════
     # GHOST BUTTONS — navegação principal (COMPLETAMENTE OCULTOS)
@@ -3376,7 +3376,7 @@ html, body { background: transparent; overflow: hidden; }
             st.warning("Configure pelo menos uma empresa antes de buscar.")
 
     # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas) — SEM BADGES NUMÉRICOS
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas)
     # ══════════════════════════════════════════════════════════════════
 
     components.html(f"""
@@ -3394,11 +3394,11 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     background:#fff;
     border:1px solid #e5e7eb;
     border-radius:14px;
-    padding:16px 20px;
+    padding:14px 18px;
     cursor:pointer;
     display:flex;
     align-items:center;
-    gap:14px;
+    gap:12px;
     transition:all 0.15s;
     position:relative;
     overflow:hidden;
@@ -3421,7 +3421,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     border-radius:0 0 14px 14px;
 }}
 .nav-icon {{
-    width:40px;height:40px;border-radius:10px;
+    width:36px;height:36px;border-radius:9px;
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;
     background:#f3f4f6;
@@ -3430,11 +3430,11 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .nav-item.active .nav-icon {{
     background:rgba(255,255,255,0.12);
 }}
-.nav-icon svg {{ width:20px;height:20px; }}
+.nav-icon svg {{ width:18px;height:18px; }}
 .nav-content {{ flex:1;min-width:0; }}
 .nav-title {{
-    font-size:15px;font-weight:700;color:#1a2e4a;
-    display:block;margin-bottom:2px;
+    font-size:14px;font-weight:700;color:#1a2e4a;
+    display:block;margin-bottom:1px;
 }}
 .nav-item.active .nav-title {{ color:#ffffff; }}
 .nav-sub {{
@@ -3490,13 +3490,13 @@ function triggerTab(label) {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '108px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '96px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=108, scrolling=False)
+""", height=96, scrolling=False)
 
-    st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
+    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
@@ -3506,11 +3506,10 @@ function triggerTab(label) {{
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: CONFIGURAÇÃO — Cards de empresa estilo imagem 2
+    # ABA: CONFIGURAÇÃO
     # ══════════════════════════════════════════════════════════════════
     if main_tab == "configuracao":
 
-        # Ghost buttons para salvar/buscar/cancelar por empresa
         config_action_css_parts = []
         for ci, e in enumerate(todas_empresas):
             sk = safe_key(e["nome"])
@@ -3540,7 +3539,6 @@ function triggerTab(label) {{
                 else:
                     config_actions[f"{action}_{ci}"] = False
 
-        # Campos de input por empresa (ocultos)
         config_inputs = {}
         input_css_parts = []
         for ci, e in enumerate(todas_empresas):
@@ -3564,7 +3562,6 @@ function triggerTab(label) {{
                 label_visibility="collapsed"
             )
 
-        # Processar ações
         for ci, e in enumerate(todas_empresas):
             novo_id = config_inputs.get(ci, "").strip()
 
@@ -3593,7 +3590,6 @@ function triggerTab(label) {{
                 st.session_state.ads_config_empresa_selecionada = None
                 st.rerun()
 
-        # Ghost select de página
         if st.session_state.ads_onboarding_paginas:
             pg_select_css = []
             for pi in range(len(st.session_state.ads_onboarding_paginas[:8])):
@@ -3613,7 +3609,6 @@ function triggerTab(label) {{
                 else:
                     pg_triggers[pi] = False
 
-        # Processar seleção de página
         if pg_triggers and st.session_state.ads_onboarding_empresa:
             ck_on = st.session_state.ads_onboarding_empresa
             e_on  = next((x for x in todas_empresas if x["nome"] == ck_on), None)
@@ -3630,7 +3625,6 @@ function triggerTab(label) {{
                         st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
                         st.rerun()
 
-        # ── Renderizar cards de configuração — estilo imagem 2
         config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
         editando_empresa = st.session_state.ads_editando_empresa
 
@@ -3639,6 +3633,8 @@ function triggerTab(label) {{
             is_minha = e["tipo"] == "minha"
             cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+            # Pega a foto de perfil salva
+            page_pic_cfg = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
             empresas_json_list.append({
                 "ci": ci,
                 "nome": e["nome"],
@@ -3648,6 +3644,7 @@ function triggerTab(label) {{
                 "avatar": gerar_avatar(e["nome"]),
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
                 "is_minha": is_minha,
+                "page_pic": page_pic_cfg,
             })
 
         empresas_json = _json.dumps(empresas_json_list, ensure_ascii=False)
@@ -3673,188 +3670,49 @@ function triggerTab(label) {{
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
-
-/* ── Container geral com borda ── */
-.config-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:16px;
-    overflow:hidden;
-}}
-.config-header {{
-    padding:16px 22px;
-    border-bottom:1px solid #e5e7eb;
-    font-size:13px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.5px;
-}}
-.config-body {{
-    padding:20px 22px;
-    display:grid;
-    grid-template-columns: repeat(3,1fr);
-    gap:16px;
-}}
-
-/* ── Card de empresa — estilo imagem 2 ── */
-.emp-card {{
-    background:#f9fafb;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    overflow:hidden;
-    transition:border-color 0.15s, box-shadow 0.15s;
-    display:flex;
-    flex-direction:column;
-}}
-.emp-card.editing {{
-    border-color:#3a9fd6;
-    box-shadow:0 0 0 3px rgba(58,159,214,0.12);
-    background:#fff;
-}}
-.emp-card-top {{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:16px 16px 14px;
-}}
-.emp-icon {{
-    width:44px; height:44px; border-radius:10px;
-    background:#e9eef5;
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-}}
-.emp-icon svg {{ width:22px; height:22px; }}
+.config-wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; }}
+.config-header {{ padding:14px 20px; border-bottom:1px solid #e5e7eb; font-size:13px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; }}
+.config-body {{ padding:16px 20px; display:grid; grid-template-columns: repeat(3,1fr); gap:14px; }}
+.emp-card {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; transition:border-color 0.15s, box-shadow 0.15s; }}
+.emp-card.editing {{ border-color:#3a9fd6; box-shadow:0 0 0 3px rgba(58,159,214,0.12); background:#fff; }}
+.emp-card-top {{ display:flex; align-items:center; gap:10px; padding:14px 14px 12px; }}
+.emp-avatar {{ width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }}
+.emp-avatar img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }}
 .emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{
-    font-size:14px; font-weight:700; color:#1a2e4a;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}}
-.badge-minha {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#f0fdf4; color:#15803d;
-    border:1px solid #bbf7d0;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700; margin-top:4px;
-}}
-.badge-minha::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#22c55e; flex-shrink:0;
-}}
-.badge-conc {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#eff6ff; color:#1d4ed8;
-    border:1px solid #bfdbfe;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700; margin-top:4px;
-}}
-.badge-conc::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#3b82f6; flex-shrink:0;
-}}
-.lapiz-btn {{
-    width:32px; height:32px;
-    border:1px solid #e5e7eb; border-radius:8px;
-    background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:#9ca3af; flex-shrink:0;
-    transition:all 0.12s;
-}}
-.lapiz-btn:hover {{
-    background:#f3f4f6; color:#374151; border-color:#9ca3af;
-}}
-.id-strip {{
-    margin:0 12px 12px;
-    background:#f3f4f6;
-    border-radius:8px;
-    padding:8px 12px;
-    display:flex; align-items:center; gap:7px;
-    font-size:12px;
-}}
-.id-strip.configured {{
-    background:#f0fdf4; border:1px solid #bbf7d0;
-}}
-.id-dot {{
-    width:7px; height:7px; border-radius:50%;
-    background:#22c55e; flex-shrink:0;
-}}
+.emp-nome {{ font-size:13px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.badge-minha {{ display:inline-flex; align-items:center; gap:4px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:3px; }}
+.badge-minha::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
+.badge-conc {{ display:inline-flex; align-items:center; gap:4px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:3px; }}
+.badge-conc::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
+.lapiz-btn {{ width:28px; height:28px; border:1px solid #e5e7eb; border-radius:7px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af; flex-shrink:0; transition:all 0.12s; }}
+.lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.id-strip {{ margin:0 12px 12px; background:#f3f4f6; border-radius:7px; padding:7px 10px; display:flex; align-items:center; gap:6px; }}
+.id-strip.configured {{ background:#f0fdf4; border:1px solid #bbf7d0; }}
+.id-dot {{ width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
 .id-dot.empty {{ background:#d1d5db; }}
-.id-val {{
-    font-size:12px; font-weight:600;
-    color:#15803d; font-family:monospace;
-    flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}}
-.id-val.empty {{ color:#9ca3af; font-family:'DM Sans',sans-serif; font-weight:400; }}
-
-/* ── Formulário de edição inline ── */
-.edit-form {{
-    display:none;
-    border-top:1px solid #e5e7eb;
-    padding:14px 16px;
-    background:#fff;
-}}
+.id-val {{ font-size:11px; font-weight:600; color:#15803d; font-family:monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+.id-val.empty {{ color:#9ca3af; font-family:'DM Sans',sans-serif; font-weight:400; font-size:11px; }}
+.edit-form {{ display:none; border-top:1px solid #e5e7eb; padding:12px 14px; background:#fff; }}
 .edit-form.open {{ display:block; }}
-.input-label {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px;
-}}
-.input-field {{
-    width:100%; padding:9px 12px;
-    border:1.5px solid #e5e7eb; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif;
-    color:#111827; outline:none; background:#fafafa;
-    transition:border-color 0.15s; margin-bottom:10px;
-}}
+.input-label {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:5px; }}
+.input-field {{ width:100%; padding:8px 10px; border:1.5px solid #e5e7eb; border-radius:7px; font-size:12px; font-family:'DM Sans',sans-serif; color:#111827; outline:none; background:#fafafa; transition:border-color 0.15s; margin-bottom:8px; }}
 .input-field:focus {{ border-color:#3a9fd6; background:#fff; }}
-.btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }}
-.btn-buscar {{
-    padding:9px; border:none; border-radius:8px;
-    background:#0e2a47; color:#fff;
-    font-size:12px; font-weight:700; cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:5px;
-    transition:background 0.15s;
-}}
+.btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }}
+.btn-buscar {{ padding:8px; border:none; border-radius:7px; background:#0e2a47; color:#fff; font-size:11px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:4px; transition:background 0.15s; }}
 .btn-buscar:hover {{ background:#1a3a5c; }}
-.btn-salvar {{
-    padding:9px; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; color:#1d4ed8;
-    font-size:12px; font-weight:700; cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:5px;
-    transition:background 0.15s;
-}}
+.btn-salvar {{ padding:8px; border:1px solid #3a9fd6; border-radius:7px; background:#eff6ff; color:#1d4ed8; font-size:11px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:4px; transition:background 0.15s; }}
 .btn-salvar:hover {{ background:#dbeafe; }}
-.btn-cancelar {{
-    grid-column:1/-1; padding:7px; border:none; border-radius:8px;
-    background:transparent; color:#9ca3af;
-    font-size:12px; font-weight:600; cursor:pointer;
-    font-family:'DM Sans',sans-serif; transition:color 0.15s;
-}}
+.btn-cancelar {{ grid-column:1/-1; padding:6px; border:none; border-radius:7px; background:transparent; color:#9ca3af; font-size:11px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:color 0.15s; }}
 .btn-cancelar:hover {{ color:#374151; }}
-
-/* ── Páginas encontradas ── */
-.paginas-wrap {{
-    margin-top:12px; border-top:1px solid #f3f4f6; padding-top:12px;
-}}
-.paginas-title {{
-    font-size:11px; font-weight:700; color:#6b7280;
-    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
-}}
-.pg-card {{
-    display:flex; align-items:center; gap:10px;
-    padding:9px 11px; background:#f9fafb;
-    border:1px solid #e5e7eb; border-radius:9px;
-    cursor:pointer; margin-bottom:6px; transition:all 0.12s;
-}}
+.paginas-wrap {{ margin-top:10px; border-top:1px solid #f3f4f6; padding-top:10px; }}
+.paginas-title {{ font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:7px; }}
+.pg-card {{ display:flex; align-items:center; gap:8px; padding:8px 10px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer; margin-bottom:5px; transition:all 0.12s; }}
 .pg-card:hover {{ background:#eff6ff; border-color:#3a9fd6; }}
-.pg-thumb {{
-    width:32px; height:32px; border-radius:50%;
-    overflow:hidden; background:#e5e7eb; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; color:#6b7280;
-}}
+.pg-thumb {{ width:28px; height:28px; border-radius:50%; overflow:hidden; background:#e5e7eb; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#6b7280; }}
 .pg-thumb img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; }}
-.pg-nome {{ font-size:12px; font-weight:700; color:#111827; }}
-.pg-id {{ font-size:10px; color:#9ca3af; font-family:monospace; }}
-.pg-ads {{ font-size:11px; font-weight:600; color:#3a9fd6; }}
+.pg-nome {{ font-size:11px; font-weight:700; color:#111827; }}
+.pg-id {{ font-size:9px; color:#9ca3af; font-family:monospace; }}
+.pg-ads {{ font-size:10px; font-weight:600; color:#3a9fd6; }}
 </style>
 </head>
 <body>
@@ -3898,6 +3756,14 @@ function buildCards() {{
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
 
+        // Avatar: foto se disponível, senão iniciais
+        var avatarInner = '';
+        if (e.page_pic && e.page_pic.startsWith('http')) {{
+            avatarInner = '<img src="' + e.page_pic + '" onerror="this.outerHTML=\'' + e.avatar + '\'" />';
+        }} else {{
+            avatarInner = e.avatar;
+        }}
+
         var idDot   = hasId ? '<div class="id-dot"></div>' : '<div class="id-dot empty"></div>';
         var idVal   = hasId
             ? '<div class="id-val">' + e.ads_id + '</div>'
@@ -3906,20 +3772,13 @@ function buildCards() {{
 
         card.innerHTML =
             '<div class="emp-card-top">'
-            + '<div class="emp-icon">'
-            + '<svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
-            + '<rect x="2" y="7" width="20" height="14" rx="2"/>'
-            + '<path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'
-            + '<line x1="12" y1="12" x2="12" y2="16"/>'
-            + '<line x1="10" y1="14" x2="14" y2="14"/>'
-            + '</svg>'
-            + '</div>'
+            + '<div class="emp-avatar" style="background:' + e.cor + '">' + avatarInner + '</div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
             + '</div>'
             + '<button class="lapiz-btn" onclick="toggleForm(' + e.ci + ')" title="Editar">'
-            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
             + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
             + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
             + '</svg>'
@@ -3935,12 +3794,12 @@ function buildCards() {{
             + 'oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
             + '<div class="btn-row">'
             + '<button class="btn-buscar" onclick="triggerAction(\'buscar\',' + e.ci + ')">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-            + 'Buscar páginas'
+            + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+            + 'Buscar'
             + '</button>'
             + '<button class="btn-salvar" onclick="triggerSalvar(' + e.ci + ')">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
-            + 'Salvar ID'
+            + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
+            + 'Salvar'
             + '</button>'
             + '<button class="btn-cancelar" onclick="toggleForm(' + e.ci + ')">Cancelar</button>'
             + '</div>'
@@ -3949,7 +3808,6 @@ function buildCards() {{
         grid.appendChild(card);
     }});
 
-    // Abrir form da empresa selecionada automaticamente
     var selectedEmpresa = "{config_empresa_selecionada or ''}";
     var editandoEmpresa = "{editando_empresa or ''}";
     var targetNome = selectedEmpresa || editandoEmpresa;
@@ -4046,7 +3904,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 """, height=100, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
+    # ABA: EMPRESAS CONFIGURADAS — Somente cards, sem abas inferiores
     # ══════════════════════════════════════════════════════════════════
     elif main_tab == "empresas":
 
@@ -4067,11 +3925,10 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
             query_values[ck] = ads_id_salvo
 
-        # ── Barra de abas de empresas ─────────────────────────────────
         if "ads_aba_ativa" not in st.session_state:
             st.session_state.ads_aba_ativa = 0
 
-        # Ghost buttons para abas de empresa
+        # Ghost buttons para seleção de empresa (apenas cards)
         aba_ghost_css = []
         for i in range(len(empresas_configuradas)):
             k = f"btn_aba_ads_{i}"
@@ -4094,15 +3951,23 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                 st.session_state.ads_aba_ativa = i
                 st.rerun()
 
-        abas_nomes = [e["nome"] for e in empresas_configuradas]
-        aba_ativa  = min(st.session_state.ads_aba_ativa, len(abas_nomes) - 1)
+        aba_ativa = min(st.session_state.ads_aba_ativa, len(empresas_configuradas) - 1)
 
-        # ── Cards de empresa no topo — estilo imagem 2
+        # ── Cards de empresa — sem abas inferiores, só os cards clicáveis
         empresas_cards_json = []
         for i, e in enumerate(empresas_configuradas):
             is_minha = e["tipo"] == "minha"
             cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+            page_pic = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
+            # Busca do cache se não tem foto salva
+            if not page_pic:
+                cache_entry = st.session_state.ads_cache.get(e["nome"], {})
+                for ad in cache_entry.get("data", []):
+                    p = ad.get("page_profile_picture", "") or ""
+                    if p and p.startswith("http"):
+                        page_pic = p
+                        break
             empresas_cards_json.append({
                 "i": i,
                 "nome": e["nome"],
@@ -4110,6 +3975,10 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                 "ads_id": ads_id,
                 "is_minha": is_minha,
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
+                "cor": cor,
+                "avatar": gerar_avatar(e["nome"]),
+                "page_pic": page_pic,
+                "total_ads": len(st.session_state.ads_cache.get(e["nome"], {}).get("data", [])),
             })
 
         empresas_cards_str = _json.dumps(empresas_cards_json, ensure_ascii=False)
@@ -4120,29 +3989,17 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 
-/* ── Container principal ── */
-.main-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:16px;
-    overflow:hidden;
-}}
-
-/* ── Grid de cards de empresa ── */
 .cards-grid {{
     display:grid;
     grid-template-columns: repeat(3,1fr);
-    gap:0;
-    padding:20px;
-    border-bottom:1px solid #e5e7eb;
-    gap:16px;
+    gap:12px;
+    padding:0;
 }}
 
-/* ── Card individual — estilo da imagem 2 ── */
 .emp-card {{
-    background:#f9fafb;
+    background:#fff;
     border:1px solid #e5e7eb;
-    border-radius:12px;
+    border-radius:14px;
     padding:16px;
     display:flex;
     align-items:center;
@@ -4153,12 +4010,13 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 }}
 .emp-card:hover {{
     border-color:#3a9fd6;
-    background:#fff;
+    background:#f9feff;
     box-shadow:0 2px 10px rgba(58,159,214,0.1);
 }}
 .emp-card.active {{
     background:#fff;
     border-color:#0e2a47;
+    border-width:2px;
     box-shadow:0 2px 12px rgba(14,42,71,0.12);
 }}
 .emp-card.active::after {{
@@ -4167,181 +4025,118 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     bottom:0; left:0; right:0;
     height:3px;
     background:linear-gradient(90deg,#3a9fd6,#2ecc71);
-    border-radius:0 0 12px 12px;
+    border-radius:0 0 13px 13px;
 }}
-.emp-icon {{
-    width:44px; height:44px; border-radius:10px;
-    background:#e9eef5;
+.emp-avatar {{
+    width:44px; height:44px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
+    font-size:16px; font-weight:700; color:#fff;
+    flex-shrink:0; overflow:hidden;
+    border:2px solid rgba(255,255,255,0.8);
+    box-shadow:0 1px 4px rgba(0,0,0,0.12);
 }}
-.emp-card.active .emp-icon {{ background:#dbeafe; }}
-.emp-icon svg {{ width:22px; height:22px; }}
+.emp-avatar img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }}
 .emp-info {{ flex:1; min-width:0; }}
 .emp-nome {{
     font-size:14px; font-weight:700; color:#1a2e4a;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:4px;
+    margin-bottom:3px;
 }}
+.emp-card.active .emp-nome {{ color:#0e2a47; }}
 .badge-minha {{
-    display:inline-flex; align-items:center; gap:5px;
+    display:inline-flex; align-items:center; gap:4px;
     background:#f0fdf4; color:#15803d;
     border:1px solid #bbf7d0;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700;
+    padding:2px 8px; border-radius:20px;
+    font-size:10px; font-weight:700;
 }}
-.badge-minha::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#22c55e; flex-shrink:0;
-}}
+.badge-minha::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
 .badge-conc {{
-    display:inline-flex; align-items:center; gap:5px;
+    display:inline-flex; align-items:center; gap:4px;
     background:#eff6ff; color:#1d4ed8;
     border:1px solid #bfdbfe;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700;
+    padding:2px 8px; border-radius:20px;
+    font-size:10px; font-weight:700;
 }}
-.badge-conc::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#3b82f6; flex-shrink:0;
+.badge-conc::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
+.emp-total {{
+    font-size:11px; color:#9ca3af; margin-top:4px;
+    font-weight:500;
 }}
-.lapiz-btn {{
-    width:28px; height:28px;
-    border:1px solid #e5e7eb; border-radius:7px;
-    background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:#9ca3af; flex-shrink:0;
-    transition:all 0.12s;
-    position:absolute; top:12px; right:12px;
-}}
-.lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
-
-/* ── Barra de abas embaixo dos cards ── */
-.tabs-row {{
-    display:flex;
-    align-items:center;
-    padding:0 20px;
-    background:#f9fafb;
-    border-bottom:1px solid #e5e7eb;
-    gap:4px;
-    overflow-x:auto;
-}}
-.tab-btn {{
-    padding:12px 20px;
-    font-size:13px; font-weight:700;
-    color:#9ca3af; background:transparent;
-    border:none; border-bottom:3px solid transparent;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:all 0.15s; white-space:nowrap;
-    margin-bottom:-1px;
-}}
-.tab-btn:hover {{ color:#374151; }}
-.tab-btn.active {{
-    color:#1a2e4a;
-    border-bottom:3px solid #3a9fd6;
-}}
-.right-wrap {{
-    margin-left:auto;
-    display:flex; align-items:center;
-    padding-right:4px;
-}}
-.cfg-btn {{
-    width:30px; height:30px;
-    border:1px solid #e5e7eb; border-radius:7px;
+.emp-card.active .emp-total {{ color:#3a9fd6; font-weight:600; }}
+.cfg-corner {{
+    position:absolute; top:10px; right:10px;
+    width:26px; height:26px;
+    border:1px solid #e5e7eb; border-radius:6px;
     background:#fff; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     color:#9ca3af; transition:all 0.12s;
 }}
-.cfg-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.cfg-corner:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
 </style>
-<div class="main-wrap">
-    <div class="cards-grid" id="cards-grid"></div>
-    <div class="tabs-row" id="tabs-row">
-        <div class="right-wrap">
-            <button class="cfg-btn" onclick="triggerTab('tab_cfg')" title="Configurações">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-</div>
+<div class="cards-grid" id="cards-grid"></div>
 <script>
 var EMPRESAS = {empresas_cards_str};
 var ABA_ATIVA = {aba_ativa};
 
 function buildUI() {{
-    // Cards
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
     EMPRESAS.forEach(function(e) {{
         var card = document.createElement('div');
         card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
         card.id = 'emp_card_' + e.i;
+
         var badgeHtml = e.is_minha
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
+
+        var avatarInner = '';
+        if (e.page_pic && e.page_pic.startsWith('http')) {{
+            avatarInner = '<img src="' + e.page_pic + '" onerror="this.style.display=\'none\'" />';
+        }} else {{
+            avatarInner = e.avatar;
+        }}
+
+        var totalLabel = e.total_ads > 0
+            ? e.total_ads + ' anúncios no cache'
+            : 'Clique para carregar';
+
         card.innerHTML =
-            '<div class="emp-icon">'
-            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
-            + '<rect x="2" y="7" width="20" height="14" rx="2"/>'
-            + '<path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'
-            + '<line x1="12" y1="12" x2="12" y2="16"/>'
-            + '<line x1="10" y1="14" x2="14" y2="14"/>'
-            + '</svg>'
-            + '</div>'
+            '<div class="emp-avatar" style="background:' + e.cor + '">' + avatarInner + '</div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
+            + '<div class="emp-total">' + totalLabel + '</div>'
             + '</div>'
-            + '<button class="lapiz-btn" onclick="goConfig(' + e.i + ',event)" title="Configurar">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
-            + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
-            + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
+            + '<button class="cfg-corner" onclick="goConfig(event)" title="Configurar">'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<circle cx="12" cy="12" r="3"/>'
+            + '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
             + '</svg>'
             + '</button>';
+
         card.addEventListener('click', function(ev) {{
-            if (ev.target.closest('.lapiz-btn')) return;
+            if (ev.target.closest('.cfg-corner')) return;
             selectAba(e.i);
         }});
         grid.appendChild(card);
     }});
-
-    // Tabs
-    var tabsRow = document.getElementById('tabs-row');
-    var rightWrap = tabsRow.querySelector('.right-wrap');
-    // Remove existing tabs
-    tabsRow.querySelectorAll('.tab-btn').forEach(function(b) {{ b.remove(); }});
-    EMPRESAS.forEach(function(e) {{
-        var btn = document.createElement('button');
-        btn.className = 'tab-btn' + (e.i === ABA_ATIVA ? ' active' : '');
-        btn.id = 'tab_btn_' + e.i;
-        btn.textContent = e.nome;
-        btn.onclick = function() {{ selectAba(e.i); }};
-        tabsRow.insertBefore(btn, rightWrap);
-    }});
-
     syncHeight();
 }}
 
 function selectAba(i) {{
     ABA_ATIVA = i;
     document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
-    document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
     var card = document.getElementById('emp_card_' + i);
-    var tab  = document.getElementById('tab_btn_' + i);
     if (card) card.classList.add('active');
-    if (tab)  tab.classList.add('active');
     triggerBtn('aba_ads_' + i);
 }}
 
-function goConfig(i, ev) {{
+function goConfig(ev) {{
     ev.stopPropagation();
     triggerBtn('tab_cfg');
 }}
-
-function triggerTab(label) {{ triggerBtn(label); }}
 
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
@@ -4356,7 +4151,7 @@ function syncHeight() {{
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 12) + 'px'; break;
+            frames[i].style.height = (h + 8) + 'px'; break;
         }} }} catch(e) {{}}
     }}
 }}
@@ -4365,11 +4160,11 @@ buildUI();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
 </script>
 """, height=100, scrolling=False)
 
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
 
         # ── Sub-abas de conteúdo por empresa ─────────────────────────
         conteudo_tab_ghost_css = []
@@ -4400,7 +4195,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                     st.session_state.ads_aba_conteudo[ck] = tab_name
                     st.rerun()
 
-        # ── Dados e helpers ──────────────────────────────────────────
         empresas_com_dados = [
             e for e in todas_empresas
             if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
@@ -4416,7 +4210,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             """, unsafe_allow_html=True)
             st.stop()
 
-        # ── Plataformas SVG JS ────────────────────────────────────────
+        # ── Plataformas SVG JS ─────────────────────────────────────
         def _plat_svg_js(uid: str) -> str:
             return f"""
 (function(){{
@@ -4529,7 +4323,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 
             st.markdown(f"""
             <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
-                <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
+                <div style='display:flex;align-items:center;gap:16px;padding:14px 20px'>
                     {avatar_empresa_html}
                     <div style='flex:1;min-width:0'>
                         <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
@@ -4559,7 +4353,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
 .tabs-bar {{ display:flex; background:#f9fafb; border:1px solid #e5e7eb; border-top:none; border-bottom:none; }}
-.tab-btn {{ flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af; background:transparent; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }}
+.tab-btn {{ flex:1; padding:13px 0; font-size:14px; font-weight:700; color:#9ca3af; background:transparent; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }}
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
 .tab-btn.active {{ color:#1a2e4a; border-bottom:3px solid #3a9fd6; background:#fff; font-weight:800; border-top:1px solid #d8d9da; }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
@@ -4587,11 +4381,11 @@ function triggerTab(sk, tab) {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '52px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '50px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=52, scrolling=False)
+""", height=50, scrolling=False)
 
             # ── ABA: ANÚNCIOS ─────────────────────────────────────────
             if aba_conteudo_atual == "anuncios":
@@ -4612,7 +4406,7 @@ function triggerTab(sk, tab) {{
                     border: 1px solid #e5e7eb !important;
                     border-top: none !important;
                     border-radius: 0 0 12px 12px !important;
-                    padding: 20px 20px !important;
+                    padding: 16px 20px !important;
                     gap: 8px !important;
                     align-items: center !important;
                 }}
@@ -4624,7 +4418,6 @@ function triggerTab(sk, tab) {{
                     font-family: 'DM Sans', sans-serif !important;
                     font-size: 14px !important;
                     color: #111827 !important;
-                    transition: border-color 0.15s !important;
                 }}
                 .st-key-{filtros_key} div[data-baseweb="select"] > div {{
                     background-color: #ffffff !important;
@@ -4636,7 +4429,6 @@ function triggerTab(sk, tab) {{
                     font-family: 'DM Sans', sans-serif !important;
                     font-size: 14px !important;
                     color: #6b7280 !important;
-                    transition: border-color 0.15s !important;
                 }}
                 .st-key-ads_toggle_cols_{sk} button {{
                     height: 40px !important;
@@ -4765,8 +4557,8 @@ function triggerTab(sk, tab) {{
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
-.stats-row{{display:flex;gap:10px;flex-wrap:wrap;padding:16px 0 4px 0;}}
-.stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;text-align:center;}}
+.stats-row{{display:flex;gap:10px;flex-wrap:wrap;padding:14px 0 4px 0;}}
+.stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;text-align:center;}}
 .stat-lbl-green{{color:#15803d;}}
 .stat-num{{font-size:22px;font-weight:800;}}
 .stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;margin-top:2px;}}
@@ -5203,7 +4995,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </body></html>
 """, height=100, scrolling=False)
 
-            # ── ABA: ANÁLISE DE IA ────────────────────────────────────
+            # ── ABA: ANÁLISE DE IA ─────────────────────────────────────
             else:
                 ads_f_ia = ads_list
 
@@ -5220,7 +5012,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
                     if chave_ind not in st.session_state:
                         st.session_state[chave_ind] = ""
 
-                # Ghost buttons para análise IA
                 ia_ghost_keys = (
                     [f"btn_subtab_{sk}_individuais", f"btn_subtab_{sk}_criativos", f"btn_subtab_{sk}_copys"]
                     + [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
@@ -5582,7 +5373,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 """, height=600, scrolling=False)
 
         # ── Renderiza empresa da aba ativa ───────────────────────────
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
         empresas_com_dados = [
             e for e in empresas_configuradas
@@ -5676,7 +5467,7 @@ Compare os anúncios das empresas abaixo e gere uma análise competitiva complet
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
 body {{ padding-bottom:8px; }}
 .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
-.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
+.hdr {{ padding:16px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
 .hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
 .hdr-sub {{ font-size:13px; color:#9ca3af; }}
 .body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
