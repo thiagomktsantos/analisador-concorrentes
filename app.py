@@ -3663,7 +3663,7 @@ function triggerTab(label) {{
                 })
             paginas_json = _json.dumps(pg_data, ensure_ascii=False)
             
-        n_rows = (len(empresas_cards_json) // 3) + 1
+        n_rows = (len(empresas_json_list) // 3) + 1
         altura_cards = max(n_rows * 160 + 60, 300)
         components.html(f"""
 <!DOCTYPE html><html><head>
