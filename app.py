@@ -4057,7 +4057,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 </body></html>
-""", height=100, scrolling=False)
+""", height=600, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
