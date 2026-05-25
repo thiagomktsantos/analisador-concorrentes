@@ -4136,7 +4136,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 
 /* ── Container principal ── */
 .main-wrap {{
-    background:#fff;
+    background:#d2dde9;
     border:1px solid #e5e7eb;
     border-radius:16px;
     overflow:hidden;
@@ -4172,7 +4172,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 }}
 .emp-card.active {{
     background:#fff;
-    border: 2px solid #0780c0;
+    border: 2px solid #3b82f6;
 }}
 .emp-card.active::after {{
     content:'';
