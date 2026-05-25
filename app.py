@@ -3662,7 +3662,9 @@ function triggerTab(label) {{
                     "profile_picture": pg.get("profile_picture", ""),
                 })
             paginas_json = _json.dumps(pg_data, ensure_ascii=False)
-
+            
+        n_rows = (len(empresas_cards_json) // 3) + 1
+        altura_cards = n_rows * 140 + 40
         components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -3901,7 +3903,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 </body></html>
-""", height=100, scrolling=False)
+""", height=altura_cards, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Somente cards, sem abas inferiores
