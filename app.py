@@ -3277,7 +3277,7 @@ html, body { background: transparent; overflow: hidden; }
                     unsafe_allow_html=True,
                 )
 
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 16px 0'/>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════
     # GHOST BUTTONS — navegação principal (COMPLETAMENTE OCULTOS)
@@ -3389,6 +3389,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     grid-template-columns: 1fr 1fr 1fr;
     gap:12px;
     width:100%;
+    margin-bottom:0px;
 }}
 .nav-item {{
     background:#fff;
