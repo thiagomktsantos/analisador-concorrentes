@@ -3235,9 +3235,9 @@ elif st.session_state.pagina == "ads":
                     paginas[nome]["profile_picture"] = pic
         return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
 
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     # CABEÇALHO DA PÁGINA
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
 
     h1_col, h2_col = st.columns([7, 3])
     with h1_col:
@@ -3279,9 +3279,9 @@ html, body { background: transparent; overflow: hidden; }
 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 12px 0'/>", unsafe_allow_html=True)
 
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     # GHOST BUTTONS — navegação principal (COMPLETAMENTE OCULTOS)
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
 
     st.markdown("""
     <style>
@@ -3324,36 +3324,6 @@ html, body { background: transparent; overflow: hidden; }
         st.session_state.ads_main_tab = "analise"
         st.rerun()
 
-    # Ghost para lápis de empresa
-    lapiz_ghost_css_parts = []
-    for ci, e in enumerate(todas_empresas):
-        sk = safe_key(e["nome"])
-        lapiz_key = f"_ads_lapiz_{sk}_{ci}_"
-        lapiz_ghost_css_parts.append(f"""
-        .st-key-{lapiz_key.strip('_')} {{
-            position: fixed !important; top: -9999px !important; left: -9999px !important;
-            width: 0 !important; height: 0 !important; overflow: hidden !important;
-            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; display: none !important;
-        }}
-        .stElementContainer:has(.st-key-{lapiz_key.strip('_')}) {{
-            display: none !important; height: 0 !important; min-height: 0 !important;
-            max-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;
-        }}
-        """)
-    if lapiz_ghost_css_parts:
-        st.markdown(f"<style>{''.join(lapiz_ghost_css_parts)}</style>", unsafe_allow_html=True)
-
-    lapiz_triggers = {}
-    for ci, e in enumerate(todas_empresas):
-        sk = safe_key(e["nome"])
-        lapiz_key = f"_ads_lapiz_{sk}_{ci}_"
-        if st.button(f"lapiz_{sk}", key=lapiz_key.strip('_')):
-            st.session_state.ads_main_tab = "configuracao"
-            st.session_state.ads_config_empresa_selecionada = e["nome"]
-            st.session_state.ads_editando_empresa = e["nome"]
-            st.rerun()
-        lapiz_triggers[ci] = lapiz_key
-
     # ── Calcular dados
     main_tab = st.session_state.ads_main_tab
     empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
@@ -3375,9 +3345,331 @@ html, body { background: transparent; overflow: hidden; }
         else:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
 
-    # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas)
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
+    # GHOST BUTTONS — editar empresa por índice
+    # ══════════════════════════════════════════════════════════════════════
+
+    edit_ghost_css_parts = []
+    for ci, e in enumerate(todas_empresas):
+        sk = safe_key(e["nome"])
+        k = f"_ads_edit_empresa_{ci}_"
+        edit_ghost_css_parts.append(f"""
+        .st-key-{k.strip('_')} {{
+            position:fixed !important; top:-9999px !important; left:-9999px !important;
+            width:0 !important; height:0 !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important; display:none !important;
+        }}
+        .stElementContainer:has(.st-key-{k.strip('_')}) {{
+            display:none !important; height:0 !important; min-height:0 !important;
+            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+        }}
+        """)
+    if edit_ghost_css_parts:
+        st.markdown(f"<style>{''.join(edit_ghost_css_parts)}</style>", unsafe_allow_html=True)
+
+    edit_triggers = {}
+    for ci, e in enumerate(todas_empresas):
+        btn_key = f"_ads_edit_empresa_{ci}_".strip('_')
+        if st.button(f"edit_empresa_{ci}", key=btn_key):
+            st.session_state.ads_main_tab = "configuracao"
+            st.session_state.ads_config_empresa_selecionada = e["nome"]
+            st.session_state.ads_editando_empresa = e["nome"]
+            st.rerun()
+        edit_triggers[ci] = btn_key
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CARDS DE EMPRESAS (aparece em AMBAS as abas: empresas e configuracao)
+    # ══════════════════════════════════════════════════════════════════════
+
+    def _get_page_pic(e):
+        if e["tipo"] == "minha":
+            pic = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
+        else:
+            pic = st.session_state.dados["concorrentes"][e["idx"]].get("ads_page_pic", "") or ""
+        if not pic:
+            cache_entry = st.session_state.ads_cache.get(e["nome"], {})
+            for ad in cache_entry.get("data", []):
+                p = ad.get("page_profile_picture", "") or ""
+                if p and p.startswith("http"):
+                    return p
+        return pic
+
+    def _get_ads_id(e):
+        if e["tipo"] == "minha":
+            return emp.get("ads_id", "").strip()
+        return concs[e["idx"]].get("ads_id", "").strip()
+
+    # Montar JSON das empresas para o HTML
+    empresas_cards_json_list = []
+    for ci, e in enumerate(todas_empresas):
+        is_minha = e["tipo"] == "minha"
+        cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+        ads_id = _get_ads_id(e)
+        page_pic = _get_page_pic(e)
+        configurada = bool(ads_id)
+        total_ads = len(st.session_state.ads_cache.get(e["nome"], {}).get("data", []))
+        empresas_cards_json_list.append({
+            "ci": ci,
+            "nome": e["nome"],
+            "tipo": e["tipo"],
+            "ads_id": ads_id,
+            "cor": cor,
+            "avatar": gerar_avatar(e["nome"]),
+            "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
+            "is_minha": is_minha,
+            "page_pic": page_pic,
+            "configurada": configurada,
+            "total_ads": total_ads,
+        })
+
+    empresas_cards_json_str = _json.dumps(empresas_cards_json_list, ensure_ascii=False)
+    aba_ativa_idx = st.session_state.get("ads_aba_ativa", 0)
+
+    # Ghost buttons para selecionar aba de empresa (conteúdo)
+    aba_ghost_css = []
+    for i in range(len(todas_empresas)):
+        k = f"btn_aba_ads_{i}"
+        aba_ghost_css.append(f"""
+        .st-key-{k} {{
+            position:fixed !important; top:-9999px !important; left:-9999px !important;
+            width:0 !important; height:0 !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important; display:none !important;
+        }}
+        .stElementContainer:has(.st-key-{k}) {{
+            display:none !important; height:0 !important; min-height:0 !important;
+            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+        }}
+        """)
+    if aba_ghost_css:
+        st.markdown(f"<style>{''.join(aba_ghost_css)}</style>", unsafe_allow_html=True)
+
+    for i in range(len(todas_empresas)):
+        if st.button(f"aba_ads_{i}", key=f"btn_aba_ads_{i}"):
+            st.session_state.ads_aba_ativa = i
+            st.rerun()
+
+    # Altura dinâmica baseada no número de empresas
+    n_cols_cards = min(len(todas_empresas), 3)
+    n_rows_cards = (len(todas_empresas) + n_cols_cards - 1) // n_cols_cards
+    altura_cards_grid = max(n_rows_cards * 120 + 60, 140)
+
+    components.html(f"""
+<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+body {{ padding-bottom:0; }}
+
+.cards-grid {{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap:10px;
+    padding:0;
+}}
+
+/* Card estilo da imagem: horizontal, compacto */
+.emp-card {{
+    background:#fff;
+    border:1.5px solid #e5e7eb;
+    border-radius:12px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    cursor:pointer;
+    transition:all 0.15s;
+    position:relative;
+    min-height:72px;
+}}
+.emp-card:hover {{
+    border-color:#3a9fd6;
+    box-shadow:0 2px 10px rgba(58,159,214,0.12);
+}}
+.emp-card.active {{
+    border-color:#0e2a47;
+    border-width:2px;
+    box-shadow:0 2px 14px rgba(14,42,71,0.13);
+}}
+.emp-card.active::after {{
+    content:'';
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height:3px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    border-radius:0 0 10px 10px;
+}}
+
+/* Avatar / logo empresa */
+.emp-avatar {{
+    width:42px; height:42px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; color:#fff;
+    flex-shrink:0; overflow:hidden;
+    border:2px solid #f3f4f6;
+    box-shadow:0 1px 4px rgba(0,0,0,0.10);
+    background:#e5e7eb;
+}}
+.emp-avatar img {{
+    width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;
+}}
+
+/* Info central */
+.emp-info {{ flex:1; min-width:0; }}
+.emp-nome {{
+    font-size:14px; font-weight:700; color:#1a2e4a;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
+}}
+.emp-card.active .emp-nome {{ color:#0e2a47; }}
+
+/* Badges */
+.badge-minha {{
+    display:inline-flex; align-items:center; gap:4px;
+    background:#f0fdf4; color:#15803d;
+    border:1px solid #bbf7d0;
+    padding:2px 8px; border-radius:20px;
+    font-size:10px; font-weight:700;
+}}
+.badge-minha::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
+.badge-conc {{
+    display:inline-flex; align-items:center; gap:4px;
+    background:#eff6ff; color:#1d4ed8;
+    border:1px solid #bfdbfe;
+    padding:2px 8px; border-radius:20px;
+    font-size:10px; font-weight:700;
+}}
+.badge-conc::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
+
+/* Ícone de edição */
+.edit-icon {{
+    width:30px; height:30px; flex-shrink:0;
+    border:1px solid #e5e7eb; border-radius:7px;
+    background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#9ca3af; transition:all 0.12s;
+}}
+.edit-icon:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.emp-card.active .edit-icon {{ border-color:#3a9fd6; color:#3a9fd6; }}
+</style>
+</head>
+<body>
+<div class="cards-grid" id="cards-grid"></div>
+<script>
+var EMPRESAS = {empresas_cards_json_str};
+var ABA_ATIVA = {aba_ativa_idx};
+var MAIN_TAB = "{main_tab}";
+
+function buildCards() {{
+    var grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+
+    EMPRESAS.forEach(function(e) {{
+        var isActive = (e.ci === ABA_ATIVA && MAIN_TAB === 'empresas');
+        var card = document.createElement('div');
+        card.className = 'emp-card' + (isActive ? ' active' : '');
+        card.id = 'emp_card_' + e.ci;
+
+        var badgeHtml = e.is_minha
+            ? '<span class="badge-minha">Minha empresa</span>'
+            : '<span class="badge-conc">Concorrente</span>';
+
+        // Avatar: logo da empresa se disponível, senão iniciais coloridas
+        var avatarInner = '';
+        if (e.page_pic && (e.page_pic.startsWith('http') || e.page_pic.startsWith('data:'))) {{
+            avatarInner =
+                '<img src="' + e.page_pic + '" '
+                + 'onerror="this.parentElement.innerHTML=\'<span style=&quot;font-size:15px;font-weight:700;color:#fff&quot;>' + e.avatar + '</span>\';this.parentElement.style.background=\'' + e.cor + '\'" />';
+        }} else {{
+            avatarInner = '<span style="font-size:15px;font-weight:700;color:#fff">' + e.avatar + '</span>';
+        }}
+
+        var avatarStyle = (e.page_pic && (e.page_pic.startsWith('http') || e.page_pic.startsWith('data:')))
+            ? 'background:#f3f4f6'
+            : 'background:' + e.cor;
+
+        card.innerHTML =
+            '<div class="emp-avatar" style="' + avatarStyle + '">' + avatarInner + '</div>'
+            + '<div class="emp-info">'
+            + '<div class="emp-nome">' + e.nome + '</div>'
+            + badgeHtml
+            + '</div>'
+            + '<button class="edit-icon" onclick="editarEmpresa(event,' + e.ci + ')" title="Editar configuração">'
+            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
+            + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
+            + '</svg>'
+            + '</button>';
+
+        card.addEventListener('click', function(ev) {{
+            if (ev.target.closest('.edit-icon')) return;
+            if (MAIN_TAB === 'empresas') {{
+                selectAba(e.ci);
+            }} else {{
+                triggerBtn('tab_emp');
+                setTimeout(function() {{ selectAba(e.ci); }}, 100);
+            }}
+        }});
+
+        grid.appendChild(card);
+    }});
+
+    syncHeight();
+}}
+
+function selectAba(ci) {{
+    ABA_ATIVA = ci;
+    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
+    var card = document.getElementById('emp_card_' + ci);
+    if (card) card.classList.add('active');
+    triggerBtn('aba_ads_' + ci);
+}}
+
+function editarEmpresa(ev, ci) {{
+    ev.stopPropagation();
+    triggerBtn('edit_empresa_' + ci);
+}}
+
+function triggerBtn(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 8) + 'px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+
+buildCards();
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 100);
+setTimeout(syncHeight, 400);
+</script>
+</body></html>
+""", height=altura_cards_grid, scrolling=False)
+
+    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # BARRA DE NAVEGAÇÃO (2 abas: Configuração e Análise de IA)
+    # ══════════════════════════════════════════════════════════════════════
+
+    if not todas_empresas:
+        st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
+        st.stop()
+
+    if not st.secrets.get("APIFY_TOKEN", ""):
+        st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
 
     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -3483,7 +3775,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 function triggerTab(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -3498,16 +3790,9 @@ function triggerTab(label) {{
 
     st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
-    if not todas_empresas:
-        st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
-        st.stop()
-
-    if not st.secrets.get("APIFY_TOKEN", ""):
-        st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
-
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     # ABA: CONFIGURAÇÃO
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     if main_tab == "configuracao":
 
         config_action_css_parts = []
@@ -3628,34 +3913,6 @@ function triggerTab(label) {{
         config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
         editando_empresa = st.session_state.ads_editando_empresa
 
-        empresas_json_list = []
-        for ci, e in enumerate(todas_empresas):
-            is_minha = e["tipo"] == "minha"
-            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-            ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            page_pic_cfg = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
-            # Se não tem foto salva, tenta pegar do cache de ads
-            if not page_pic_cfg:
-                cache_entry = st.session_state.ads_cache.get(e["nome"], {})
-                for ad in cache_entry.get("data", []):
-                    p = ad.get("page_profile_picture", "") or ""
-                    if p and p.startswith("http"):
-                        page_pic_cfg = p
-                        break
-            empresas_json_list.append({
-                "ci": ci,
-                "nome": e["nome"],
-                "tipo": e["tipo"],
-                "ads_id": ads_id,
-                "cor": cor,
-                "avatar": gerar_avatar(e["nome"]),
-                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
-                "is_minha": is_minha,
-                "page_pic": page_pic_cfg,
-            })
-
-        empresas_json = _json.dumps(empresas_json_list, ensure_ascii=False)
-
         paginas_json = "[]"
         paginas_empresa_nome = st.session_state.ads_onboarding_empresa or ""
         if st.session_state.ads_onboarding_paginas:
@@ -3670,8 +3927,8 @@ function triggerTab(label) {{
                 })
             paginas_json = _json.dumps(pg_data, ensure_ascii=False)
 
-        n_rows = (len(empresas_json_list) // 3) + 1
-        altura_cards = max(n_rows * 200 + 80, 300)
+        n_rows_cfg = (len(todas_empresas) + 2) // 3
+        altura_cfg = max(n_rows_cfg * 210 + 80, 300)
 
         components.html(f"""
 <!DOCTYPE html><html><head>
@@ -3683,25 +3940,51 @@ body {{ padding-bottom:8px; }}
 .config-wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; }}
 .config-header {{ padding:14px 20px; border-bottom:1px solid #e5e7eb; font-size:13px; font-weight:800; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; }}
 .config-body {{ padding:16px 20px; display:grid; grid-template-columns: repeat(3,1fr); gap:14px; }}
-.emp-card {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; transition:border-color 0.15s, box-shadow 0.15s; }}
-.emp-card.editing {{ border-color:#3a9fd6; box-shadow:0 0 0 3px rgba(58,159,214,0.12); background:#fff; }}
-.emp-card-top {{ display:flex; align-items:center; gap:12px; padding:16px 14px; }}
-.emp-avatar {{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; border:2px solid rgba(255,255,255,0.8); box-shadow:0 1px 4px rgba(0,0,0,0.12); }}
+
+/* Card de configuração: mesmo estilo dos cards de empresa */
+.emp-card {{
+    background:#f9fafb;
+    border:1.5px solid #e5e7eb;
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    transition:border-color 0.15s, box-shadow 0.15s;
+}}
+.emp-card.editing {{
+    border-color:#3a9fd6;
+    box-shadow:0 0 0 3px rgba(58,159,214,0.12);
+    background:#fff;
+}}
+.emp-card-top {{
+    display:flex; align-items:center; gap:12px; padding:14px 14px 10px;
+}}
+.emp-avatar {{
+    width:42px; height:42px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; color:#fff;
+    flex-shrink:0; overflow:hidden;
+    border:2px solid #f3f4f6;
+    box-shadow:0 1px 4px rgba(0,0,0,0.10);
+    background:#e5e7eb;
+}}
 .emp-avatar img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }}
 .emp-info {{ flex:1; min-width:0; }}
 .emp-nome {{ font-size:14px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
-.badge-minha {{ display:inline-flex; align-items:center; gap:4px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-.badge-minha::before {{ content:''; width:7px; height:7px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
-.badge-conc {{ display:inline-flex; align-items:center; gap:4px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-.badge-conc::before {{ content:''; width:7px; height:7px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
-.lapiz-btn {{ width:32px; height:32px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af; flex-shrink:0; transition:all 0.12s; }}
+.badge-minha {{ display:inline-flex; align-items:center; gap:4px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }}
+.badge-minha::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
+.badge-conc {{ display:inline-flex; align-items:center; gap:4px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }}
+.badge-conc::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
+.lapiz-btn {{ width:28px; height:28px; border:1px solid #e5e7eb; border-radius:7px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af; flex-shrink:0; transition:all 0.12s; }}
 .lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+
 .id-strip {{ margin:0 12px 12px; background:#f3f4f6; border-radius:7px; padding:7px 10px; display:flex; align-items:center; gap:6px; }}
 .id-strip.configured {{ background:#f0fdf4; border:1px solid #bbf7d0; }}
 .id-dot {{ width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
 .id-dot.empty {{ background:#d1d5db; }}
 .id-val {{ font-size:11px; font-weight:600; color:#15803d; font-family:monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
 .id-val.empty {{ color:#9ca3af; font-family:'DM Sans',sans-serif; font-weight:400; font-size:11px; }}
+
 .edit-form {{ display:none; border-top:1px solid #e5e7eb; padding:12px 14px; background:#fff; }}
 .edit-form.open {{ display:block; }}
 .input-label {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:5px; }}
@@ -3731,7 +4014,7 @@ body {{ padding-bottom:8px; }}
     <div class="config-body" id="cards-grid"></div>
 </div>
 <script>
-var EMPRESAS = {empresas_json};
+var EMPRESAS = {empresas_cards_json_str};
 var PAGINAS  = {paginas_json};
 var PAGINAS_EMPRESA = "{paginas_empresa_nome}";
 var INPUT_VALS = {{}};
@@ -3756,6 +4039,7 @@ function toggleForm(ci) {{
 function buildCards() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
+
     EMPRESAS.forEach(function(e) {{
         var hasId = e.ads_id && e.ads_id.trim() !== '';
         var card = document.createElement('div');
@@ -3766,19 +4050,17 @@ function buildCards() {{
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
 
-        // Avatar: logo/foto de perfil se disponível, senão iniciais coloridas
-        var avatarHtml = '';
-        if (e.page_pic && e.page_pic.startsWith('http')) {{
-            avatarHtml =
-                '<div class="emp-avatar" style="background:' + e.cor + '">'
-                + '<img src="' + e.page_pic + '" '
-                + 'onerror="this.parentElement.innerHTML=\'' + e.avatar + '\';this.parentElement.style.background=\'' + e.cor + '\'" />'
-                + '</div>';
+        // Avatar com logo ou iniciais
+        var avatarInner = '';
+        var avatarStyle = '';
+        if (e.page_pic && (e.page_pic.startsWith('http') || e.page_pic.startsWith('data:'))) {{
+            avatarStyle = 'background:#f3f4f6';
+            avatarInner =
+                '<img src="' + e.page_pic + '" '
+                + 'onerror="this.parentElement.innerHTML=\'<span style=&quot;font-size:15px;font-weight:700;color:#fff&quot;>' + e.avatar + '</span>\';this.parentElement.style.background=\'' + e.cor + '\'" />';
         }} else {{
-            avatarHtml =
-                '<div class="emp-avatar" style="background:' + e.cor + '">'
-                + e.avatar
-                + '</div>';
+            avatarStyle = 'background:' + e.cor;
+            avatarInner = '<span style="font-size:15px;font-weight:700;color:#fff">' + e.avatar + '</span>';
         }}
 
         var idDot   = hasId ? '<div class="id-dot"></div>' : '<div class="id-dot empty"></div>';
@@ -3789,7 +4071,7 @@ function buildCards() {{
 
         card.innerHTML =
             '<div class="emp-card-top">'
-            + avatarHtml
+            + '<div class="emp-avatar" style="' + avatarStyle + '">' + avatarInner + '</div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
@@ -3807,7 +4089,7 @@ function buildCards() {{
             + '<div class="edit-form" id="form_' + e.ci + '">'
             + '<div class="input-label">Nome ou ID numérico da página</div>'
             + '<input class="input-field" id="inp_' + e.ci + '" type="text" value="' + (e.ads_id || '') + '" '
-            + 'placeholder="Ex: Nome da Página  ou  102803918240129" '
+            + 'placeholder="Ex: Nome da Página ou 102803918240129" '
             + 'oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
             + '<div class="btn-row">'
             + '<button class="btn-buscar" onclick="triggerAction(\'buscar\',' + e.ci + ')">'
@@ -3822,9 +4104,11 @@ function buildCards() {{
             + '</div>'
             + getPaginasHtml(e.nome)
             + '</div>';
+
         grid.appendChild(card);
     }});
 
+    // Abrir o formulário da empresa selecionada automaticamente
     var selectedEmpresa = "{config_empresa_selecionada or ''}";
     var editandoEmpresa = "{editando_empresa or ''}";
     var targetNome = selectedEmpresa || editandoEmpresa;
@@ -3835,6 +4119,7 @@ function buildCards() {{
             }}
         }});
     }}
+
     syncHeight();
 }}
 
@@ -3918,11 +4203,11 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 </body></html>
-""", height=altura_cards, scrolling=False)
+""", height=altura_cfg, scrolling=False)
 
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     elif main_tab == "empresas":
 
         if not empresas_configuradas:
@@ -3936,254 +4221,12 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             """, unsafe_allow_html=True)
             st.stop()
 
-        query_values = {}
-        for e in empresas_configuradas:
-            ck = e["nome"]
-            ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
-            query_values[ck] = ads_id_salvo
-
         if "ads_aba_ativa" not in st.session_state:
             st.session_state.ads_aba_ativa = 0
 
-        aba_ghost_css = []
-        for i in range(len(empresas_configuradas)):
-            k = f"btn_aba_ads_{i}"
-            aba_ghost_css.append(f"""
-            .st-key-{k} {{
-                position:fixed !important; top:-9999px !important; left:-9999px !important;
-                width:0 !important; height:0 !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important; display:none !important;
-            }}
-            .stElementContainer:has(.st-key-{k}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-            }}
-            """)
-        if aba_ghost_css:
-            st.markdown(f"<style>{''.join(aba_ghost_css)}</style>", unsafe_allow_html=True)
+        st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
-        for i in range(len(empresas_configuradas)):
-            if st.button(f"aba_ads_{i}", key=f"btn_aba_ads_{i}"):
-                st.session_state.ads_aba_ativa = i
-                st.rerun()
-
-        aba_ativa = min(st.session_state.ads_aba_ativa, len(empresas_configuradas) - 1)
-
-        # Cards de empresa com logo
-        empresas_cards_json = []
-        for i, e in enumerate(empresas_configuradas):
-            is_minha = e["tipo"] == "minha"
-            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-            ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            page_pic = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
-            if not page_pic:
-                cache_entry = st.session_state.ads_cache.get(e["nome"], {})
-                for ad in cache_entry.get("data", []):
-                    p = ad.get("page_profile_picture", "") or ""
-                    if p and p.startswith("http"):
-                        page_pic = p
-                        break
-            empresas_cards_json.append({
-                "i": i,
-                "nome": e["nome"],
-                "tipo": e["tipo"],
-                "ads_id": ads_id,
-                "is_minha": is_minha,
-                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
-                "cor": cor,
-                "avatar": gerar_avatar(e["nome"]),
-                "page_pic": page_pic,
-                "total_ads": len(st.session_state.ads_cache.get(e["nome"], {}).get("data", [])),
-            })
-
-        empresas_cards_str = _json.dumps(empresas_cards_json, ensure_ascii=False)
-
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-
-.cards-grid {{
-    display:grid;
-    grid-template-columns: repeat(3,1fr);
-    gap:12px;
-    padding:0;
-}}
-
-.emp-card {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:14px;
-    padding:16px;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    cursor:pointer;
-    transition:all 0.15s;
-    position:relative;
-}}
-.emp-card:hover {{
-    border-color:#3a9fd6;
-    background:#f9feff;
-    box-shadow:0 2px 10px rgba(58,159,214,0.1);
-}}
-.emp-card.active {{
-    background:#fff;
-    border-color:#0e2a47;
-    border-width:2px;
-    box-shadow:0 2px 12px rgba(14,42,71,0.12);
-}}
-.emp-card.active::after {{
-    content:'';
-    position:absolute;
-    bottom:0; left:0; right:0;
-    height:3px;
-    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
-    border-radius:0 0 13px 13px;
-}}
-.emp-avatar {{
-    width:44px; height:44px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:16px; font-weight:700; color:#fff;
-    flex-shrink:0; overflow:hidden;
-    border:2px solid rgba(255,255,255,0.8);
-    box-shadow:0 1px 4px rgba(0,0,0,0.12);
-}}
-.emp-avatar img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }}
-.emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{
-    font-size:14px; font-weight:700; color:#1a2e4a;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:3px;
-}}
-.emp-card.active .emp-nome {{ color:#0e2a47; }}
-.badge-minha {{
-    display:inline-flex; align-items:center; gap:4px;
-    background:#f0fdf4; color:#15803d;
-    border:1px solid #bbf7d0;
-    padding:2px 8px; border-radius:20px;
-    font-size:10px; font-weight:700;
-}}
-.badge-minha::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
-.badge-conc {{
-    display:inline-flex; align-items:center; gap:4px;
-    background:#eff6ff; color:#1d4ed8;
-    border:1px solid #bfdbfe;
-    padding:2px 8px; border-radius:20px;
-    font-size:10px; font-weight:700;
-}}
-.badge-conc::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
-.emp-total {{
-    font-size:11px; color:#9ca3af; margin-top:4px;
-    font-weight:500;
-}}
-.emp-card.active .emp-total {{ color:#3a9fd6; font-weight:600; }}
-.cfg-corner {{
-    position:absolute; top:10px; right:10px;
-    width:26px; height:26px;
-    border:1px solid #e5e7eb; border-radius:6px;
-    background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:#9ca3af; transition:all 0.12s;
-}}
-.cfg-corner:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
-</style>
-<div class="cards-grid" id="cards-grid"></div>
-<script>
-var EMPRESAS = {empresas_cards_str};
-var ABA_ATIVA = {aba_ativa};
-
-function buildUI() {{
-    var grid = document.getElementById('cards-grid');
-    grid.innerHTML = '';
-    EMPRESAS.forEach(function(e) {{
-        var card = document.createElement('div');
-        card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
-        card.id = 'emp_card_' + e.i;
-
-        var badgeHtml = e.is_minha
-            ? '<span class="badge-minha">Minha empresa</span>'
-            : '<span class="badge-conc">Concorrente</span>';
-
-        // Logo/foto de perfil ou iniciais coloridas
-        var avatarInner = '';
-        if (e.page_pic && e.page_pic.startsWith('http')) {{
-            avatarInner = '<img src="' + e.page_pic + '" '
-                + 'onerror="this.parentElement.innerHTML=\'' + e.avatar + '\'" />';
-        }} else {{
-            avatarInner = e.avatar;
-        }}
-
-        var totalLabel = e.total_ads > 0
-            ? e.total_ads + ' anúncios no cache'
-            : 'Clique para carregar';
-
-        card.innerHTML =
-            '<div class="emp-avatar" style="background:' + e.cor + '">' + avatarInner + '</div>'
-            + '<div class="emp-info">'
-            + '<div class="emp-nome">' + e.nome + '</div>'
-            + badgeHtml
-            + '<div class="emp-total">' + totalLabel + '</div>'
-            + '</div>'
-            + '<button class="cfg-corner" onclick="goConfig(event)" title="Configurar">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-            + '<circle cx="12" cy="12" r="3"/>'
-            + '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
-            + '</svg>'
-            + '</button>';
-
-        card.addEventListener('click', function(ev) {{
-            if (ev.target.closest('.cfg-corner')) return;
-            selectAba(e.i);
-        }});
-        grid.appendChild(card);
-    }});
-    syncHeight();
-}}
-
-function selectAba(i) {{
-    ABA_ATIVA = i;
-    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
-    var card = document.getElementById('emp_card_' + i);
-    if (card) card.classList.add('active');
-    triggerBtn('aba_ads_' + i);
-}}
-
-function goConfig(ev) {{
-    ev.stopPropagation();
-    triggerBtn('tab_cfg');
-}}
-
-function triggerBtn(label) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
-}}
-
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 8) + 'px'; break;
-        }} }} catch(e) {{}}
-    }}
-}}
-
-buildUI();
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
-</script>
-""", height=200, scrolling=False)
-
-        st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-
-        # ── Sub-abas de conteúdo por empresa
+        # Sub-abas de conteúdo por empresa
         conteudo_tab_ghost_css = []
         for e in empresas_configuradas:
             sk = safe_key(e["nome"])
@@ -4253,9 +4296,9 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
 }})();
 """
 
-        # ══════════════════════════════════════════════════════════════
+        # ══════════════════════════════════════════════════════════════════
         # FUNÇÃO PRINCIPAL: render_ads_empresa
-        # ══════════════════════════════════════════════════════════════
+        # ══════════════════════════════════════════════════════════════════
         def render_ads_empresa(emp_item):
             ck       = emp_item["nome"]
             nome     = emp_item["nome"]
@@ -5392,26 +5435,12 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
         # ── Renderiza empresa da aba ativa
         st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
-        empresas_com_dados = [
-            e for e in empresas_configuradas
-            if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
-        ]
+        aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
+        render_ads_empresa(empresas_com_dados[aba_idx])
 
-        if not empresas_com_dados:
-            st.markdown("""
-            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
-                <div style='font-size:32px;margin-bottom:12px'>📢</div>
-                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
-                <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar</b>.</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
-            render_ads_empresa(empresas_com_dados[aba_idx])
-
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA (resumo comparativo)
-    # ══════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
     elif main_tab == "analise":
 
         if not st.session_state.ads_cache:
