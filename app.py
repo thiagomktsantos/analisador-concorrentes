@@ -4361,8 +4361,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
 
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-
         # ── Sub-abas de conteúdo por empresa ─────────────────────────
         conteudo_tab_ghost_css = []
         for e in empresas_configuradas:
