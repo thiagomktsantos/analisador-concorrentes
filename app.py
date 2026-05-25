@@ -3185,10 +3185,8 @@ elif st.session_state.pagina == "ads":
         st.session_state.ads_editando_empresa = None
     if "ads_aba_conteudo" not in st.session_state:
         st.session_state.ads_aba_conteudo = {}
-    # Nova: aba principal da página (configuracao | empresas | analise)
     if "ads_main_tab" not in st.session_state:
         st.session_state.ads_main_tab = "empresas"
-    # Empresa selecionada na aba de configuração quando clica no lápis
     if "ads_config_empresa_selecionada" not in st.session_state:
         st.session_state.ads_config_empresa_selecionada = None
 
@@ -3237,47 +3235,13 @@ elif st.session_state.pagina == "ads":
                     paginas[nome]["profile_picture"] = pic
         return sorted(paginas.values(), key=lambda x: x["total_ads"], reverse=True)
 
-    def _avatar_html_empresa(e: dict, size: int = 42) -> str:
-        is_minha = e["tipo"] == "minha"
-        cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-        nome = e["nome"]
-        av = gerar_avatar(nome)
-
-        if is_minha:
-            pic = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
-        else:
-            pic = st.session_state.dados["concorrentes"][e["idx"]].get("ads_page_pic", "") or ""
-
-        if not pic:
-            cache_entry = st.session_state.ads_cache.get(nome, {})
-            ads_data = cache_entry.get("data", [])
-            for ad in ads_data:
-                p = ad.get("page_profile_picture", "") or ""
-                if p and p.startswith("http"):
-                    pic = p
-                    break
-
-        if pic:
-            return (
-                f'<div style="width:{size}px;height:{size}px;border-radius:50%;overflow:hidden;'
-                f'flex-shrink:0;border:2px solid #e5e7eb;">'
-                f'<img src="{pic}" style="width:100%;height:100%;object-fit:cover;display:block" '
-                f'onerror="this.parentElement.style.background=\'{cor}\';'
-                f'this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;'
-                f'justify-content:center;width:100%;height:100%;font-size:{int(size*0.35)}px;'
-                f'font-weight:700;color:#fff&quot;>{av}</div>\'" />'
-                f'</div>'
-            )
-        return (
-            f'<div style="width:{size}px;height:{size}px;border-radius:50%;background:{cor};'
-            f'display:flex;align-items:center;justify-content:center;'
-            f'font-size:{int(size*0.35)}px;font-weight:700;color:#fff;flex-shrink:0">{av}</div>'
-        )
-
     # ══════════════════════════════════════════════════════════════════
     # CABEÇALHO DA PÁGINA
     # ══════════════════════════════════════════════════════════════════
-    components.html("""
+
+    h1_col, h2_col = st.columns([7, 3])
+    with h1_col:
+        components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @font-face {
@@ -3297,84 +3261,126 @@ html, body { background: transparent; overflow: hidden; }
 <div class="sub">Criativos, copies e formatos dos anúncios dos seus concorrentes.</div>
 """, height=65)
 
+    with h2_col:
+        # Botão buscar sempre visível no cabeçalho
+        gerar_btn_ads_header = st.button(
+            "Buscar / Atualizar Anúncios",
+            type="primary",
+            use_container_width=True,
+            key="ads_buscar_header_btn",
+        )
+        if st.session_state.ads_cache:
+            _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
+            if _tss:
+                st.markdown(
+                    f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
+                    f"🕒 Última busca: <b>{min(_tss)}</b></div>",
+                    unsafe_allow_html=True,
+                )
+
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 16px 0'/>", unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════
-    # GHOST BUTTONS para navegação principal
+    # GHOST BUTTONS — navegação principal (COMPLETAMENTE OCULTOS)
     # ══════════════════════════════════════════════════════════════════
-    main_tab_ghost_keys = ["_ads_tab_configuracao_", "_ads_tab_empresas_", "_ads_tab_analise_", "_ads_tab_buscar_"]
-    ghost_main_css = "\n".join([
-        f"""
-        .st-key-btn{k.replace('_','-')}ghost {{
-            position:absolute !important; top:-9999px !important; left:-9999px !important;
-            width:1px !important; height:1px !important; overflow:hidden !important;
-            opacity:0 !important; pointer-events:none !important;
-        }}
-        .stElementContainer:has(.st-key-btn{k.replace('_','-')}ghost) {{
-            display:none !important; height:0 !important; min-height:0 !important;
-            max-height:0 !important; padding:0 !important; margin:0 !important;
-            overflow:hidden !important; line-height:0 !important; border:none !important;
-        }}
-        """
-        for k in main_tab_ghost_keys
-    ])
-    st.markdown(f"<style>{ghost_main_css}</style>", unsafe_allow_html=True)
 
-    if st.button("_ads_tab_configuracao_", key="btn-_ads_tab_configuracao_-ghost"):
+    # CSS para ocultar TODOS os ghost buttons desta página
+    st.markdown("""
+    <style>
+    /* Ocultar ghost buttons de navegação principal */
+    .st-key-_ads_ghost_tab_configuracao_,
+    .st-key-_ads_ghost_tab_empresas_,
+    .st-key-_ads_ghost_tab_analise_ {
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        display: none !important;
+    }
+    .stElementContainer:has(.st-key-_ads_ghost_tab_configuracao_),
+    .stElementContainer:has(.st-key-_ads_ghost_tab_empresas_),
+    .stElementContainer:has(.st-key-_ads_ghost_tab_analise_) {
+        display: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    if st.button("tab_cfg", key="_ads_ghost_tab_configuracao_"):
         st.session_state.ads_main_tab = "configuracao"
         st.session_state.ads_config_empresa_selecionada = None
         st.rerun()
-    if st.button("_ads_tab_empresas_", key="btn-_ads_tab_empresas_-ghost"):
+    if st.button("tab_emp", key="_ads_ghost_tab_empresas_"):
         st.session_state.ads_main_tab = "empresas"
         st.rerun()
-    if st.button("_ads_tab_analise_", key="btn-_ads_tab_analise_-ghost"):
+    if st.button("tab_ia", key="_ads_ghost_tab_analise_"):
         st.session_state.ads_main_tab = "analise"
         st.rerun()
-    if st.button("_ads_tab_buscar_", key="btn-_ads_tab_buscar_-ghost"):
-        st.session_state.ads_main_tab = "buscar"
-        st.rerun()
 
-    # Ghost para abrir config de empresa específica (pelo lápis)
+    # Ghost para lápis de empresa
     lapiz_ghost_css_parts = []
     for ci, e in enumerate(todas_empresas):
         sk = safe_key(e["nome"])
-        lapiz_key = f"ads_lapiz_ghost_{sk}_{ci}"
+        lapiz_key = f"_ads_lapiz_{sk}_{ci}_"
         lapiz_ghost_css_parts.append(f"""
-        .st-key-{lapiz_key} {{
-            position:absolute !important; top:-9999px !important; left:-9999px !important;
-            width:1px !important; height:1px !important; overflow:hidden !important;
-            opacity:0 !important; pointer-events:none !important;
+        .st-key-{lapiz_key.strip('_')} {{
+            position: fixed !important; top: -9999px !important; left: -9999px !important;
+            width: 0 !important; height: 0 !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; display: none !important;
         }}
-        .stElementContainer:has(.st-key-{lapiz_key}) {{
-            display:none !important; height:0 !important; min-height:0 !important;
-            max-height:0 !important; padding:0 !important; margin:0 !important;
-            overflow:hidden !important; line-height:0 !important; border:none !important;
+        .stElementContainer:has(.st-key-{lapiz_key.strip('_')}) {{
+            display: none !important; height: 0 !important; min-height: 0 !important;
+            max-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;
         }}
         """)
-    st.markdown(f"<style>{''.join(lapiz_ghost_css_parts)}</style>", unsafe_allow_html=True)
+    if lapiz_ghost_css_parts:
+        st.markdown(f"<style>{''.join(lapiz_ghost_css_parts)}</style>", unsafe_allow_html=True)
 
     lapiz_triggers = {}
     for ci, e in enumerate(todas_empresas):
         sk = safe_key(e["nome"])
-        lapiz_key = f"ads_lapiz_ghost_{sk}_{ci}"
-        if st.button(f"_lapiz_{sk}_{ci}_", key=lapiz_key):
+        lapiz_key = f"_ads_lapiz_{sk}_{ci}_"
+        if st.button(f"lapiz_{sk}", key=lapiz_key.strip('_')):
             st.session_state.ads_main_tab = "configuracao"
             st.session_state.ads_config_empresa_selecionada = e["nome"]
             st.session_state.ads_editando_empresa = e["nome"]
             st.rerun()
         lapiz_triggers[ci] = lapiz_key
 
-    # ── Calcular dados para exibir na barra ─────────────────────────
+    # ── Calcular dados
     main_tab = st.session_state.ads_main_tab
     empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
     empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
 
-    # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas: Configuração | Empresas configuradas | Análise de IA)
-    # ══════════════════════════════════════════════════════════════════
-
     n_configuradas = len(empresas_configuradas)
     n_sem_config   = len(empresas_sem_config)
+
+    # ── Processar busca do cabeçalho
+    if gerar_btn_ads_header:
+        query_values_header = {}
+        for e in todas_empresas:
+            if empresa_tem_ads_id(e):
+                ck = e["nome"]
+                ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
+                query_values_header[ck] = ads_id_salvo
+        if query_values_header:
+            executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values_header, forcar=False)
+        else:
+            st.warning("Configure pelo menos uma empresa antes de buscar.")
+
+    # ══════════════════════════════════════════════════════════════════
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas)
+    # ══════════════════════════════════════════════════════════════════
 
     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -3450,7 +3456,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 }}
 </style>
 <div class="nav-bar">
-    <div class="nav-item {'active' if main_tab == 'configuracao' else ''}" onclick="triggerTab('_ads_tab_configuracao_')">
+    <div class="nav-item {'active' if main_tab == 'configuracao' else ''}" onclick="triggerTab('tab_cfg')">
         <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'configuracao' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
@@ -3463,7 +3469,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
         </div>
         {f'<div class="nav-badge">{n_sem_config}</div>' if n_sem_config > 0 else ''}
     </div>
-    <div class="nav-item {'active' if main_tab == 'empresas' else ''}" onclick="triggerTab('_ads_tab_empresas_')">
+    <div class="nav-item {'active' if main_tab == 'empresas' else ''}" onclick="triggerTab('tab_emp')">
         <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'empresas' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -3476,7 +3482,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
         </div>
         {f'<div class="nav-badge">{n_configuradas}</div>' if n_configuradas > 0 else ''}
     </div>
-    <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('_ads_tab_analise_')">
+    <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('tab_ia')">
         <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -3520,47 +3526,52 @@ function triggerTab(label) {{
     if main_tab == "configuracao":
 
         # Ghost buttons para salvar/buscar/cancelar por empresa
-        config_action_keys = []
+        config_action_css_parts = []
         for ci, e in enumerate(todas_empresas):
             sk = safe_key(e["nome"])
             for action in ["buscar", "salvar", "cancelar"]:
-                config_action_keys.append(f"cfg_action_{action}_{sk}_{ci}")
-
-        ghost_cfg_css = "\n".join([
-            f"""
-            .st-key-{k} {{
-                position:absolute !important; top:-9999px !important; left:-9999px !important;
-                width:1px !important; height:1px !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important;
-            }}
-            .stElementContainer:has(.st-key-{k}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important;
-                overflow:hidden !important; line-height:0 !important; border:none !important;
-            }}
-            """
-            for k in config_action_keys
-        ])
-        st.markdown(f"<style>{ghost_cfg_css}</style>", unsafe_allow_html=True)
+                k = f"_cfg_{action}_{sk}_{ci}_"
+                config_action_css_parts.append(f"""
+                .st-key-{k.strip('_')} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:0 !important; height:0 !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; display:none !important;
+                }}
+                .stElementContainer:has(.st-key-{k.strip('_')}) {{
+                    display:none !important; height:0 !important; min-height:0 !important;
+                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                }}
+                """)
+        if config_action_css_parts:
+            st.markdown(f"<style>{''.join(config_action_css_parts)}</style>", unsafe_allow_html=True)
 
         config_actions = {}
         for ci, e in enumerate(todas_empresas):
             sk = safe_key(e["nome"])
             for action in ["buscar", "salvar", "cancelar"]:
-                btn_key = f"cfg_action_{action}_{sk}_{ci}"
-                if st.button(f"_cfg_{action}_{sk}_{ci}_", key=btn_key):
+                btn_key = f"_cfg_{action}_{sk}_{ci}_".strip('_')
+                if st.button(f"cfg_{action}_{sk}", key=btn_key):
                     config_actions[f"{action}_{ci}"] = True
                 else:
                     config_actions[f"{action}_{ci}"] = False
 
-        # Campos de input por empresa
+        # Campos de input por empresa (ocultos)
         config_inputs = {}
+        input_css_parts = []
+        for ci, e in enumerate(todas_empresas):
+            sk = safe_key(e["nome"])
+            input_key = f"cfg_input_{sk}_{ci}"
+            input_css_parts.append(f"""
+            .st-key-{input_key} {{ display:none !important; }}
+            .stElementContainer:has(.st-key-{input_key}) {{ display:none !important; height:0 !important; min-height:0 !important; max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important; }}
+            """)
+        if input_css_parts:
+            st.markdown(f"<style>{''.join(input_css_parts)}</style>", unsafe_allow_html=True)
+
         for ci, e in enumerate(todas_empresas):
             sk = safe_key(e["nome"])
             ads_id_atual = emp.get("ads_id", "") if e["tipo"] == "minha" else concs[e["idx"]].get("ads_id", "")
             input_key = f"cfg_input_{sk}_{ci}"
-            # Renderizar oculto mas funcional
-            st.markdown(f"<style>.st-key-{input_key} {{ display:none !important; }}</style>", unsafe_allow_html=True)
             config_inputs[ci] = st.text_input(
                 f"ID {e['nome']}",
                 value=ads_id_atual,
@@ -3570,7 +3581,6 @@ function triggerTab(label) {{
 
         # Processar ações
         for ci, e in enumerate(todas_empresas):
-            sk = safe_key(e["nome"])
             novo_id = config_inputs.get(ci, "").strip()
 
             if config_actions.get(f"buscar_{ci}") and novo_id:
@@ -3599,35 +3609,21 @@ function triggerTab(label) {{
                 st.rerun()
 
         # Ghost select de página
-        paginas_select_keys = []
         if st.session_state.ads_onboarding_paginas:
-            for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
-                psk = f"cfg_select_pg_{pi}"
-                paginas_select_keys.append(psk)
-
-        ghost_pg_css = "\n".join([
-            f"""
-            .st-key-{k} {{
-                position:absolute !important; top:-9999px !important; left:-9999px !important;
-                width:1px !important; height:1px !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important;
-            }}
-            .stElementContainer:has(.st-key-{k}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important;
-                overflow:hidden !important; line-height:0 !important; border:none !important;
-            }}
-            """
-            for k in paginas_select_keys
-        ])
-        if ghost_pg_css:
-            st.markdown(f"<style>{ghost_pg_css}</style>", unsafe_allow_html=True)
+            pg_select_css = []
+            for pi in range(len(st.session_state.ads_onboarding_paginas[:8])):
+                k = f"cfg_select_pg_{pi}"
+                pg_select_css.append(f"""
+                .st-key-{k} {{ display:none !important; }}
+                .stElementContainer:has(.st-key-{k}) {{ display:none !important; height:0 !important; min-height:0 !important; max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important; }}
+                """)
+            if pg_select_css:
+                st.markdown(f"<style>{''.join(pg_select_css)}</style>", unsafe_allow_html=True)
 
         pg_triggers = {}
         if st.session_state.ads_onboarding_paginas:
             for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
-                psk = f"cfg_select_pg_{pi}"
-                if st.button(f"_select_pg_{pi}_", key=psk):
+                if st.button(f"select_pg_{pi}", key=f"cfg_select_pg_{pi}"):
                     pg_triggers[pi] = True
                 else:
                     pg_triggers[pi] = False
@@ -3649,11 +3645,10 @@ function triggerTab(label) {{
                         st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
                         st.rerun()
 
-        # ── Renderizar cards de configuração ─────────────────────────
+        # ── Renderizar cards de configuração
         config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
         editando_empresa = st.session_state.ads_editando_empresa
 
-        # Gerar JSON das empresas para o HTML
         empresas_json_list = []
         for ci, e in enumerate(todas_empresas):
             is_minha = e["tipo"] == "minha"
@@ -3674,7 +3669,6 @@ function triggerTab(label) {{
 
         empresas_json = _json.dumps(empresas_json_list, ensure_ascii=False)
 
-        # Montar lista de páginas encontradas (se houver)
         paginas_json = "[]"
         paginas_empresa_nome = st.session_state.ads_onboarding_empresa or ""
         if st.session_state.ads_onboarding_paginas:
@@ -3696,7 +3690,6 @@ function triggerTab(label) {{
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
-
 .section-label {{
     font-size:11px; font-weight:700; color:#9ca3af;
     text-transform:uppercase; letter-spacing:1.2px;
@@ -3787,8 +3780,6 @@ body {{ padding-bottom:8px; }}
     transition:color 0.15s;
 }}
 .btn-cancelar:hover {{ color:#374151; }}
-
-/* Resultado de páginas encontradas */
 .paginas-wrap {{
     margin-top:14px; border-top:1px solid #f3f4f6; padding-top:14px;
 }}
@@ -3812,12 +3803,8 @@ body {{ padding-bottom:8px; }}
 </style>
 </head>
 <body>
-
 <div class="section-label">Configure as páginas do Facebook/Instagram</div>
 <div class="cards-grid" id="cards-grid"></div>
-
-<div id="paginas-result" style="display:none"></div>
-
 <script>
 var EMPRESAS = {empresas_json};
 var PAGINAS  = {paginas_json};
@@ -3825,14 +3812,13 @@ var PAGINAS_EMPRESA = "{paginas_empresa_nome}";
 var INPUT_VALS = {{}};
 
 EMPRESAS.forEach(function(e) {{
-    INPUT_VALS[e.ci] = e.ads_id || e.nome;
+    INPUT_VALS[e.ci] = e.ads_id || '';
 }});
 
 function toggleForm(ci) {{
     var form = document.getElementById('form_' + ci);
     var card = document.getElementById('card_' + ci);
     var isOpen = form.classList.contains('open');
-    // fechar todos
     document.querySelectorAll('.edit-form').forEach(function(f) {{ f.classList.remove('open'); }});
     document.querySelectorAll('.card').forEach(function(c) {{ c.classList.remove('editing'); }});
     if (!isOpen) {{
@@ -3845,17 +3831,14 @@ function toggleForm(ci) {{
 function buildCards() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
-
     EMPRESAS.forEach(function(e) {{
         var hasId = e.ads_id && e.ads_id.trim() !== '';
         var card = document.createElement('div');
         card.className = 'card';
         card.id = 'card_' + e.ci;
-
         var idBlock = hasId
             ? '<div class="id-row"><div class="id-dot"></div><div class="id-val">' + e.ads_id + '</div></div>'
             : '<div class="no-config-row"><div class="no-config-dot"></div><div class="no-config-val">Não configurado</div></div>';
-
         card.innerHTML =
             '<div class="card-header">'
             + '<div class="avatar" style="background:' + e.cor + '">' + e.avatar + '</div>'
@@ -3878,7 +3861,7 @@ function buildCards() {{
             + '<div class="input-label">Nome ou ID numérico da página</div>'
             + '<input class="input-field" id="inp_' + e.ci + '" type="text" value="' + (e.ads_id || '') + '" placeholder="Ex: Nome da Página  ou  102803918240129" oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
             + '<div class="btn-row">'
-            + '<button class="btn-buscar" onclick="triggerAction(\'buscar\', ' + e.ci + ')">'
+            + '<button class="btn-buscar" onclick="triggerAction(\'buscar\',' + e.ci + ')">'
             + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
             + 'Buscar páginas'
             + '</button>'
@@ -3890,15 +3873,19 @@ function buildCards() {{
             + '</div>'
             + getPaginasHtml(e.nome)
             + '</div>';
-
         grid.appendChild(card);
-
-        // Se essa empresa estava sendo editada, abrir form automaticamente
-        if ("' + (config_empresa_selecionada or '') + '" === e.nome || "' + (editando_empresa or '') + '" === e.nome) {{
-            setTimeout(function() {{ toggleForm(e.ci); }}, 100);
-        }}
     }});
-
+    // Abrir form da empresa selecionada automaticamente
+    var selectedEmpresa = "{config_empresa_selecionada or ''}";
+    var editandoEmpresa = "{editando_empresa or ''}";
+    var targetNome = selectedEmpresa || editandoEmpresa;
+    if (targetNome) {{
+        EMPRESAS.forEach(function(e) {{
+            if (e.nome === targetNome) {{
+                setTimeout(function() {{ toggleForm(e.ci); }}, 200);
+            }}
+        }});
+    }}
     syncHeight();
 }}
 
@@ -3922,28 +3909,6 @@ function getPaginasHtml(nomeEmpresa) {{
     return html;
 }}
 
-function triggerAction(action, ci) {{
-    var val = document.getElementById('inp_' + ci);
-    if (val) {{
-        // Sincronizar valor com o input oculto do Streamlit
-        syncInputToSt(ci, val.value);
-    }}
-    var label = '_cfg_' + action + '_' + getSkByIndex(ci) + '_' + ci + '_';
-    triggerBtn(label);
-}}
-
-function triggerSalvar(ci) {{
-    var val = document.getElementById('inp_' + ci);
-    if (val) {{ syncInputToSt(ci, val.value); }}
-    var label = '_cfg_salvar_' + getSkByIndex(ci) + '_' + ci + '_';
-    triggerBtn(label);
-}}
-
-function triggerSelectPg(pi) {{
-    var label = '_select_pg_' + pi + '_';
-    triggerBtn(label);
-}}
-
 function getSkByIndex(ci) {{
     var e = EMPRESAS[ci];
     if (!e) return '';
@@ -3951,16 +3916,45 @@ function getSkByIndex(ci) {{
 }}
 
 function syncInputToSt(ci, val) {{
-    var stInputs = window.parent.document.querySelectorAll('input[data-testid="stTextInput"]');
-    // encontra o input oculto do streamlit pelo key name aproximado
     var keyPattern = 'cfg_input_' + getSkByIndex(ci) + '_' + ci;
+    var stInputs = window.parent.document.querySelectorAll('input');
     stInputs.forEach(function(inp) {{
-        if (inp.id && inp.id.includes(keyPattern)) {{
-            var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            nativeInputValueSetter.call(inp, val);
-            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        var container = inp.closest('[data-testid="stTextInput"]');
+        if (container) {{
+            var wrapper = container.closest('[class*="st-key-' + keyPattern + '"]');
+            if (wrapper || (inp.getAttribute('aria-label') || '').includes(keyPattern)) {{
+                var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                setter.call(inp, val);
+                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
         }}
     }});
+    // Fallback: try by id pattern in parent document
+    var allInputs = window.parent.document.querySelectorAll('input[id*="' + keyPattern + '"]');
+    allInputs.forEach(function(inp) {{
+        var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(inp, val);
+        inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+    }});
+}}
+
+function triggerAction(action, ci) {{
+    var val = document.getElementById('inp_' + ci);
+    if (val) {{ syncInputToSt(ci, val.value); }}
+    var sk = getSkByIndex(ci);
+    var label = 'cfg_' + action + '_' + sk;
+    triggerBtn(label);
+}}
+
+function triggerSalvar(ci) {{
+    var val = document.getElementById('inp_' + ci);
+    if (val) {{ syncInputToSt(ci, val.value); }}
+    var sk = getSkByIndex(ci);
+    triggerBtn('cfg_salvar_' + sk);
+}}
+
+function triggerSelectPg(pi) {{
+    triggerBtn('select_pg_' + pi);
 }}
 
 function triggerBtn(label) {{
@@ -3982,19 +3976,6 @@ function syncHeight() {{
 }}
 
 buildCards();
-
-// Abrir form da empresa selecionada automaticamente
-var selectedEmpresa = "{config_empresa_selecionada or ''}";
-var editandoEmpresa = "{editando_empresa or ''}";
-if (selectedEmpresa || editandoEmpresa) {{
-    var targetNome = selectedEmpresa || editandoEmpresa;
-    EMPRESAS.forEach(function(e) {{
-        if (e.nome === targetNome) {{
-            setTimeout(function() {{ toggleForm(e.ci); }}, 200);
-        }}
-    }});
-}}
-
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
@@ -4004,30 +3985,9 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 """, height=100, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: EMPRESAS CONFIGURADAS (navegação por páginas + anúncios)
+    # ABA: EMPRESAS CONFIGURADAS
     # ══════════════════════════════════════════════════════════════════
     elif main_tab == "empresas":
-
-        if not st.secrets.get("APIFY_TOKEN", ""):
-            st.warning("Configure `APIFY_TOKEN` no secrets.toml para buscar anúncios.")
-
-        # ── Botão de busca e barra de páginas configuradas ────────────
-        h_col, btn_col = st.columns([7, 3])
-        with btn_col:
-            gerar_btn_ads = st.button(
-                "Buscar / Atualizar Anúncios",
-                type="primary",
-                use_container_width=True,
-                key="ads_buscar_topo_btn",
-            )
-            if st.session_state.ads_cache:
-                _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
-                if _tss:
-                    st.markdown(
-                        f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
-                        f"🕒 Última busca: <b>{min(_tss)}</b></div>",
-                        unsafe_allow_html=True,
-                    )
 
         if not empresas_configuradas:
             st.markdown("""
@@ -4046,62 +4006,40 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
             query_values[ck] = ads_id_salvo
 
-        if gerar_btn_ads:
-            if not query_values:
-                st.warning("Configure pelo menos uma empresa antes de buscar.")
-            else:
-                executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values, forcar=False)
-
-        # ── Barra de abas de empresas (estilo imagem 2) ───────────────
+        # ── Barra de abas de empresas ─────────────────────────────────
         if "ads_aba_ativa" not in st.session_state:
             st.session_state.ads_aba_ativa = 0
 
-        ids_abas = [f"btn_aba_ads_{i}" for i in range(len(empresas_configuradas))]
-        ghost_abas_css = "\n".join([
-            f"""
+        # Ghost buttons para abas de empresa
+        aba_ghost_css = []
+        for i in range(len(empresas_configuradas)):
+            k = f"btn_aba_ads_{i}"
+            aba_ghost_css.append(f"""
             .st-key-{k} {{
-                position:absolute !important; top:-9999px !important; left:-9999px !important;
-                width:1px !important; height:1px !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important;
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:0 !important; height:0 !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; display:none !important;
             }}
             .stElementContainer:has(.st-key-{k}) {{
                 display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important;
-                overflow:hidden !important; line-height:0 !important; border:none !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
             }}
-            """
-            for k in ids_abas
-        ])
-        st.markdown(f"<style>{ghost_abas_css}</style>", unsafe_allow_html=True)
+            """)
+        if aba_ghost_css:
+            st.markdown(f"<style>{''.join(aba_ghost_css)}</style>", unsafe_allow_html=True)
 
         for i in range(len(empresas_configuradas)):
-            if st.button(f"_aba_ads_{i}_", key=f"btn_aba_ads_{i}"):
+            if st.button(f"aba_ads_{i}", key=f"btn_aba_ads_{i}"):
                 st.session_state.ads_aba_ativa = i
                 st.rerun()
 
         abas_nomes = [e["nome"] for e in empresas_configuradas]
         aba_ativa  = min(st.session_state.ads_aba_ativa, len(abas_nomes) - 1)
 
-        # Gerar HTML das abas (estilo da imagem 2: barra compacta)
         abas_items_html = ""
         for i, nome in enumerate(abas_nomes):
             active_class = "active" if i == aba_ativa else ""
             abas_items_html += f'<button class="aba-btn {active_class}" onclick="triggerAba({i})">{nome}</button>'
-
-        # Lápis para cada empresa configurada (abre configuração)
-        lapiz_abas_html = ""
-        for i, e in enumerate(empresas_configuradas):
-                nome_empresa = e['nome']
-                sk = safe_key(nome_empresa)
-                lapiz_abas_html += (
-                        f'<button class="lapiz-btn" onclick="triggerLapiz(\'{nome_empresa}\')" '
-                        f'title="Editar {nome_empresa}">'
-                        f'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
-                        f'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-                        f'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
-                        f'<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
-                        f'</svg></button>'
-                )
 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -4149,7 +4087,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     </div>
     <div class="abas-wrap">{abas_items_html}</div>
     <div class="right-wrap">
-        <button class="lapiz-btn" onclick="triggerTab('_ads_tab_configuracao_')" title="Gerenciar configurações">
+        <button class="lapiz-btn" onclick="triggerTab('tab_cfg')" title="Gerenciar configurações">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -4158,13 +4096,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     </div>
 </div>
 <script>
-function triggerAba(i) {{
-    var label = '_aba_ads_' + i + '_';
-    triggerBtn(label);
-}}
-function triggerTab(label) {{
-    triggerBtn(label);
-}}
+function triggerAba(i) {{ triggerBtn('aba_ads_' + i); }}
+function triggerTab(label) {{ triggerBtn(label); }}
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -4184,36 +4117,31 @@ function triggerBtn(label) {{
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
         # ── Sub-abas de conteúdo por empresa ─────────────────────────
-        conteudo_tab_ids = []
+        conteudo_tab_ghost_css = []
         for e in empresas_configuradas:
             sk = safe_key(e["nome"])
             for tab_name in ["anuncios", "analise"]:
-                btn_key = f"btn_conteudo_{sk}_{tab_name}"
-                conteudo_tab_ids.append(btn_key)
-
-        ghost_conteudo_css = "\n".join([
-            f"""
-            .st-key-{k} {{
-                position:absolute !important; top:-9999px !important; left:-9999px !important;
-                width:1px !important; height:1px !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important;
-            }}
-            .stElementContainer:has(.st-key-{k}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important;
-                overflow:hidden !important; line-height:0 !important; border:none !important;
-            }}
-            """
-            for k in conteudo_tab_ids
-        ])
-        st.markdown(f"<style>{ghost_conteudo_css}</style>", unsafe_allow_html=True)
+                k = f"btn_conteudo_{sk}_{tab_name}"
+                conteudo_tab_ghost_css.append(f"""
+                .st-key-{k} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:0 !important; height:0 !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; display:none !important;
+                }}
+                .stElementContainer:has(.st-key-{k}) {{
+                    display:none !important; height:0 !important; min-height:0 !important;
+                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                }}
+                """)
+        if conteudo_tab_ghost_css:
+            st.markdown(f"<style>{''.join(conteudo_tab_ghost_css)}</style>", unsafe_allow_html=True)
 
         for e in empresas_configuradas:
             sk = safe_key(e["nome"])
             ck = e["nome"]
             for tab_name in ["anuncios", "analise"]:
                 btn_key = f"btn_conteudo_{sk}_{tab_name}"
-                if st.button(f"_tab_{sk}_{tab_name}_", key=btn_key):
+                if st.button(f"tab_{sk}_{tab_name}", key=btn_key):
                     st.session_state.ads_aba_conteudo[ck] = tab_name
                     st.rerun()
 
@@ -4344,10 +4272,6 @@ function triggerBtn(label) {{
             page_display = configured_page if configured_page else "—"
             lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
 
-            # Índice real desta empresa em todas_empresas para o lápis
-            idx_real = next((ci for ci, te in enumerate(todas_empresas) if te["nome"] == ck), -1)
-            lapiz_trigger_label = f"_lapiz_{safe_key(ck)}_{idx_real}_" if idx_real >= 0 else ""
-
             st.markdown(f"""
             <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
                 <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
@@ -4398,7 +4322,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 </div>
 <script>
 function triggerTab(sk, tab) {{
-    var label = '_tab_' + sk + '_' + tab + '_';
+    var label = 'tab_' + sk + '_' + tab;
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
         var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
@@ -4861,9 +4785,7 @@ window.__PLATS_{uid}__ = {plat_js};
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:4px;min-height:0;}}
-
 .ads-grid{{display:grid;grid-template-columns:repeat({n_cols},1fr);gap:12px;align-items:start;}}
-
 .card{{background:#fff;border:1px solid #dde1e7;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,0.06);}}
 .status-bar{{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px;border-bottom:1px solid #f0f2f5;background:#fafbfc;flex-wrap:wrap;gap:4px;}}
 .status-dot{{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#1aab40;}}
@@ -4888,12 +4810,10 @@ body{{padding-bottom:4px;min-height:0;}}
 .copy-desc{{font-size:11px;color:#65676b;margin-top:2px;}}
 .no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;padding-top:10px;border-top:2px solid #f3f4f6;}}
 .dyn-float{{position:absolute;top:10px;right:10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
-
 .media-block{{width:100%;position:relative;overflow:hidden;background:#000;height:180px;}}
 .img-block{{height:180px;background:#f0f2f5;}}
 .video-thumb-block{{height:180px;}}
 .no-media-block{{height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#7592cc;gap:6px;}}
-
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#ffffff;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
 .cta-domain{{font-size:10px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
@@ -4905,7 +4825,6 @@ body{{padding-bottom:4px;min-height:0;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:10px;color:#374151;padding:8px 12px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:180px;overflow-y:auto;border-top:1px solid #fde68a;}}
-
 #modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
 #modal-overlay.open{{display:flex;}}
 #modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
@@ -4918,16 +4837,13 @@ body{{padding-bottom:4px;min-height:0;}}
 </style>
 </head>
 <body>
-
 <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">✕</button>
         <div id="modal-content"></div>
     </div>
 </div>
-
 <div class="ads-grid">{cards_joined}</div>
-
 <script>
 function openModal(mediaSrc, snapUrl, isVideo) {{
     var overlay = document.getElementById('modal-overlay');
@@ -4995,7 +4911,6 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
         tmp.src = mediaSrc;
     }}
 }}
-
 function closeModal() {{
     var vid = document.getElementById('modal-video');
     if (vid) {{ vid.pause(); vid.src = ''; }}
@@ -5003,14 +4918,12 @@ function closeModal() {{
     document.getElementById('modal-content').innerHTML = '';
 }}
 document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
-
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
     if (!el) return;
     el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
     setTimeout(syncHeight, 50);
 }}
-
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -5052,45 +4965,37 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
                     if chave_ind not in st.session_state:
                         st.session_state[chave_ind] = ""
 
-                sub_tab_keys = [
-                    f"btn_subtab_{sk}_individuais",
-                    f"btn_subtab_{sk}_criativos",
-                    f"btn_subtab_{sk}_copys",
-                ]
-                ia_ind_trigger_keys = [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
-                ia_geral_trigger_keys = [
-                    f"btn_ia_geral_{sk}",
-                    f"btn_ia_criativos_{sk}",
-                    f"btn_ia_copys_{sk}",
-                ]
-                all_ghost_ia = sub_tab_keys + ia_ind_trigger_keys + ia_geral_trigger_keys
-
-                ghost_ia_css = "\n".join([
+                # Ghost buttons para análise IA
+                ia_ghost_keys = (
+                    [f"btn_subtab_{sk}_individuais", f"btn_subtab_{sk}_criativos", f"btn_subtab_{sk}_copys"]
+                    + [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
+                    + [f"btn_ia_geral_{sk}", f"btn_ia_criativos_{sk}", f"btn_ia_copys_{sk}"]
+                )
+                ia_ghost_css = "\n".join([
                     f"""
                     .st-key-{k} {{
-                        position:absolute !important; top:-9999px !important; left:-9999px !important;
-                        width:1px !important; height:1px !important; overflow:hidden !important;
-                        opacity:0 !important; pointer-events:none !important;
+                        position:fixed !important; top:-9999px !important; left:-9999px !important;
+                        width:0 !important; height:0 !important; overflow:hidden !important;
+                        opacity:0 !important; pointer-events:none !important; display:none !important;
                     }}
                     .stElementContainer:has(.st-key-{k}) {{
                         display:none !important; height:0 !important; min-height:0 !important;
-                        max-height:0 !important; padding:0 !important; margin:0 !important;
-                        overflow:hidden !important; line-height:0 !important; border:none !important;
+                        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
                     }}
                     """
-                    for k in all_ghost_ia
+                    for k in ia_ghost_keys
                 ])
-                st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
+                st.markdown(f"<style>{ia_ghost_css}</style>", unsafe_allow_html=True)
 
                 if f"ads_subtab_{sk}" not in st.session_state:
                     st.session_state[f"ads_subtab_{sk}"] = "individuais"
 
                 for tab_name in ["individuais", "criativos", "copys"]:
-                    if st.button(f"_subtab_{sk}_{tab_name}_", key=f"btn_subtab_{sk}_{tab_name}"):
+                    if st.button(f"subtab_{sk}_{tab_name}", key=f"btn_subtab_{sk}_{tab_name}"):
                         st.session_state[f"ads_subtab_{sk}"] = tab_name
                         st.rerun()
 
-                if st.button(f"_ia_geral_{sk}_", key=f"btn_ia_geral_{sk}"):
+                if st.button(f"ia_geral_{sk}", key=f"btn_ia_geral_{sk}"):
                     if gemini_model is None:
                         st.session_state[chave_ia_geral] = "Configure GEMINI_API_KEY nos secrets."
                     else:
@@ -5125,7 +5030,7 @@ Amostra dos anúncios:
                                 st.session_state[chave_ia_geral] = f"Erro: {ex}"
                                 st.rerun()
 
-                if st.button(f"_ia_criativos_{sk}_", key=f"btn_ia_criativos_{sk}"):
+                if st.button(f"ia_criativos_{sk}", key=f"btn_ia_criativos_{sk}"):
                     if gemini_model is None:
                         st.session_state[chave_ia_criativos] = "Configure GEMINI_API_KEY nos secrets."
                     else:
@@ -5159,7 +5064,7 @@ Dados dos criativos:
                                 st.session_state[chave_ia_criativos] = f"Erro: {ex}"
                                 st.rerun()
 
-                if st.button(f"_ia_copys_{sk}_", key=f"btn_ia_copys_{sk}"):
+                if st.button(f"ia_copys_{sk}", key=f"btn_ia_copys_{sk}"):
                     if gemini_model is None:
                         st.session_state[chave_ia_copys] = "Configure GEMINI_API_KEY nos secrets."
                     else:
@@ -5192,7 +5097,7 @@ Copies coletadas:
                                 st.rerun()
 
                 for j, ad in enumerate(ads_f_ia):
-                    if st.button(f"_ia_ind_{sk}_{j}_", key=f"btn_ia_ind_{sk}_{j}"):
+                    if st.button(f"ia_ind_{sk}_{j}", key=f"btn_ia_ind_{sk}_{j}"):
                         chave_ind = f"ia_ad_result_{sk}_{j}"
                         if gemini_model is None:
                             st.session_state[chave_ind] = "Configure GEMINI_API_KEY nos secrets."
@@ -5299,13 +5204,11 @@ body {{ padding-bottom:8px; }}
 </style>
 </head>
 <body>
-
 <div class="subtabs-wrap">
     <button class="subtab {'active' if subtab_atual == 'individuais' else ''}" onclick="showSubtab('individuais',this)">📋 Anúncios Individuais</button>
     <button class="subtab {'active' if subtab_atual == 'criativos' else ''}" onclick="showSubtab('criativos',this)">🎨 Criativos</button>
     <button class="subtab {'active' if subtab_atual == 'copys' else ''}" onclick="showSubtab('copys',this)">✍️ Copys</button>
 </div>
-
 <div id="panel-individuais" class="panel {'active' if subtab_atual == 'individuais' else ''}">
     <div class="stats-mini">
         <div class="stat-mini"><div class="stat-mini-num">{n_anuncios}</div><div class="stat-mini-lbl">Total</div></div>
@@ -5315,7 +5218,6 @@ body {{ padding-bottom:8px; }}
     </div>
     <div class="ind-grid" id="ind-grid"></div>
 </div>
-
 <div id="panel-criativos" class="panel {'active' if subtab_atual == 'criativos' else ''}">
     <div class="analise-wrap">
         <div class="analise-header"><span>🎨 Análise de Criativos</span></div>
@@ -5323,13 +5225,12 @@ body {{ padding-bottom:8px; }}
             {'<div>' + criativos_html + '</div>' if criativos_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar os criativos dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
-            <button class="btn-gerar" onclick="triggerGlobal('_ia_criativos_{sk}_')">
+            <button class="btn-gerar" onclick="triggerGlobal('ia_criativos_{sk}')">
                 {'🔄 Nova Análise' if criativos_html else '⚡ Gerar Análise de Criativos'}
             </button>
         </div>
     </div>
 </div>
-
 <div id="panel-copys" class="panel {'active' if subtab_atual == 'copys' else ''}">
     <div class="analise-wrap">
         <div class="analise-header"><span>✍️ Análise de Copys</span></div>
@@ -5337,16 +5238,14 @@ body {{ padding-bottom:8px; }}
             {'<div>' + copys_html + '</div>' if copys_html else '<div class="analise-empty">Clique em <b>Gerar Análise</b> para analisar as copies dos anúncios.</div>'}
         </div>
         <div class="analise-footer">
-            <button class="btn-gerar" onclick="triggerGlobal('_ia_copys_{sk}_')">
+            <button class="btn-gerar" onclick="triggerGlobal('ia_copys_{sk}')">
                 {'🔄 Nova Análise' if copys_html else '⚡ Gerar Análise de Copys'}
             </button>
         </div>
     </div>
 </div>
-
 <script>
 var IND_CARDS = {ind_cards_json};
-
 function buildIndGrid() {{
     var grid = document.getElementById('ind-grid');
     if (!grid) return;
@@ -5355,13 +5254,10 @@ function buildIndGrid() {{
         var card = document.createElement('div');
         card.className = 'ind-card';
         card.id = 'ind_card_' + d.j;
-
         var thumbHtml = d.img_src
             ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
             : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
-
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
-
         card.innerHTML =
             '<div class="ind-card-top">'
             + '<div class="ind-thumb">' + thumbHtml + '</div>'
@@ -5373,14 +5269,12 @@ function buildIndGrid() {{
             + (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '')
             + (d.plataformas ? '📱 ' + d.plataformas : '')
             + '</div></div></div>';
-
         if (d.resultado) {{
             var res = document.createElement('div');
             res.className = 'ind-result';
             res.innerHTML = '<div class="ind-result-header">Análise IA</div>' + d.resultado;
             card.appendChild(res);
         }}
-
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
@@ -5389,25 +5283,22 @@ function buildIndGrid() {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
                 if (b) {{ b.textContent = 'Analisando…'; b.style.color = '#9ca3af'; }}
-                triggerGlobal('_ia_ind_{sk}_' + idx + '_');
+                triggerGlobal('ia_ind_{sk}_' + idx);
             }};
         }})(d.j);
         card.appendChild(btn);
-
         grid.appendChild(card);
     }});
     syncHeight();
 }}
-
 function showSubtab(name, el) {{
     document.querySelectorAll('.subtab').forEach(function(t) {{ t.classList.remove('active'); }});
     document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
-    triggerGlobal('_subtab_{sk}_' + name + '_');
+    triggerGlobal('subtab_{sk}_' + name);
     setTimeout(syncHeight, 100);
 }}
-
 function triggerGlobal(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -5415,7 +5306,6 @@ function triggerGlobal(label) {{
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
-
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -5427,7 +5317,6 @@ function syncHeight() {{
         }} }} catch(e) {{}}
     }}
 }}
-
 buildIndGrid();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
@@ -5439,8 +5328,23 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 
         # ── Renderiza empresa da aba ativa ───────────────────────────
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-        aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
-        if empresas_com_dados:
+
+        # Filtrar para empresas que têm dados no cache
+        empresas_com_dados = [
+            e for e in empresas_configuradas
+            if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
+        ]
+
+        if not empresas_com_dados:
+            st.markdown("""
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
+                <div style='font-size:32px;margin-bottom:12px'>📢</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
+                <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar</b>.</div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
             render_ads_empresa(empresas_com_dados[aba_idx])
 
     # ══════════════════════════════════════════════════════════════════
@@ -5456,21 +5360,20 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
         if chave_comp not in st.session_state:
             st.session_state[chave_comp] = ""
 
-        ghost_comp_css = f"""
-        .st-key-btn_ia_comp {{
-            position:absolute !important; top:-9999px !important; left:-9999px !important;
-            width:1px !important; height:1px !important; overflow:hidden !important;
-            opacity:0 !important; pointer-events:none !important;
-        }}
-        .stElementContainer:has(.st-key-btn_ia_comp) {{
+        ghost_comp_css = """
+        .st-key-btn_ia_comp_geral {
+            position:fixed !important; top:-9999px !important; left:-9999px !important;
+            width:0 !important; height:0 !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important; display:none !important;
+        }
+        .stElementContainer:has(.st-key-btn_ia_comp_geral) {
             display:none !important; height:0 !important; min-height:0 !important;
-            max-height:0 !important; padding:0 !important; margin:0 !important;
-            overflow:hidden !important; line-height:0 !important; border:none !important;
-        }}
+            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+        }
         """
         st.markdown(f"<style>{ghost_comp_css}</style>", unsafe_allow_html=True)
 
-        if st.button("_ia_comparativo_", key="btn_ia_comp"):
+        if st.button("ia_comparativo", key="btn_ia_comp_geral"):
             if gemini_model is None:
                 st.session_state[chave_comp] = "Configure GEMINI_API_KEY nos secrets."
             else:
@@ -5499,22 +5402,11 @@ Compare os anúncios das empresas abaixo e gere uma análise competitiva complet
 
 ---
 ### 🏆 Ranking de Presença Digital
-Quem está investindo mais e com mais consistência?
-
 ### 🎯 Estratégias Comparadas
-Como cada empresa usa seus anúncios? Quais são as diferenças de abordagem?
-
 ### ✍️ Tom de Voz e Mensagens
-Compare os tons de voz e as principais mensagens de cada empresa.
-
 ### 🎨 Mix de Formatos
-Quem usa melhor os formatos visuais? Quem se destaca?
-
 ### ⚔️ Análise Competitiva
-Pontos fortes e fracos de cada empresa nos anúncios.
-
-### 💡 Recomendações Estratégicas
-3 ações concretas para se destacar da concorrência em anúncios.""")
+### 💡 Recomendações Estratégicas (3 ações concretas)""")
                         st.session_state[chave_comp] = resp.text
                         st.rerun()
                     except Exception as ex:
@@ -5555,7 +5447,7 @@ body {{ padding-bottom:8px; }}
         {'<div>' + comp_html + '</div>' if comp_html else '<div class="empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar os anúncios de todas as empresas com IA.</div>'}
     </div>
     <div class="footer">
-        <button class="btn-gerar" onclick="triggerBtn('_ia_comparativo_')">
+        <button class="btn-gerar" onclick="triggerBtn('ia_comparativo')">
             {'🔄 Regerar Análise' if comp_html else '⚡ Gerar Análise Comparativa'}
         </button>
     </div>
