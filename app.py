@@ -3495,6 +3495,7 @@ function triggerTab(label) {{
           if (iframes[i].contentWindow === window) {{
             iframes[i].style.height = '90px';
             iframes[i].style.marginTop = '-15px';
+            iframes[i].style.marginBottom = '-40px';
             break;
           }}
         }} catch(e) {{}}
