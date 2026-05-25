@@ -3495,7 +3495,6 @@ function triggerTab(label) {{
           if (iframes[i].contentWindow === window) {{
             iframes[i].style.height = '90px';
             iframes[i].style.marginTop = '-15px';
-            iframes[i].style.marginBottom = '-40px';
             break;
           }}
         }} catch(e) {{}}
@@ -4363,7 +4362,8 @@ function syncHeight() {{
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 2) + 'px'; break;
+            frames[i].style.height = (h + 2) + 'px';
+            iframes[i].style.marginTop = '-40px'; break;
         }} }} catch(e) {{}}
     }}
 }}
