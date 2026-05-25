@@ -4218,13 +4218,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 
 /* ── Barra de abas embaixo dos cards ── */
 .tabs-row {{
-    display:flex;
-    align-items:center;
-    padding:0 20px;
-    background:#f9fafb;
-    border-bottom:1px solid #e5e7eb;
-    gap:4px;
-    overflow-x:auto;
+    display:none !important;
 }}
 .tab-btn {{
     padding:12px 20px;
