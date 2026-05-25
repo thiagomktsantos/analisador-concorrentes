@@ -3633,8 +3633,15 @@ function triggerTab(label) {{
             is_minha = e["tipo"] == "minha"
             cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            # Pega a foto de perfil salva
             page_pic_cfg = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
+            # Se não tem foto salva, tenta pegar do cache de ads
+            if not page_pic_cfg:
+                cache_entry = st.session_state.ads_cache.get(e["nome"], {})
+                for ad in cache_entry.get("data", []):
+                    p = ad.get("page_profile_picture", "") or ""
+                    if p and p.startswith("http"):
+                        page_pic_cfg = p
+                        break
             empresas_json_list.append({
                 "ci": ci,
                 "nome": e["nome"],
@@ -3662,9 +3669,10 @@ function triggerTab(label) {{
                     "profile_picture": pg.get("profile_picture", ""),
                 })
             paginas_json = _json.dumps(pg_data, ensure_ascii=False)
-            
+
         n_rows = (len(empresas_json_list) // 3) + 1
-        altura_cards = max(n_rows * 160 + 60, 300)
+        altura_cards = max(n_rows * 200 + 80, 300)
+
         components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -3677,16 +3685,16 @@ body {{ padding-bottom:8px; }}
 .config-body {{ padding:16px 20px; display:grid; grid-template-columns: repeat(3,1fr); gap:14px; }}
 .emp-card {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; transition:border-color 0.15s, box-shadow 0.15s; }}
 .emp-card.editing {{ border-color:#3a9fd6; box-shadow:0 0 0 3px rgba(58,159,214,0.12); background:#fff; }}
-.emp-card-top {{ display:flex; align-items:center; gap:10px; padding:14px 14px 12px; }}
-.emp-avatar {{ width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }}
+.emp-card-top {{ display:flex; align-items:center; gap:12px; padding:16px 14px; }}
+.emp-avatar {{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; border:2px solid rgba(255,255,255,0.8); box-shadow:0 1px 4px rgba(0,0,0,0.12); }}
 .emp-avatar img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }}
 .emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{ font-size:13px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.badge-minha {{ display:inline-flex; align-items:center; gap:4px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:3px; }}
-.badge-minha::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
-.badge-conc {{ display:inline-flex; align-items:center; gap:4px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:3px; }}
-.badge-conc::before {{ content:''; width:6px; height:6px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
-.lapiz-btn {{ width:28px; height:28px; border:1px solid #e5e7eb; border-radius:7px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af; flex-shrink:0; transition:all 0.12s; }}
+.emp-nome {{ font-size:14px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
+.badge-minha {{ display:inline-flex; align-items:center; gap:4px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
+.badge-minha::before {{ content:''; width:7px; height:7px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
+.badge-conc {{ display:inline-flex; align-items:center; gap:4px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
+.badge-conc::before {{ content:''; width:7px; height:7px; border-radius:50%; background:#3b82f6; flex-shrink:0; }}
+.lapiz-btn {{ width:32px; height:32px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#9ca3af; flex-shrink:0; transition:all 0.12s; }}
 .lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
 .id-strip {{ margin:0 12px 12px; background:#f3f4f6; border-radius:7px; padding:7px 10px; display:flex; align-items:center; gap:6px; }}
 .id-strip.configured {{ background:#f0fdf4; border:1px solid #bbf7d0; }}
@@ -3758,12 +3766,19 @@ function buildCards() {{
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
 
-        // Avatar: foto se disponível, senão iniciais
-        var avatarInner = '';
+        // Avatar: logo/foto de perfil se disponível, senão iniciais coloridas
+        var avatarHtml = '';
         if (e.page_pic && e.page_pic.startsWith('http')) {{
-            avatarInner = '<img src="' + e.page_pic + '" onerror="this.outerHTML=\'' + e.avatar + '\'" />';
+            avatarHtml =
+                '<div class="emp-avatar" style="background:' + e.cor + '">'
+                + '<img src="' + e.page_pic + '" '
+                + 'onerror="this.parentElement.innerHTML=\'' + e.avatar + '\';this.parentElement.style.background=\'' + e.cor + '\'" />'
+                + '</div>';
         }} else {{
-            avatarInner = e.avatar;
+            avatarHtml =
+                '<div class="emp-avatar" style="background:' + e.cor + '">'
+                + e.avatar
+                + '</div>';
         }}
 
         var idDot   = hasId ? '<div class="id-dot"></div>' : '<div class="id-dot empty"></div>';
@@ -3774,13 +3789,13 @@ function buildCards() {{
 
         card.innerHTML =
             '<div class="emp-card-top">'
-            + '<div class="emp-avatar" style="background:' + e.cor + '">' + avatarInner + '</div>'
+            + avatarHtml
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
             + '</div>'
             + '<button class="lapiz-btn" onclick="toggleForm(' + e.ci + ')" title="Editar">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
             + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
             + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
             + '</svg>'
@@ -3906,7 +3921,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 """, height=altura_cards, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: EMPRESAS CONFIGURADAS — Somente cards, sem abas inferiores
+    # ABA: EMPRESAS CONFIGURADAS
     # ══════════════════════════════════════════════════════════════════
     elif main_tab == "empresas":
 
@@ -3930,7 +3945,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         if "ads_aba_ativa" not in st.session_state:
             st.session_state.ads_aba_ativa = 0
 
-        # Ghost buttons para seleção de empresa (apenas cards)
         aba_ghost_css = []
         for i in range(len(empresas_configuradas)):
             k = f"btn_aba_ads_{i}"
@@ -3955,14 +3969,13 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 
         aba_ativa = min(st.session_state.ads_aba_ativa, len(empresas_configuradas) - 1)
 
-        # ── Cards de empresa — sem abas inferiores, só os cards clicáveis
+        # Cards de empresa com logo
         empresas_cards_json = []
         for i, e in enumerate(empresas_configuradas):
             is_minha = e["tipo"] == "minha"
             cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             page_pic = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
-            # Busca do cache se não tem foto salva
             if not page_pic:
                 cache_entry = st.session_state.ads_cache.get(e["nome"], {})
                 for ad in cache_entry.get("data", []):
@@ -4093,9 +4106,11 @@ function buildUI() {{
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
 
+        // Logo/foto de perfil ou iniciais coloridas
         var avatarInner = '';
         if (e.page_pic && e.page_pic.startsWith('http')) {{
-            avatarInner = '<img src="' + e.page_pic + '" onerror="this.style.display=\'none\'" />';
+            avatarInner = '<img src="' + e.page_pic + '" '
+                + 'onerror="this.parentElement.innerHTML=\'' + e.avatar + '\'" />';
         }} else {{
             avatarInner = e.avatar;
         }}
@@ -4168,7 +4183,7 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
 
         st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
 
-        # ── Sub-abas de conteúdo por empresa ─────────────────────────
+        # ── Sub-abas de conteúdo por empresa
         conteudo_tab_ghost_css = []
         for e in empresas_configuradas:
             sk = safe_key(e["nome"])
@@ -4212,7 +4227,7 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
             """, unsafe_allow_html=True)
             st.stop()
 
-        # ── Plataformas SVG JS ─────────────────────────────────────
+        # ── Plataformas SVG JS
         def _plat_svg_js(uid: str) -> str:
             return f"""
 (function(){{
@@ -4355,7 +4370,7 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
 .tabs-bar {{ display:flex; background:#f9fafb; border:1px solid #e5e7eb; border-top:none; border-bottom:none; }}
-.tab-btn {{ flex:1; padding:13px 0; font-size:14px; font-weight:700; color:#9ca3af; background:transparent; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }}
+.tab-btn {{ flex:1; padding:13px 0; font-size:14px; font-weight:700; color:#9ca3af; background:transparent; border:none; cursor:pointer; border-bottom:3px solid transparent; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }}
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
 .tab-btn.active {{ color:#1a2e4a; border-bottom:3px solid #3a9fd6; background:#fff; font-weight:800; border-top:1px solid #d8d9da; }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
@@ -4389,7 +4404,7 @@ function triggerTab(sk, tab) {{
 </script>
 """, height=50, scrolling=False)
 
-            # ── ABA: ANÚNCIOS ─────────────────────────────────────────
+            # ── ABA: ANÚNCIOS
             if aba_conteudo_atual == "anuncios":
 
                 col_key = f"ads_cols_{sk}"
@@ -4997,7 +5012,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </body></html>
 """, height=100, scrolling=False)
 
-            # ── ABA: ANÁLISE DE IA ─────────────────────────────────────
+            # ── ABA: ANÁLISE DE IA
             else:
                 ads_f_ia = ads_list
 
@@ -5374,7 +5389,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </body></html>
 """, height=600, scrolling=False)
 
-        # ── Renderiza empresa da aba ativa ───────────────────────────
+        # ── Renderiza empresa da aba ativa
         st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
         empresas_com_dados = [
