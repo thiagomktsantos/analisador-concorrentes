@@ -4134,7 +4134,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     grid-template-columns: repeat(3,1fr);
     gap:0;
     padding:20px;
-    border-bottom:1px solid #e5e7eb;
     gap:16px;
 }}
 
@@ -4158,15 +4157,13 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 }}
 .emp-card.active {{
     background:#fff;
-    border-color:#0e2a47;
-    box-shadow:0 2px 12px rgba(14,42,71,0.12);
+    border: 2px solid #0780c0;
 }}
 .emp-card.active::after {{
     content:'';
     position:absolute;
     bottom:0; left:0; right:0;
     height:3px;
-    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
     border-radius:0 0 12px 12px;
 }}
 .emp-icon {{
