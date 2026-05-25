@@ -3497,6 +3497,15 @@ function triggerTab(label) {{
 </script>
 """, height=90, scrolling=False)
 
+    st.markdown("""
+    <style>
+    /* Remove espaço entre nav-bar e conteúdo seguinte */
+    section.main .block-container > div > div:has(> iframe) + div {
+        margin-top: -16px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
         st.stop()
