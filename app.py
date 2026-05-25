@@ -3664,7 +3664,7 @@ function triggerTab(label) {{
             paginas_json = _json.dumps(pg_data, ensure_ascii=False)
             
         n_rows = (len(empresas_cards_json) // 3) + 1
-        altura_cards = n_rows * 140 + 40
+        altura_cards = max(n_rows * 160 + 60, 300)
         components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -4164,7 +4164,7 @@ document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
 </script>
-""", height=100, scrolling=False)
+""", height=200, scrolling=False)
 
         st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
 
