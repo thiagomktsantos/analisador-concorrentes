@@ -3185,6 +3185,12 @@ elif st.session_state.pagina == "ads":
         st.session_state.ads_editando_empresa = None
     if "ads_aba_conteudo" not in st.session_state:
         st.session_state.ads_aba_conteudo = {}
+    # Nova: aba principal da página (configuracao | empresas | analise)
+    if "ads_main_tab" not in st.session_state:
+        st.session_state.ads_main_tab = "empresas"
+    # Empresa selecionada na aba de configuração quando clica no lápis
+    if "ads_config_empresa_selecionada" not in st.session_state:
+        st.session_state.ads_config_empresa_selecionada = None
 
     def safe_key(s):
         return re.sub(r"[^a-zA-Z0-9_]", "_", s)
@@ -3268,43 +3274,238 @@ elif st.session_state.pagina == "ads":
             f'font-size:{int(size*0.35)}px;font-weight:700;color:#fff;flex-shrink:0">{av}</div>'
         )
 
-    # ── Cabeçalho ────────────────────────────────────────────────────
-    h1_col, h2_col = st.columns([7, 3])
-    with h1_col:
-        components.html("""
+    # ══════════════════════════════════════════════════════════════════
+    # CABEÇALHO DA PÁGINA
+    # ══════════════════════════════════════════════════════════════════
+    components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @font-face {
     font-family: 'Animo';
     src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:transparent; overflow:hidden; }
-.titulo { font-family:'Animo','DM Sans',sans-serif; font-size:32px; font-weight:700; color:#1a2e4a; text-transform:uppercase; margin:0 0 6px 0; letter-spacing:0.5px; }
-.sub    { font-family:'DM Sans',sans-serif; font-size:14px; color:#6b7280; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
+}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
 </style>
 <div class="titulo">Biblioteca de Ads</div>
 <div class="sub">Criativos, copies e formatos dos anúncios dos seus concorrentes.</div>
 """, height=65)
 
-    with h2_col:
-        gerar_btn_ads = st.button(
-            "Buscar / Atualizar Anúncios",
-            type="primary",
-            use_container_width=True,
-            key="ads_buscar_topo_btn",
-        )
-        if st.session_state.ads_cache:
-            _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
-            if _tss:
-                _ts_antigo = min(_tss)
-                st.markdown(
-                    f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
-                    f"🕒 Última busca: <b>{_ts_antigo}</b></div>",
-                    unsafe_allow_html=True,
-                )
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 16px 0'/>", unsafe_allow_html=True)
 
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 0px 0'/>", unsafe_allow_html=True)
+    # ══════════════════════════════════════════════════════════════════
+    # GHOST BUTTONS para navegação principal
+    # ══════════════════════════════════════════════════════════════════
+    main_tab_ghost_keys = ["_ads_tab_configuracao_", "_ads_tab_empresas_", "_ads_tab_analise_", "_ads_tab_buscar_"]
+    ghost_main_css = "\n".join([
+        f"""
+        .st-key-btn{k.replace('_','-')}ghost {{
+            position:absolute !important; top:-9999px !important; left:-9999px !important;
+            width:1px !important; height:1px !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important;
+        }}
+        .stElementContainer:has(.st-key-btn{k.replace('_','-')}ghost) {{
+            display:none !important; height:0 !important; min-height:0 !important;
+            max-height:0 !important; padding:0 !important; margin:0 !important;
+            overflow:hidden !important; line-height:0 !important; border:none !important;
+        }}
+        """
+        for k in main_tab_ghost_keys
+    ])
+    st.markdown(f"<style>{ghost_main_css}</style>", unsafe_allow_html=True)
+
+    if st.button("_ads_tab_configuracao_", key="btn-_ads_tab_configuracao_-ghost"):
+        st.session_state.ads_main_tab = "configuracao"
+        st.session_state.ads_config_empresa_selecionada = None
+        st.rerun()
+    if st.button("_ads_tab_empresas_", key="btn-_ads_tab_empresas_-ghost"):
+        st.session_state.ads_main_tab = "empresas"
+        st.rerun()
+    if st.button("_ads_tab_analise_", key="btn-_ads_tab_analise_-ghost"):
+        st.session_state.ads_main_tab = "analise"
+        st.rerun()
+    if st.button("_ads_tab_buscar_", key="btn-_ads_tab_buscar_-ghost"):
+        st.session_state.ads_main_tab = "buscar"
+        st.rerun()
+
+    # Ghost para abrir config de empresa específica (pelo lápis)
+    lapiz_ghost_css_parts = []
+    for ci, e in enumerate(todas_empresas):
+        sk = safe_key(e["nome"])
+        lapiz_key = f"ads_lapiz_ghost_{sk}_{ci}"
+        lapiz_ghost_css_parts.append(f"""
+        .st-key-{lapiz_key} {{
+            position:absolute !important; top:-9999px !important; left:-9999px !important;
+            width:1px !important; height:1px !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important;
+        }}
+        .stElementContainer:has(.st-key-{lapiz_key}) {{
+            display:none !important; height:0 !important; min-height:0 !important;
+            max-height:0 !important; padding:0 !important; margin:0 !important;
+            overflow:hidden !important; line-height:0 !important; border:none !important;
+        }}
+        """)
+    st.markdown(f"<style>{''.join(lapiz_ghost_css_parts)}</style>", unsafe_allow_html=True)
+
+    lapiz_triggers = {}
+    for ci, e in enumerate(todas_empresas):
+        sk = safe_key(e["nome"])
+        lapiz_key = f"ads_lapiz_ghost_{sk}_{ci}"
+        if st.button(f"_lapiz_{sk}_{ci}_", key=lapiz_key):
+            st.session_state.ads_main_tab = "configuracao"
+            st.session_state.ads_config_empresa_selecionada = e["nome"]
+            st.session_state.ads_editando_empresa = e["nome"]
+            st.rerun()
+        lapiz_triggers[ci] = lapiz_key
+
+    # ── Calcular dados para exibir na barra ─────────────────────────
+    main_tab = st.session_state.ads_main_tab
+    empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
+    empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
+
+    # ══════════════════════════════════════════════════════════════════
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas: Configuração | Empresas configuradas | Análise de IA)
+    # ══════════════════════════════════════════════════════════════════
+
+    n_configuradas = len(empresas_configuradas)
+    n_sem_config   = len(empresas_sem_config)
+
+    components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+.nav-bar {{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:12px;
+    width:100%;
+}}
+.nav-item {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:16px 20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    transition:all 0.15s;
+    position:relative;
+    overflow:hidden;
+}}
+.nav-item:hover {{
+    border-color:#3a9fd6;
+    box-shadow:0 2px 12px rgba(58,159,214,0.12);
+}}
+.nav-item.active {{
+    background:#0e2a47;
+    border-color:#0e2a47;
+    box-shadow:0 4px 20px rgba(14,42,71,0.22);
+}}
+.nav-item.active::after {{
+    content:'';
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:3px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    border-radius:0 0 14px 14px;
+}}
+.nav-icon {{
+    width:40px;height:40px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    background:#f3f4f6;
+    transition:background 0.15s;
+}}
+.nav-item.active .nav-icon {{
+    background:rgba(255,255,255,0.12);
+}}
+.nav-icon svg {{ width:20px;height:20px; }}
+.nav-content {{ flex:1;min-width:0; }}
+.nav-title {{
+    font-size:15px;font-weight:700;color:#1a2e4a;
+    display:block;margin-bottom:2px;
+}}
+.nav-item.active .nav-title {{ color:#ffffff; }}
+.nav-sub {{
+    font-size:12px;color:#9ca3af;
+}}
+.nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
+.nav-badge {{
+    width:22px;height:22px;border-radius:50%;
+    background:#3a9fd6;color:#fff;
+    font-size:11px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+}}
+.nav-item.active .nav-badge {{
+    background:rgba(255,255,255,0.2);
+}}
+</style>
+<div class="nav-bar">
+    <div class="nav-item {'active' if main_tab == 'configuracao' else ''}" onclick="triggerTab('_ads_tab_configuracao_')">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'configuracao' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Configuração</span>
+            <span class="nav-sub">Configure suas empresas</span>
+        </div>
+        {f'<div class="nav-badge">{n_sem_config}</div>' if n_sem_config > 0 else ''}
+    </div>
+    <div class="nav-item {'active' if main_tab == 'empresas' else ''}" onclick="triggerTab('_ads_tab_empresas_')">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'empresas' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Empresas configuradas</span>
+            <span class="nav-sub">Gerencie empresas cadastradas</span>
+        </div>
+        {f'<div class="nav-badge">{n_configuradas}</div>' if n_configuradas > 0 else ''}
+    </div>
+    <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('_ads_tab_analise_')">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Análise de IA</span>
+            <span class="nav-sub">Visualize análises inteligentes</span>
+        </div>
+    </div>
+</div>
+<script>
+function triggerTab(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '108px'; break; }} }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=108, scrolling=False)
+
+    st.markdown("<div style='height:12px'/>", unsafe_allow_html=True)
 
     if not todas_empresas:
         st.info("Cadastre sua empresa e concorrentes para usar esta funcionalidade.")
@@ -3313,132 +3514,659 @@ html, body { background:transparent; overflow:hidden; }
     if not st.secrets.get("APIFY_TOKEN", ""):
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
 
-    empresas_sem_config   = [e for e in todas_empresas if not empresa_tem_ads_id(e)]
-    empresas_configuradas = [e for e in todas_empresas if empresa_tem_ads_id(e)]
+    # ══════════════════════════════════════════════════════════════════
+    # ABA: CONFIGURAÇÃO
+    # ══════════════════════════════════════════════════════════════════
+    if main_tab == "configuracao":
 
-    if "ads_mostrar_edicao" not in st.session_state:
-        st.session_state.ads_mostrar_edicao = False
-    if "ads_aba_ativa" not in st.session_state:
-        st.session_state.ads_aba_ativa = 0
+        # Ghost buttons para salvar/buscar/cancelar por empresa
+        config_action_keys = []
+        for ci, e in enumerate(todas_empresas):
+            sk = safe_key(e["nome"])
+            for action in ["buscar", "salvar", "cancelar"]:
+                config_action_keys.append(f"cfg_action_{action}_{sk}_{ci}")
 
-    ids_abas = [f"btn_aba_ads_{i}" for i in range(len(empresas_configuradas))]
-    todos_ids = ["btn_toggle_edicao_ads"] + ids_abas
+        ghost_cfg_css = "\n".join([
+            f"""
+            .st-key-{k} {{
+                position:absolute !important; top:-9999px !important; left:-9999px !important;
+                width:1px !important; height:1px !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important;
+            }}
+            .stElementContainer:has(.st-key-{k}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important;
+                overflow:hidden !important; line-height:0 !important; border:none !important;
+            }}
+            """
+            for k in config_action_keys
+        ])
+        st.markdown(f"<style>{ghost_cfg_css}</style>", unsafe_allow_html=True)
 
-    ghost_css_parts = []
-    for k in todos_ids:
-        ghost_css_parts.append(f"""
-        .st-key-{k} {{
-            position: absolute !important; top: -9999px !important; left: -9999px !important;
-            width: 1px !important; height: 1px !important; overflow: hidden !important;
-            opacity: 0 !important; pointer-events: none !important;
-        }}
-        """)
-    for k in todos_ids:
-        ghost_css_parts.append(f"""
-        .stElementContainer:has(.st-key-{k}),
-        div[data-testid="stVerticalBlock"] > div:has(.st-key-{k}) {{
-            display: none !important; height: 0 !important; min-height: 0 !important;
-            max-height: 0 !important; padding: 0 !important; margin: 0 !important;
-            overflow: hidden !important; line-height: 0 !important; border: none !important;
-        }}
-        """)
-    st.markdown(f"<style>{''.join(ghost_css_parts)}</style>", unsafe_allow_html=True)
+        config_actions = {}
+        for ci, e in enumerate(todas_empresas):
+            sk = safe_key(e["nome"])
+            for action in ["buscar", "salvar", "cancelar"]:
+                btn_key = f"cfg_action_{action}_{sk}_{ci}"
+                if st.button(f"_cfg_{action}_{sk}_{ci}_", key=btn_key):
+                    config_actions[f"{action}_{ci}"] = True
+                else:
+                    config_actions[f"{action}_{ci}"] = False
 
-    if st.button("\_toggle\_edicao\_ads\_", key="btn_toggle_edicao_ads"):
-        st.session_state.ads_mostrar_edicao = not st.session_state.ads_mostrar_edicao
-        st.rerun()
+        # Campos de input por empresa
+        config_inputs = {}
+        for ci, e in enumerate(todas_empresas):
+            sk = safe_key(e["nome"])
+            ads_id_atual = emp.get("ads_id", "") if e["tipo"] == "minha" else concs[e["idx"]].get("ads_id", "")
+            input_key = f"cfg_input_{sk}_{ci}"
+            # Renderizar oculto mas funcional
+            st.markdown(f"<style>.st-key-{input_key} {{ display:none !important; }}</style>", unsafe_allow_html=True)
+            config_inputs[ci] = st.text_input(
+                f"ID {e['nome']}",
+                value=ads_id_atual,
+                key=input_key,
+                label_visibility="collapsed"
+            )
 
-    for i in range(len(empresas_configuradas)):
-        if st.button(f"\_aba\_ads\_{i}\_", key=f"btn_aba_ads_{i}"):
-            st.session_state.ads_aba_ativa = i
-            st.rerun()
+        # Processar ações
+        for ci, e in enumerate(todas_empresas):
+            sk = safe_key(e["nome"])
+            novo_id = config_inputs.get(ci, "").strip()
 
-    conteudo_tab_ids = []
-    for e in empresas_configuradas:
-        sk = safe_key(e["nome"])
-        for tab_name in ["anuncios", "analise"]:
-            btn_key = f"btn_conteudo_{sk}_{tab_name}"
-            conteudo_tab_ids.append(btn_key)
-
-    ghost_conteudo_css = "\n".join([
-        f"""
-        .st-key-{k} {{
-            position: absolute !important; top: -9999px !important; left: -9999px !important;
-            width: 1px !important; height: 1px !important; overflow: hidden !important;
-            opacity: 0 !important; pointer-events: none !important;
-        }}
-        .stElementContainer:has(.st-key-{k}) {{
-            display: none !important; height: 0 !important; min-height: 0 !important;
-            max-height: 0 !important; padding: 0 !important; margin: 0 !important;
-            overflow: hidden !important; line-height: 0 !important; border: none !important;
-        }}
-        """
-        for k in conteudo_tab_ids
-    ])
-    st.markdown(f"<style>{ghost_conteudo_css}</style>", unsafe_allow_html=True)
-
-    for e in empresas_configuradas:
-        sk = safe_key(e["nome"])
-        ck = e["nome"]
-        for tab_name in ["anuncios", "analise"]:
-            btn_key = f"btn_conteudo_{sk}_{tab_name}"
-            if st.button(f"_tab_{sk}_{tab_name}_", key=btn_key):
-                st.session_state.ads_aba_conteudo[ck] = tab_name
+            if config_actions.get(f"buscar_{ci}") and novo_id:
+                st.session_state.ads_onboarding_empresa = e["nome"]
+                st.session_state.ads_onboarding_termo   = novo_id
+                st.session_state.ads_config_empresa_selecionada = e["nome"]
+                with st.spinner(f"Buscando «{novo_id}»…"):
+                    paginas = buscar_paginas_facebook(novo_id)
+                st.session_state.ads_onboarding_paginas = paginas
                 st.rerun()
 
-    abas_nomes = [e["nome"] for e in empresas_configuradas]
-    aba_ativa  = st.session_state.ads_aba_ativa
-    editando   = st.session_state.ads_mostrar_edicao
+            if config_actions.get(f"salvar_{ci}") and novo_id:
+                salvar_ads_id(e, novo_id)
+                st.session_state.ads_editando_empresa = None
+                st.session_state.ads_onboarding_empresa = None
+                st.session_state.ads_onboarding_paginas = []
+                st.session_state.ads_config_empresa_selecionada = None
+                st.toast(f"✅ {e['nome']} salvo: {novo_id}", icon="✅")
+                st.rerun()
 
-    abas_html_items = ""
-    for i, nome in enumerate(abas_nomes):
-        active_class = "active" if i == aba_ativa else ""
-        abas_html_items += f'<button class="aba {active_class}" onclick="triggerAba({i})">{nome}</button>'
+            if config_actions.get(f"cancelar_{ci}"):
+                st.session_state.ads_editando_empresa = None
+                st.session_state.ads_onboarding_empresa = None
+                st.session_state.ads_onboarding_paginas = []
+                st.session_state.ads_config_empresa_selecionada = None
+                st.rerun()
 
-    components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+        # Ghost select de página
+        paginas_select_keys = []
+        if st.session_state.ads_onboarding_paginas:
+            for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
+                psk = f"cfg_select_pg_{pi}"
+                paginas_select_keys.append(psk)
+
+        ghost_pg_css = "\n".join([
+            f"""
+            .st-key-{k} {{
+                position:absolute !important; top:-9999px !important; left:-9999px !important;
+                width:1px !important; height:1px !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important;
+            }}
+            .stElementContainer:has(.st-key-{k}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important;
+                overflow:hidden !important; line-height:0 !important; border:none !important;
+            }}
+            """
+            for k in paginas_select_keys
+        ])
+        if ghost_pg_css:
+            st.markdown(f"<style>{ghost_pg_css}</style>", unsafe_allow_html=True)
+
+        pg_triggers = {}
+        if st.session_state.ads_onboarding_paginas:
+            for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
+                psk = f"cfg_select_pg_{pi}"
+                if st.button(f"_select_pg_{pi}_", key=psk):
+                    pg_triggers[pi] = True
+                else:
+                    pg_triggers[pi] = False
+
+        # Processar seleção de página
+        if pg_triggers and st.session_state.ads_onboarding_empresa:
+            ck_on = st.session_state.ads_onboarding_empresa
+            e_on  = next((x for x in todas_empresas if x["nome"] == ck_on), None)
+            if e_on:
+                for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
+                    if pg_triggers.get(pi):
+                        page_id_val = pg.get("page_id") or pg.get("nome", "")
+                        page_pic    = pg.get("profile_picture", "")
+                        salvar_ads_id(e_on, page_id_val, page_pic)
+                        st.session_state.ads_editando_empresa = None
+                        st.session_state.ads_onboarding_empresa = None
+                        st.session_state.ads_onboarding_paginas = []
+                        st.session_state.ads_config_empresa_selecionada = None
+                        st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
+                        st.rerun()
+
+        # ── Renderizar cards de configuração ─────────────────────────
+        config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
+        editando_empresa = st.session_state.ads_editando_empresa
+
+        # Gerar JSON das empresas para o HTML
+        empresas_json_list = []
+        for ci, e in enumerate(todas_empresas):
+            is_minha = e["tipo"] == "minha"
+            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+            empresas_json_list.append({
+                "ci": ci,
+                "nome": e["nome"],
+                "tipo": e["tipo"],
+                "ads_id": ads_id,
+                "cor": cor,
+                "avatar": gerar_avatar(e["nome"]),
+                "badge_lbl": "Minha Empresa" if is_minha else "Concorrente",
+                "badge_bg":  "#eff6ff" if is_minha else "#f3f4f6",
+                "badge_txt": "#1d4ed8" if is_minha else "#6b7280",
+                "badge_brd": "#bfdbfe" if is_minha else "#e5e7eb",
+            })
+
+        empresas_json = _json.dumps(empresas_json_list, ensure_ascii=False)
+
+        # Montar lista de páginas encontradas (se houver)
+        paginas_json = "[]"
+        paginas_empresa_nome = st.session_state.ads_onboarding_empresa or ""
+        if st.session_state.ads_onboarding_paginas:
+            pg_data = []
+            for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
+                pg_data.append({
+                    "pi": pi,
+                    "nome": pg.get("nome", "—"),
+                    "page_id": pg.get("page_id", ""),
+                    "total_ads": pg.get("total_ads", 0),
+                    "profile_picture": pg.get("profile_picture", ""),
+                })
+            paginas_json = _json.dumps(pg_data, ensure_ascii=False)
+
+        components.html(f"""
+<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+
+.section-label {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1.2px;
+    margin-bottom:12px; padding-bottom:8px;
+    border-bottom:1px solid #f3f4f6;
+}}
+.cards-grid {{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:24px;
+}}
+.card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;
+    transition:border-color 0.15s, box-shadow 0.15s;
+}}
+.card.editing {{
+    border-color:#3a9fd6;
+    box-shadow:0 0 0 3px rgba(58,159,214,0.12);
+}}
+.card-header {{
+    display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid #f3f4f6;
+}}
+.avatar {{
+    width:42px; height:42px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.card-info {{ flex:1; min-width:0; }}
+.card-nome {{ font-size:15px; font-weight:700; color:#111827; }}
+.badge {{
+    display:inline-block; padding:2px 8px; border-radius:20px;
+    font-size:11px; font-weight:600; margin-top:3px;
+}}
+.card-body {{ padding:14px 18px; }}
+.id-row {{
+    display:flex; align-items:center; gap:8px;
+    background:#f0fdf4; border:1px solid #86efac;
+    border-radius:8px; padding:8px 12px; margin-bottom:12px;
+}}
+.id-dot {{ width:8px; height:8px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
+.id-val {{ font-size:13px; font-weight:600; color:#15803d; font-family:monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+.no-config-row {{
+    display:flex; align-items:center; gap:8px;
+    background:#fffbeb; border:1px solid #fde68a;
+    border-radius:8px; padding:8px 12px; margin-bottom:12px;
+}}
+.no-config-dot {{ width:8px; height:8px; border-radius:50%; background:#f59e0b; flex-shrink:0; }}
+.no-config-val {{ font-size:13px; font-weight:600; color:#92400e; }}
+.btn-editar {{
+    width:100%; padding:10px; border:1px solid #e5e7eb;
+    border-radius:8px; background:#fff;
+    font-size:14px; font-weight:700; color:#374151;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:all 0.15s;
+}}
+.btn-editar:hover {{ background:#f3f4f6; border-color:#9ca3af; }}
+.edit-form {{ display:none; padding:14px 18px; border-top:1px solid #f3f4f6; }}
+.edit-form.open {{ display:block; }}
+.input-label {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }}
+.input-field {{
+    width:100%; padding:10px 14px; border:1.5px solid #e5e7eb;
+    border-radius:8px; font-size:14px; font-family:'DM Sans',sans-serif;
+    color:#111827; outline:none; transition:border-color 0.15s; background:#fafafa;
+    margin-bottom:10px;
+}}
+.input-field:focus {{ border-color:#3a9fd6; background:#fff; }}
+.btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }}
+.btn-buscar {{
+    padding:10px; border:none; border-radius:8px;
+    background:#0e2a47; color:#fff;
+    font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:background 0.15s;
+}}
+.btn-buscar:hover {{ background:#1a3a5c; }}
+.btn-salvar {{
+    padding:10px; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; color:#1d4ed8;
+    font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:background 0.15s;
+}}
+.btn-salvar:hover {{ background:#dbeafe; }}
+.btn-cancelar {{
+    grid-column:1/-1;
+    padding:8px; border:none; border-radius:8px;
+    background:transparent; color:#9ca3af;
+    font-size:12px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:color 0.15s;
+}}
+.btn-cancelar:hover {{ color:#374151; }}
+
+/* Resultado de páginas encontradas */
+.paginas-wrap {{
+    margin-top:14px; border-top:1px solid #f3f4f6; padding-top:14px;
+}}
+.paginas-title {{ font-size:12px; font-weight:700; color:#6b7280; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px; }}
+.pg-card {{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
+    cursor:pointer; margin-bottom:6px; transition:all 0.12s;
+}}
+.pg-card:hover {{ background:#eff6ff; border-color:#3a9fd6; }}
+.pg-thumb {{
+    width:36px; height:36px; border-radius:50%; overflow:hidden;
+    background:#e5e7eb; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:#6b7280;
+}}
+.pg-thumb img {{ width:100%; height:100%; object-fit:cover; display:block; border-radius:50%; }}
+.pg-info {{ flex:1; min-width:0; }}
+.pg-nome {{ font-size:13px; font-weight:700; color:#111827; }}
+.pg-id {{ font-size:11px; color:#9ca3af; font-family:monospace; }}
+.pg-ads {{ font-size:11px; font-weight:600; color:#3a9fd6; }}
+</style>
+</head>
+<body>
+
+<div class="section-label">Configure as páginas do Facebook/Instagram</div>
+<div class="cards-grid" id="cards-grid"></div>
+
+<div id="paginas-result" style="display:none"></div>
+
+<script>
+var EMPRESAS = {empresas_json};
+var PAGINAS  = {paginas_json};
+var PAGINAS_EMPRESA = "{paginas_empresa_nome}";
+var INPUT_VALS = {{}};
+
+EMPRESAS.forEach(function(e) {{
+    INPUT_VALS[e.ci] = e.ads_id || e.nome;
+}});
+
+function toggleForm(ci) {{
+    var form = document.getElementById('form_' + ci);
+    var card = document.getElementById('card_' + ci);
+    var isOpen = form.classList.contains('open');
+    // fechar todos
+    document.querySelectorAll('.edit-form').forEach(function(f) {{ f.classList.remove('open'); }});
+    document.querySelectorAll('.card').forEach(function(c) {{ c.classList.remove('editing'); }});
+    if (!isOpen) {{
+        form.classList.add('open');
+        card.classList.add('editing');
+    }}
+    setTimeout(syncHeight, 50);
+}}
+
+function buildCards() {{
+    var grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+
+    EMPRESAS.forEach(function(e) {{
+        var hasId = e.ads_id && e.ads_id.trim() !== '';
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.id = 'card_' + e.ci;
+
+        var idBlock = hasId
+            ? '<div class="id-row"><div class="id-dot"></div><div class="id-val">' + e.ads_id + '</div></div>'
+            : '<div class="no-config-row"><div class="no-config-dot"></div><div class="no-config-val">Não configurado</div></div>';
+
+        card.innerHTML =
+            '<div class="card-header">'
+            + '<div class="avatar" style="background:' + e.cor + '">' + e.avatar + '</div>'
+            + '<div class="card-info">'
+            + '<div class="card-nome">' + e.nome + '</div>'
+            + '<span class="badge" style="background:' + e.badge_bg + ';color:' + e.badge_txt + ';border:1px solid ' + e.badge_brd + '">' + e.badge_lbl + '</span>'
+            + '</div>'
+            + '<button onclick="toggleForm(' + e.ci + ')" title="Editar" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#9ca3af;transition:all 0.12s;display:flex;align-items:center" onmouseover="this.style.background=\'#f3f4f6\';this.style.color=\'#374151\'" onmouseout="this.style.background=\'none\';this.style.color=\'#9ca3af\'">'
+            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+            + '</button>'
+            + '</div>'
+            + '<div class="card-body">'
+            + idBlock
+            + '<button class="btn-editar" onclick="toggleForm(' + e.ci + ')">'
+            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+            + 'Editar configuração'
+            + '</button>'
+            + '</div>'
+            + '<div class="edit-form" id="form_' + e.ci + '">'
+            + '<div class="input-label">Nome ou ID numérico da página</div>'
+            + '<input class="input-field" id="inp_' + e.ci + '" type="text" value="' + (e.ads_id || '') + '" placeholder="Ex: Nome da Página  ou  102803918240129" oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
+            + '<div class="btn-row">'
+            + '<button class="btn-buscar" onclick="triggerAction(\'buscar\', ' + e.ci + ')">'
+            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+            + 'Buscar páginas'
+            + '</button>'
+            + '<button class="btn-salvar" onclick="triggerSalvar(' + e.ci + ')">'
+            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
+            + 'Salvar ID direto'
+            + '</button>'
+            + '<button class="btn-cancelar" onclick="toggleForm(' + e.ci + ')">Cancelar</button>'
+            + '</div>'
+            + getPaginasHtml(e.nome)
+            + '</div>';
+
+        grid.appendChild(card);
+
+        // Se essa empresa estava sendo editada, abrir form automaticamente
+        if ("' + (config_empresa_selecionada or '') + '" === e.nome || "' + (editando_empresa or '') + '" === e.nome) {{
+            setTimeout(function() {{ toggleForm(e.ci); }}, 100);
+        }}
+    }});
+
+    syncHeight();
+}}
+
+function getPaginasHtml(nomeEmpresa) {{
+    if (!PAGINAS || PAGINAS.length === 0 || PAGINAS_EMPRESA !== nomeEmpresa) return '';
+    var html = '<div class="paginas-wrap"><div class="paginas-title">📋 Páginas encontradas — clique para selecionar</div>';
+    PAGINAS.forEach(function(pg) {{
+        var thumb = pg.profile_picture
+            ? '<img src="' + pg.profile_picture + '" onerror="this.outerHTML=\'<span>' + (pg.nome[0]||'P') + '</span>\'" />'
+            : '<span>' + (pg.nome[0]||'P') + '</span>';
+        html += '<div class="pg-card" onclick="triggerSelectPg(' + pg.pi + ')">'
+            + '<div class="pg-thumb">' + thumb + '</div>'
+            + '<div class="pg-info">'
+            + '<div class="pg-nome">' + pg.nome + '</div>'
+            + '<div class="pg-id">ID: ' + (pg.page_id || '—') + '</div>'
+            + '</div>'
+            + '<div class="pg-ads">' + pg.total_ads + ' ads</div>'
+            + '</div>';
+    }});
+    html += '</div>';
+    return html;
+}}
+
+function triggerAction(action, ci) {{
+    var val = document.getElementById('inp_' + ci);
+    if (val) {{
+        // Sincronizar valor com o input oculto do Streamlit
+        syncInputToSt(ci, val.value);
+    }}
+    var label = '_cfg_' + action + '_' + getSkByIndex(ci) + '_' + ci + '_';
+    triggerBtn(label);
+}}
+
+function triggerSalvar(ci) {{
+    var val = document.getElementById('inp_' + ci);
+    if (val) {{ syncInputToSt(ci, val.value); }}
+    var label = '_cfg_salvar_' + getSkByIndex(ci) + '_' + ci + '_';
+    triggerBtn(label);
+}}
+
+function triggerSelectPg(pi) {{
+    var label = '_select_pg_' + pi + '_';
+    triggerBtn(label);
+}}
+
+function getSkByIndex(ci) {{
+    var e = EMPRESAS[ci];
+    if (!e) return '';
+    return e.nome.replace(/[^a-zA-Z0-9_]/g, '_');
+}}
+
+function syncInputToSt(ci, val) {{
+    var stInputs = window.parent.document.querySelectorAll('input[data-testid="stTextInput"]');
+    // encontra o input oculto do streamlit pelo key name aproximado
+    var keyPattern = 'cfg_input_' + getSkByIndex(ci) + '_' + ci;
+    stInputs.forEach(function(inp) {{
+        if (inp.id && inp.id.includes(keyPattern)) {{
+            var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            nativeInputValueSetter.call(inp, val);
+            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        }}
+    }});
+}}
+
+function triggerBtn(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 12) + 'px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+
+buildCards();
+
+// Abrir form da empresa selecionada automaticamente
+var selectedEmpresa = "{config_empresa_selecionada or ''}";
+var editandoEmpresa = "{editando_empresa or ''}";
+if (selectedEmpresa || editandoEmpresa) {{
+    var targetNome = selectedEmpresa || editandoEmpresa;
+    EMPRESAS.forEach(function(e) {{
+        if (e.nome === targetNome) {{
+            setTimeout(function() {{ toggleForm(e.ci); }}, 200);
+        }}
+    }});
+}}
+
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+</script>
+</body></html>
+""", height=100, scrolling=False)
+
+    # ══════════════════════════════════════════════════════════════════
+    # ABA: EMPRESAS CONFIGURADAS (navegação por páginas + anúncios)
+    # ══════════════════════════════════════════════════════════════════
+    elif main_tab == "empresas":
+
+        if not st.secrets.get("APIFY_TOKEN", ""):
+            st.warning("Configure `APIFY_TOKEN` no secrets.toml para buscar anúncios.")
+
+        # ── Botão de busca e barra de páginas configuradas ────────────
+        h_col, btn_col = st.columns([7, 3])
+        with btn_col:
+            gerar_btn_ads = st.button(
+                "Buscar / Atualizar Anúncios",
+                type="primary",
+                use_container_width=True,
+                key="ads_buscar_topo_btn",
+            )
+            if st.session_state.ads_cache:
+                _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
+                if _tss:
+                    st.markdown(
+                        f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
+                        f"🕒 Última busca: <b>{min(_tss)}</b></div>",
+                        unsafe_allow_html=True,
+                    )
+
+        if not empresas_configuradas:
+            st.markdown("""
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                        padding:48px 32px;text-align:center;margin-top:8px'>
+                <div style='font-size:32px;margin-bottom:12px'>⚙️</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhuma página configurada</div>
+                <div style='font-size:14px;color:#9ca3af'>Clique em <b>Configuração</b> acima para configurar suas páginas.</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
+
+        query_values = {}
+        for e in empresas_configuradas:
+            ck = e["nome"]
+            ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
+            query_values[ck] = ads_id_salvo
+
+        if gerar_btn_ads:
+            if not query_values:
+                st.warning("Configure pelo menos uma empresa antes de buscar.")
+            else:
+                executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values, forcar=False)
+
+        # ── Barra de abas de empresas (estilo imagem 2) ───────────────
+        if "ads_aba_ativa" not in st.session_state:
+            st.session_state.ads_aba_ativa = 0
+
+        ids_abas = [f"btn_aba_ads_{i}" for i in range(len(empresas_configuradas))]
+        ghost_abas_css = "\n".join([
+            f"""
+            .st-key-{k} {{
+                position:absolute !important; top:-9999px !important; left:-9999px !important;
+                width:1px !important; height:1px !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important;
+            }}
+            .stElementContainer:has(.st-key-{k}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important;
+                overflow:hidden !important; line-height:0 !important; border:none !important;
+            }}
+            """
+            for k in ids_abas
+        ])
+        st.markdown(f"<style>{ghost_abas_css}</style>", unsafe_allow_html=True)
+
+        for i in range(len(empresas_configuradas)):
+            if st.button(f"_aba_ads_{i}_", key=f"btn_aba_ads_{i}"):
+                st.session_state.ads_aba_ativa = i
+                st.rerun()
+
+        abas_nomes = [e["nome"] for e in empresas_configuradas]
+        aba_ativa  = min(st.session_state.ads_aba_ativa, len(abas_nomes) - 1)
+
+        # Gerar HTML das abas (estilo da imagem 2: barra compacta)
+        abas_items_html = ""
+        for i, nome in enumerate(abas_nomes):
+            active_class = "active" if i == aba_ativa else ""
+            abas_items_html += f'<button class="aba-btn {active_class}" onclick="triggerAba({i})">{nome}</button>'
+
+        # Lápis para cada empresa configurada (abre configuração)
+        lapiz_abas_html = ""
+        for i, e in enumerate(empresas_configuradas):
+            sk = safe_key(e["nome"])
+            lapiz_trigger = lapiz_triggers.get(
+                next((ci for ci, te in enumerate(todas_empresas) if te["nome"] == e["nome"]), -1),
+                ""
+            )
+            lapiz_abas_html += f'<button class="lapiz-btn" onclick="triggerLapiz(\'{e[\'nome']}\')" title="Editar {e[\'nome\']}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
+
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.barra {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; display:flex; align-items:stretch; height:48px; overflow:hidden; }}
-.barra-label {{ display:flex; align-items:center; gap:7px; padding:0 14px; border-right:1px solid #f3f4f6; flex-shrink:0; }}
-.barra-label-txt {{ font-size:13px; font-weight:700; color:#000000; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }}
+.barra {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    display:flex; align-items:stretch; height:48px; overflow:hidden;
+}}
+.barra-label {{
+    display:flex; align-items:center; gap:7px;
+    padding:0 14px; border-right:1px solid #f3f4f6; flex-shrink:0;
+}}
+.barra-label-txt {{
+    font-size:12px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:1.2px; white-space:nowrap;
+}}
 .abas-wrap {{ display:flex; align-items:center; flex:1; padding:6px 8px; gap:4px; overflow:hidden; }}
-.aba {{ height:36px; padding:0 18px; border-radius:7px; border:1px solid transparent; background:transparent; font-size:14px; font-weight:600; color:#6d6c6c; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap; flex-shrink:0; }}
-.aba:hover {{ background:#f3f4f6; color:#374151; }}
-.aba.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
-.btn-wrap {{ display:flex; align-items:center; padding:0 10px; border-left:1px solid #f3f4f6; flex-shrink:0; }}
-.btn-editar {{ display:flex; align-items:center; gap:6px; height:34px; padding:0 14px; border:none; border-radius:7px; background:transparent; font-size:13px; font-weight:600; color:#374151; cursor:pointer; font-family:'DM Sans',sans-serif; white-space:nowrap; transition:all 0.12s; }}
-.btn-editar:hover {{ background:#f3f4f6; }}
+.aba-btn {{
+    height:36px; padding:0 18px; border-radius:7px; border:1px solid transparent;
+    background:transparent; font-size:14px; font-weight:600; color:#6b7280;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap;
+}}
+.aba-btn:hover {{ background:#f3f4f6; color:#374151; }}
+.aba-btn.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
+.right-wrap {{
+    display:flex; align-items:center; padding:0 10px;
+    border-left:1px solid #f3f4f6; flex-shrink:0; gap:4px;
+}}
+.lapiz-btn {{
+    width:30px; height:30px; border:1px solid #e5e7eb; border-radius:7px;
+    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:#9ca3af; transition:all 0.12s;
+}}
+.lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
 </style>
 <div class="barra">
     <div class="barra-label">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
         </svg>
         <span class="barra-label-txt">Páginas configuradas</span>
     </div>
-    <div class="abas-wrap">{abas_html_items}</div>
-    <div class="btn-wrap">
-        <button class="btn-editar" onclick="triggerToggle()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    <div class="abas-wrap">{abas_items_html}</div>
+    <div class="right-wrap">
+        <button class="lapiz-btn" onclick="triggerTab('_ads_tab_configuracao_')" title="Gerenciar configurações">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
-            {'Fechar' if editando else 'Editar páginas'}
         </button>
     </div>
 </div>
 <script>
-function trigger(label) {{
+function triggerAba(i) {{
+    var label = '_aba_ads_' + i + '_';
+    triggerBtn(label);
+}}
+function triggerTab(label) {{
+    triggerBtn(label);
+}}
+function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-        var txt = (btns[i].textContent || btns[i].innerText || '').trim();
-        if (txt === label) {{ btns[i].click(); return; }}
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
     }}
 }}
-function triggerToggle() {{ trigger('_toggle_edicao_ads_'); }}
-function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
@@ -3448,277 +4176,61 @@ function triggerAba(i) {{ trigger('_aba_ads_' + i + '_'); }}
 </script>
 """, height=48, scrolling=False)
 
-    # ── Painel de edição ────────────────────────────────────────────
-    edit_triggers = {}
-    if st.session_state.ads_mostrar_edicao and empresas_configuradas:
-        ghost_css = "\n".join([
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
+        # ── Sub-abas de conteúdo por empresa ─────────────────────────
+        conteudo_tab_ids = []
+        for e in empresas_configuradas:
+            sk = safe_key(e["nome"])
+            for tab_name in ["anuncios", "analise"]:
+                btn_key = f"btn_conteudo_{sk}_{tab_name}"
+                conteudo_tab_ids.append(btn_key)
+
+        ghost_conteudo_css = "\n".join([
             f"""
-            .st-key-cfg_edit_trigger_{safe_key(e['nome'])}_{ci} {{
-                display: none !important; height: 0 !important; min-height: 0 !important;
-                max-height: 0 !important; padding: 0 !important; margin: 0 !important;
-                overflow: hidden !important; line-height: 0 !important; border: none !important;
+            .st-key-{k} {{
+                position:absolute !important; top:-9999px !important; left:-9999px !important;
+                width:1px !important; height:1px !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important;
+            }}
+            .stElementContainer:has(.st-key-{k}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important;
+                overflow:hidden !important; line-height:0 !important; border:none !important;
             }}
             """
-            for ci, e in enumerate(empresas_configuradas)
+            for k in conteudo_tab_ids
         ])
-        st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
+        st.markdown(f"<style>{ghost_conteudo_css}</style>", unsafe_allow_html=True)
 
-        for ci, e in enumerate(empresas_configuradas):
+        for e in empresas_configuradas:
             sk = safe_key(e["nome"])
-            triggered = st.button(f"cfg_edit_trigger_{sk}_{ci}", key=f"cfg_edit_trigger_{sk}_{ci}")
-            edit_triggers[ci] = triggered
+            ck = e["nome"]
+            for tab_name in ["anuncios", "analise"]:
+                btn_key = f"btn_conteudo_{sk}_{tab_name}"
+                if st.button(f"_tab_{sk}_{tab_name}_", key=btn_key):
+                    st.session_state.ads_aba_conteudo[ck] = tab_name
+                    st.rerun()
 
-    if st.session_state.ads_mostrar_edicao:
-        st.markdown(f"""
-        <style>
-        .st-key-ads_edit_panel, .st-key-ads_edit_panel > div, .st-key-ads_edit_panel > div > div,
-        .st-key-ads_edit_panel [data-testid="stVerticalBlock"], .st-key-ads_edit_panel [data-testid="stHorizontalBlock"],
-        .st-key-ads_edit_panel [data-testid="column"], .st-key-ads_edit_panel [data-testid="column"] > div,
-        .st-key-ads_edit_panel .stElementContainer, .st-key-ads_edit_panel .stElementContainer > div {{
-            background: #b9d8f9 !important; border:none !important;
-        }}
-        .st-key-ads_edit_panel [data-testid="stVerticalBlockBorderWrapper"] {{
-            background: #b9d8f9 !important; border: 1.5px dashed #fff !important;
-            border-radius: 14px !important; margin: 0px !important;
-            padding: 0px 16px 0px 16px !important; box-shadow: none !important;
-        }}
-        .st-key-ads_edit_panel .stElementContainer:has(> .stButton),
-        .st-key-ads_edit_panel .stElementContainer:has(> .stButton) * {{
-            height: 0 !important; min-height: 0 !important; max-height: 0 !important;
-            padding: 0 !important; margin: 0 !important; overflow: hidden !important;
-            line-height: 0 !important; display: block !important; border: none !important;
-            visibility: hidden !important;
-        }}
-        .st-key-ads_edit_panel {{ margin-top: -2.5rem !important; margin-bottom: -2.5rem !important; }}
-        </style>
-        """, unsafe_allow_html=True)
+        # ── Dados e helpers ──────────────────────────────────────────
+        empresas_com_dados = [
+            e for e in todas_empresas
+            if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
+        ]
 
-        with st.container(border=True, key="ads_edit_panel"):
-            if empresas_configuradas:
-                for ci, e in enumerate(empresas_configuradas):
-                    if edit_triggers.get(ci):
-                        st.session_state.ads_editando_empresa = e["nome"]
-                        st.session_state.ads_onboarding_empresa = None
-                        st.session_state.ads_onboarding_paginas = []
-                        st.rerun()
-
-                cfg_cols = st.columns(2)
-                for ci, e in enumerate(empresas_configuradas):
-                    ck       = e["nome"]
-                    sk       = safe_key(ck)
-                    is_minha = e["tipo"] == "minha"
-                    badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-                    badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-                    badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-                    badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-                    ads_id_atual = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-                    is_editing = (st.session_state.ads_editando_empresa == ck)
-                    avatar_html = _avatar_html_empresa(e, size=42)
-                    edit_trigger_key = f"cfg_edit_trigger_{sk}_{ci}"
-
-                    with cfg_cols[ci % 2]:
-                        if not is_editing:
-                            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-body {{ padding-bottom:4px; }}
-.card {{ background:#ffffff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
-.card-body {{ display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid #f3f4f6; }}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:15px; font-weight:700; color:#111827; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.badges {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
-.badge {{ padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd}; }}
-.badge-id {{ background:#dcfce7; color:#15803d; border:1px solid #86efac; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; }}
-.edit-btn {{ width:100%; padding:10px 0; background:#fff; border:none; font-size:14px; font-weight:600; color:#6b7280; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.12s ease; }}
-.edit-btn:hover {{ background:#f9fafb; color:#111827; }}
-</style>
-<div class="card">
-    <div class="card-body">
-        {avatar_html}
-        <div class="info">
-            <div class="nome">{ck}</div>
-            <div class="badges">
-                <span class="badge">{badge_lbl}</span>
-                <span class="badge-id">✅ {ads_id_atual}</span>
+        if not empresas_com_dados:
+            st.markdown("""
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
+                <div style='font-size:32px;margin-bottom:12px'>📢</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
+                <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar</b>.</div>
             </div>
-        </div>
-    </div>
-    <button class="edit-btn" onclick="triggerBtn('{edit_trigger_key}')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-        Editar página
-    </button>
-</div>
-<script>
-function triggerBtn(key) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if ((b.innerText || b.textContent || '').split(/\s+/).join(' ').trim() === key) {{ b.click(); return; }}
-    }}
-}}
-function ajustarAltura() {{
-    var h = document.body.scrollHeight;
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h + 8) + 'px'; break; }} }} catch(err) {{}}
-    }}
-}}
-if (window.ResizeObserver) new ResizeObserver(ajustarAltura).observe(document.body);
-setTimeout(ajustarAltura, 100);
-</script>
-""", height=100, scrolling=False)
+            """, unsafe_allow_html=True)
+            st.stop()
 
-                        else:
-                            novo_id_key  = f"_inline_edit_{sk}_{ci}"
-                            buscar_key   = f"buscar_cfg_{sk}_{ci}"
-                            salvar_key   = f"salvar_cfg_{sk}_{ci}"
-                            cancel_key   = f"cancel_edit_{sk}_{ci}"
-
-                            st.markdown(f"""
-                            <div style='background:#fff;border:1.5px solid #3a9fd6;border-radius:14px;overflow:hidden;margin-bottom:4px'>
-                                <div style='display:flex;align-items:center;gap:14px;padding:16px 20px'>
-                                    {avatar_html}
-                                    <div style='flex:1;min-width:0'>
-                                        <div style='font-size:16px;font-weight:700;color:#111827'>{ck}</div>
-                                        <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-
-                            with st.container(border=True, key=f"inline_edit_{sk}_{ci}"):
-                                st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px 0'>Nome ou ID numérico da página</div>", unsafe_allow_html=True)
-                                novo_id = st.text_input("ID ou nome", value=ads_id_atual, key=novo_id_key, label_visibility="collapsed", placeholder="Ex: Nome da Página  ou  102803918240129")
-                                col_b, col_s, col_c = st.columns([2, 2, 1])
-                                with col_b:
-                                    buscar_clicked = st.button("Buscar páginas", key=buscar_key, use_container_width=True, type="primary")
-                                with col_s:
-                                    salvar_clicked = st.button("Salvar Página", key=salvar_key, use_container_width=True)
-                                with col_c:
-                                    cancel_clicked = st.button("Cancelar", key=cancel_key, use_container_width=True)
-
-                            if buscar_clicked and novo_id.strip():
-                                st.session_state.ads_onboarding_empresa = ck
-                                st.session_state.ads_onboarding_termo   = novo_id.strip()
-                                with st.spinner(f"Buscando «{novo_id.strip()}»…"):
-                                    paginas = buscar_paginas_facebook(novo_id.strip())
-                                st.session_state.ads_onboarding_paginas = paginas
-                                st.rerun()
-
-                            if salvar_clicked and novo_id.strip():
-                                salvar_ads_id(e, novo_id.strip())
-                                st.session_state.ads_editando_empresa    = None
-                                st.session_state.ads_onboarding_empresa  = None
-                                st.session_state.ads_onboarding_paginas  = []
-                                st.toast(f"✅ Salvo: {novo_id.strip()}", icon="✅")
-                                st.rerun()
-
-                            if cancel_clicked:
-                                st.session_state.ads_editando_empresa    = None
-                                st.session_state.ads_onboarding_empresa  = None
-                                st.session_state.ads_onboarding_paginas  = []
-                                st.rerun()
-
-                            if (st.session_state.ads_onboarding_empresa == ck and st.session_state.ads_onboarding_paginas):
-                                _render_paginas_resultado(e, sk, ck)
-
-            if empresas_sem_config:
-                st.markdown("<div style='font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;margin:16px 0 10px 0'>⚠️ Páginas não configuradas</div>", unsafe_allow_html=True)
-                for e in empresas_sem_config:
-                    ck       = e["nome"]
-                    sk       = safe_key(ck)
-                    is_minha = e["tipo"] == "minha"
-                    cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-                    av       = gerar_avatar(ck)
-                    badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-                    badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-                    badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-                    badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-
-                    st.markdown(f"""
-                    <div style='background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:10px'>
-                        <div style='width:42px;height:42px;border-radius:50%;background:{cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0'>{av}</div>
-                        <div>
-                            <div style='font-size:15px;font-weight:700;color:#111827'>{ck}</div>
-                            <div style='display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap'>
-                                <span style='background:{badge_bg};color:{badge_txt};border:1px solid {badge_brd};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600'>{badge_lbl}</span>
-                                <span style='background:#fef9c3;color:#854d0e;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600'>⚠️ Não configurado</span>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                    col_inp, col_btn_b, col_btn_s = st.columns([4, 2, 2])
-                    with col_inp:
-                        termo_input = st.text_input("Nome ou ID da página", value=ck, placeholder=f"Ex: {ck}  ou  102803918240129", key=f"_termo_uncfg_{sk}", label_visibility="collapsed")
-                    with col_btn_b:
-                        if st.button("Buscar", key=f"buscar_uncfg_{sk}", use_container_width=True, type="primary"):
-                            if termo_input.strip():
-                                st.session_state.ads_onboarding_empresa = ck
-                                st.session_state.ads_onboarding_termo   = termo_input.strip()
-                                with st.spinner(f"Buscando «{termo_input.strip()}»…"):
-                                    paginas = buscar_paginas_facebook(termo_input.strip())
-                                st.session_state.ads_onboarding_paginas = paginas
-                                st.rerun()
-                    with col_btn_s:
-                        if st.button("Salvar ID", key=f"salvar_uncfg_{sk}", use_container_width=True):
-                            if termo_input.strip():
-                                salvar_ads_id(e, termo_input.strip())
-                                st.session_state.ads_onboarding_empresa = None
-                                st.session_state.ads_onboarding_paginas = []
-                                st.toast(f"✅ Salvo!", icon="✅")
-                                st.rerun()
-
-                    if (st.session_state.ads_onboarding_empresa == ck and st.session_state.ads_onboarding_paginas is not None):
-                        if not st.session_state.ads_onboarding_paginas:
-                            st.warning("Nenhuma página encontrada. Tente outro nome ou cole o ID numérico.")
-                        else:
-                            _render_paginas_resultado(e, sk, ck)
-
-                    st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
-
-            st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-
-    if not empresas_configuradas:
-        st.info("Configure pelo menos uma empresa acima para buscar anúncios.")
-        st.stop()
-
-    query_values = {}
-    for e in empresas_configuradas:
-        ck = e["nome"]
-        ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
-        query_values[ck] = ads_id_salvo
-
-    if gerar_btn_ads:
-        if not query_values:
-            st.warning("Configure pelo menos uma empresa antes de buscar.")
-        else:
-            executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values, forcar=False)
-
-    empresas_com_dados = [
-        e for e in todas_empresas
-        if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
-    ]
-
-    if not empresas_com_dados:
-        st.markdown("""
-        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
-            <div style='font-size:32px;margin-bottom:12px'>📢</div>
-            <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
-            <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar</b>.</div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.stop()
-
-    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-
-    # ── Plataformas SVG JS ──────────────────────────────────────────
-    def _plat_svg_js(uid: str) -> str:
-        return f"""
+        # ── Plataformas SVG JS ────────────────────────────────────────
+        def _plat_svg_js(uid: str) -> str:
+            return f"""
 (function(){{
     var plats={{}};
     try {{ plats = window.__PLATS_{uid}__; }} catch(e) {{ return; }}
@@ -3742,118 +4254,122 @@ setTimeout(ajustarAltura, 100);
 }})();
 """
 
-    # ══════════════════════════════════════════════════════════════════
-    # FUNÇÃO PRINCIPAL: render_ads_empresa
-    # ══════════════════════════════════════════════════════════════════
-    def render_ads_empresa(emp_item):
-        ck       = emp_item["nome"]
-        nome     = emp_item["nome"]
-        is_minha = emp_item["tipo"] == "minha"
-        cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(emp_item["idx"])
-        avatar   = gerar_avatar(nome)
-        sk       = safe_key(nome)
+        # ══════════════════════════════════════════════════════════════
+        # FUNÇÃO PRINCIPAL: render_ads_empresa
+        # ══════════════════════════════════════════════════════════════
+        def render_ads_empresa(emp_item):
+            ck       = emp_item["nome"]
+            nome     = emp_item["nome"]
+            is_minha = emp_item["tipo"] == "minha"
+            cor_av   = get_minha_empresa_color() if is_minha else get_concorrente_color(emp_item["idx"])
+            avatar   = gerar_avatar(nome)
+            sk       = safe_key(nome)
 
-        if emp_item["tipo"] == "minha":
-            configured_page = emp.get("ads_id","").strip()
-        else:
-            configured_page = concs[emp_item["idx"]].get("ads_id","").strip()
-
-        if ck in st.session_state.ads_erro:
-            st.error(f"Erro: {st.session_state.ads_erro[ck]}")
-            return
-
-        cache_entry = st.session_state.ads_cache.get(ck)
-        if not cache_entry:
-            st.info("Sem dados. Configure a página e clique em Buscar.")
-            return
-
-        ads_list_raw = cache_entry["data"]
-        ts           = cache_entry["ts"]
-        query        = cache_entry.get("query","")
-
-        if configured_page:
-            if configured_page.isdigit():
-                filtered = [a for a in ads_list_raw if str(a.get("page_id","")).strip() == configured_page]
-                ads_list = filtered if filtered else ads_list_raw
+            if emp_item["tipo"] == "minha":
+                configured_page = emp.get("ads_id","").strip()
             else:
-                configured_lower = configured_page.lower()
-                exact = [a for a in ads_list_raw if (a.get("page_name") or "").strip().lower() == configured_lower]
-                if exact:
-                    ads_list = exact
+                configured_page = concs[emp_item["idx"]].get("ads_id","").strip()
+
+            if ck in st.session_state.ads_erro:
+                st.error(f"Erro: {st.session_state.ads_erro[ck]}")
+                return
+
+            cache_entry = st.session_state.ads_cache.get(ck)
+            if not cache_entry:
+                st.info("Sem dados. Configure a página e clique em Buscar.")
+                return
+
+            ads_list_raw = cache_entry["data"]
+            ts           = cache_entry["ts"]
+            query        = cache_entry.get("query","")
+
+            if configured_page:
+                if configured_page.isdigit():
+                    filtered = [a for a in ads_list_raw if str(a.get("page_id","")).strip() == configured_page]
+                    ads_list = filtered if filtered else ads_list_raw
                 else:
-                    partial = [a for a in ads_list_raw
-                               if configured_lower in (a.get("page_name") or "").strip().lower()
-                               or (a.get("page_name") or "").strip().lower() in configured_lower]
-                    ads_list = partial if partial else ads_list_raw
-        else:
-            ads_list = ads_list_raw
+                    configured_lower = configured_page.lower()
+                    exact = [a for a in ads_list_raw if (a.get("page_name") or "").strip().lower() == configured_lower]
+                    if exact:
+                        ads_list = exact
+                    else:
+                        partial = [a for a in ads_list_raw
+                                   if configured_lower in (a.get("page_name") or "").strip().lower()
+                                   or (a.get("page_name") or "").strip().lower() in configured_lower]
+                        ads_list = partial if partial else ads_list_raw
+            else:
+                ads_list = ads_list_raw
 
-        if emp_item["tipo"] == "minha":
-            page_pic_empresa = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
-        else:
-            page_pic_empresa = st.session_state.dados["concorrentes"][emp_item["idx"]].get("ads_page_pic", "") or ""
+            if emp_item["tipo"] == "minha":
+                page_pic_empresa = st.session_state.dados["minha_empresa"].get("ads_page_pic", "") or ""
+            else:
+                page_pic_empresa = st.session_state.dados["concorrentes"][emp_item["idx"]].get("ads_page_pic", "") or ""
 
-        if not page_pic_empresa:
-            for ad in ads_list:
-                p = ad.get("page_profile_picture", "") or ""
-                if p and p.startswith("http"):
-                    page_pic_empresa = p
-                    break
+            if not page_pic_empresa:
+                for ad in ads_list:
+                    p = ad.get("page_profile_picture", "") or ""
+                    if p and p.startswith("http"):
+                        page_pic_empresa = p
+                        break
 
-        if page_pic_empresa:
-            avatar_empresa_html = (
-                f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb;">'
-                f'<img src="{page_pic_empresa}" style="width:100%;height:100%;object-fit:cover;display:block" '
-                f'onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:16px;font-weight:700;color:#fff&quot;>{avatar}</div>\'" /></div>'
-            )
-        else:
-            avatar_empresa_html = (
-                f'<div style="width:44px;height:44px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">{avatar}</div>'
-            )
+            if page_pic_empresa:
+                avatar_empresa_html = (
+                    f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb;">'
+                    f'<img src="{page_pic_empresa}" style="width:100%;height:100%;object-fit:cover;display:block" '
+                    f'onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:16px;font-weight:700;color:#fff&quot;>{avatar}</div>\'" /></div>'
+                )
+            else:
+                avatar_empresa_html = (
+                    f'<div style="width:44px;height:44px;border-radius:50%;background:{cor_av};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">{avatar}</div>'
+                )
 
-        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
 
-        import urllib.parse as _urlparse
-        if configured_page and configured_page.isdigit():
-            lib_url = (f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&is_targeted_country=false&media_type=all&search_type=page&sort_data[direction]=desc&sort_data[mode]=total_impressions&view_all_page_id={configured_page}")
-        elif query:
-            lib_url = (f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q={_urlparse.quote(query)}")
-        else:
-            lib_url = ""
+            import urllib.parse as _urlparse
+            if configured_page and configured_page.isdigit():
+                lib_url = (f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&is_targeted_country=false&media_type=all&search_type=page&sort_data[direction]=desc&sort_data[mode]=total_impressions&view_all_page_id={configured_page}")
+            elif query:
+                lib_url = (f"https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=BR&q={_urlparse.quote(query)}")
+            else:
+                lib_url = ""
 
-        page_display = configured_page if configured_page else "—"
-        lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
+            page_display = configured_page if configured_page else "—"
+            lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
 
-        st.markdown(f"""
-        <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
-            <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
-                {avatar_empresa_html}
-                <div style='flex:1;min-width:0'>
-                    <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
-                    <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
-                        <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
-                        <span style='color:#d1d5db;font-size:12px'>·</span>
-                        <span style='font-size:13px;color:#6b7280'>Página: {page_display}</span>
+            # Índice real desta empresa em todas_empresas para o lápis
+            idx_real = next((ci for ci, te in enumerate(todas_empresas) if te["nome"] == ck), -1)
+            lapiz_trigger_label = f"_lapiz_{safe_key(ck)}_{idx_real}_" if idx_real >= 0 else ""
+
+            st.markdown(f"""
+            <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
+                <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
+                    {avatar_empresa_html}
+                    <div style='flex:1;min-width:0'>
+                        <div style='font-size:17px;font-weight:700;color:#111827'>{nome}</div>
+                        <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
+                            <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
+                            <span style='color:#d1d5db;font-size:12px'>·</span>
+                            <span style='font-size:13px;color:#6b7280'>Página: {page_display}</span>
+                        </div>
+                    </div>
+                    <div style='display:flex;align-items:center;gap:0;flex-shrink:0'>
+                        <div style='width:1px;height:40px;background:#e5e7eb;margin-right:20px'></div>
+                        <div style='text-align:center;min-width:56px'>
+                            <div style='font-size:28px;font-weight:800;color:#111827;line-height:1'>{len(ads_list)}</div>
+                            <div style='font-size:11px;color:#394252;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px'>anúncios</div>
+                        </div>
+                        <div style='width:1px;height:40px;background:#e5e7eb;margin:0 20px'></div>
+                        {lib_btn_top}
                     </div>
                 </div>
-                <div style='display:flex;align-items:center;gap:0;flex-shrink:0'>
-                    <div style='width:1px;height:40px;background:#e5e7eb;margin-right:20px'></div>
-                    <div style='text-align:center;min-width:56px'>
-                        <div style='font-size:28px;font-weight:800;color:#111827;line-height:1'>{len(ads_list)}</div>
-                        <div style='font-size:11px;color:#394252;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px'>anúncios</div>
-                    </div>
-                    <div style='width:1px;height:40px;background:#e5e7eb;margin:0 20px'></div>
-                    {lib_btn_top}
-                </div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+            </div>""", unsafe_allow_html=True)
 
-        aba_conteudo_atual = st.session_state.ads_aba_conteudo.get(ck, "anuncios")
+            aba_conteudo_atual = st.session_state.ads_aba_conteudo.get(ck, "anuncios")
 
-        components.html(f"""
+            components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -3880,7 +4396,7 @@ function triggerTab(sk, tab) {{
     var label = '_tab_' + sk + '_' + tab + '_';
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -3893,260 +4409,174 @@ function triggerTab(sk, tab) {{
 </script>
 """, height=52, scrolling=False)
 
-        # ════════════════════════════════════════════════════════════
-        # ABA: ANÚNCIOS
-        # ════════════════════════════════════════════════════════════
-        if aba_conteudo_atual == "anuncios":
+            # ── ABA: ANÚNCIOS ─────────────────────────────────────────
+            if aba_conteudo_atual == "anuncios":
 
-            # ── toggle de colunas (3 ou 4) ──────────────────────────
-            col_key = f"ads_cols_{sk}"
-            if col_key not in st.session_state:
-                st.session_state[col_key] = 4
+                col_key = f"ads_cols_{sk}"
+                if col_key not in st.session_state:
+                    st.session_state[col_key] = 4
 
-            n_cols_atual = st.session_state.get(col_key, 4)
-            icon_toggle  = "▦" if n_cols_atual == 4 else "⊞"
+                n_cols_atual = st.session_state.get(col_key, 4)
+                filtros_key = f"filtros_{sk}"
 
-            filtros_key = f"filtros_{sk}"
+                st.markdown(f"""
+                <style>
+                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+                .st-key-{filtros_key} {{ margin-top: -35px !important; }}
+                .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
+                    background: #ffffff !important;
+                    border: 1px solid #e5e7eb !important;
+                    border-top: none !important;
+                    border-radius: 0 0 12px 12px !important;
+                    padding: 20px 20px !important;
+                    gap: 8px !important;
+                    align-items: center !important;
+                }}
+                .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
+                    background-color: #fafafa !important;
+                    border-radius: 8px !important;
+                    height: 40px !important;
+                    padding: 0 14px !important;
+                    font-family: 'DM Sans', sans-serif !important;
+                    font-size: 14px !important;
+                    color: #111827 !important;
+                    transition: border-color 0.15s !important;
+                }}
+                .st-key-{filtros_key} div[data-baseweb="select"] > div {{
+                    background-color: #ffffff !important;
+                    border: 2px solid #e5e7eb !important;
+                    border-radius: 8px !important;
+                    height: 40px !important;
+                    min-height: 40px !important;
+                    padding: 0 10px !important;
+                    font-family: 'DM Sans', sans-serif !important;
+                    font-size: 14px !important;
+                    color: #6b7280 !important;
+                    transition: border-color 0.15s !important;
+                }}
+                .st-key-ads_toggle_cols_{sk} button {{
+                    height: 40px !important;
+                    width: 40px !important;
+                    min-width: 40px !important;
+                    max-width: 40px !important;
+                    padding: 4px !important;
+                    border: 1px solid #e5e7eb !important;
+                    border-radius: 8px !important;
+                    background: #ffffff !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
 
-            st.markdown(f"""
-            <style>
-            @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+                import unicodedata as _ud
+                def _limpar_formato(s):
+                    return ''.join(c for c in s if _ud.category(c) not in ('So','Sm','Sk','Mn')).strip()
+                formatos_disponiveis = sorted(set(_limpar_formato(a["formato"]) for a in ads_list))
 
-            .st-key-{filtros_key} {{ margin-top: -35px !important; }}
+                with st.container(key=filtros_key):
+                    fcol1, fcol2, fcol3, fcol4, fcol5, fcol6 = st.columns([3, 2.5, 2.5, 2.5, 2.5, 0.6])
+                    with fcol1:
+                        busca_texto = st.text_input(
+                            "Pesquisar no copy",
+                            placeholder="Pesquisar no copy…",
+                            key=f"ads_busca_{sk}",
+                            label_visibility="collapsed",
+                        )
+                    with fcol2:
+                        filtro_fmt = st.selectbox(
+                            "Tipo",
+                            ["Tipo (todos)"] + formatos_disponiveis,
+                            key=f"ads_fmt_{sk}",
+                            label_visibility="collapsed",
+                        )
+                    with fcol3:
+                        plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
+                        filtro_plat = st.selectbox(
+                            "Plataforma",
+                            ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
+                            key=f"ads_plat_{sk}",
+                            label_visibility="collapsed",
+                        )
+                    with fcol4:
+                        filtro_status = st.selectbox(
+                            "Status",
+                            ["Status (todos)", "Ativos", "Inativos (histórico)"],
+                            key=f"ads_status_{sk}",
+                            label_visibility="collapsed",
+                        )
+                    with fcol5:
+                        filtro_ordem = st.selectbox(
+                            "Ordenar",
+                            ["Mais recentes", "Mais tempo ativo"],
+                            key=f"ads_ordem_{sk}",
+                            label_visibility="collapsed",
+                        )
+                    with fcol6:
+                        icon_url = (
+                            "https://raw.githubusercontent.com/thiagomktsantos/marketylics/4f750a3205deb9b8a618997b3b8e300e3c3bf3f3/images/icons/3-Columns.png"
+                            if n_cols_atual == 4
+                            else "https://raw.githubusercontent.com/thiagomktsantos/marketylics/4f750a3205deb9b8a618997b3b8e300e3c3bf3f3/images/icons/4-Columns.png"
+                        )
+                        toggle_cols = st.button(
+                            f"![col]({icon_url})",
+                            key=f"ads_toggle_cols_{sk}",
+                            use_container_width=False,
+                            help="Alternar 3/4 colunas",
+                        )
+                        if toggle_cols:
+                            st.session_state[col_key] = 3 if n_cols_atual == 4 else 4
+                            st.rerun()
 
-            /* Row container */
-            .st-key-{filtros_key} > div > div[data-testid="stHorizontalBlock"] {{
-                background: #ffffff !important;
-                border: 1px solid #e5e7eb !important;
-                border-top: none !important;
-                border-radius: 0 0 12px 12px !important;
-                padding: 20px 20px !important;
-                gap: 8px !important;
-                align-items: center !important;
-            }}
+                ads_f = ads_list
+                if busca_texto:
+                    q = busca_texto.lower()
+                    ads_f = [a for a in ads_f if q in (a.get("body") or "").lower() or q in (a.get("title") or "").lower() or q in (a.get("body_raw") or "").lower()]
+                if filtro_fmt != "Tipo (todos)":
+                    ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
+                if filtro_plat != "Plataforma (todas)":
+                    ads_f = [a for a in ads_f if filtro_plat.lower() in (a["plataformas"] or [])]
+                if filtro_status == "Ativos":
+                    ads_f = [a for a in ads_f if a.get("ativo", True)]
+                elif filtro_status == "Inativos (histórico)":
+                    ads_f = [a for a in ads_f if not a.get("ativo", True)]
 
-            /* ── Search input ── */
-            .st-key-{filtros_key} div[data-testid="stTextInput"] input {{
-                background-color: #fafafa !important;
-                border-radius: 8px !important;
-                height: 40px !important;
-                padding: 0 14px !important;
-                font-family: 'DM Sans', sans-serif !important;
-                font-size: 14px !important;
-                color: #111827 !important;
-                transition: border-color 0.15s !important;
-            }}
-            .st-key-{filtros_key} div[data-testid="stTextInput"] input:focus {{
-                border-color: #3a9fd6 !important;
-                background: #fff !important;
-                outline: none !important;
-            }}
-            .st-key-{filtros_key} div[data-testid="stTextInput"] input::placeholder {{
-                color: #6b7280 !important;
-                font-family: 'DM Sans', sans-serif !important;
-            }}
-
-            /* ── Selects fundo escuro ── */
-            .st-key-{filtros_key} div[data-baseweb="select"] > div {{
-                background-color: #ffffff !important;
-                border: 2px solid #e5e7eb !important;
-                border-radius: 8px !important;
-                height: 40px !important;
-                min-height: 40px !important;
-                padding: 0 10px !important;
-                font-family: 'DM Sans', sans-serif !important;
-                font-size: 14px !important;
-                color: #6b7280 !important;
-                transition: border-color 0.15s !important;
-            }}
-            .st-key-{filtros_key} div[data-baseweb="select"] > div:hover {{
-                border-color: #3a9fd6 !important;
-            }}
-            .st-key-{filtros_key} div[data-baseweb="select"] span,
-            .st-key-{filtros_key} div[data-baseweb="select"] div[class*="placeholder"],
-            .st-key-{filtros_key} div[data-baseweb="select"] div[class*="singleValue"],
-            .st-key-{filtros_key} div[data-baseweb="select"] [data-testid="stSelectboxLabel"] {{
-                color: #e2eaf5 !important;
-                font-family: 'DM Sans', sans-serif !important;
-                background-color: transparent !important;
-            }}
-            .st-key-{filtros_key} div[data-baseweb="select"] svg {{
-                fill: #6b7280 !important;
-                color: #6b7280 !important;
-            }}
-
-            /* Dropdown menu escuro */
-            [data-baseweb="popover"] ul,
-            [data-baseweb="menu"] {{
-                background: #e5e7eb !important;
-                border: 1px solid #ffffff !important;
-                border-radius: 8px !important;
-                font-family: 'DM Sans', sans-serif !important;
-            }}
-            [data-baseweb="menu"] li,
-            [data-baseweb="menu"] [role="option"] {{
-                background: #e5e7eb !important;
-                color: #e2eaf5 !important;
-                font-family: 'DM Sans', sans-serif !important;
-                font-size: 13px !important;
-            }}
-            [data-baseweb="menu"] li:hover,
-            [data-baseweb="menu"] [role="option"]:hover,
-            [data-baseweb="menu"] [aria-selected="true"] {{
-                background: #1e3a5c !important;
-                color: #ffffff !important;
-            }}
-
-            /* ── Botão toggle — sem borda, só ícone, tamanho compacto ── */
-            .st-key-ads_toggle_cols_{sk} {{
-                width: auto !important;
-                flex: 0 0 auto !important;
-            }}
-            .st-key-ads_toggle_cols_{sk} button {{
-                height: 40px !important;
-                width: 40px !important;
-                min-width: 40px !important;
-                max-width: 40px !important;
-                padding: 4px !important;
-                border: 1px solid #e5e7eb !important;
-                border-radius: 8px !important;
-                background: #ffffff !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                transition: background 0.12s !important;
-                box-shadow: none !important;
-            }}
-            .st-key-ads_toggle_cols_{sk} button:hover {{
-                background: #f3f4f6 !important;
-                border-color: #9ca3af !important;
-                box-shadow: none !important;
-            }}
-            .st-key-ads_toggle_cols_{sk} button:focus,
-            .st-key-ads_toggle_cols_{sk} button:active {{
-                box-shadow: none !important;
-                outline: none !important;
-            }}
-            .st-key-ads_toggle_cols_{sk} button img {{
-                width: 24px !important;
-                height: 24px !important;
-                object-fit: contain !important;
-                display: block !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-
-            import unicodedata as _ud
-            def _limpar_formato(s):
-                return ''.join(c for c in s if _ud.category(c) not in ('So','Sm','Sk','Mn')).strip()
-            formatos_disponiveis = sorted(set(_limpar_formato(a["formato"]) for a in ads_list))
-
-            with st.container(key=filtros_key):
-                fcol1, fcol2, fcol3, fcol4, fcol5, fcol6 = st.columns([3, 2.5, 2.5, 2.5, 2.5, 0.6])
-                with fcol1:
-                    busca_texto = st.text_input(
-                        "Pesquisar no copy",
-                        placeholder="Pesquisar no copy…",
-                        key=f"ads_busca_{sk}",
-                        label_visibility="collapsed",
-                    )
-                with fcol2:
-                    filtro_fmt = st.selectbox(
-                        "Tipo",
-                        ["Tipo (todos)"] + formatos_disponiveis,
-                        key=f"ads_fmt_{sk}",
-                        label_visibility="collapsed",
-                    )
-                with fcol3:
-                    plats_todas = sorted(set(p for a in ads_list for p in (a["plataformas"] or [])))
-                    filtro_plat = st.selectbox(
-                        "Plataforma",
-                        ["Plataforma (todas)"] + [p.capitalize() for p in plats_todas],
-                        key=f"ads_plat_{sk}",
-                        label_visibility="collapsed",
-                    )
-                with fcol4:
-                    filtro_status = st.selectbox(
-                        "Status",
-                        ["Status (todos)", "Ativos", "Inativos (histórico)"],
-                        key=f"ads_status_{sk}",
-                        label_visibility="collapsed",
-                    )
-                with fcol5:
-                    filtro_ordem = st.selectbox(
-                        "Ordenar",
-                        ["Mais recentes", "Mais tempo ativo"],
-                        key=f"ads_ordem_{sk}",
-                        label_visibility="collapsed",
-                    )
-                with fcol6:
-                    # Determine which icon to show: if currently 4 cols, show "3-Columns" icon (to switch to 3), and vice versa
-                    icon_url = (
-                        "https://raw.githubusercontent.com/thiagomktsantos/marketylics/4f750a3205deb9b8a618997b3b8e300e3c3bf3f3/images/icons/3-Columns.png"
-                        if n_cols_atual == 4
-                        else "https://raw.githubusercontent.com/thiagomktsantos/marketylics/4f750a3205deb9b8a618997b3b8e300e3c3bf3f3/images/icons/4-Columns.png"
-                    )
-                    toggle_cols = st.button(
-                        f"![col]({icon_url})",
-                        key=f"ads_toggle_cols_{sk}",
-                        use_container_width=False,
-                        help="Alternar 3/4 colunas",
-                    )
-                    if toggle_cols:
-                        st.session_state[col_key] = 3 if n_cols_atual == 4 else 4
-                        st.rerun()
-
-            ads_f = ads_list
-            if busca_texto:
-                q = busca_texto.lower()
-                ads_f = [a for a in ads_f if q in (a.get("body") or "").lower() or q in (a.get("title") or "").lower() or q in (a.get("body_raw") or "").lower()]
-            if filtro_fmt != "Tipo (todos)":
-                ads_f = [a for a in ads_f if a["formato"] == filtro_fmt]
-            if filtro_plat != "Plataforma (todas)":
-                ads_f = [a for a in ads_f if filtro_plat.lower() in (a["plataformas"] or [])]
-            if filtro_status == "Ativos":
-                ads_f = [a for a in ads_f if a.get("ativo", True)]
-            elif filtro_status == "Inativos (histórico)":
-                ads_f = [a for a in ads_f if not a.get("ativo", True)]
-
-            def _parse_ts(a):
-                raw = str(a.get("data_raw", "") or "").strip()
-                try:
-                    ts = int(raw)
-                    return ts if ts > 10**8 else 0
-                except Exception:
+                def _parse_ts(a):
+                    raw = str(a.get("data_raw", "") or "").strip()
                     try:
-                        return int(_dt.datetime.strptime(raw[:10], "%Y-%m-%d").timestamp())
+                        ts = int(raw)
+                        return ts if ts > 10**8 else 0
                     except Exception:
-                        return 0
+                        try:
+                            return int(_dt.datetime.strptime(raw[:10], "%Y-%m-%d").timestamp())
+                        except Exception:
+                            return 0
 
-            if filtro_ordem == "Mais recentes":
-                ads_f = sorted(ads_f, key=_parse_ts, reverse=True)
-            else:
-                ads_f = sorted(ads_f, key=_parse_ts, reverse=False)
+                if filtro_ordem == "Mais recentes":
+                    ads_f = sorted(ads_f, key=_parse_ts, reverse=True)
+                else:
+                    ads_f = sorted(ads_f, key=_parse_ts, reverse=False)
 
-            if not ads_f:
-                st.warning("Nenhum anúncio com os filtros aplicados.")
-                return
+                if not ads_f:
+                    st.warning("Nenhum anúncio com os filtros aplicados.")
+                    return
 
-            n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
-            n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
-            n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
-            n_dynamic   = sum(1 for a in ads_f if a.get("is_dynamic"))
-            n_ativos    = sum(1 for a in ads_f if a.get("ativo", True))
-            n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
+                n_video     = sum(1 for a in ads_f if "Vídeo"     in a["formato"])
+                n_imagem    = sum(1 for a in ads_f if "Imagem"    in a["formato"])
+                n_carrossel = sum(1 for a in ads_f if "Carrossel" in a["formato"])
+                n_dynamic   = sum(1 for a in ads_f if a.get("is_dynamic"))
+                n_ativos    = sum(1 for a in ads_f if a.get("ativo", True))
+                n_inativos  = sum(1 for a in ads_f if not a.get("ativo", True))
 
-            stats_cards = []
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_ativos}</div><div class="stat-lbl stat-lbl-green">Ativos</div></div>')
-            if n_inativos > 0:
-                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#6b7280">{n_inativos}</div><div class="stat-lbl">Histórico inativo</div></div>')
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_imagem}</div><div class="stat-lbl">Imagens</div></div>')
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_video}</div><div class="stat-lbl">Vídeos</div></div>')
-            stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_carrossel}</div><div class="stat-lbl">Carrossel</div></div>')
-            if n_dynamic > 0:
-                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Dinâmicos</div></div>')
+                stats_cards = []
+                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_ativos}</div><div class="stat-lbl stat-lbl-green">Ativos</div></div>')
+                if n_inativos > 0:
+                    stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#6b7280">{n_inativos}</div><div class="stat-lbl">Histórico inativo</div></div>')
+                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_imagem}</div><div class="stat-lbl">Imagens</div></div>')
+                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_video}</div><div class="stat-lbl">Vídeos</div></div>')
+                stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_carrossel}</div><div class="stat-lbl">Carrossel</div></div>')
+                if n_dynamic > 0:
+                    stats_cards.append(f'<div class="stat-card"><div class="stat-num" style="color:#111827">{n_dynamic}</div><div class="stat-lbl">Dinâmicos</div></div>')
 
-            components.html(f"""
+                components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
@@ -4165,88 +4595,88 @@ setTimeout(ajustarAltura,100);
 </script>
 """, height=80, scrolling=False)
 
-            st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+                st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
-            cta_labels = {
-                "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
-                "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
-                "WHATSAPP_MESSAGE":"Enviar Mensagem","SEND_WHATSAPP_MESSAGE":"WhatsApp",
-                "MESSAGE_PAGE":"Enviar Mensagem","SHOP_NOW":"Comprar Agora","DOWNLOAD":"Baixar",
-                "WATCH_MORE":"Ver Mais","APPLY_NOW":"Candidatar-se","GET_OFFER":"Ver Oferta",
-                "SUBSCRIBE":"Assinar","CALL_NOW":"Ligar Agora","SEND_MESSAGE":"Enviar Mensagem",
-                "GET_DIRECTIONS":"Como Chegar","BUY_NOW":"Comprar","DONATE":"Doar",
-                "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
-            }
-
-            all_cards_html = []
-
-            for j, ad in enumerate(ads_f):
-                snap_url    = ad.get("snapshot_url") or ""
-                images      = ad.get("images") or []
-                images_b64  = ad.get("images_b64") or []
-                videos      = ad.get("videos") or []
-                is_dyn      = ad.get("is_dynamic", False)
-                baixo_vol   = ad.get("baixo_volume", False)
-                ad_id       = ad.get("id","")
-                ad_id_short = ad_id
-                plats       = ad.get("plataformas") or []
-                plat_js     = _json.dumps([p.lower() for p in plats])
-                data_inicio = ad.get("data_inicio","")
-                impressoes  = ad.get("impressoes","")
-                body        = ad.get("body") or ""
-                title       = ad.get("title") or ""
-                desc        = ad.get("description") or ""
-                cta         = ad.get("cta") or ""
-                uid         = f"{sk}_{j}"
-                page_pic    = ad.get("page_profile_picture") or ""
-
-                snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
-
-                body_clean  = re.sub(r'\n{2,}', '\n', body.strip())
-                title_clean = title.strip()
-                desc_clean  = desc.strip()
-
-                body_safe  = body_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                title_safe = title_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-                desc_safe  = _truncar(desc_clean, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-
-                debug_keys = {
-                   "id": ad.get("id", ""),
-                   "page_name": ad.get("page_name", ""),
-                   "formato": ad.get("formato", ""),
-                   "plataformas": ad.get("plataformas", []),
-                   "data_raw": ad.get("data_raw", ""),
-                   "impressoes": ad.get("impressoes", ""),
-                   "is_dynamic": ad.get("is_dynamic", False),
-                   "ativo": ad.get("ativo", True),
-                   "n_imagens": len(ad.get("images", [])),
-                   "tem_video": bool(videos),
-                   "n_videos": len(videos),
-                   "snapshot_url": (snap_url or "")[:80],
-                   "body_len": len(body),
-                   "title_len": len(title),
-                   "cta": cta,
+                cta_labels = {
+                    "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
+                    "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
+                    "WHATSAPP_MESSAGE":"Enviar Mensagem","SEND_WHATSAPP_MESSAGE":"WhatsApp",
+                    "MESSAGE_PAGE":"Enviar Mensagem","SHOP_NOW":"Comprar Agora","DOWNLOAD":"Baixar",
+                    "WATCH_MORE":"Ver Mais","APPLY_NOW":"Candidatar-se","GET_OFFER":"Ver Oferta",
+                    "SUBSCRIBE":"Assinar","CALL_NOW":"Ligar Agora","SEND_MESSAGE":"Enviar Mensagem",
+                    "GET_DIRECTIONS":"Como Chegar","BUY_NOW":"Comprar","DONATE":"Doar",
+                    "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
                 }
-                debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
-                debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
-                img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
-                img_fallbacks = []
-                if images_b64 and len(images_b64) > 1:
-                    img_fallbacks.extend(images_b64[1:])
-                img_fallbacks.extend([u for u in images if u not in img_fallbacks])
-                srcs_js = _json.dumps(img_fallbacks)
+                all_cards_html = []
 
-                if videos:
-                    vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
-                    vid_hd = next((v for v in videos if v != vid_sd), "")
-                    vid_primary = vid_sd or vid_hd or videos[0]
-                    vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
-                    vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
-                    vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
-                    snap_url_safe_vid = snap_url_safe
+                for j, ad in enumerate(ads_f):
+                    snap_url    = ad.get("snapshot_url") or ""
+                    images      = ad.get("images") or []
+                    images_b64  = ad.get("images_b64") or []
+                    videos      = ad.get("videos") or []
+                    is_dyn      = ad.get("is_dynamic", False)
+                    baixo_vol   = ad.get("baixo_volume", False)
+                    ad_id       = ad.get("id","")
+                    ad_id_short = ad_id
+                    plats       = ad.get("plataformas") or []
+                    plat_js     = _json.dumps([p.lower() for p in plats])
+                    data_inicio = ad.get("data_inicio","")
+                    impressoes  = ad.get("impressoes","")
+                    body        = ad.get("body") or ""
+                    title       = ad.get("title") or ""
+                    desc        = ad.get("description") or ""
+                    cta         = ad.get("cta") or ""
+                    uid         = f"{sk}_{j}"
+                    page_pic    = ad.get("page_profile_picture") or ""
 
-                    media_block = f"""
+                    snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
+
+                    body_clean  = re.sub(r'\n{2,}', '\n', body.strip())
+                    title_clean = title.strip()
+                    desc_clean  = desc.strip()
+
+                    body_safe  = body_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                    title_safe = title_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+                    desc_safe  = _truncar(desc_clean, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+
+                    debug_keys = {
+                       "id": ad.get("id", ""),
+                       "page_name": ad.get("page_name", ""),
+                       "formato": ad.get("formato", ""),
+                       "plataformas": ad.get("plataformas", []),
+                       "data_raw": ad.get("data_raw", ""),
+                       "impressoes": ad.get("impressoes", ""),
+                       "is_dynamic": ad.get("is_dynamic", False),
+                       "ativo": ad.get("ativo", True),
+                       "n_imagens": len(ad.get("images", [])),
+                       "tem_video": bool(videos),
+                       "n_videos": len(videos),
+                       "snapshot_url": (snap_url or "")[:80],
+                       "body_len": len(body),
+                       "title_len": len(title),
+                       "cta": cta,
+                    }
+                    debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
+                    debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+
+                    img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
+                    img_fallbacks = []
+                    if images_b64 and len(images_b64) > 1:
+                        img_fallbacks.extend(images_b64[1:])
+                    img_fallbacks.extend([u for u in images if u not in img_fallbacks])
+                    srcs_js = _json.dumps(img_fallbacks)
+
+                    if videos:
+                        vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
+                        vid_hd = next((v for v in videos if v != vid_sd), "")
+                        vid_primary = vid_sd or vid_hd or videos[0]
+                        vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
+                        vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
+                        vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
+                        snap_url_safe_vid = snap_url_safe
+
+                        media_block = f"""
 <div class="media-block video-thumb-block" style="position:relative;background:#000;cursor:pointer"
      id="vwrap_{uid}">
     <video id="vid_{uid}"
@@ -4308,8 +4738,8 @@ setTimeout(ajustarAltura,100);
 }})();
 </script>"""
 
-                elif img_primary:
-                    media_block = f"""
+                    elif img_primary:
+                        media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
      onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
@@ -4329,53 +4759,53 @@ function imgFallback_{uid}(img){{
     else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
-                else:
-                    _sv = snap_url.replace("'", "")
-                    _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
-                    _nm_color   = "#fff" if snap_url else "#c4c4c4"
-                    _nm_label   = "Ver criativo no Ad Library →" if snap_url else "Sem criativo"
-                    media_block = (
-                        f'<div class="media-block no-media-block" {_nm_onclick} style="{"cursor:pointer;" if snap_url else ""}">'
-                        f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
-                        f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
-                        f'<polyline points="21 15 16 10 5 21"/></svg>'
-                        f'<span style="font-size:12px;color:{_nm_color};font-weight:600;margin-top:8px;">{_nm_label}</span>'
+                    else:
+                        _sv = snap_url.replace("'", "")
+                        _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
+                        _nm_color   = "#fff" if snap_url else "#c4c4c4"
+                        _nm_label   = "Ver criativo no Ad Library →" if snap_url else "Sem criativo"
+                        media_block = (
+                            f'<div class="media-block no-media-block" {_nm_onclick} style="{"cursor:pointer;" if snap_url else ""}">'
+                            f'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2">'
+                            f'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>'
+                            f'<polyline points="21 15 16 10 5 21"/></svg>'
+                            f'<span style="font-size:12px;color:{_nm_color};font-weight:600;margin-top:8px;">{_nm_label}</span>'
+                            f'</div>'
+                        )
+
+                    cta_display = cta_labels.get(cta.upper() if cta else "", cta)
+                    is_ativo    = ad.get("ativo", True)
+                    card_opacity = "1" if is_ativo else "0.72"
+
+                    status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
+                    baixo_vol_badge = '<span class="badge-small">Baixo volume</span>' if baixo_vol else ""
+
+                    page_avatar_html = (
+                        f'<div class="page-avatar" style="overflow:hidden;padding:0">'
+                        f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
+                        f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
                         f'</div>'
-                    )
+                    ) if page_pic and page_pic.startswith("http") else f'<div class="page-avatar">{avatar}</div>'
 
-                cta_display = cta_labels.get(cta.upper() if cta else "", cta)
-                is_ativo    = ad.get("ativo", True)
-                card_opacity = "1" if is_ativo else "0.72"
+                    data_inicio_html = (
+                        f'<div class="meta-row"><span class="meta-label">Veic. iniciada:</span><span>{data_inicio}</span></div>'
+                    ) if data_inicio else ""
 
-                status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
-                baixo_vol_badge = '<span class="badge-small">Baixo volume</span>' if baixo_vol else ""
+                    if body_safe and len(body_clean) > 80:
+                        short_b = body_safe[:80]
+                        rest_b  = body_safe[80:]
+                        body_display = (
+                            f'<div class="copy-body">{short_b}'
+                            f'<span style="color:#9ca3af;font-size:13px" id="ell_{uid}">... </span>'
+                            f'<span id="cm_{uid}" style="display:none">{rest_b}</span>'
+                            f'<button id="cb_{uid}" onclick="var m=document.getElementById(\'cm_{uid}\');var b=document.getElementById(\'cb_{uid}\');var e=document.getElementById(\'ell_{uid}\');if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;cursor:pointer;padding:0;margin-left:3px;">ver mais</button></div>'
+                        )
+                    elif body_safe:
+                        body_display = f'<div class="copy-body">{body_safe}</div>'
+                    else:
+                        body_display = ""
 
-                page_avatar_html = (
-                    f'<div class="page-avatar" style="overflow:hidden;padding:0">'
-                    f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"'
-                    f' onerror="this.parentElement.style.background=\'{cor_av}\';this.parentElement.innerHTML=\'{avatar}\'" />'
-                    f'</div>'
-                ) if page_pic and page_pic.startswith("http") else f'<div class="page-avatar">{avatar}</div>'
-
-                data_inicio_html = (
-                    f'<div class="meta-row"><span class="meta-label">Veic. iniciada:</span><span>{data_inicio}</span></div>'
-                ) if data_inicio else ""
-
-                if body_safe and len(body_clean) > 80:
-                    short_b = body_safe[:80]
-                    rest_b  = body_safe[80:]
-                    body_display = (
-                        f'<div class="copy-body">{short_b}'
-                        f'<span style="color:#9ca3af;font-size:13px" id="ell_{uid}">... </span>'
-                        f'<span id="cm_{uid}" style="display:none">{rest_b}</span>'
-                        f'<button id="cb_{uid}" onclick="var m=document.getElementById(\'cm_{uid}\');var b=document.getElementById(\'cb_{uid}\');var e=document.getElementById(\'ell_{uid}\');if(m.style.display===\'none\'){{m.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}else{{m.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:13px;cursor:pointer;padding:0;margin-left:3px;">ver mais</button></div>'
-                    )
-                elif body_safe:
-                    body_display = f'<div class="copy-body">{body_safe}</div>'
-                else:
-                    body_display = ""
-
-                card_html = f"""
+                    card_html = f"""
 <div class="card" style="opacity:{card_opacity}" id="card_{uid}">
     <div class="status-bar">
         <div style="display:flex;align-items:center;gap:6px">{status_dot_html}{baixo_vol_badge}</div>
@@ -4414,12 +4844,12 @@ function imgFallback_{uid}(img){{
 window.__PLATS_{uid}__ = {plat_js};
 {_plat_svg_js(uid)}
 </script>"""
-                all_cards_html.append(card_html)
+                    all_cards_html.append(card_html)
 
-            cards_joined = "\n".join(all_cards_html)
-            n_cols = st.session_state.get(col_key, 4)
+                cards_joined = "\n".join(all_cards_html)
+                n_cols = st.session_state.get(col_key, 4)
 
-            components.html(f"""
+                components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -4600,78 +5030,76 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </body></html>
 """, height=100, scrolling=False)
 
-        # ════════════════════════════════════════════════════════════
-        # ABA: ANÁLISE DE IA
-        # ════════════════════════════════════════════════════════════
-        else:
-            ads_f_ia = ads_list
+            # ── ABA: ANÁLISE DE IA ────────────────────────────────────
+            else:
+                ads_f_ia = ads_list
 
-            chave_ia_geral     = f"ia_ads_geral_{sk}"
-            chave_ia_criativos = f"ia_ads_criativos_{sk}"
-            chave_ia_copys     = f"ia_ads_copys_{sk}"
+                chave_ia_geral     = f"ia_ads_geral_{sk}"
+                chave_ia_criativos = f"ia_ads_criativos_{sk}"
+                chave_ia_copys     = f"ia_ads_copys_{sk}"
 
-            for ch in [chave_ia_geral, chave_ia_criativos, chave_ia_copys]:
-                if ch not in st.session_state:
-                    st.session_state[ch] = ""
+                for ch in [chave_ia_geral, chave_ia_criativos, chave_ia_copys]:
+                    if ch not in st.session_state:
+                        st.session_state[ch] = ""
 
-            for j in range(len(ads_f_ia)):
-                chave_ind = f"ia_ad_result_{sk}_{j}"
-                if chave_ind not in st.session_state:
-                    st.session_state[chave_ind] = ""
+                for j in range(len(ads_f_ia)):
+                    chave_ind = f"ia_ad_result_{sk}_{j}"
+                    if chave_ind not in st.session_state:
+                        st.session_state[chave_ind] = ""
 
-            sub_tab_keys = [
-                f"btn_subtab_{sk}_individuais",
-                f"btn_subtab_{sk}_criativos",
-                f"btn_subtab_{sk}_copys",
-            ]
-            ia_ind_trigger_keys = [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
-            ia_geral_trigger_keys = [
-                f"btn_ia_geral_{sk}",
-                f"btn_ia_criativos_{sk}",
-                f"btn_ia_copys_{sk}",
-            ]
-            all_ghost_ia = sub_tab_keys + ia_ind_trigger_keys + ia_geral_trigger_keys
+                sub_tab_keys = [
+                    f"btn_subtab_{sk}_individuais",
+                    f"btn_subtab_{sk}_criativos",
+                    f"btn_subtab_{sk}_copys",
+                ]
+                ia_ind_trigger_keys = [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
+                ia_geral_trigger_keys = [
+                    f"btn_ia_geral_{sk}",
+                    f"btn_ia_criativos_{sk}",
+                    f"btn_ia_copys_{sk}",
+                ]
+                all_ghost_ia = sub_tab_keys + ia_ind_trigger_keys + ia_geral_trigger_keys
 
-            ghost_ia_css = "\n".join([
-                f"""
-                .st-key-{k} {{
-                    position:absolute !important; top:-9999px !important; left:-9999px !important;
-                    width:1px !important; height:1px !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important;
-                }}
-                .stElementContainer:has(.st-key-{k}) {{
-                    display:none !important; height:0 !important; min-height:0 !important;
-                    max-height:0 !important; padding:0 !important; margin:0 !important;
-                    overflow:hidden !important; line-height:0 !important; border:none !important;
-                }}
-                """
-                for k in all_ghost_ia
-            ])
-            st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
+                ghost_ia_css = "\n".join([
+                    f"""
+                    .st-key-{k} {{
+                        position:absolute !important; top:-9999px !important; left:-9999px !important;
+                        width:1px !important; height:1px !important; overflow:hidden !important;
+                        opacity:0 !important; pointer-events:none !important;
+                    }}
+                    .stElementContainer:has(.st-key-{k}) {{
+                        display:none !important; height:0 !important; min-height:0 !important;
+                        max-height:0 !important; padding:0 !important; margin:0 !important;
+                        overflow:hidden !important; line-height:0 !important; border:none !important;
+                    }}
+                    """
+                    for k in all_ghost_ia
+                ])
+                st.markdown(f"<style>{ghost_ia_css}</style>", unsafe_allow_html=True)
 
-            if f"ads_subtab_{sk}" not in st.session_state:
-                st.session_state[f"ads_subtab_{sk}"] = "individuais"
+                if f"ads_subtab_{sk}" not in st.session_state:
+                    st.session_state[f"ads_subtab_{sk}"] = "individuais"
 
-            for tab_name in ["individuais", "criativos", "copys"]:
-                if st.button(f"_subtab_{sk}_{tab_name}_", key=f"btn_subtab_{sk}_{tab_name}"):
-                    st.session_state[f"ads_subtab_{sk}"] = tab_name
-                    st.rerun()
+                for tab_name in ["individuais", "criativos", "copys"]:
+                    if st.button(f"_subtab_{sk}_{tab_name}_", key=f"btn_subtab_{sk}_{tab_name}"):
+                        st.session_state[f"ads_subtab_{sk}"] = tab_name
+                        st.rerun()
 
-            if st.button(f"_ia_geral_{sk}_", key=f"btn_ia_geral_{sk}"):
-                if gemini_model is None:
-                    st.session_state[chave_ia_geral] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    resumo = "\n".join([
-                        f"- [{a['formato']}] Título: {_truncar(a.get('title',''),60) or '—'} | Copy: {_truncar(a.get('body',''),100) or '—'}"
-                        for a in ads_f_ia[:15]
-                    ])
-                    n_vid = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
-                    n_img = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
-                    n_car = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
-                    n_dyn = sum(1 for a in ads_f_ia if a.get("is_dynamic"))
-                    with st.spinner("Analisando anúncios…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""Você é especialista em mídia paga e marketing digital.
+                if st.button(f"_ia_geral_{sk}_", key=f"btn_ia_geral_{sk}"):
+                    if gemini_model is None:
+                        st.session_state[chave_ia_geral] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        resumo = "\n".join([
+                            f"- [{a['formato']}] Título: {_truncar(a.get('title',''),60) or '—'} | Copy: {_truncar(a.get('body',''),100) or '—'}"
+                            for a in ads_f_ia[:15]
+                        ])
+                        n_vid = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
+                        n_img = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
+                        n_car = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
+                        n_dyn = sum(1 for a in ads_f_ia if a.get("is_dynamic"))
+                        with st.spinner("Analisando anúncios…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""Você é especialista em mídia paga e marketing digital.
 Analise os anúncios de "{nome}" e gere um relatório estratégico completo em português.
 
 Empresa: {nome} | Total: {len(ads_f_ia)} | {n_img} imagens | {n_vid} vídeos | {n_car} carrosseis | {n_dyn} dinâmicos
@@ -4686,26 +5114,26 @@ Amostra dos anúncios:
 ### 📊 Estimativa de Investimento e Alcance
 ### ⚠️ Pontos de Atenção
 ### 💡 Oportunidades Competitivas (3 ações concretas)""")
-                            st.session_state[chave_ia_geral] = resp.text
-                            st.rerun()
-                        except Exception as ex:
-                            st.session_state[chave_ia_geral] = f"Erro: {ex}"
-                            st.rerun()
+                                st.session_state[chave_ia_geral] = resp.text
+                                st.rerun()
+                            except Exception as ex:
+                                st.session_state[chave_ia_geral] = f"Erro: {ex}"
+                                st.rerun()
 
-            if st.button(f"_ia_criativos_{sk}_", key=f"btn_ia_criativos_{sk}"):
-                if gemini_model is None:
-                    st.session_state[chave_ia_criativos] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    resumo_criativos = "\n".join([
-                        f"- [{a['formato']}] Plataformas: {', '.join(a.get('plataformas',[]))} | Título: {_truncar(a.get('title',''),60) or '—'}"
-                        for a in ads_f_ia[:15]
-                    ])
-                    n_vid = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
-                    n_img = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
-                    n_car = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
-                    with st.spinner("Analisando criativos…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""Você é especialista em design e criação de anúncios digitais.
+                if st.button(f"_ia_criativos_{sk}_", key=f"btn_ia_criativos_{sk}"):
+                    if gemini_model is None:
+                        st.session_state[chave_ia_criativos] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        resumo_criativos = "\n".join([
+                            f"- [{a['formato']}] Plataformas: {', '.join(a.get('plataformas',[]))} | Título: {_truncar(a.get('title',''),60) or '—'}"
+                            for a in ads_f_ia[:15]
+                        ])
+                        n_vid = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
+                        n_img = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
+                        n_car = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
+                        with st.spinner("Analisando criativos…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""Você é especialista em design e criação de anúncios digitais.
 Analise os CRIATIVOS (formatos visuais) dos anúncios de "{nome}" em português.
 
 Empresa: {nome} | {n_img} imagens | {n_vid} vídeos | {n_car} carrosseis
@@ -4720,23 +5148,23 @@ Dados dos criativos:
 ### ✅ Pontos Fortes Visuais (3 pontos)
 ### ⚠️ O que Melhorar (2 pontos)
 ### 💡 Recomendações de Criativo (2 ações concretas)""")
-                            st.session_state[chave_ia_criativos] = resp.text
-                            st.rerun()
-                        except Exception as ex:
-                            st.session_state[chave_ia_criativos] = f"Erro: {ex}"
-                            st.rerun()
+                                st.session_state[chave_ia_criativos] = resp.text
+                                st.rerun()
+                            except Exception as ex:
+                                st.session_state[chave_ia_criativos] = f"Erro: {ex}"
+                                st.rerun()
 
-            if st.button(f"_ia_copys_{sk}_", key=f"btn_ia_copys_{sk}"):
-                if gemini_model is None:
-                    st.session_state[chave_ia_copys] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    todas_copies = "\n".join([
-                        f"- Título: {_truncar(a.get('title',''),80) or '—'} | Body: {_truncar(a.get('body',''),120) or '—'} | CTA: {a.get('cta','') or '—'}"
-                        for a in ads_f_ia[:20]
-                    ])
-                    with st.spinner("Analisando copys…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""Você é especialista em copywriting e marketing de resposta direta.
+                if st.button(f"_ia_copys_{sk}_", key=f"btn_ia_copys_{sk}"):
+                    if gemini_model is None:
+                        st.session_state[chave_ia_copys] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        todas_copies = "\n".join([
+                            f"- Título: {_truncar(a.get('title',''),80) or '—'} | Body: {_truncar(a.get('body',''),120) or '—'} | CTA: {a.get('cta','') or '—'}"
+                            for a in ads_f_ia[:20]
+                        ])
+                        with st.spinner("Analisando copys…"):
+                            try:
+                                resp = gemini_model.generate_content(f"""Você é especialista em copywriting e marketing de resposta direta.
 Analise as COPIES (textos) dos anúncios de "{nome}" em português.
 
 Empresa: {nome} | {len(ads_f_ia)} anúncios analisados
@@ -4752,21 +5180,21 @@ Copies coletadas:
 ### ✅ Pontos Fortes nas Copies (3 pontos)
 ### ⚠️ O que Melhorar (2 pontos)
 ### 💡 Sugestões de Copy (2 exemplos concretos)""")
-                            st.session_state[chave_ia_copys] = resp.text
-                            st.rerun()
-                        except Exception as ex:
-                            st.session_state[chave_ia_copys] = f"Erro: {ex}"
-                            st.rerun()
+                                st.session_state[chave_ia_copys] = resp.text
+                                st.rerun()
+                            except Exception as ex:
+                                st.session_state[chave_ia_copys] = f"Erro: {ex}"
+                                st.rerun()
 
-            for j, ad in enumerate(ads_f_ia):
-                if st.button(f"_ia_ind_{sk}_{j}_", key=f"btn_ia_ind_{sk}_{j}"):
-                    chave_ind = f"ia_ad_result_{sk}_{j}"
-                    if gemini_model is None:
-                        st.session_state[chave_ind] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner(f"Analisando anúncio {j+1}…"):
-                            try:
-                                resp = gemini_model.generate_content(f"""Você é especialista em mídia paga e copywriting.
+                for j, ad in enumerate(ads_f_ia):
+                    if st.button(f"_ia_ind_{sk}_{j}_", key=f"btn_ia_ind_{sk}_{j}"):
+                        chave_ind = f"ia_ad_result_{sk}_{j}"
+                        if gemini_model is None:
+                            st.session_state[chave_ind] = "Configure GEMINI_API_KEY nos secrets."
+                        else:
+                            with st.spinner(f"Analisando anúncio {j+1}…"):
+                                try:
+                                    resp = gemini_model.generate_content(f"""Você é especialista em mídia paga e copywriting.
 Analise este anúncio específico e dê feedback estratégico em português.
 
 Empresa: {nome}
@@ -4782,49 +5210,49 @@ CTA: {ad.get("cta","")}
 ### ✍️ Análise de Copy
 ### 🎨 Análise de Formato e Criativo
 ### 💡 Sugestões de Melhoria (2 ações concretas)""")
-                                st.session_state[chave_ind] = resp.text
-                                st.rerun()
-                            except Exception as ex:
-                                st.session_state[chave_ind] = f"Erro: {ex}"
-                                st.rerun()
+                                    st.session_state[chave_ind] = resp.text
+                                    st.rerun()
+                                except Exception as ex:
+                                    st.session_state[chave_ind] = f"Erro: {ex}"
+                                    st.rerun()
 
-            subtab_atual = st.session_state.get(f"ads_subtab_{sk}", "individuais")
+                subtab_atual = st.session_state.get(f"ads_subtab_{sk}", "individuais")
 
-            ind_cards_data = []
-            for j, ad in enumerate(ads_f_ia):
-                chave_ind = f"ia_ad_result_{sk}_{j}"
-                resultado = st.session_state.get(chave_ind, "")
-                img_src = ""
-                if ad.get("images_b64"):
-                    img_src = ad["images_b64"][0]
-                elif ad.get("images"):
-                    img_src = ad["images"][0]
-                resultado_html = resultado.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado else ""
-                ind_cards_data.append({
-                    "j": j,
-                    "formato": ad.get("formato",""),
-                    "title": _truncar(ad.get("title",""), 80),
-                    "body": _truncar(ad.get("body",""), 120),
-                    "cta": ad.get("cta",""),
-                    "data_inicio": ad.get("data_inicio",""),
-                    "plataformas": ", ".join(ad.get("plataformas") or []),
-                    "img_src": img_src,
-                    "resultado": resultado_html,
-                    "ativo": ad.get("ativo", True),
-                })
+                ind_cards_data = []
+                for j, ad in enumerate(ads_f_ia):
+                    chave_ind = f"ia_ad_result_{sk}_{j}"
+                    resultado = st.session_state.get(chave_ind, "")
+                    img_src = ""
+                    if ad.get("images_b64"):
+                        img_src = ad["images_b64"][0]
+                    elif ad.get("images"):
+                        img_src = ad["images"][0]
+                    resultado_html = resultado.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado else ""
+                    ind_cards_data.append({
+                        "j": j,
+                        "formato": ad.get("formato",""),
+                        "title": _truncar(ad.get("title",""), 80),
+                        "body": _truncar(ad.get("body",""), 120),
+                        "cta": ad.get("cta",""),
+                        "data_inicio": ad.get("data_inicio",""),
+                        "plataformas": ", ".join(ad.get("plataformas") or []),
+                        "img_src": img_src,
+                        "resultado": resultado_html,
+                        "ativo": ad.get("ativo", True),
+                    })
 
-            ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
+                ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
 
-            geral_html     = st.session_state.get(chave_ia_geral, "").replace("\n","<br>")
-            criativos_html = st.session_state.get(chave_ia_criativos, "").replace("\n","<br>")
-            copys_html     = st.session_state.get(chave_ia_copys, "").replace("\n","<br>")
+                geral_html     = st.session_state.get(chave_ia_geral, "").replace("\n","<br>")
+                criativos_html = st.session_state.get(chave_ia_criativos, "").replace("\n","<br>")
+                copys_html     = st.session_state.get(chave_ia_copys, "").replace("\n","<br>")
 
-            n_anuncios = len(ads_f_ia)
-            n_vid2 = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
-            n_img2 = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
-            n_car2 = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
+                n_anuncios = len(ads_f_ia)
+                n_vid2 = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
+                n_img2 = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
+                n_car2 = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
 
-            components.html(f"""
+                components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -4978,7 +5406,7 @@ function showSubtab(name, el) {{
 function triggerGlobal(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -5004,11 +5432,152 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </body></html>
 """, height=600, scrolling=False)
 
-    # ── Renderiza empresa da aba ativa ───────────────────────────────
-    st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-    aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
-    if empresas_com_dados:
-        render_ads_empresa(empresas_com_dados[aba_idx])
+        # ── Renderiza empresa da aba ativa ───────────────────────────
+        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+        aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
+        if empresas_com_dados:
+            render_ads_empresa(empresas_com_dados[aba_idx])
+
+    # ══════════════════════════════════════════════════════════════════
+    # ABA: ANÁLISE DE IA (resumo comparativo)
+    # ══════════════════════════════════════════════════════════════════
+    elif main_tab == "analise":
+
+        if not st.session_state.ads_cache:
+            st.info("Busque anúncios primeiro na aba **Empresas configuradas** para ver análises aqui.")
+            st.stop()
+
+        chave_comp = "ia_ads_comparativo"
+        if chave_comp not in st.session_state:
+            st.session_state[chave_comp] = ""
+
+        ghost_comp_css = f"""
+        .st-key-btn_ia_comp {{
+            position:absolute !important; top:-9999px !important; left:-9999px !important;
+            width:1px !important; height:1px !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important;
+        }}
+        .stElementContainer:has(.st-key-btn_ia_comp) {{
+            display:none !important; height:0 !important; min-height:0 !important;
+            max-height:0 !important; padding:0 !important; margin:0 !important;
+            overflow:hidden !important; line-height:0 !important; border:none !important;
+        }}
+        """
+        st.markdown(f"<style>{ghost_comp_css}</style>", unsafe_allow_html=True)
+
+        if st.button("_ia_comparativo_", key="btn_ia_comp"):
+            if gemini_model is None:
+                st.session_state[chave_comp] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                resumos = []
+                for ck, entry in st.session_state.ads_cache.items():
+                    ads_data = entry.get("data", [])
+                    ativos = [a for a in ads_data if a.get("ativo", True)]
+                    n_vid = sum(1 for a in ativos if "Vídeo" in a.get("formato",""))
+                    n_img = sum(1 for a in ativos if "Imagem" in a.get("formato",""))
+                    n_car = sum(1 for a in ativos if "Carrossel" in a.get("formato",""))
+                    sample = "\n".join([
+                        f"  - [{a.get('formato','')}] {_truncar(a.get('title','') or a.get('body',''),80)}"
+                        for a in ativos[:5]
+                    ])
+                    resumos.append(f"""
+Empresa: {ck} | {len(ativos)} anúncios ativos | {n_img} imagens | {n_vid} vídeos | {n_car} carrosseis
+Amostra:
+{sample}
+""")
+                with st.spinner("Gerando análise comparativa…"):
+                    try:
+                        resp = gemini_model.generate_content(f"""Você é especialista em inteligência competitiva e mídia paga.
+Compare os anúncios das empresas abaixo e gere uma análise competitiva completa em português.
+
+{'---'.join(resumos)}
+
+---
+### 🏆 Ranking de Presença Digital
+Quem está investindo mais e com mais consistência?
+
+### 🎯 Estratégias Comparadas
+Como cada empresa usa seus anúncios? Quais são as diferenças de abordagem?
+
+### ✍️ Tom de Voz e Mensagens
+Compare os tons de voz e as principais mensagens de cada empresa.
+
+### 🎨 Mix de Formatos
+Quem usa melhor os formatos visuais? Quem se destaca?
+
+### ⚔️ Análise Competitiva
+Pontos fortes e fracos de cada empresa nos anúncios.
+
+### 💡 Recomendações Estratégicas
+3 ações concretas para se destacar da concorrência em anúncios.""")
+                        st.session_state[chave_comp] = resp.text
+                        st.rerun()
+                    except Exception as ex:
+                        st.session_state[chave_comp] = f"Erro: {ex}"
+                        st.rerun()
+
+        comp_html = st.session_state.get(chave_comp, "").replace("\n","<br>")
+
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
+.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
+.hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
+.hdr-sub {{ font-size:13px; color:#9ca3af; }}
+.body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
+.empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:60px 24px; }}
+.footer {{ padding:16px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
+.btn-gerar {{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 28px; border:none; border-radius:10px;
+    background:#0e2a47; font-size:15px; font-weight:700; color:#fff;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}}
+.btn-gerar:hover {{ background:#1a3a5c; }}
+</style>
+<div class="wrap">
+    <div class="hdr">
+        <div>
+            <div class="hdr-title">✨ Análise Competitiva de Anúncios</div>
+            <div class="hdr-sub">Comparativo inteligente de todas as empresas configuradas</div>
+        </div>
+    </div>
+    <div class="body">
+        {'<div>' + comp_html + '</div>' if comp_html else '<div class="empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar os anúncios de todas as empresas com IA.</div>'}
+    </div>
+    <div class="footer">
+        <button class="btn-gerar" onclick="triggerBtn('_ia_comparativo_')">
+            {'🔄 Regerar Análise' if comp_html else '⚡ Gerar Análise Comparativa'}
+        </button>
+    </div>
+</div>
+<script>
+function triggerBtn(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 12) + 'px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+</script>
+""", height=200, scrolling=False)
 
 # ---------------------------------------------------
 # PAGINA - INSIGHTS
