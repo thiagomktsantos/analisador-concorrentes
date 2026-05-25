@@ -3262,7 +3262,6 @@ html, body { background: transparent; overflow: hidden; }
 """, height=65)
 
     with h2_col:
-        # Botão buscar sempre visível no cabeçalho
         gerar_btn_ads_header = st.button(
             "Buscar / Atualizar Anúncios",
             type="primary",
@@ -3284,10 +3283,8 @@ html, body { background: transparent; overflow: hidden; }
     # GHOST BUTTONS — navegação principal (COMPLETAMENTE OCULTOS)
     # ══════════════════════════════════════════════════════════════════
 
-    # CSS para ocultar TODOS os ghost buttons desta página
     st.markdown("""
     <style>
-    /* Ocultar ghost buttons de navegação principal */
     .st-key-_ads_ghost_tab_configuracao_,
     .st-key-_ads_ghost_tab_empresas_,
     .st-key-_ads_ghost_tab_analise_ {
@@ -3379,7 +3376,7 @@ html, body { background: transparent; overflow: hidden; }
             st.warning("Configure pelo menos uma empresa antes de buscar.")
 
     # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas)
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (3 abas) — SEM BADGES NUMÉRICOS
     # ══════════════════════════════════════════════════════════════════
 
     components.html(f"""
@@ -3444,16 +3441,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     font-size:12px;color:#9ca3af;
 }}
 .nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
-.nav-badge {{
-    width:22px;height:22px;border-radius:50%;
-    background:#3a9fd6;color:#fff;
-    font-size:11px;font-weight:800;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-}}
-.nav-item.active .nav-badge {{
-    background:rgba(255,255,255,0.2);
-}}
 </style>
 <div class="nav-bar">
     <div class="nav-item {'active' if main_tab == 'configuracao' else ''}" onclick="triggerTab('tab_cfg')">
@@ -3467,7 +3454,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <span class="nav-title">Configuração</span>
             <span class="nav-sub">Configure suas empresas</span>
         </div>
-        {f'<div class="nav-badge">{n_sem_config}</div>' if n_sem_config > 0 else ''}
     </div>
     <div class="nav-item {'active' if main_tab == 'empresas' else ''}" onclick="triggerTab('tab_emp')">
         <div class="nav-icon">
@@ -3480,7 +3466,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <span class="nav-title">Empresas configuradas</span>
             <span class="nav-sub">Gerencie empresas cadastradas</span>
         </div>
-        {f'<div class="nav-badge">{n_configuradas}</div>' if n_configuradas > 0 else ''}
     </div>
     <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('tab_ia')">
         <div class="nav-icon">
@@ -3521,7 +3506,7 @@ function triggerTab(label) {{
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: CONFIGURAÇÃO
+    # ABA: CONFIGURAÇÃO — Cards de empresa estilo imagem 2
     # ══════════════════════════════════════════════════════════════════
     if main_tab == "configuracao":
 
@@ -3645,7 +3630,7 @@ function triggerTab(label) {{
                         st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
                         st.rerun()
 
-        # ── Renderizar cards de configuração
+        # ── Renderizar cards de configuração — estilo imagem 2
         config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
         editando_empresa = st.session_state.ads_editando_empresa
 
@@ -3661,10 +3646,8 @@ function triggerTab(label) {{
                 "ads_id": ads_id,
                 "cor": cor,
                 "avatar": gerar_avatar(e["nome"]),
-                "badge_lbl": "Minha Empresa" if is_minha else "Concorrente",
-                "badge_bg":  "#eff6ff" if is_minha else "#f3f4f6",
-                "badge_txt": "#1d4ed8" if is_minha else "#6b7280",
-                "badge_brd": "#bfdbfe" if is_minha else "#e5e7eb",
+                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
+                "is_minha": is_minha,
             })
 
         empresas_json = _json.dumps(empresas_json_list, ensure_ascii=False)
@@ -3690,121 +3673,195 @@ function triggerTab(label) {{
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
-.section-label {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1.2px;
-    margin-bottom:12px; padding-bottom:8px;
-    border-bottom:1px solid #f3f4f6;
+
+/* ── Container geral com borda ── */
+.config-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    overflow:hidden;
 }}
-.cards-grid {{
-    display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:24px;
+.config-header {{
+    padding:16px 22px;
+    border-bottom:1px solid #e5e7eb;
+    font-size:13px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.5px;
 }}
-.card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;
+.config-body {{
+    padding:20px 22px;
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:16px;
+}}
+
+/* ── Card de empresa — estilo imagem 2 ── */
+.emp-card {{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    overflow:hidden;
     transition:border-color 0.15s, box-shadow 0.15s;
+    display:flex;
+    flex-direction:column;
 }}
-.card.editing {{
+.emp-card.editing {{
     border-color:#3a9fd6;
     box-shadow:0 0 0 3px rgba(58,159,214,0.12);
+    background:#fff;
 }}
-.card-header {{
-    display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid #f3f4f6;
+.emp-card-top {{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:16px 16px 14px;
 }}
-.avatar {{
-    width:42px; height:42px; border-radius:50%;
+.emp-icon {{
+    width:44px; height:44px; border-radius:10px;
+    background:#e9eef5;
     display:flex; align-items:center; justify-content:center;
-    font-size:15px; font-weight:700; color:#fff; flex-shrink:0;
+    flex-shrink:0;
 }}
-.card-info {{ flex:1; min-width:0; }}
-.card-nome {{ font-size:15px; font-weight:700; color:#111827; }}
-.badge {{
-    display:inline-block; padding:2px 8px; border-radius:20px;
-    font-size:11px; font-weight:600; margin-top:3px;
+.emp-icon svg {{ width:22px; height:22px; }}
+.emp-info {{ flex:1; min-width:0; }}
+.emp-nome {{
+    font-size:14px; font-weight:700; color:#1a2e4a;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }}
-.card-body {{ padding:14px 18px; }}
-.id-row {{
-    display:flex; align-items:center; gap:8px;
-    background:#f0fdf4; border:1px solid #86efac;
-    border-radius:8px; padding:8px 12px; margin-bottom:12px;
+.badge-minha {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#f0fdf4; color:#15803d;
+    border:1px solid #bbf7d0;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700; margin-top:4px;
 }}
-.id-dot {{ width:8px; height:8px; border-radius:50%; background:#22c55e; flex-shrink:0; }}
-.id-val {{ font-size:13px; font-weight:600; color:#15803d; font-family:monospace; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
-.no-config-row {{
-    display:flex; align-items:center; gap:8px;
-    background:#fffbeb; border:1px solid #fde68a;
-    border-radius:8px; padding:8px 12px; margin-bottom:12px;
+.badge-minha::before {{
+    content:''; width:7px; height:7px; border-radius:50%;
+    background:#22c55e; flex-shrink:0;
 }}
-.no-config-dot {{ width:8px; height:8px; border-radius:50%; background:#f59e0b; flex-shrink:0; }}
-.no-config-val {{ font-size:13px; font-weight:600; color:#92400e; }}
-.btn-editar {{
-    width:100%; padding:10px; border:1px solid #e5e7eb;
-    border-radius:8px; background:#fff;
-    font-size:14px; font-weight:700; color:#374151;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    transition:all 0.15s;
+.badge-conc {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#eff6ff; color:#1d4ed8;
+    border:1px solid #bfdbfe;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700; margin-top:4px;
 }}
-.btn-editar:hover {{ background:#f3f4f6; border-color:#9ca3af; }}
-.edit-form {{ display:none; padding:14px 18px; border-top:1px solid #f3f4f6; }}
+.badge-conc::before {{
+    content:''; width:7px; height:7px; border-radius:50%;
+    background:#3b82f6; flex-shrink:0;
+}}
+.lapiz-btn {{
+    width:32px; height:32px;
+    border:1px solid #e5e7eb; border-radius:8px;
+    background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#9ca3af; flex-shrink:0;
+    transition:all 0.12s;
+}}
+.lapiz-btn:hover {{
+    background:#f3f4f6; color:#374151; border-color:#9ca3af;
+}}
+.id-strip {{
+    margin:0 12px 12px;
+    background:#f3f4f6;
+    border-radius:8px;
+    padding:8px 12px;
+    display:flex; align-items:center; gap:7px;
+    font-size:12px;
+}}
+.id-strip.configured {{
+    background:#f0fdf4; border:1px solid #bbf7d0;
+}}
+.id-dot {{
+    width:7px; height:7px; border-radius:50%;
+    background:#22c55e; flex-shrink:0;
+}}
+.id-dot.empty {{ background:#d1d5db; }}
+.id-val {{
+    font-size:12px; font-weight:600;
+    color:#15803d; font-family:monospace;
+    flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}}
+.id-val.empty {{ color:#9ca3af; font-family:'DM Sans',sans-serif; font-weight:400; }}
+
+/* ── Formulário de edição inline ── */
+.edit-form {{
+    display:none;
+    border-top:1px solid #e5e7eb;
+    padding:14px 16px;
+    background:#fff;
+}}
 .edit-form.open {{ display:block; }}
-.input-label {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }}
+.input-label {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px;
+}}
 .input-field {{
-    width:100%; padding:10px 14px; border:1.5px solid #e5e7eb;
-    border-radius:8px; font-size:14px; font-family:'DM Sans',sans-serif;
-    color:#111827; outline:none; transition:border-color 0.15s; background:#fafafa;
-    margin-bottom:10px;
+    width:100%; padding:9px 12px;
+    border:1.5px solid #e5e7eb; border-radius:8px;
+    font-size:13px; font-family:'DM Sans',sans-serif;
+    color:#111827; outline:none; background:#fafafa;
+    transition:border-color 0.15s; margin-bottom:10px;
 }}
 .input-field:focus {{ border-color:#3a9fd6; background:#fff; }}
 .btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }}
 .btn-buscar {{
-    padding:10px; border:none; border-radius:8px;
+    padding:9px; border:none; border-radius:8px;
     background:#0e2a47; color:#fff;
-    font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:12px; font-weight:700; cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:5px;
     transition:background 0.15s;
 }}
 .btn-buscar:hover {{ background:#1a3a5c; }}
 .btn-salvar {{
-    padding:10px; border:1px solid #3a9fd6; border-radius:8px;
+    padding:9px; border:1px solid #3a9fd6; border-radius:8px;
     background:#eff6ff; color:#1d4ed8;
-    font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:12px; font-weight:700; cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:5px;
     transition:background 0.15s;
 }}
 .btn-salvar:hover {{ background:#dbeafe; }}
 .btn-cancelar {{
-    grid-column:1/-1;
-    padding:8px; border:none; border-radius:8px;
+    grid-column:1/-1; padding:7px; border:none; border-radius:8px;
     background:transparent; color:#9ca3af;
-    font-size:12px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:color 0.15s;
+    font-size:12px; font-weight:600; cursor:pointer;
+    font-family:'DM Sans',sans-serif; transition:color 0.15s;
 }}
 .btn-cancelar:hover {{ color:#374151; }}
+
+/* ── Páginas encontradas ── */
 .paginas-wrap {{
-    margin-top:14px; border-top:1px solid #f3f4f6; padding-top:14px;
+    margin-top:12px; border-top:1px solid #f3f4f6; padding-top:12px;
 }}
-.paginas-title {{ font-size:12px; font-weight:700; color:#6b7280; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px; }}
+.paginas-title {{
+    font-size:11px; font-weight:700; color:#6b7280;
+    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
+}}
 .pg-card {{
-    display:flex; align-items:center; gap:10px; padding:10px 12px;
-    background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
+    display:flex; align-items:center; gap:10px;
+    padding:9px 11px; background:#f9fafb;
+    border:1px solid #e5e7eb; border-radius:9px;
     cursor:pointer; margin-bottom:6px; transition:all 0.12s;
 }}
 .pg-card:hover {{ background:#eff6ff; border-color:#3a9fd6; }}
 .pg-thumb {{
-    width:36px; height:36px; border-radius:50%; overflow:hidden;
-    background:#e5e7eb; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    font-size:12px; font-weight:700; color:#6b7280;
+    width:32px; height:32px; border-radius:50%;
+    overflow:hidden; background:#e5e7eb; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#6b7280;
 }}
-.pg-thumb img {{ width:100%; height:100%; object-fit:cover; display:block; border-radius:50%; }}
-.pg-info {{ flex:1; min-width:0; }}
-.pg-nome {{ font-size:13px; font-weight:700; color:#111827; }}
-.pg-id {{ font-size:11px; color:#9ca3af; font-family:monospace; }}
+.pg-thumb img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; }}
+.pg-nome {{ font-size:12px; font-weight:700; color:#111827; }}
+.pg-id {{ font-size:10px; color:#9ca3af; font-family:monospace; }}
 .pg-ads {{ font-size:11px; font-weight:600; color:#3a9fd6; }}
 </style>
 </head>
 <body>
-<div class="section-label">Configure as páginas do Facebook/Instagram</div>
-<div class="cards-grid" id="cards-grid"></div>
+<div class="config-wrap">
+    <div class="config-header">Configure as páginas do Facebook / Instagram</div>
+    <div class="config-body" id="cards-grid"></div>
+</div>
 <script>
 var EMPRESAS = {empresas_json};
 var PAGINAS  = {paginas_json};
@@ -3820,7 +3877,7 @@ function toggleForm(ci) {{
     var card = document.getElementById('card_' + ci);
     var isOpen = form.classList.contains('open');
     document.querySelectorAll('.edit-form').forEach(function(f) {{ f.classList.remove('open'); }});
-    document.querySelectorAll('.card').forEach(function(c) {{ c.classList.remove('editing'); }});
+    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('editing'); }});
     if (!isOpen) {{
         form.classList.add('open');
         card.classList.add('editing');
@@ -3834,40 +3891,56 @@ function buildCards() {{
     EMPRESAS.forEach(function(e) {{
         var hasId = e.ads_id && e.ads_id.trim() !== '';
         var card = document.createElement('div');
-        card.className = 'card';
+        card.className = 'emp-card';
         card.id = 'card_' + e.ci;
-        var idBlock = hasId
-            ? '<div class="id-row"><div class="id-dot"></div><div class="id-val">' + e.ads_id + '</div></div>'
-            : '<div class="no-config-row"><div class="no-config-dot"></div><div class="no-config-val">Não configurado</div></div>';
+
+        var badgeHtml = e.is_minha
+            ? '<span class="badge-minha">Minha empresa</span>'
+            : '<span class="badge-conc">Concorrente</span>';
+
+        var idDot   = hasId ? '<div class="id-dot"></div>' : '<div class="id-dot empty"></div>';
+        var idVal   = hasId
+            ? '<div class="id-val">' + e.ads_id + '</div>'
+            : '<div class="id-val empty">Não configurado</div>';
+        var idClass = hasId ? 'id-strip configured' : 'id-strip';
+
         card.innerHTML =
-            '<div class="card-header">'
-            + '<div class="avatar" style="background:' + e.cor + '">' + e.avatar + '</div>'
-            + '<div class="card-info">'
-            + '<div class="card-nome">' + e.nome + '</div>'
-            + '<span class="badge" style="background:' + e.badge_bg + ';color:' + e.badge_txt + ';border:1px solid ' + e.badge_brd + '">' + e.badge_lbl + '</span>'
+            '<div class="emp-card-top">'
+            + '<div class="emp-icon">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<rect x="2" y="7" width="20" height="14" rx="2"/>'
+            + '<path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'
+            + '<line x1="12" y1="12" x2="12" y2="16"/>'
+            + '<line x1="10" y1="14" x2="14" y2="14"/>'
+            + '</svg>'
             + '</div>'
-            + '<button onclick="toggleForm(' + e.ci + ')" title="Editar" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#9ca3af;transition:all 0.12s;display:flex;align-items:center" onmouseover="this.style.background=\'#f3f4f6\';this.style.color=\'#374151\'" onmouseout="this.style.background=\'none\';this.style.color=\'#9ca3af\'">'
-            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+            + '<div class="emp-info">'
+            + '<div class="emp-nome">' + e.nome + '</div>'
+            + badgeHtml
+            + '</div>'
+            + '<button class="lapiz-btn" onclick="toggleForm(' + e.ci + ')" title="Editar">'
+            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
+            + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
+            + '</svg>'
             + '</button>'
             + '</div>'
-            + '<div class="card-body">'
-            + idBlock
-            + '<button class="btn-editar" onclick="toggleForm(' + e.ci + ')">'
-            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
-            + 'Editar configuração'
-            + '</button>'
+            + '<div class="' + idClass + '">'
+            + idDot + idVal
             + '</div>'
             + '<div class="edit-form" id="form_' + e.ci + '">'
             + '<div class="input-label">Nome ou ID numérico da página</div>'
-            + '<input class="input-field" id="inp_' + e.ci + '" type="text" value="' + (e.ads_id || '') + '" placeholder="Ex: Nome da Página  ou  102803918240129" oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
+            + '<input class="input-field" id="inp_' + e.ci + '" type="text" value="' + (e.ads_id || '') + '" '
+            + 'placeholder="Ex: Nome da Página  ou  102803918240129" '
+            + 'oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
             + '<div class="btn-row">'
             + '<button class="btn-buscar" onclick="triggerAction(\'buscar\',' + e.ci + ')">'
-            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
             + 'Buscar páginas'
             + '</button>'
             + '<button class="btn-salvar" onclick="triggerSalvar(' + e.ci + ')">'
-            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
-            + 'Salvar ID direto'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
+            + 'Salvar ID'
             + '</button>'
             + '<button class="btn-cancelar" onclick="toggleForm(' + e.ci + ')">Cancelar</button>'
             + '</div>'
@@ -3875,6 +3948,7 @@ function buildCards() {{
             + '</div>';
         grid.appendChild(card);
     }});
+
     // Abrir form da empresa selecionada automaticamente
     var selectedEmpresa = "{config_empresa_selecionada or ''}";
     var editandoEmpresa = "{editando_empresa or ''}";
@@ -3898,7 +3972,7 @@ function getPaginasHtml(nomeEmpresa) {{
             : '<span>' + (pg.nome[0]||'P') + '</span>';
         html += '<div class="pg-card" onclick="triggerSelectPg(' + pg.pi + ')">'
             + '<div class="pg-thumb">' + thumb + '</div>'
-            + '<div class="pg-info">'
+            + '<div style="flex:1;min-width:0">'
             + '<div class="pg-nome">' + pg.nome + '</div>'
             + '<div class="pg-id">ID: ' + (pg.page_id || '—') + '</div>'
             + '</div>'
@@ -3917,19 +3991,6 @@ function getSkByIndex(ci) {{
 
 function syncInputToSt(ci, val) {{
     var keyPattern = 'cfg_input_' + getSkByIndex(ci) + '_' + ci;
-    var stInputs = window.parent.document.querySelectorAll('input');
-    stInputs.forEach(function(inp) {{
-        var container = inp.closest('[data-testid="stTextInput"]');
-        if (container) {{
-            var wrapper = container.closest('[class*="st-key-' + keyPattern + '"]');
-            if (wrapper || (inp.getAttribute('aria-label') || '').includes(keyPattern)) {{
-                var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                setter.call(inp, val);
-                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
-            }}
-        }}
-    }});
-    // Fallback: try by id pattern in parent document
     var allInputs = window.parent.document.querySelectorAll('input[id*="' + keyPattern + '"]');
     allInputs.forEach(function(inp) {{
         var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -3985,7 +4046,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 """, height=100, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: EMPRESAS CONFIGURADAS
+    # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
     # ══════════════════════════════════════════════════════════════════
     elif main_tab == "empresas":
 
@@ -4036,68 +4097,252 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         abas_nomes = [e["nome"] for e in empresas_configuradas]
         aba_ativa  = min(st.session_state.ads_aba_ativa, len(abas_nomes) - 1)
 
-        abas_items_html = ""
-        for i, nome in enumerate(abas_nomes):
-            active_class = "active" if i == aba_ativa else ""
-            abas_items_html += f'<button class="aba-btn {active_class}" onclick="triggerAba({i})">{nome}</button>'
+        # ── Cards de empresa no topo — estilo imagem 2
+        empresas_cards_json = []
+        for i, e in enumerate(empresas_configuradas):
+            is_minha = e["tipo"] == "minha"
+            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+            empresas_cards_json.append({
+                "i": i,
+                "nome": e["nome"],
+                "tipo": e["tipo"],
+                "ads_id": ads_id,
+                "is_minha": is_minha,
+                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
+            })
+
+        empresas_cards_str = _json.dumps(empresas_cards_json, ensure_ascii=False)
 
         components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.barra {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    display:flex; align-items:stretch; height:48px; overflow:hidden;
+
+/* ── Container principal ── */
+.main-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    overflow:hidden;
 }}
-.barra-label {{
-    display:flex; align-items:center; gap:7px;
-    padding:0 14px; border-right:1px solid #f3f4f6; flex-shrink:0;
+
+/* ── Grid de cards de empresa ── */
+.cards-grid {{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:0;
+    padding:20px;
+    border-bottom:1px solid #e5e7eb;
+    gap:16px;
 }}
-.barra-label-txt {{
-    font-size:12px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:1.2px; white-space:nowrap;
+
+/* ── Card individual — estilo da imagem 2 ── */
+.emp-card {{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    transition:all 0.15s;
+    position:relative;
 }}
-.abas-wrap {{ display:flex; align-items:center; flex:1; padding:6px 8px; gap:4px; overflow:hidden; }}
-.aba-btn {{
-    height:36px; padding:0 18px; border-radius:7px; border:1px solid transparent;
-    background:transparent; font-size:14px; font-weight:600; color:#6b7280;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap;
+.emp-card:hover {{
+    border-color:#3a9fd6;
+    background:#fff;
+    box-shadow:0 2px 10px rgba(58,159,214,0.1);
 }}
-.aba-btn:hover {{ background:#f3f4f6; color:#374151; }}
-.aba-btn.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
-.right-wrap {{
-    display:flex; align-items:center; padding:0 10px;
-    border-left:1px solid #f3f4f6; flex-shrink:0; gap:4px;
+.emp-card.active {{
+    background:#fff;
+    border-color:#0e2a47;
+    box-shadow:0 2px 12px rgba(14,42,71,0.12);
+}}
+.emp-card.active::after {{
+    content:'';
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height:3px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    border-radius:0 0 12px 12px;
+}}
+.emp-icon {{
+    width:44px; height:44px; border-radius:10px;
+    background:#e9eef5;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+}}
+.emp-card.active .emp-icon {{ background:#dbeafe; }}
+.emp-icon svg {{ width:22px; height:22px; }}
+.emp-info {{ flex:1; min-width:0; }}
+.emp-nome {{
+    font-size:14px; font-weight:700; color:#1a2e4a;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
+}}
+.badge-minha {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#f0fdf4; color:#15803d;
+    border:1px solid #bbf7d0;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
+.badge-minha::before {{
+    content:''; width:7px; height:7px; border-radius:50%;
+    background:#22c55e; flex-shrink:0;
+}}
+.badge-conc {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#eff6ff; color:#1d4ed8;
+    border:1px solid #bfdbfe;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
+.badge-conc::before {{
+    content:''; width:7px; height:7px; border-radius:50%;
+    background:#3b82f6; flex-shrink:0;
 }}
 .lapiz-btn {{
-    width:30px; height:30px; border:1px solid #e5e7eb; border-radius:7px;
-    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    color:#9ca3af; transition:all 0.12s;
+    width:28px; height:28px;
+    border:1px solid #e5e7eb; border-radius:7px;
+    background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#9ca3af; flex-shrink:0;
+    transition:all 0.12s;
+    position:absolute; top:12px; right:12px;
 }}
 .lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+
+/* ── Barra de abas embaixo dos cards ── */
+.tabs-row {{
+    display:flex;
+    align-items:center;
+    padding:0 20px;
+    background:#f9fafb;
+    border-bottom:1px solid #e5e7eb;
+    gap:4px;
+    overflow-x:auto;
+}}
+.tab-btn {{
+    padding:12px 20px;
+    font-size:13px; font-weight:700;
+    color:#9ca3af; background:transparent;
+    border:none; border-bottom:3px solid transparent;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:all 0.15s; white-space:nowrap;
+    margin-bottom:-1px;
+}}
+.tab-btn:hover {{ color:#374151; }}
+.tab-btn.active {{
+    color:#1a2e4a;
+    border-bottom:3px solid #3a9fd6;
+}}
+.right-wrap {{
+    margin-left:auto;
+    display:flex; align-items:center;
+    padding-right:4px;
+}}
+.cfg-btn {{
+    width:30px; height:30px;
+    border:1px solid #e5e7eb; border-radius:7px;
+    background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#9ca3af; transition:all 0.12s;
+}}
+.cfg-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
 </style>
-<div class="barra">
-    <div class="barra-label">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-        </svg>
-        <span class="barra-label-txt">Páginas configuradas</span>
-    </div>
-    <div class="abas-wrap">{abas_items_html}</div>
-    <div class="right-wrap">
-        <button class="lapiz-btn" onclick="triggerTab('tab_cfg')" title="Gerenciar configurações">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-        </button>
+<div class="main-wrap">
+    <div class="cards-grid" id="cards-grid"></div>
+    <div class="tabs-row" id="tabs-row">
+        <div class="right-wrap">
+            <button class="cfg-btn" onclick="triggerTab('tab_cfg')" title="Configurações">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+        </div>
     </div>
 </div>
 <script>
-function triggerAba(i) {{ triggerBtn('aba_ads_' + i); }}
+var EMPRESAS = {empresas_cards_str};
+var ABA_ATIVA = {aba_ativa};
+
+function buildUI() {{
+    // Cards
+    var grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+    EMPRESAS.forEach(function(e) {{
+        var card = document.createElement('div');
+        card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
+        card.id = 'emp_card_' + e.i;
+        var badgeHtml = e.is_minha
+            ? '<span class="badge-minha">Minha empresa</span>'
+            : '<span class="badge-conc">Concorrente</span>';
+        card.innerHTML =
+            '<div class="emp-icon">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<rect x="2" y="7" width="20" height="14" rx="2"/>'
+            + '<path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'
+            + '<line x1="12" y1="12" x2="12" y2="16"/>'
+            + '<line x1="10" y1="14" x2="14" y2="14"/>'
+            + '</svg>'
+            + '</div>'
+            + '<div class="emp-info">'
+            + '<div class="emp-nome">' + e.nome + '</div>'
+            + badgeHtml
+            + '</div>'
+            + '<button class="lapiz-btn" onclick="goConfig(' + e.i + ',event)" title="Configurar">'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
+            + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
+            + '</svg>'
+            + '</button>';
+        card.addEventListener('click', function(ev) {{
+            if (ev.target.closest('.lapiz-btn')) return;
+            selectAba(e.i);
+        }});
+        grid.appendChild(card);
+    }});
+
+    // Tabs
+    var tabsRow = document.getElementById('tabs-row');
+    var rightWrap = tabsRow.querySelector('.right-wrap');
+    // Remove existing tabs
+    tabsRow.querySelectorAll('.tab-btn').forEach(function(b) {{ b.remove(); }});
+    EMPRESAS.forEach(function(e) {{
+        var btn = document.createElement('button');
+        btn.className = 'tab-btn' + (e.i === ABA_ATIVA ? ' active' : '');
+        btn.id = 'tab_btn_' + e.i;
+        btn.textContent = e.nome;
+        btn.onclick = function() {{ selectAba(e.i); }};
+        tabsRow.insertBefore(btn, rightWrap);
+    }});
+
+    syncHeight();
+}}
+
+function selectAba(i) {{
+    ABA_ATIVA = i;
+    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
+    document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
+    var card = document.getElementById('emp_card_' + i);
+    var tab  = document.getElementById('tab_btn_' + i);
+    if (card) card.classList.add('active');
+    if (tab)  tab.classList.add('active');
+    triggerBtn('aba_ads_' + i);
+}}
+
+function goConfig(i, ev) {{
+    ev.stopPropagation();
+    triggerBtn('tab_cfg');
+}}
+
 function triggerTab(label) {{ triggerBtn(label); }}
+
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -4105,14 +4350,24 @@ function triggerBtn(label) {{
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '48px'; break; }} }} catch(e) {{}}
+
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 12) + 'px'; break;
+        }} }} catch(e) {{}}
     }}
-}})();
+}}
+
+buildUI();
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
-""", height=48, scrolling=False)
+""", height=100, scrolling=False)
 
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
@@ -5329,7 +5584,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
         # ── Renderiza empresa da aba ativa ───────────────────────────
         st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
-        # Filtrar para empresas que têm dados no cache
         empresas_com_dados = [
             e for e in empresas_configuradas
             if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
@@ -5456,7 +5710,7 @@ body {{ padding-bottom:8px; }}
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
