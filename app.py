@@ -5572,7 +5572,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 """, height=600, scrolling=False)
 
         # ── Renderiza empresa da aba ativa ───────────────────────────
-        st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
         empresas_com_dados = [
             e for e in empresas_configuradas
