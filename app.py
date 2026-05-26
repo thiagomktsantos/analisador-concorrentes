@@ -4430,7 +4430,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             lib_btn_top = f'<a href="{lib_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#042b6b;color:#fff;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">Ver no Meta Ad Library</a>' if lib_url else ""
 
             st.markdown(f"""
-            <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden'>
+            <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;overflow:hidden;margin-top:-45px;'>
                 <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
                     {avatar_empresa_html}
                     <div style='flex:1;min-width:0'>
