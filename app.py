@@ -20,7 +20,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------
-# CONFIGURAÇÃO SUPABASE
+#  SUPABASE
 # ---------------------------------------------------
 
 @st.cache_resource
@@ -3523,7 +3523,7 @@ function triggerTab(label) {{
 # ABA: CONFIGURAÇÃO — Cards de empresa
 # ══════════════════════════════════════════════════════════════════
 
-if main_tab == "configuracao":
+    if main_tab == "configuracao":
 
         editando_empresa   = st.session_state.ads_editando_empresa
         onboarding_empresa = st.session_state.ads_onboarding_empresa
