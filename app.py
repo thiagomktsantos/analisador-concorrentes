@@ -3554,7 +3554,29 @@ function triggerTab(label) {{
                 st.session_state.ads_onboarding_paginas = []
                 st.rerun()
 
-        # ── Monta HTML dos cards
+        # ── INFO BOX fora do container cinza ──
+        st.markdown("""
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
+                    padding:12px 16px;font-size:13px;color:#0369a1;
+                    display:flex;align-items:flex-start;gap:10px;
+                    line-height:1.6;margin-bottom:12px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                 style="flex-shrink:0;margin-top:1px">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div>
+                Clique em <strong>✏️ Editar</strong> em cada empresa para configurar.
+                Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong>
+                do Facebook, depois clique em <strong>Buscar páginas</strong> para encontrar
+                ou <strong>Salvar ID</strong> para salvar diretamente.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── Monta HTML dos cards (sem info-box dentro)
         cards_html = ""
         for ci, e in enumerate(todas_empresas):
             is_minha   = e["tipo"] == "minha"
@@ -3662,12 +3684,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     border-radius:16px;
     padding:20px;
 }}
-.info-box {{
-    background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px;
-    padding:12px 16px; font-size:13px; color:#0369a1;
-    display:flex; align-items:flex-start; gap:10px;
-    line-height:1.6; margin-bottom:16px;
-}}
 .cards-grid {{
     display:grid;
     grid-template-columns:repeat(3,1fr);
@@ -3701,21 +3717,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 </style>
 
 <div class="outer">
-    <div class="info-box">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             style="flex-shrink:0;margin-top:1px">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <div>
-            Clique em <strong>✏️ Editar</strong> em cada empresa para configurar.
-            Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong>
-            do Facebook, depois clique em <strong>Buscar páginas</strong> para encontrar
-            ou <strong>Salvar ID</strong> para salvar diretamente.
-        </div>
-    </div>
     <div class="cards-grid">
         {cards_html}
     </div>
@@ -3748,44 +3749,45 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 100);
 setTimeout(syncHeight, 400);
 </script>
-""", height=240, scrolling=False)
+""", height=200, scrolling=False)
 
         # ── Formulário de edição (aparece abaixo do grid quando editando)
         if editando_empresa:
             e_edit = next((x for x in todas_empresas if x["nome"] == editando_empresa), None)
             if e_edit:
-                ci_edit      = next(i for i, x in enumerate(todas_empresas) if x["nome"] == editando_empresa)
-                sk_edit      = safe_key(e_edit["nome"])
+                ci_edit       = next(i for i, x in enumerate(todas_empresas) if x["nome"] == editando_empresa)
+                sk_edit       = safe_key(e_edit["nome"])
                 is_minha_edit = e_edit["tipo"] == "minha"
-                ads_id_edit  = emp.get("ads_id","") if is_minha_edit else concs[e_edit["idx"]].get("ads_id","")
-                cor_edit     = get_minha_empresa_color() if is_minha_edit else get_concorrente_color(e_edit["idx"])
+                ads_id_edit   = emp.get("ads_id","") if is_minha_edit else concs[e_edit["idx"]].get("ads_id","")
+                cor_edit      = get_minha_empresa_color() if is_minha_edit else get_concorrente_color(e_edit["idx"])
                 page_pic_edit = emp.get("ads_page_pic","") if is_minha_edit else concs[e_edit["idx"]].get("ads_page_pic","")
 
-                # Avatar para o header do formulário
+                # ── Header do formulário de edição
                 if page_pic_edit and page_pic_edit.startswith("http"):
-                    form_avatar = (
-                        f'<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;'
+                    form_avatar_html = (
+                        f'<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;'
                         f'flex-shrink:0;border:2px solid #e5e7eb">'
-                        f'<img src="{page_pic_edit}" style="width:100%;height:100%;object-fit:cover;display:block" '
-                        f'onerror="this.parentElement.style.background=\'{cor_edit}\';'
-                        f'this.parentElement.innerHTML=\'{gerar_avatar(e_edit["nome"])}\'" /></div>'
+                        f'<img src="{page_pic_edit}" style="width:100%;height:100%;object-fit:cover;display:block" />'
+                        f'</div>'
                     )
                 else:
-                    form_avatar = (
-                        f'<div style="width:36px;height:36px;border-radius:50%;background:{cor_edit};'
-                        f'display:flex;align-items:center;justify-content:center;font-size:13px;'
-                        f'font-weight:700;color:#fff;flex-shrink:0">{gerar_avatar(e_edit["nome"])}</div>'
+                    form_avatar_html = (
+                        f'<div style="width:40px;height:40px;border-radius:50%;background:{cor_edit};'
+                        f'display:flex;align-items:center;justify-content:center;font-size:14px;'
+                        f'font-weight:700;color:#fff;flex-shrink:0">'
+                        f'{gerar_avatar(e_edit["nome"])}</div>'
                     )
 
                 st.markdown(f"""
                 <div style="background:#fff;border:2px solid #3a9fd6;border-radius:12px;
-                            padding:20px;margin-top:4px;
+                            padding:20px;margin-top:8px;
                             box-shadow:0 0 0 3px rgba(58,159,214,0.10)">
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;
-                                padding-bottom:14px;border-bottom:1px solid #f3f4f6">
-                        {form_avatar}
+                    <div style="display:flex;align-items:center;gap:12px;
+                                margin-bottom:16px;padding-bottom:14px;
+                                border-bottom:1px solid #f3f4f6">
+                        {form_avatar_html}
                         <div>
-                            <div style="font-size:14px;font-weight:700;color:#1a2e4a">
+                            <div style="font-size:15px;font-weight:700;color:#1a2e4a">
                                 Configurando: {editando_empresa}
                             </div>
                             <div style="font-size:12px;color:#6b7280;margin-top:2px">
