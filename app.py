@@ -7303,15 +7303,14 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
         cor = get_avatar_color(aba_ativa)
         bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
-        eng_est   = len(r.get("posts", [])) == 0
         posts_list = r.get("posts", [])
 
-        # DEBUG TEMPORÁRIO
-        st.write(f"**Debug:** {len(posts_list)} posts | Seguidores: {r.get('seguidores', 0)} | Handle: {r.get('handle', '')}")
-        if not posts_list:
-            st.write(f"**Chaves no cache:** {list(r.keys())}")
- 
-        # ── Header do perfil ────────────────────────────────────────
+        # ── Cabeçalho do perfil — estilo imagem 2 ──────────────────
+        seg_fmt   = fmt_num(r.get("seguidores", 0))
+        posts_fmt = fmt_num(r.get("total_posts", 0))
+        handle_clean = (r.get("handle") or "").lstrip("@")
+        ig_url = f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#"
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7331,6 +7330,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     display:flex; align-items:center; justify-content:center;
     font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
 }}
+.info {{ flex:1; min-width:0; }}
 .nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
 .handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
 .badge {{
@@ -7340,12 +7340,46 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     padding:2px 10px; border-radius:20px;
     font-size:11px; font-weight:600; margin-top:4px;
 }}
+.divider {{ width:1px; height:44px; background:#e5e7eb; flex-shrink:0; margin:0 8px; }}
+.stat-wrap {{ display:flex; align-items:center; gap:24px; flex-shrink:0; }}
+.stat {{ text-align:center; }}
+.stat-num {{ font-size:24px; font-weight:800; color:#0f1f35; line-height:1; }}
+.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }}
+.btn-ig {{
+    display:inline-flex; align-items:center; gap:7px;
+    background:#0e2a47; color:#fff;
+    padding:9px 18px; border-radius:9px;
+    font-size:13px; font-weight:700; text-decoration:none;
+    white-space:nowrap; flex-shrink:0;
+    transition:background 0.15s;
+}}
+.btn-ig:hover {{ background:#1a3a5c; }}
 </style>
 <div class="header">
     <div class="avatar">{gerar_avatar(r["nome"])}</div>
-    <div>
+    <div class="info">
         <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
         <div class="badge">{badge_lbl}</div>
+    </div>
+    <div class="stat-wrap">
+        <div class="divider"></div>
+        <div class="stat">
+            <div class="stat-num">{seg_fmt}</div>
+            <div class="stat-lbl">Seguidores</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">{posts_fmt}</div>
+            <div class="stat-lbl">Postagens</div>
+        </div>
+        <div class="divider"></div>
+        <a class="btn-ig" href="{ig_url}" target="_blank">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="20" height="20" rx="5" fill="white" fill-opacity="0.15"/>
+                <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+            </svg>
+            Ver no Instagram
+        </a>
     </div>
 </div>
 <script>
@@ -7357,169 +7391,143 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 }})();
 </script>
 """, height=88, scrolling=False)
- 
-        # ── Métricas + Bio ──────────────────────────────────────────
-        col_metricas, col_bio = st.columns([1, 1], gap="large")
- 
-        with col_metricas:
-            st.markdown(f"""
-<div style='background:#fff;border:1px solid #e5e7eb;border-top:none;padding:18px 20px 20px;'>
-    <div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;
-                letter-spacing:1px;margin-bottom:14px'>Métricas</div>
-    <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/users-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {fmt_num(r.get("seguidores",0))}
-                </span>
-            </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Seguidores</span>
-        </div>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/camera-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {fmt_num(r.get("total_posts",0))}
-                </span>
-            </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Posts</span>
-        </div>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/heart-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {fmt_num(int(r.get("eng_medio",0)))}
-                </span>
-            </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Eng. Médio</span>
-        </div>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/chart-line-solid.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {r.get("eng_pct",0):.2f}%
-                </span>
-            </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Engajamento%{"*" if eng_est else ""}</span>
-        </div>
-    </div>
-    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark</div>" if eng_est else ""}
-</div>
-""", unsafe_allow_html=True)
- 
-        with col_bio:
-            chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
-            if chave_bio_ia not in st.session_state:
-                st.session_state[chave_bio_ia] = ""
- 
-            st.markdown(f"""
-            <style>
-            .st-key-btn_bio_ia_{aba_ativa} {{
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
- 
-            analisar_bio = st.button(
-                f"__bio_{aba_ativa}__",
-                key=f"btn_bio_ia_{aba_ativa}",
-                use_container_width=True,
-            )
-            if analisar_bio:
-                if gemini_model is None:
-                    st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Analisando bio…"):
-                        try:
-                            prompt_bio = f"""
+
+        # ── Bio — largura 100%, 2 colunas ───────────────────────────
+        chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
+        if chave_bio_ia not in st.session_state:
+            st.session_state[chave_bio_ia] = ""
+
+        st.markdown(f"""
+        <style>
+        .st-key-btn_bio_ia_{aba_ativa} {{
+            position: fixed !important; top: -9999px !important; left: -9999px !important;
+            width: 1px !important; height: 1px !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+
+        analisar_bio = st.button(
+            f"__bio_{aba_ativa}__",
+            key=f"btn_bio_ia_{aba_ativa}",
+            use_container_width=True,
+        )
+        if analisar_bio:
+            if gemini_model is None:
+                st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                with st.spinner("Analisando bio…"):
+                    try:
+                        prompt_bio = f"""
 Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
- 
+
 Bio: "{bio_txt}"
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
- 
+
 Responda com:
 ### Posicionamento
 Qual é o posicionamento transmitido pela bio?
- 
+
 ### Pontos Fortes
 (2 pontos positivos da bio)
- 
+
 ### O que melhorar
 (2 sugestões concretas de melhoria)
- 
+
 ### Bio sugerida
 Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
-                            resp = gemini_model.generate_content(prompt_bio)
-                            st.session_state[chave_bio_ia] = resp.text
-                        except Exception as e:
-                            st.session_state[chave_bio_ia] = f"Erro: {e}"
- 
-            bio_resultado = st.session_state.get(chave_bio_ia, "")
-            bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
- 
-            components.html(f"""
+                        resp = gemini_model.generate_content(prompt_bio)
+                        st.session_state[chave_bio_ia] = resp.text
+                    except Exception as e:
+                        st.session_state[chave_bio_ia] = f"Erro: {e}"
+
+        bio_resultado = st.session_state.get(chave_bio_ia, "")
+        bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
+
+        components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; -webkit-font-smoothing:antialiased; }}
 body {{ padding-bottom:4px; }}
-.wrap {{
+.bio-wrap {{
     background:#fff;
     border:1px solid #e5e7eb;
     border-top:none;
     border-radius:0;
     overflow:hidden;
-    height:100%;
 }}
-.hdr {{
-    padding:12px 18px;
+.bio-hdr {{
+    padding:10px 20px;
     font-size:11px; font-weight:700; color:#9ca3af;
     text-transform:uppercase; letter-spacing:1px;
     border-bottom:1px solid #e5e7eb; background:#fff;
 }}
-.body {{ padding:14px 18px; }}
+.bio-body {{
+    display:grid;
+    grid-template-columns:1fr 220px;
+    gap:0;
+    min-height:80px;
+}}
+.bio-left {{
+    padding:18px 20px;
+    border-right:1px solid #f3f4f6;
+}}
 .bio-text {{
-    font-size:14px; color:#374151; line-height:1.7;
-    min-height:40px; font-style:italic; margin-bottom:16px;
+    font-size:15px; color:#374151; line-height:1.75;
+    font-style:italic;
+}}
+.bio-empty {{
+    font-size:14px; color:#d1d5db; font-style:italic;
+}}
+.bio-right {{
+    padding:18px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    background:#fafbfc;
 }}
 .btn-ia {{
-    width:100%; padding:10px; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; font-size:14px; font-weight:600; color:#1d4ed8;
+    width:100%; padding:11px 0; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
     cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+    text-align:center;
 }}
 .btn-ia:hover {{ background:#dbeafe; }}
+.ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.5; }}
 .resultado {{
-    margin-top:12px; background:#f0fdf4; border:1px solid #86efac;
-    border-radius:8px; padding:12px 14px;
-    font-size:13px; color:#374151; line-height:1.7;
-    max-height:220px; overflow-y:auto;
+    grid-column: 1 / -1;
+    margin:0; background:#f0fdf4; border-top:1px solid #86efac;
+    padding:14px 20px;
+    font-size:13px; color:#374151; line-height:1.75;
+}}
+.resultado-hdr {{
+    font-size:10px; font-weight:800; color:#15803d;
+    text-transform:uppercase; letter-spacing:0.5px;
+    margin-bottom:8px;
 }}
 </style>
-<div class="wrap">
-    <div class="hdr">Bio</div>
-    <div class="body">
-        <div class="bio-text">
-            {f'&ldquo;{bio_txt}&rdquo;' if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
+<div class="bio-wrap">
+    <div class="bio-hdr">Bio do perfil</div>
+    <div class="bio-body" id="bio-grid">
+        <div class="bio-left">
+            {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
         </div>
-        <div style="border-top:1px solid #f3f4f6;padding-top:14px">
+        <div class="bio-right">
             <button class="btn-ia" onclick="
                 const btns = window.parent.document.querySelectorAll('button');
                 for (const b of btns) {{
                     if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
                 }}
-            ">Analisar Bio 🤖</button>
+            ">🤖 Analisar Bio</button>
+            <div class="ia-hint">Análise de posicionamento<br>e sugestões de melhoria</div>
         </div>
-        {'<div class="resultado">' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
     </div>
+    {'<div class="resultado"><div class="resultado-hdr">✨ Análise de IA</div>' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
 </div>
 <script>
 function syncH() {{
@@ -7534,9 +7542,9 @@ document.addEventListener('DOMContentLoaded', syncH);
 window.addEventListener('load', syncH);
 setTimeout(syncH, 100); setTimeout(syncH, 400);
 </script>
-""", height=200, scrolling=False)
+""", height=120, scrolling=False)
  
-        # ── s: Postagens / Análise de IA ────────────────────
+        # ── Abas: Postagens / Análise de IA ────────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
@@ -7622,7 +7630,7 @@ function triggerSub(sub) {{
 </script>
 """, height=52, scrolling=False)
  
-        # ── SUB-ABA: POSTAGENS — CARDS ──────────────────────────────
+        # ── SUB-ABA: POSTAGENS ──────────────────────────────────────
         if subtab_atual == "postagens":
  
             if not posts_list:
@@ -7682,25 +7690,6 @@ function triggerSub(sub) {{
                 total_coms  = sum(p.get("comments", 0) for p in posts_list)
                 best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
 
-                # ── DEBUG: mostra info dos primeiros posts para identificar problema de imagem
-                with st.expander("🔍 Debug — dados brutos dos posts", expanded=False):
-                    for idx_dbg, p_dbg in enumerate(posts_list[:5]):
-                        thumb_val = p_dbg.get("thumb", "")
-                        st.markdown(f"""
-**Post {idx_dbg + 1}**
-- `thumb`: `{thumb_val if thumb_val else '❌ VAZIO'}`
-- `likes`: `{p_dbg.get('likes', 0)}`
-- `comments`: `{p_dbg.get('comments', 0)}`
-- `is_video`: `{p_dbg.get('is_video', False)}`
-- `date`: `{p_dbg.get('date', '')}`
-- `caption`: `{str(p_dbg.get('caption', ''))[:80]}`
----
-""")
-                    st.markdown(f"**Chaves disponíveis no post[0]:** `{list(posts_list[0].keys()) if posts_list else 'N/A'}`")
-                    st.markdown(f"**Total de posts na lista:** `{len(posts_list)}`")
-                    st.markdown(f"**Dados brutos do post[0]:**")
-                    st.json(posts_list[0] if posts_list else {})
-
                 def _fmt(n):
                     n = int(n or 0)
                     if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
@@ -7712,14 +7701,9 @@ function triggerSub(sub) {{
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background:transparent;
-    font-family:'DM Sans',sans-serif;
-    -webkit-font-smoothing:antialiased;
-    overflow:visible;
-}}
-body {{ padding-bottom:8px; }}
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
+body{{padding-bottom:8px;}}
 
 .outer {{
     background:#fff;
@@ -7865,31 +7849,6 @@ body {{ padding-bottom:8px; }}
     gap:6px;
 }}
 .thumb-fallback-icon {{ font-size:28px; }}
-.thumb-fallback-url {{
-    font-size:9px;
-    color:#6b7280;
-    word-break:break-all;
-    text-align:center;
-    padding:0 8px;
-    max-width:100%;
-    font-family:monospace;
-}}
-.thumb-debug {{
-    position:absolute;
-    bottom:0;
-    left:0;
-    right:0;
-    background:rgba(0,0,0,0.75);
-    color:#fff;
-    font-size:9px;
-    font-family:monospace;
-    padding:4px 6px;
-    word-break:break-all;
-    line-height:1.3;
-    pointer-events:none;
-    display:none;
-}}
-.post-card:hover .thumb-debug {{ display:block; }}
 .card-overlay {{
     position:absolute;
     inset:0;
@@ -7969,8 +7928,6 @@ body {{ padding-bottom:8px; }}
     color:#3a9fd6;
     white-space:nowrap;
 }}
-
-/* ── VER COPY — agora dentro do card-info, abaixo do texto ── */
 .ver-copy-btn {{
     display:inline-flex;
     align-items:center;
@@ -8066,43 +8023,6 @@ body {{ padding-bottom:8px; }}
     font-weight:700;
     color:#374151;
 }}
-
-/* ── DEBUG PANEL ── */
-.debug-panel {{
-    background:#fffbeb;
-    border:1px solid #fcd34d;
-    border-radius:8px;
-    margin:12px 16px;
-    overflow:hidden;
-}}
-.debug-hdr {{
-    padding:8px 12px;
-    font-size:11px;
-    font-weight:800;
-    color:#92400e;
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:#fffbeb;
-    border-bottom:1px solid #fde68a;
-}}
-.debug-body {{
-    padding:10px 12px;
-    font-size:10px;
-    font-family:monospace;
-    color:#374151;
-    background:#fffef5;
-    max-height:180px;
-    overflow-y:auto;
-    line-height:1.6;
-}}
-.debug-row {{ margin-bottom:4px; }}
-.debug-key {{ color:#92400e; font-weight:700; }}
-.debug-val {{ color:#059669; }}
-.debug-val-empty {{ color:#dc2626; font-weight:700; }}
 </style>
 </head>
 <body>
@@ -8180,15 +8100,6 @@ body {{ padding-bottom:8px; }}
         </div>
     </div>
 
-    <!-- DEBUG PANEL (inline no HTML) -->
-    <div class="debug-panel" id="debug-panel">
-        <div class="debug-hdr" onclick="toggleDebug()">
-            <span>&#128270; Debug — imagens dos posts</span>
-            <span id="debug-chevron">&#9660;</span>
-        </div>
-        <div class="debug-body" id="debug-body" style="display:none"></div>
-    </div>
-
     <!-- GRID -->
     <div class="posts-grid" id="posts-grid"></div>
 
@@ -8202,46 +8113,6 @@ var R_SEG    = {r_seg_val};
 var ICON_VIDEO = '&#127916;';
 var ICON_FOTO  = '&#128247;';
 
-/* ── DEBUG ── */
-function buildDebug() {{
-    var body = document.getElementById('debug-body');
-    if (!body) return;
-    var html = '';
-    ALL_POSTS.forEach(function(p, i) {{
-        var thumbVal  = p.thumb || '';
-        var thumbCls  = thumbVal ? 'debug-val' : 'debug-val-empty';
-        var thumbDisp = thumbVal ? thumbVal.substring(0,80) + (thumbVal.length > 80 ? '...' : '') : 'VAZIO / NULL';
-        html +=
-            '<div class="debug-row"><span class="debug-key">Post ' + (i+1) + ':</span></div>'
-            + '<div class="debug-row" style="padding-left:10px">'
-            + '<span class="debug-key">thumb: </span><span class="' + thumbCls + '">' + thumbDisp + '</span>'
-            + '</div>'
-            + '<div class="debug-row" style="padding-left:10px">'
-            + '<span class="debug-key">is_video: </span><span class="debug-val">' + p.is_video + '</span> &nbsp;'
-            + '<span class="debug-key">likes: </span><span class="debug-val">' + (p.likes||0) + '</span> &nbsp;'
-            + '<span class="debug-key">date: </span><span class="debug-val">' + (p.date||'—') + '</span>'
-            + '</div>'
-            + '<div class="debug-row" style="padding-left:10px;color:#9ca3af;font-size:9px">'
-            + (p.caption ? p.caption.substring(0,60) + '...' : 'sem legenda')
-            + '</div>'
-            + '<div style="height:1px;background:#fde68a;margin:5px 0"></div>';
-    }});
-    body.innerHTML = html;
-}}
-
-function toggleDebug() {{
-    var body = document.getElementById('debug-body');
-    var chev = document.getElementById('debug-chevron');
-    if (!body) return;
-    var aberto = body.style.display !== 'none';
-    body.style.display = aberto ? 'none' : 'block';
-    chev.innerHTML = aberto ? '&#9660;' : '&#9650;';
-    setTimeout(syncHeight, 80);
-}}
-
-buildDebug();
-
-/* ── HELPERS ── */
 function fmtNum(n) {{
     n = Math.round(n || 0);
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
@@ -8290,46 +8161,32 @@ function buildGrid(posts) {{
         var typeLbl      = p.is_video ? 'V&iacute;deo' : 'Foto';
         var thumbUrl     = (p.thumb || '').trim();
 
-        /* ── overlay hover ── */
         var overlayHtml =
             '<div class="card-overlay">'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
             + '</div>';
 
-        /* ── thumb: mostra URL resumida no debug tooltip ── */
-        var thumbDebugTxt = thumbUrl
-            ? 'URL: ' + thumbUrl.substring(0,60) + (thumbUrl.length > 60 ? '...' : '')
-            : 'SEM URL';
-
         var thumbHtml;
         if (thumbUrl) {{
-            thumbHtml =
-                '<img id="thumb_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />'
-                + '<div class="thumb-debug">' + thumbDebugTxt + '</div>';
+            thumbHtml = '<img id="thumb_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />';
         }} else {{
             thumbHtml =
                 '<div class="thumb-fallback">'
                 + '<span class="thumb-fallback-icon">' + iconFallback + '</span>'
-                + '<span class="thumb-fallback-url">Sem URL de imagem</span>'
-                + '</div>'
-                + '<div class="thumb-debug">SEM URL</div>';
+                + '</div>';
         }}
 
-        /* ── caption completa ou truncada ── */
         var capDisplay = hasCaption ? p.caption : '';
 
         card.innerHTML =
-            /* THUMB */
             '<div class="thumb-wrap" id="tw_' + idx + '">'
             + thumbHtml
             + '<div class="type-badge">' + typeLbl + '</div>'
             + overlayHtml
             + '</div>'
-            /* INFO */
             + '<div class="card-info">'
             + (p.date ? '<div class="card-date">' + p.date + '</div>' : '')
-            /* caption truncada com "ver copy" inline ao fim */
             + '<div class="card-caption" id="cap_' + idx + '">'
             + (hasCaption
                 ? (capDisplay.length > 100
@@ -8341,7 +8198,6 @@ function buildGrid(posts) {{
                     : capDisplay)
                 : '<span style="color:#d1d5db;font-style:italic">Sem legenda</span>')
             + '</div>'
-            /* métricas */
             + '<div class="card-metrics">'
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="13" height="13"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</span>'
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
@@ -8349,25 +8205,22 @@ function buildGrid(posts) {{
             + '</div>'
             + '</div>';
 
-        /* ── onerror da imagem ── */
         if (thumbUrl) {{
             var imgEl = card.querySelector('#thumb_' + idx);
             if (imgEl) {{
-                imgEl.onerror = (function(i, icon, lbl, ov, url) {{
+                imgEl.onerror = (function(i, icon, lbl, ov) {{
                     return function() {{
                         var tw = document.getElementById('tw_' + i);
                         if (tw) {{
                             tw.innerHTML =
                                 '<div class="thumb-fallback">'
                                 + '<span class="thumb-fallback-icon">' + icon + '</span>'
-                                + '<span class="thumb-fallback-url">Erro ao carregar:<br>' + url.substring(0,50) + '</span>'
                                 + '</div>'
                                 + '<div class="type-badge">' + lbl + '</div>'
-                                + ov
-                                + '<div class="thumb-debug">ERRO ao carregar: ' + url.substring(0,60) + '</div>';
+                                + ov;
                         }}
                     }};
-                }})(idx, iconFallback, typeLbl, overlayHtml, thumbUrl);
+                }})(idx, iconFallback, typeLbl, overlayHtml);
             }}
         }}
 
@@ -8377,7 +8230,6 @@ function buildGrid(posts) {{
     syncHeight();
 }}
 
-/* ── VER COPY: expande/recolhe inline ── */
 function toggleCopy(idx) {{
     var rest = document.getElementById('cap_rest_' + idx);
     var btn  = document.getElementById('vcb_' + idx);
@@ -8749,7 +8601,6 @@ Compare os perfis do Instagram abaixo e gere uma análise competitiva completa e
                         st.session_state[chave_comp_redes] = f"Erro: {ex}"
                         st.rerun()
  
-        # ── Gráficos comparativos ───────────────────────────────────
         nomes_ok   = [x["nome"] for x in ok]
         segs_ok    = [x.get("seguidores", 0) for x in ok]
         eng_pct_ok = [float(x.get("eng_pct", 0.0)) for x in ok]
@@ -8888,7 +8739,6 @@ setTimeout(syncHeight,300); setTimeout(syncHeight,800);
 </body></html>
 """, height=560, scrolling=False)
  
-        # ── Painel de análise comparativa ──────────────────────────
         comp_html_redes = st.session_state.get(chave_comp_redes, "").replace("\n", "<br>")
  
         components.html(f"""
