@@ -7635,13 +7635,11 @@ function triggerSub(sub) {{
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                # Número de colunas
                 posts_col_key = f"posts_cols_{aba_ativa}"
                 if posts_col_key not in st.session_state:
                     st.session_state[posts_col_key] = 4
                 n_cols_posts = st.session_state.get(posts_col_key, 4)
- 
-                # Ghost button toggle colunas
+
                 ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
                 st.markdown(f"""
                 <style>
@@ -7656,12 +7654,11 @@ function triggerSub(sub) {{
                 }}
                 </style>
                 """, unsafe_allow_html=True)
- 
+
                 if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
                     st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
                     st.rerun()
- 
-                # Monta JSON dos posts de forma segura
+
                 import json as _json_posts
                 posts_json_data = []
                 for p in posts_list:
@@ -7674,66 +7671,357 @@ function triggerSub(sub) {{
                         "eng":      p.get("likes", 0) + p.get("comments", 0),
                         "is_video": p.get("is_video", False),
                     })
- 
+
                 posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
                 r_seg_val = r.get("seguidores", 0)
- 
+
+                n_total    = len(posts_list)
+                n_fotos    = sum(1 for p in posts_list if not p.get("is_video"))
+                n_videos   = sum(1 for p in posts_list if p.get("is_video"))
+                total_likes = sum(p.get("likes", 0) for p in posts_list)
+                total_coms  = sum(p.get("comments", 0) for p in posts_list)
+                best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
+
+                def _fmt(n):
+                    n = int(n or 0)
+                    if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+                    if n >= 1_000:     return f"{n/1_000:.1f}K"
+                    return str(n)
+
                 components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+html, body {{
+    background:transparent;
+    font-family:'DM Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:visible;
+}}
 body {{ padding-bottom:8px; }}
-.outer {{ background:#fff; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 12px 12px; overflow:hidden; }}
-.stats-bar {{ display:flex; align-items:center; border-bottom:1px solid #e5e7eb; background:#f9fafb; }}
-.stat-item {{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 8px; border-right:1px solid #e5e7eb; text-align:center; }}
-.stat-item:last-child {{ border-right:none; }}
-.stat-num {{ font-size:20px; font-weight:800; color:#111827; line-height:1; margin-bottom:3px; }}
-.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; }}
-.filters-bar {{ display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid #e5e7eb; background:#fff; flex-wrap:wrap; }}
-.filter-label {{ font-size:12px; font-weight:700; color:#6b7280; white-space:nowrap; }}
-.filter-select {{ padding:6px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; color:#374151; background:#fafafa; cursor:pointer; outline:none; }}
-.filter-select:focus {{ border-color:#3a9fd6; background:#fff; }}
-.col-toggle {{ margin-left:auto; padding:6px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-weight:600; color:#6b7280; background:#fff; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:6px; white-space:nowrap; }}
+
+/* ── WRAPPER PRINCIPAL ── */
+.outer {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-radius:0 0 14px 14px;
+    overflow:hidden;
+}}
+
+/* ── BARRA DE FILTROS ── */
+.filters-bar {{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:14px 16px;
+    border-bottom:1px solid #e5e7eb;
+    background:#fff;
+    flex-wrap:wrap;
+}}
+.filter-input {{
+    flex:1;
+    min-width:160px;
+    max-width:260px;
+    height:40px;
+    padding:0 14px;
+    border:1px solid #e5e7eb;
+    border-radius:8px;
+    font-size:13px;
+    font-family:'DM Sans',sans-serif;
+    color:#374151;
+    background:#fafafa;
+    outline:none;
+    transition:border-color 0.15s;
+}}
+.filter-input:focus {{ border-color:#3a9fd6; background:#fff; }}
+.filter-input::placeholder {{ color:#9ca3af; }}
+.filter-select {{
+    height:40px;
+    padding:0 32px 0 12px;
+    border:1px solid #e5e7eb;
+    border-radius:8px;
+    font-size:13px;
+    font-family:'DM Sans',sans-serif;
+    color:#374151;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+    -webkit-appearance:none;
+    appearance:none;
+    cursor:pointer;
+    outline:none;
+    transition:border-color 0.15s;
+    white-space:nowrap;
+}}
+.filter-select:focus {{ border-color:#3a9fd6; }}
+.col-toggle {{
+    margin-left:auto;
+    width:40px;
+    height:40px;
+    border:1px solid #e5e7eb;
+    border-radius:8px;
+    background:#fff;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#6b7280;
+    flex-shrink:0;
+    transition:all 0.12s;
+}}
 .col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
-.posts-grid {{ display:grid; gap:0; }}
-.post-card {{ background:#fff; border-right:1px solid #f0f2f5; border-bottom:1px solid #f0f2f5; display:flex; flex-direction:column; overflow:hidden; cursor:pointer; position:relative; }}
+
+/* ── STATS ROW ── */
+.stats-row {{
+    display:flex;
+    gap:12px;
+    padding:16px 16px 4px;
+    flex-wrap:wrap;
+}}
+.stat-card {{
+    flex:1;
+    min-width:90px;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:14px 10px;
+    text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}}
+.stat-num {{
+    font-size:26px;
+    font-weight:800;
+    color:#0f1f35;
+    line-height:1;
+    margin-bottom:5px;
+    letter-spacing:-0.5px;
+}}
+.stat-lbl {{
+    font-size:10px;
+    font-weight:700;
+    color:#9ca3af;
+    text-transform:uppercase;
+    letter-spacing:1px;
+}}
+
+/* ── GRID DE POSTS ── */
+.posts-grid {{ display:grid; gap:0; margin-top:16px; }}
+.post-card {{
+    background:#fff;
+    border-right:1px solid #f0f2f5;
+    border-bottom:1px solid #f0f2f5;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    position:relative;
+}}
 .post-card:hover {{ background:#f9fafb; }}
 .post-card:hover .card-overlay {{ opacity:1; }}
-.thumb-wrap {{ position:relative; width:100%; aspect-ratio:1/1; background:#f0f2f5; overflow:hidden; flex-shrink:0; }}
-.thumb-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.2s; }}
+.thumb-wrap {{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    background:#f0f2f5;
+    overflow:hidden;
+    flex-shrink:0;
+}}
+.thumb-wrap img {{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    transition:transform 0.2s;
+}}
 .post-card:hover .thumb-wrap img {{ transform:scale(1.04); }}
-.thumb-fallback {{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e9eef5,#d2dde9); font-size:28px; }}
-.card-overlay {{ position:absolute; inset:0; background:rgba(14,42,71,0.72); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; opacity:0; transition:opacity 0.18s; pointer-events:none; }}
-.overlay-stat {{ display:flex; align-items:center; gap:6px; font-size:16px; font-weight:700; color:#fff; }}
-.type-badge {{ position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; pointer-events:none; text-transform:uppercase; letter-spacing:0.5px; }}
-.card-info {{ padding:10px 12px 12px; flex:1; display:flex; flex-direction:column; gap:6px; }}
+.thumb-fallback {{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#e9eef5,#d2dde9);
+    font-size:28px;
+}}
+.card-overlay {{
+    position:absolute;
+    inset:0;
+    background:rgba(14,42,71,0.72);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    opacity:0;
+    transition:opacity 0.18s;
+    pointer-events:none;
+}}
+.overlay-stat {{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:16px;
+    font-weight:700;
+    color:#fff;
+}}
+.type-badge {{
+    position:absolute;
+    top:8px;
+    left:8px;
+    background:rgba(0,0,0,0.55);
+    color:#fff;
+    font-size:10px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:20px;
+    pointer-events:none;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+}}
+.card-info {{
+    padding:10px 12px 12px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}}
 .card-date {{ font-size:11px; color:#9ca3af; font-weight:600; }}
-.card-caption {{ font-size:12px; color:#374151; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; flex:1; min-height:36px; font-style:italic; }}
-.card-metrics {{ display:flex; align-items:center; gap:10px; padding-top:8px; border-top:1px solid #f3f4f6; flex-wrap:wrap; }}
-.metric {{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:#374151; }}
-.metric-eng {{ margin-left:auto; font-size:11px; font-weight:700; color:#3a9fd6; white-space:nowrap; }}
-.ver-copy-btn {{ width:100%; padding:8px; border:none; border-top:1px solid #f0f2f5; background:#f9fafb; font-size:12px; font-weight:700; color:#1d4ed8; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:5px; }}
+.card-caption {{
+    font-size:12px;
+    color:#374151;
+    line-height:1.5;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    flex:1;
+    min-height:36px;
+    font-style:italic;
+}}
+.card-metrics {{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding-top:8px;
+    border-top:1px solid #f3f4f6;
+    flex-wrap:wrap;
+}}
+.metric {{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-size:12px;
+    font-weight:600;
+    color:#374151;
+}}
+.metric-eng {{
+    margin-left:auto;
+    font-size:11px;
+    font-weight:700;
+    color:#3a9fd6;
+    white-space:nowrap;
+}}
+.ver-copy-btn {{
+    width:100%;
+    padding:8px;
+    border:none;
+    border-top:1px solid #f0f2f5;
+    background:#f9fafb;
+    font-size:12px;
+    font-weight:700;
+    color:#1d4ed8;
+    cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+}}
 .ver-copy-btn:hover {{ background:#eff6ff; }}
-#modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(2px); }}
+
+/* ── MODAL ── */
+#modal-bg {{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:9999;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    backdrop-filter:blur(2px);
+}}
 #modal-bg.open {{ display:flex; }}
-#modal-box {{ background:#fff; border-radius:16px; overflow:hidden; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 24px 80px rgba(0,0,0,0.3); position:relative; }}
-#modal-img-wrap {{ width:100%; aspect-ratio:1/1; background:#000; overflow:hidden; flex-shrink:0; }}
+#modal-box {{
+    background:#fff;
+    border-radius:16px;
+    overflow:hidden;
+    width:100%;
+    max-width:520px;
+    max-height:90vh;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 24px 80px rgba(0,0,0,0.3);
+    position:relative;
+}}
+#modal-img-wrap {{
+    width:100%;
+    aspect-ratio:1/1;
+    background:#000;
+    overflow:hidden;
+    flex-shrink:0;
+}}
 #modal-img-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
 #modal-content {{ padding:20px 22px; overflow-y:auto; flex:1; }}
-#modal-title {{ font-size:13px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }}
+#modal-title {{
+    font-size:13px;
+    font-weight:700;
+    color:#9ca3af;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-bottom:8px;
+}}
 #modal-caption {{ font-size:14px; color:#374151; line-height:1.75; white-space:pre-wrap; }}
-#modal-close {{ position:absolute; top:14px; right:16px; background:rgba(0,0,0,0.5); border:none; width:32px; height:32px; border-radius:50%; font-size:16px; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }}
-#modal-metrics {{ display:flex; gap:16px; padding:12px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; flex-shrink:0; }}
-.modal-metric {{ display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700; color:#374151; }}
+#modal-close {{
+    position:absolute;
+    top:14px;
+    right:16px;
+    background:rgba(0,0,0,0.5);
+    border:none;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    font-size:16px;
+    color:#fff;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+}}
+#modal-metrics {{
+    display:flex;
+    gap:16px;
+    padding:12px 22px;
+    border-top:1px solid #f3f4f6;
+    background:#f9fafb;
+    flex-shrink:0;
+}}
+.modal-metric {{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:14px;
+    font-weight:700;
+    color:#374151;
+}}
 </style>
 </head>
 <body>
- 
+
 <script id="posts-data" type="application/json">{posts_json_str}</script>
- 
+
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">&#x2715;</button>
@@ -7745,94 +8033,136 @@ body {{ padding-bottom:8px; }}
         <div id="modal-metrics"></div>
     </div>
 </div>
- 
+
 <div class="outer">
-    <div class="stats-bar">
-        <div class="stat-item"><div class="stat-num" id="stat-total">-</div><div class="stat-lbl">Postagens</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-fotos">-</div><div class="stat-lbl">Fotos</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-videos">-</div><div class="stat-lbl">Videos</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-likes">-</div><div class="stat-lbl">Curtidas</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-coms">-</div><div class="stat-lbl">Comentarios</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-best">-</div><div class="stat-lbl">Melhor Engaj.</div></div>
-    </div>
+
+    <!-- FILTROS -->
     <div class="filters-bar">
-        <span class="filter-label">Filtrar:</span>
+        <input
+            class="filter-input"
+            id="filter-text"
+            type="text"
+            placeholder="Pesquisar no copy..."
+            oninput="applyFilters()"
+        />
         <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
-            <option value="todos">Todos os tipos</option>
-            <option value="foto">So Fotos</option>
-            <option value="video">So Videos</option>
+            <option value="todos">Tipo (todos)</option>
+            <option value="foto">Fotos</option>
+            <option value="video">V&#237;deos</option>
         </select>
         <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
             <option value="recentes">Mais recentes</option>
             <option value="likes">Mais curtidas</option>
             <option value="eng">Maior engajamento</option>
         </select>
-        <button class="col-toggle" onclick="toggleCols()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <span id="col-label">{n_cols_posts} colunas</span>
+        <button class="col-toggle" onclick="toggleCols()" title="Alternar colunas">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="5" height="18" rx="1"/>
+                <rect x="10" y="3" width="5" height="18" rx="1"/>
+                <rect x="17" y="3" width="5" height="18" rx="1"/>
+            </svg>
         </button>
     </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-num" id="stat-total">{n_total}</div>
+            <div class="stat-lbl">Postagens</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-fotos">{n_fotos}</div>
+            <div class="stat-lbl">Fotos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-videos">{n_videos}</div>
+            <div class="stat-lbl">V&#237;deos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-likes">{_fmt(total_likes)}</div>
+            <div class="stat-lbl">Curtidas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-coms">{_fmt(total_coms)}</div>
+            <div class="stat-lbl">Coment&#225;rios</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="stat-best">{_fmt(best_eng)}</div>
+            <div class="stat-lbl">Melhor Engaj.</div>
+        </div>
+    </div>
+
+    <!-- GRID -->
     <div class="posts-grid" id="posts-grid"></div>
+
 </div>
- 
+
 <script>
 var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
 var N_COLS = {n_cols_posts};
-var R_SEG = {r_seg_val};
+var R_SEG  = {r_seg_val};
 
 var ICON_VIDEO = '&#127916;';
 var ICON_FOTO  = '&#128247;';
- 
+
 function fmtNum(n) {{
     n = Math.round(n || 0);
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
     return String(n);
 }}
- 
+
 function updateStats(posts) {{
-    var nF = posts.filter(function(p){{ return !p.is_video; }}).length;
-    var nV = posts.filter(function(p){{ return p.is_video; }}).length;
-    var tL = posts.reduce(function(s,p){{ return s+(p.likes||0); }},0);
-    var tC = posts.reduce(function(s,p){{ return s+(p.comments||0); }},0);
-    var bE = posts.reduce(function(mx,p){{ return Math.max(mx,(p.likes||0)+(p.comments||0)); }},0);
+    var nF  = posts.filter(function(p){{ return !p.is_video; }}).length;
+    var nV  = posts.filter(function(p){{ return  p.is_video; }}).length;
+    var tL  = posts.reduce(function(s,p){{ return s+(p.likes||0); }}, 0);
+    var tC  = posts.reduce(function(s,p){{ return s+(p.comments||0); }}, 0);
+    var bE  = posts.reduce(function(mx,p){{ return Math.max(mx,(p.likes||0)+(p.comments||0)); }}, 0);
     document.getElementById('stat-total').textContent = posts.length;
     document.getElementById('stat-fotos').textContent = nF;
     document.getElementById('stat-videos').textContent = nV;
     document.getElementById('stat-likes').textContent = fmtNum(tL);
-    document.getElementById('stat-coms').textContent = fmtNum(tC);
-    document.getElementById('stat-best').textContent = fmtNum(bE);
+    document.getElementById('stat-coms').textContent  = fmtNum(tC);
+    document.getElementById('stat-best').textContent  = fmtNum(bE);
 }}
- 
+
 function getFiltered() {{
-    var tipo = document.getElementById('filter-tipo').value;
+    var texto = (document.getElementById('filter-text').value || '').toLowerCase().trim();
+    var tipo  = document.getElementById('filter-tipo').value;
     var ordem = document.getElementById('filter-ordem').value;
     var posts = ALL_POSTS.slice();
-    if (tipo === 'foto') posts = posts.filter(function(p){{ return !p.is_video; }});
-    if (tipo === 'video') posts = posts.filter(function(p){{ return p.is_video; }});
+    if (texto) posts = posts.filter(function(p){{ return (p.caption||'').toLowerCase().indexOf(texto) !== -1; }});
+    if (tipo === 'foto')  posts = posts.filter(function(p){{ return !p.is_video; }});
+    if (tipo === 'video') posts = posts.filter(function(p){{ return  p.is_video; }});
     if (ordem === 'likes') posts.sort(function(a,b){{ return (b.likes||0)-(a.likes||0); }});
     else if (ordem === 'eng') posts.sort(function(a,b){{ return ((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0)); }});
     return posts;
 }}
- 
+
 function buildGrid(posts) {{
     var grid = document.getElementById('posts-grid');
     grid.style.gridTemplateColumns = 'repeat(' + N_COLS + ', 1fr)';
     grid.innerHTML = '';
+
     posts.forEach(function(p, idx) {{
         var card = document.createElement('div');
         card.className = 'post-card';
-        var capShort = (p.caption||'').substring(0,80) + ((p.caption||'').length > 80 ? '...' : '');
-        var hasCaption = !!(p.caption && p.caption.trim());
+
+        var capShort    = (p.caption||'').substring(0,80) + ((p.caption||'').length > 80 ? '...' : '');
+        var hasCaption  = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? ICON_VIDEO : ICON_FOTO;
-        var typeLbl = p.is_video ? 'Video' : 'Foto';
-        var overlayHtml = '<div class="card-overlay">'
+        var typeLbl      = p.is_video ? 'V&#237;deo' : 'Foto';
+
+        var overlayHtml =
+            '<div class="card-overlay">'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
             + '</div>';
+
         var thumbHtml = p.thumb
             ? '<img src="' + p.thumb + '" loading="lazy" alt="" />'
             : '<div class="thumb-fallback">' + iconFallback + '</div>';
+
         card.innerHTML =
             '<div class="thumb-wrap">'
             + thumbHtml
@@ -7847,6 +8177,7 @@ function buildGrid(posts) {{
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
             + '<span class="metric-eng">' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
             + '</div></div>';
+
         if (p.thumb) {{
             var img = card.querySelector('img');
             if (img) {{
@@ -7858,6 +8189,7 @@ function buildGrid(posts) {{
                 }};
             }}
         }}
+
         if (hasCaption) {{
             var btn = document.createElement('button');
             btn.className = 'ver-copy-btn';
@@ -7865,61 +8197,77 @@ function buildGrid(posts) {{
             btn.onclick = (function(i){{ return function(ev){{ ev.stopPropagation(); openModal(i); }}; }})(idx);
             card.appendChild(btn);
         }}
+
         grid.appendChild(card);
     }});
+
     syncHeight();
 }}
- 
+
 function applyFilters() {{
     var posts = getFiltered();
     updateStats(posts);
     buildGrid(posts);
 }}
- 
+
 function toggleCols() {{
     var btns = window.parent.document.querySelectorAll('button');
     var label = 'posts_toggle_{aba_ativa}';
     for (var b of btns) {{
-        if ((b.textContent||b.innerText||'').split(/\\s+/).join(' ').trim() === label) {{ b.click(); return; }}
+        if ((b.textContent||b.innerText||'').split(/\\s+/).join(' ').trim() === label) {{
+            b.click(); return;
+        }}
     }}
 }}
- 
+
 function openModal(idx) {{
     var filtered = getFiltered();
     var p = filtered[idx];
     if (!p) return;
     var imgWrap = document.getElementById('modal-img-wrap');
-    var img = document.getElementById('modal-img');
-    if (p.thumb) {{ imgWrap.style.display = 'block'; img.src = p.thumb; img.onerror = function(){{ imgWrap.style.display='none'; }}; }}
-    else {{ imgWrap.style.display = 'none'; }}
+    var img     = document.getElementById('modal-img');
+    if (p.thumb) {{
+        imgWrap.style.display = 'block';
+        img.src = p.thumb;
+        img.onerror = function(){{ imgWrap.style.display = 'none'; }};
+    }} else {{
+        imgWrap.style.display = 'none';
+    }}
     document.getElementById('modal-caption').textContent = p.caption || 'Sem legenda.';
     document.getElementById('modal-metrics').innerHTML =
         '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + ' curtidas</div>'
-        + '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + ' comentarios</div>'
+        + '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + ' coment&#225;rios</div>'
         + (p.date ? '<div class="modal-metric" style="margin-left:auto;color:#9ca3af;font-size:12px">' + p.date + '</div>' : '');
     document.getElementById('modal-bg').classList.add('open');
 }}
- 
+
 function closeModal() {{
     document.getElementById('modal-bg').classList.remove('open');
     document.getElementById('modal-img').src = '';
 }}
- 
+
 document.addEventListener('keydown', function(e){{ if(e.key==='Escape') closeModal(); }});
- 
+
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i=0;i<frames.length;i++) {{
-        try {{ if (frames[i].contentWindow===window) {{ frames[i].style.height=(h+12)+'px'; break; }} }} catch(e) {{}}
+    for (var i = 0; i < frames.length; i++) {{
+        try {{
+            if (frames[i].contentWindow === window) {{
+                frames[i].style.height = (h + 12) + 'px';
+                break;
+            }}
+        }} catch(e) {{}}
     }}
 }}
- 
+
 applyFilters();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
+setTimeout(syncHeight, 300);
+setTimeout(syncHeight, 800);
+setTimeout(syncHeight, 1500);
 </script>
 </body></html>
 """, height=600, scrolling=False)
