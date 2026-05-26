@@ -3863,7 +3863,7 @@ if main_tab == "configuracao":
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
     # ══════════════════════════════════════════════════════════════════
-    elif main_tab == "empresas":
+elif main_tab == "empresas":
 
         if not empresas_configuradas:
             st.markdown("""
