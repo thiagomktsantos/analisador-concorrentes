@@ -3554,7 +3554,7 @@ function triggerTab(label) {{
                 st.session_state.ads_onboarding_paginas = []
                 st.rerun()
 
-        # ── INFO BOX fora do container cinza ──
+        # ── INFO BOX fora do container cinza
         st.markdown("""
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
                     padding:12px 16px;font-size:13px;color:#0369a1;
@@ -3576,7 +3576,7 @@ function triggerTab(label) {{
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Monta HTML dos cards (sem info-box dentro)
+        # ── Monta HTML dos cards
         cards_html = ""
         for ci, e in enumerate(todas_empresas):
             is_minha   = e["tipo"] == "minha"
@@ -3632,9 +3632,9 @@ function triggerTab(label) {{
             </button>"""
 
             editing_indicator = (
-                '<div style="padding:8px 16px;background:#eff6ff;border-top:1px solid #bfdbfe;'
-                'font-size:12px;color:#1d4ed8;font-weight:600;display:flex;align-items:center;gap:6px">'
-                '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+                '<div style="padding:7px 16px;background:#eff6ff;border-top:1px solid #bfdbfe;'
+                'font-size:11px;color:#1d4ed8;font-weight:600;display:flex;align-items:center;gap:5px">'
+                '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
                 'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
                 '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>'
                 '<line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
@@ -3702,33 +3702,26 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }}
 .edit-btn {{
-    width:100%; padding:11px 0;
+    width:100%; padding:10px 0;
     background:#fff; border:none; border-top:1px solid #f3f4f6;
     outline:none; -webkit-appearance:none;
-    font-size:14px; font-weight:600; color:#6b7280;
+    font-size:13px; font-weight:600; color:#6b7280;
     cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:8px;
+    display:flex; align-items:center; justify-content:center; gap:7px;
     transition:background 0.12s;
 }}
 .edit-btn:hover {{ background:#f9fafb; color:#111827; }}
-.edit-btn:focus,
-.edit-btn:focus-visible,
-.edit-btn:active {{ outline:none; box-shadow:none; }}
+.edit-btn:focus, .edit-btn:focus-visible, .edit-btn:active {{ outline:none; box-shadow:none; }}
 </style>
-
 <div class="outer">
-    <div class="cards-grid">
-        {cards_html}
-    </div>
+    <div class="cards-grid">{cards_html}</div>
 </div>
-
 <script>
 function triggerGhost(ci) {{
     var allBtns = window.parent.document.querySelectorAll('button');
     for (var b of allBtns) {{
         if ((b.innerText || b.textContent || '').trim() === String(ci)) {{
-            b.click();
-            return;
+            b.click(); return;
         }}
     }}
 }}
@@ -3738,8 +3731,7 @@ function syncHeight() {{
     for (var i = 0; i < iframes.length; i++) {{
         try {{
             if (iframes[i].contentWindow === window) {{
-                iframes[i].style.height = (h + 8) + 'px';
-                break;
+                iframes[i].style.height = (h + 8) + 'px'; break;
             }}
         }} catch(ex) {{}}
     }}
@@ -3751,7 +3743,7 @@ setTimeout(syncHeight, 400);
 </script>
 """, height=200, scrolling=False)
 
-        # ── Formulário de edição (aparece abaixo do grid quando editando)
+        # ── Formulário de edição
         if editando_empresa:
             e_edit = next((x for x in todas_empresas if x["nome"] == editando_empresa), None)
             if e_edit:
@@ -3762,97 +3754,157 @@ setTimeout(syncHeight, 400);
                 cor_edit      = get_minha_empresa_color() if is_minha_edit else get_concorrente_color(e_edit["idx"])
                 page_pic_edit = emp.get("ads_page_pic","") if is_minha_edit else concs[e_edit["idx"]].get("ads_page_pic","")
 
-                # ── Header do formulário de edição
+                badge_lbl_edit = "Minha empresa" if is_minha_edit else "Concorrente"
+                badge_bg_edit  = "#f0fdf4" if is_minha_edit else "#eff6ff"
+                badge_col_edit = "#15803d" if is_minha_edit else "#1d4ed8"
+                badge_brd_edit = "#bbf7d0" if is_minha_edit else "#bfdbfe"
+                dot_col_edit   = "#22c55e" if is_minha_edit else "#3b82f6"
+
                 if page_pic_edit and page_pic_edit.startswith("http"):
                     form_avatar_html = (
-                        f'<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;'
+                        f'<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;'
                         f'flex-shrink:0;border:2px solid #e5e7eb">'
                         f'<img src="{page_pic_edit}" style="width:100%;height:100%;object-fit:cover;display:block" />'
                         f'</div>'
                     )
                 else:
                     form_avatar_html = (
-                        f'<div style="width:40px;height:40px;border-radius:50%;background:{cor_edit};'
-                        f'display:flex;align-items:center;justify-content:center;font-size:14px;'
+                        f'<div style="width:36px;height:36px;border-radius:50%;background:{cor_edit};'
+                        f'display:flex;align-items:center;justify-content:center;font-size:13px;'
                         f'font-weight:700;color:#fff;flex-shrink:0">'
                         f'{gerar_avatar(e_edit["nome"])}</div>'
                     )
 
+                # CSS: remove espaço extra, estiliza o container azul
                 st.markdown(f"""
-                <div style="background:#fff;border:2px solid #3a9fd6;border-radius:12px;
-                            padding:20px;margin-top:8px;
-                            box-shadow:0 0 0 3px rgba(58,159,214,0.10)">
-                    <div style="display:flex;align-items:center;gap:12px;
-                                margin-bottom:16px;padding-bottom:14px;
-                                border-bottom:1px solid #f3f4f6">
-                        {form_avatar_html}
-                        <div>
-                            <div style="font-size:15px;font-weight:700;color:#1a2e4a">
-                                Configurando: {editando_empresa}
-                            </div>
-                            <div style="font-size:12px;color:#6b7280;margin-top:2px">
-                                Cole o nome ou ID numérico da página do Facebook
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <style>
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} {{
+                    margin-top: 4px !important;
+                }}
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} > div,
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} > div > div,
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} > div > div > div,
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} [class*="st-emotion-cache"] {{
+                    background: #ffffff !important;
+                    background-color: #ffffff !important;
+                }}
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} [data-testid="stVerticalBlockBorderWrapper"] {{
+                    border: 2px solid #3a9fd6 !important;
+                    border-radius: 12px !important;
+                    box-shadow: 0 0 0 3px rgba(58,159,214,0.10) !important;
+                    overflow: hidden !important;
+                    padding: 0 !important;
+                    margin-top: 0 !important;
+                }}
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} [data-testid="stVerticalBlockBorderWrapper"] > div,
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} [data-testid="stVerticalBlockBorderWrapper"] > div > div {{
+                    background: #ffffff !important;
+                    padding: 0 !important;
+                }}
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} input {{
+                    background: #fafafa !important;
+                    border: 1.5px solid #e5e7eb !important;
+                    border-radius: 8px !important;
+                    font-size: 14px !important;
+                }}
+                .st-key-form_edit_wrap_{sk_edit}_{ci_edit} input:focus {{
+                    border-color: #3a9fd6 !important;
+                    background: #fff !important;
+                }}
+                </style>
                 """, unsafe_allow_html=True)
 
-                novo_val = st.text_input(
-                    "Nome ou ID da página",
-                    value=ads_id_edit,
-                    key=f"cfg_inline_input_{sk_edit}_{ci_edit}",
-                    placeholder="Ex: Marketylics  ou  102803918240129",
-                )
+                with st.container(key=f"form_edit_wrap_{sk_edit}_{ci_edit}", border=True):
 
-                col_b, col_s, col_c = st.columns(3)
-                with col_b:
-                    if st.button(
-                        "🔍 Buscar páginas",
-                        key=f"btn_inline_buscar_{sk_edit}_{ci_edit}",
-                        use_container_width=True,
-                    ):
-                        if novo_val.strip():
-                            st.session_state.ads_onboarding_empresa = editando_empresa
-                            with st.spinner("Buscando…"):
-                                paginas = buscar_paginas_facebook(novo_val.strip())
-                            st.session_state.ads_onboarding_paginas = paginas
-                            st.rerun()
-                        else:
-                            st.warning("Digite um nome ou ID.")
+                    # ── Header compacto
+                    st.markdown(f"""
+                    <div style="display:flex;align-items:center;justify-content:space-between;
+                                gap:12px;padding:14px 18px 13px;
+                                border-bottom:1px solid #f0f4f8;
+                                background:#f8fbff;margin:-1px -1px 0 -1px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+                            {form_avatar_html}
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:14px;font-weight:700;color:#1a2e4a;
+                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                    {editando_empresa}
+                                </div>
+                                <div style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;
+                                            background:{badge_bg_edit};color:{badge_col_edit};
+                                            border:1px solid {badge_brd_edit};
+                                            padding:2px 8px;border-radius:20px;
+                                            font-size:11px;font-weight:700">
+                                    <span style="width:6px;height:6px;border-radius:50%;
+                                                 background:{dot_col_edit};display:inline-block"></span>
+                                    {badge_lbl_edit}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size:12px;color:#9ca3af;white-space:nowrap;flex-shrink:0">
+                            ID ou nome da página Facebook
+                        </div>
+                    </div>
+                    <div style="padding:16px 18px 6px">
+                    """, unsafe_allow_html=True)
 
-                with col_s:
-                    if st.button(
-                        "💾 Salvar ID",
-                        key=f"btn_inline_salvar_{sk_edit}_{ci_edit}",
-                        use_container_width=True,
-                    ):
-                        if novo_val.strip():
-                            salvar_ads_id(e_edit, novo_val.strip())
+                    novo_val = st.text_input(
+                        "ID ou nome",
+                        value=ads_id_edit,
+                        key=f"cfg_inline_input_{sk_edit}_{ci_edit}",
+                        placeholder="Ex: Marketylics  ou  102803918240129",
+                        label_visibility="collapsed",
+                    )
+
+                    col_b, col_s, col_c = st.columns(3)
+                    with col_b:
+                        if st.button(
+                            "🔍 Buscar páginas",
+                            key=f"btn_inline_buscar_{sk_edit}_{ci_edit}",
+                            use_container_width=True,
+                        ):
+                            if novo_val.strip():
+                                st.session_state.ads_onboarding_empresa = editando_empresa
+                                with st.spinner("Buscando…"):
+                                    paginas = buscar_paginas_facebook(novo_val.strip())
+                                st.session_state.ads_onboarding_paginas = paginas
+                                st.rerun()
+                            else:
+                                st.warning("Digite um nome ou ID.")
+
+                    with col_s:
+                        if st.button(
+                            "💾 Salvar ID",
+                            key=f"btn_inline_salvar_{sk_edit}_{ci_edit}",
+                            use_container_width=True,
+                        ):
+                            if novo_val.strip():
+                                salvar_ads_id(e_edit, novo_val.strip())
+                                st.session_state.ads_editando_empresa = None
+                                st.session_state.ads_onboarding_empresa = None
+                                st.session_state.ads_onboarding_paginas = []
+                                st.toast(f"✅ {editando_empresa} salvo!", icon="✅")
+                                st.rerun()
+                            else:
+                                st.warning("Digite um nome ou ID.")
+
+                    with col_c:
+                        if st.button(
+                            "✕ Cancelar",
+                            key=f"btn_inline_cancelar_{sk_edit}_{ci_edit}",
+                            use_container_width=True,
+                        ):
                             st.session_state.ads_editando_empresa = None
                             st.session_state.ads_onboarding_empresa = None
                             st.session_state.ads_onboarding_paginas = []
-                            st.toast(f"✅ {editando_empresa} salvo!", icon="✅")
                             st.rerun()
-                        else:
-                            st.warning("Digite um nome ou ID.")
 
-                with col_c:
-                    if st.button(
-                        "✕ Cancelar",
-                        key=f"btn_inline_cancelar_{sk_edit}_{ci_edit}",
-                        use_container_width=True,
-                    ):
-                        st.session_state.ads_editando_empresa = None
-                        st.session_state.ads_onboarding_empresa = None
-                        st.session_state.ads_onboarding_paginas = []
-                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                # ── Páginas encontradas
+                # ── Páginas encontradas (fora do container azul)
                 if onboarding_empresa == editando_empresa and onboarding_paginas:
                     st.markdown(
                         f"<div style='font-size:11px;font-weight:700;color:#6b7280;"
-                        f"text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px'>"
+                        f"text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 8px'>"
                         f"📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)</div>",
                         unsafe_allow_html=True,
                     )
