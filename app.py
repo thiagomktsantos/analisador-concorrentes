@@ -7625,427 +7625,119 @@ function triggerSub(sub) {{
         # ── SUB-ABA: POSTAGENS — CARDS ──────────────────────────────
         if subtab_atual == "postagens":
  
-            def _fmt(n):
-                n = int(n or 0)
-                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
-                if n >= 1_000:     return f"{n/1_000:.1f}K"
-                return str(n)
+            if not posts_list:
+                st.markdown("""
+                <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
+                            border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
+                    <div style='font-size:28px;margin-bottom:10px'>📸</div>
+                    <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
+                    <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                # Número de colunas
+                posts_col_key = f"posts_cols_{aba_ativa}"
+                if posts_col_key not in st.session_state:
+                    st.session_state[posts_col_key] = 4
+                n_cols_posts = st.session_state.get(posts_col_key, 4)
  
-            def _esc_js(s):
-                return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"').replace("\n", " ").replace("\r", "").replace("`", "\\`")
+                # Ghost button toggle colunas
+                ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
+                st.markdown(f"""
+                <style>
+                .st-key-{ghost_toggle_key} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:0 !important; height:0 !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; display:none !important;
+                }}
+                .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
+                    display:none !important; height:0 !important; min-height:0 !important;
+                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
  
-                if not posts_list:
-                    st.markdown("""
-                    <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
-                                border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
-                        <div style='font-size:28px;margin-bottom:10px'>📸</div>
-                        <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
-                        <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    # Número de colunas
-                    posts_col_key = f"posts_cols_{aba_ativa}"
-                    if posts_col_key not in st.session_state:
-                        st.session_state[posts_col_key] = 4
-                    n_cols_posts = st.session_state.get(posts_col_key, 4)
+                if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
+                    st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
+                    st.rerun()
  
-                    # Ghost button toggle colunas
-                    ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
-                    st.markdown(f"""
-                    <style>
-                    .st-key-{ghost_toggle_key} {{
-                        position:fixed !important; top:-9999px !important; left:-9999px !important;
-                        width:0 !important; height:0 !important; overflow:hidden !important;
-                        opacity:0 !important; pointer-events:none !important; display:none !important;
-                    }}
-                    .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
-                        display:none !important; height:0 !important; min-height:0 !important;
-                        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                    }}
-                    </style>
-                    """, unsafe_allow_html=True)
+                # Monta JSON dos posts de forma segura
+                import json as _json_posts
+                posts_json_data = []
+                for p in posts_list:
+                    posts_json_data.append({
+                        "thumb":    p.get("thumb", ""),
+                        "caption":  p.get("caption", ""),
+                        "date":     p.get("date", ""),
+                        "likes":    p.get("likes", 0),
+                        "comments": p.get("comments", 0),
+                        "eng":      p.get("likes", 0) + p.get("comments", 0),
+                        "is_video": p.get("is_video", False),
+                    })
  
-                    if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
-                        st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
-                        st.rerun()
+                posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
+                r_seg_val = r.get("seguidores", 0)
  
-                    # Monta JSON dos posts de forma segura (ensure_ascii=True evita quebra por emojis)
-                    posts_json_data = []
-                    for p in posts_list:
-                        posts_json_data.append({
-                            "thumb":    p.get("thumb", ""),
-                            "caption":  p.get("caption", ""),
-                            "date":     p.get("date", ""),
-                            "likes":    p.get("likes", 0),
-                            "comments": p.get("comments", 0),
-                            "eng":      p.get("likes", 0) + p.get("comments", 0),
-                            "is_video": p.get("is_video", False),
-                        })
- 
-                    import json as _json_posts
-                    posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
-                    r_seg_val = r.get("seguidores", 0)
- 
-                    components.html(f"""
+                components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background:transparent;
-    font-family:'DM Sans',sans-serif;
-    -webkit-font-smoothing:antialiased;
-    overflow:visible;
-}}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
- 
-.outer {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-radius:0 0 12px 12px;
-    overflow:hidden;
-}}
- 
-.stats-bar {{
-    display:flex;
-    align-items:center;
-    gap:0;
-    border-bottom:1px solid #e5e7eb;
-    background:#f9fafb;
-    overflow:hidden;
-}}
-.stat-item {{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding:14px 8px;
-    border-right:1px solid #e5e7eb;
-    text-align:center;
-}}
+.outer {{ background:#fff; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 12px 12px; overflow:hidden; }}
+.stats-bar {{ display:flex; align-items:center; border-bottom:1px solid #e5e7eb; background:#f9fafb; }}
+.stat-item {{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 8px; border-right:1px solid #e5e7eb; text-align:center; }}
 .stat-item:last-child {{ border-right:none; }}
-.stat-num {{
-    font-size:20px;
-    font-weight:800;
-    color:#111827;
-    line-height:1;
-    margin-bottom:3px;
-}}
-.stat-lbl {{
-    font-size:10px;
-    font-weight:700;
-    color:#9ca3af;
-    text-transform:uppercase;
-    letter-spacing:0.8px;
-}}
- 
-.filters-bar {{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:12px 16px;
-    border-bottom:1px solid #e5e7eb;
-    background:#fff;
-    flex-wrap:wrap;
-}}
-.filter-label {{
-    font-size:12px;
-    font-weight:700;
-    color:#6b7280;
-    white-space:nowrap;
-}}
-.filter-select {{
-    padding:6px 12px;
-    border:1px solid #e5e7eb;
-    border-radius:8px;
-    font-size:13px;
-    font-family:'DM Sans',sans-serif;
-    color:#374151;
-    background:#fafafa;
-    cursor:pointer;
-    outline:none;
-    transition:border-color 0.15s;
-}}
+.stat-num {{ font-size:20px; font-weight:800; color:#111827; line-height:1; margin-bottom:3px; }}
+.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; }}
+.filters-bar {{ display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid #e5e7eb; background:#fff; flex-wrap:wrap; }}
+.filter-label {{ font-size:12px; font-weight:700; color:#6b7280; white-space:nowrap; }}
+.filter-select {{ padding:6px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; color:#374151; background:#fafafa; cursor:pointer; outline:none; }}
 .filter-select:focus {{ border-color:#3a9fd6; background:#fff; }}
-.col-toggle {{
-    margin-left:auto;
-    padding:6px 12px;
-    border:1px solid #e5e7eb;
-    border-radius:8px;
-    font-size:13px;
-    font-weight:600;
-    color:#6b7280;
-    background:#fff;
-    cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    transition:all 0.15s;
-    display:flex;
-    align-items:center;
-    gap:6px;
-    white-space:nowrap;
-}}
+.col-toggle {{ margin-left:auto; padding:6px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:13px; font-weight:600; color:#6b7280; background:#fff; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:6px; white-space:nowrap; }}
 .col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
- 
-.posts-grid {{
-    display:grid;
-    gap:0;
-    padding:0;
-}}
- 
-.post-card {{
-    background:#fff;
-    border-right:1px solid #f0f2f5;
-    border-bottom:1px solid #f0f2f5;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    cursor:pointer;
-    transition:background 0.12s;
-    position:relative;
-}}
+.posts-grid {{ display:grid; gap:0; }}
+.post-card {{ background:#fff; border-right:1px solid #f0f2f5; border-bottom:1px solid #f0f2f5; display:flex; flex-direction:column; overflow:hidden; cursor:pointer; position:relative; }}
 .post-card:hover {{ background:#f9fafb; }}
 .post-card:hover .card-overlay {{ opacity:1; }}
- 
-.thumb-wrap {{
-    position:relative;
-    width:100%;
-    aspect-ratio:1/1;
-    background:#f0f2f5;
-    overflow:hidden;
-    flex-shrink:0;
-}}
-.thumb-wrap img {{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-    transition:transform 0.2s;
-}}
+.thumb-wrap {{ position:relative; width:100%; aspect-ratio:1/1; background:#f0f2f5; overflow:hidden; flex-shrink:0; }}
+.thumb-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.2s; }}
 .post-card:hover .thumb-wrap img {{ transform:scale(1.04); }}
-.thumb-fallback {{
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(135deg,#e9eef5,#d2dde9);
-    font-size:28px;
-}}
- 
-.card-overlay {{
-    position:absolute;
-    inset:0;
-    background:rgba(14,42,71,0.72);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    opacity:0;
-    transition:opacity 0.18s;
-    pointer-events:none;
-}}
-.overlay-stat {{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-size:16px;
-    font-weight:700;
-    color:#fff;
-}}
-.overlay-stat svg {{ width:18px; height:18px; }}
- 
-.type-badge {{
-    position:absolute;
-    top:8px;
-    left:8px;
-    background:rgba(0,0,0,0.55);
-    color:#fff;
-    font-size:10px;
-    font-weight:700;
-    padding:2px 8px;
-    border-radius:20px;
-    pointer-events:none;
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-}}
- 
-.card-info {{
-    padding:10px 12px 12px;
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-}}
-.card-date {{
-    font-size:11px;
-    color:#9ca3af;
-    font-weight:600;
-}}
-.card-caption {{
-    font-size:12px;
-    color:#374151;
-    line-height:1.5;
-    display:-webkit-box;
-    -webkit-line-clamp:2;
-    -webkit-box-orient:vertical;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    flex:1;
-    min-height:36px;
-    font-style:italic;
-}}
-.card-metrics {{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding-top:8px;
-    border-top:1px solid #f3f4f6;
-    flex-wrap:wrap;
-}}
-.metric {{
-    display:flex;
-    align-items:center;
-    gap:4px;
-    font-size:12px;
-    font-weight:600;
-    color:#374151;
-}}
-.metric svg {{ width:13px; height:13px; flex-shrink:0; }}
-.metric-eng {{
-    margin-left:auto;
-    font-size:11px;
-    font-weight:700;
-    color:#3a9fd6;
-    white-space:nowrap;
-}}
- 
-.ver-copy-btn {{
-    width:100%;
-    padding:8px;
-    border:none;
-    border-top:1px solid #f0f2f5;
-    background:#f9fafb;
-    font-size:12px;
-    font-weight:700;
-    color:#1d4ed8;
-    cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    transition:background 0.12s;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:5px;
-}}
+.thumb-fallback {{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e9eef5,#d2dde9); font-size:28px; }}
+.card-overlay {{ position:absolute; inset:0; background:rgba(14,42,71,0.72); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; opacity:0; transition:opacity 0.18s; pointer-events:none; }}
+.overlay-stat {{ display:flex; align-items:center; gap:6px; font-size:16px; font-weight:700; color:#fff; }}
+.type-badge {{ position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; pointer-events:none; text-transform:uppercase; letter-spacing:0.5px; }}
+.card-info {{ padding:10px 12px 12px; flex:1; display:flex; flex-direction:column; gap:6px; }}
+.card-date {{ font-size:11px; color:#9ca3af; font-weight:600; }}
+.card-caption {{ font-size:12px; color:#374151; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; flex:1; min-height:36px; font-style:italic; }}
+.card-metrics {{ display:flex; align-items:center; gap:10px; padding-top:8px; border-top:1px solid #f3f4f6; flex-wrap:wrap; }}
+.metric {{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:#374151; }}
+.metric-eng {{ margin-left:auto; font-size:11px; font-weight:700; color:#3a9fd6; white-space:nowrap; }}
+.ver-copy-btn {{ width:100%; padding:8px; border:none; border-top:1px solid #f0f2f5; background:#f9fafb; font-size:12px; font-weight:700; color:#1d4ed8; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:5px; }}
 .ver-copy-btn:hover {{ background:#eff6ff; }}
- 
-#modal-bg {{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.6);
-    z-index:9999;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    backdrop-filter:blur(2px);
-}}
+#modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(2px); }}
 #modal-bg.open {{ display:flex; }}
-#modal-box {{
-    background:#fff;
-    border-radius:16px;
-    overflow:hidden;
-    width:100%;
-    max-width:520px;
-    max-height:90vh;
-    display:flex;
-    flex-direction:column;
-    box-shadow:0 24px 80px rgba(0,0,0,0.3);
-    position:relative;
-}}
-#modal-img-wrap {{
-    width:100%;
-    aspect-ratio:1/1;
-    background:#000;
-    overflow:hidden;
-    flex-shrink:0;
-}}
-#modal-img-wrap img {{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-}}
-#modal-content {{
-    padding:20px 22px;
-    overflow-y:auto;
-    flex:1;
-}}
-#modal-title {{
-    font-size:13px;
-    font-weight:700;
-    color:#9ca3af;
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-    margin-bottom:8px;
-}}
-#modal-caption {{
-    font-size:14px;
-    color:#374151;
-    line-height:1.75;
-    white-space:pre-wrap;
-}}
-#modal-close {{
-    position:absolute;
-    top:14px;
-    right:16px;
-    background:rgba(0,0,0,0.5);
-    border:none;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    font-size:16px;
-    color:#fff;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:10;
-}}
-#modal-metrics {{
-    display:flex;
-    gap:16px;
-    padding:12px 22px;
-    border-top:1px solid #f3f4f6;
-    background:#f9fafb;
-    flex-shrink:0;
-}}
-.modal-metric {{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-size:14px;
-    font-weight:700;
-    color:#374151;
-}}
+#modal-box {{ background:#fff; border-radius:16px; overflow:hidden; width:100%; max-width:520px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 24px 80px rgba(0,0,0,0.3); position:relative; }}
+#modal-img-wrap {{ width:100%; aspect-ratio:1/1; background:#000; overflow:hidden; flex-shrink:0; }}
+#modal-img-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
+#modal-content {{ padding:20px 22px; overflow-y:auto; flex:1; }}
+#modal-title {{ font-size:13px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }}
+#modal-caption {{ font-size:14px; color:#374151; line-height:1.75; white-space:pre-wrap; }}
+#modal-close {{ position:absolute; top:14px; right:16px; background:rgba(0,0,0,0.5); border:none; width:32px; height:32px; border-radius:50%; font-size:16px; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }}
+#modal-metrics {{ display:flex; gap:16px; padding:12px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; flex-shrink:0; }}
+.modal-metric {{ display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700; color:#374151; }}
 </style>
 </head>
 <body>
  
-<!-- JSON dos posts embutido de forma segura -->
 <script id="posts-data" type="application/json">{posts_json_str}</script>
  
-<!-- Modal -->
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">&#x2715;</button>
-        <div id="modal-img-wrap" style="display:none">
-            <img id="modal-img" src="" alt="" />
-        </div>
+        <div id="modal-img-wrap" style="display:none"><img id="modal-img" src="" alt="" /></div>
         <div id="modal-content">
             <div id="modal-title">Copy da publica&#xe7;&#xe3;o</div>
             <div id="modal-caption"></div>
@@ -8056,20 +7748,19 @@ body {{ padding-bottom:8px; }}
  
 <div class="outer">
     <div class="stats-bar">
-        <div class="stat-item"><div class="stat-num" id="stat-total">&#x2014;</div><div class="stat-lbl">Postagens</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-fotos">&#x2014;</div><div class="stat-lbl">Fotos</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-videos">&#x2014;</div><div class="stat-lbl">V&#xed;deos</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-likes">&#x2014;</div><div class="stat-lbl">Total Curtidas</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-coms">&#x2014;</div><div class="stat-lbl">Total Coment&#xe1;rios</div></div>
-        <div class="stat-item"><div class="stat-num" id="stat-best">&#x2014;</div><div class="stat-lbl">Melhor Engaj.</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-total">-</div><div class="stat-lbl">Postagens</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-fotos">-</div><div class="stat-lbl">Fotos</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-videos">-</div><div class="stat-lbl">Videos</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-likes">-</div><div class="stat-lbl">Curtidas</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-coms">-</div><div class="stat-lbl">Comentarios</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-best">-</div><div class="stat-lbl">Melhor Engaj.</div></div>
     </div>
- 
     <div class="filters-bar">
         <span class="filter-label">Filtrar:</span>
         <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
             <option value="todos">Todos os tipos</option>
-            <option value="foto">S&#xf3; Fotos</option>
-            <option value="video">S&#xf3; V&#xed;deos</option>
+            <option value="foto">So Fotos</option>
+            <option value="video">So Videos</option>
         </select>
         <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
             <option value="recentes">Mais recentes</option>
@@ -8077,52 +7768,47 @@ body {{ padding-bottom:8px; }}
             <option value="eng">Maior engajamento</option>
         </select>
         <button class="col-toggle" onclick="toggleCols()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-            </svg>
-            <span id="col-toggle-label">{n_cols_posts} colunas</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span id="col-label">{n_cols_posts} colunas</span>
         </button>
     </div>
- 
     <div class="posts-grid" id="posts-grid"></div>
 </div>
  
 <script>
-// Lê os dados do elemento JSON — evita quebra por emojis/aspas no inline JS
 var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
 var N_COLS = {n_cols_posts};
-var R_SEG  = {r_seg_val};
+var R_SEG = {r_seg_val};
  
 function fmtNum(n) {{
     n = Math.round(n || 0);
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
+    if (n >= 1000) return (n/1000).toFixed(1) + 'K';
     return String(n);
 }}
  
 function updateStats(posts) {{
-    var nFotos  = posts.filter(function(p) {{ return !p.is_video; }}).length;
-    var nVideos = posts.filter(function(p) {{ return p.is_video; }}).length;
-    var totLikes = posts.reduce(function(s,p) {{ return s + (p.likes||0); }}, 0);
-    var totComs  = posts.reduce(function(s,p) {{ return s + (p.comments||0); }}, 0);
-    var bestEng  = posts.reduce(function(mx,p) {{ return Math.max(mx, (p.likes||0)+(p.comments||0)); }}, 0);
-    document.getElementById('stat-total').textContent  = posts.length;
-    document.getElementById('stat-fotos').textContent  = nFotos;
-    document.getElementById('stat-videos').textContent = nVideos;
-    document.getElementById('stat-likes').textContent  = fmtNum(totLikes);
-    document.getElementById('stat-coms').textContent   = fmtNum(totComs);
-    document.getElementById('stat-best').textContent   = fmtNum(bestEng);
+    var nF = posts.filter(function(p){{ return !p.is_video; }}).length;
+    var nV = posts.filter(function(p){{ return p.is_video; }}).length;
+    var tL = posts.reduce(function(s,p){{ return s+(p.likes||0); }},0);
+    var tC = posts.reduce(function(s,p){{ return s+(p.comments||0); }},0);
+    var bE = posts.reduce(function(mx,p){{ return Math.max(mx,(p.likes||0)+(p.comments||0)); }},0);
+    document.getElementById('stat-total').textContent = posts.length;
+    document.getElementById('stat-fotos').textContent = nF;
+    document.getElementById('stat-videos').textContent = nV;
+    document.getElementById('stat-likes').textContent = fmtNum(tL);
+    document.getElementById('stat-coms').textContent = fmtNum(tC);
+    document.getElementById('stat-best').textContent = fmtNum(bE);
 }}
  
 function getFiltered() {{
-    var tipo  = document.getElementById('filter-tipo').value;
+    var tipo = document.getElementById('filter-tipo').value;
     var ordem = document.getElementById('filter-ordem').value;
     var posts = ALL_POSTS.slice();
-    if (tipo === 'foto')  posts = posts.filter(function(p) {{ return !p.is_video; }});
-    if (tipo === 'video') posts = posts.filter(function(p) {{ return p.is_video; }});
-    if (ordem === 'likes') posts.sort(function(a,b) {{ return (b.likes||0)-(a.likes||0); }});
-    else if (ordem === 'eng') posts.sort(function(a,b) {{ return ((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0)); }});
+    if (tipo === 'foto') posts = posts.filter(function(p){{ return !p.is_video; }});
+    if (tipo === 'video') posts = posts.filter(function(p){{ return p.is_video; }});
+    if (ordem === 'likes') posts.sort(function(a,b){{ return (b.likes||0)-(a.likes||0); }});
+    else if (ordem === 'eng') posts.sort(function(a,b){{ return ((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0)); }});
     return posts;
 }}
  
@@ -8130,27 +7816,18 @@ function buildGrid(posts) {{
     var grid = document.getElementById('posts-grid');
     grid.style.gridTemplateColumns = 'repeat(' + N_COLS + ', 1fr)';
     grid.innerHTML = '';
- 
     posts.forEach(function(p, idx) {{
         var card = document.createElement('div');
         card.className = 'post-card';
- 
-        var capShort = (p.caption || '').substring(0, 80) + ((p.caption||'').length > 80 ? '...' : '');
+        var capShort = (p.caption||'').substring(0,80) + ((p.caption||'').length > 80 ? '...' : '');
         var hasCaption = !!(p.caption && p.caption.trim());
- 
-        var thumbHtml;
-        if (p.thumb) {{
-            thumbHtml = '<img src="' + p.thumb + '" loading="lazy" alt="" />';
-        }} else {{
-            thumbHtml = '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>';
-        }}
- 
-        var overlayHtml =
-            '<div class="card-overlay">'
-            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
-            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
+        var thumbHtml = p.thumb
+            ? '<img src="' + p.thumb + '" loading="lazy" alt="" />'
+            : '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>';
+        var overlayHtml = '<div class="card-overlay">'
+            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
+            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
             + '</div>';
- 
         card.innerHTML =
             '<div class="thumb-wrap">'
             + thumbHtml
@@ -8159,36 +7836,29 @@ function buildGrid(posts) {{
             + '</div>'
             + '<div class="card-info">'
             + (p.date ? '<div class="card-date">' + p.date + '</div>' : '')
-            + '<div class="card-caption">' + (capShort || '') + '</div>'
+            + '<div class="card-caption">' + capShort + '</div>'
             + '<div class="card-metrics">'
-            + '<span class="metric"><svg viewBox="0 0 24 24" fill="#e11d48"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</span>'
-            + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
+            + '<span class="metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="13" height="13"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</span>'
+            + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
             + '<span class="metric-eng">' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
-            + '</div>'
-            + '</div>';
- 
+            + '</div></div>';
         if (hasCaption) {{
             var btn = document.createElement('button');
             btn.className = 'ver-copy-btn';
             btn.textContent = 'Ver copy completa';
-            btn.onclick = (function(i) {{ return function(ev) {{ ev.stopPropagation(); openModal(i); }}; }})(idx);
+            btn.onclick = (function(i){{ return function(ev){{ ev.stopPropagation(); openModal(i); }}; }})(idx);
             card.appendChild(btn);
         }}
- 
-        // Corrige erro de imagem
         var img = card.querySelector('img');
         if (img) {{
             img.onerror = function() {{
-                var wrap = this.parentElement;
-                wrap.innerHTML = '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>'
+                this.parentElement.innerHTML = '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>'
                     + '<div class="type-badge">' + (p.is_video ? 'Video' : 'Foto') + '</div>'
                     + overlayHtml;
             }};
         }}
- 
         grid.appendChild(card);
     }});
- 
     syncHeight();
 }}
  
@@ -8199,39 +7869,26 @@ function applyFilters() {{
 }}
  
 function toggleCols() {{
-    triggerGlobal('posts_toggle_{aba_ativa}');
-}}
- 
-function triggerGlobal(label) {{
     var btns = window.parent.document.querySelectorAll('button');
+    var label = 'posts_toggle_{aba_ativa}';
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
+        if ((b.textContent||b.innerText||'').split(/\\s+/).join(' ').trim() === label) {{ b.click(); return; }}
     }}
 }}
  
-var _filteredForModal = [];
 function openModal(idx) {{
-    _filteredForModal = getFiltered();
-    var p = _filteredForModal[idx];
+    var filtered = getFiltered();
+    var p = filtered[idx];
     if (!p) return;
- 
     var imgWrap = document.getElementById('modal-img-wrap');
-    var img     = document.getElementById('modal-img');
-    if (p.thumb) {{
-        imgWrap.style.display = 'block';
-        img.src = p.thumb;
-        img.onerror = function() {{ imgWrap.style.display = 'none'; }};
-    }} else {{
-        imgWrap.style.display = 'none';
-    }}
- 
-    document.getElementById('modal-caption').textContent = p.caption || 'Sem legenda disponivel.';
+    var img = document.getElementById('modal-img');
+    if (p.thumb) {{ imgWrap.style.display = 'block'; img.src = p.thumb; img.onerror = function(){{ imgWrap.style.display='none'; }}; }}
+    else {{ imgWrap.style.display = 'none'; }}
+    document.getElementById('modal-caption').textContent = p.caption || 'Sem legenda.';
     document.getElementById('modal-metrics').innerHTML =
         '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + ' curtidas</div>'
         + '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + ' comentarios</div>'
         + (p.date ? '<div class="modal-metric" style="margin-left:auto;color:#9ca3af;font-size:12px">' + p.date + '</div>' : '');
- 
     document.getElementById('modal-bg').classList.add('open');
 }}
  
@@ -8240,28 +7897,21 @@ function closeModal() {{
     document.getElementById('modal-img').src = '';
 }}
  
-document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
+document.addEventListener('keydown', function(e){{ if(e.key==='Escape') closeModal(); }});
  
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 12) + 'px';
-            break;
-        }} }} catch(e) {{}}
+    for (var i=0;i<frames.length;i++) {{
+        try {{ if (frames[i].contentWindow===window) {{ frames[i].style.height=(h+12)+'px'; break; }} }} catch(e) {{}}
     }}
 }}
  
-// Inicializa
 applyFilters();
- 
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 300);
-setTimeout(syncHeight, 800);
-setTimeout(syncHeight, 1500);
+setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
 """, height=600, scrolling=False)
