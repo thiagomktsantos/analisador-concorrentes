@@ -7289,7 +7289,7 @@ function syncHeight() {{
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
             frames[i].style.height = (h + 2) + 'px';
-            frames[i].style.marginTop = '-65px';
+            frames[i].style.marginTop = '-23px';
             break;
         }} }} catch(e) {{}}
     }}
@@ -7394,7 +7394,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '88px'; iframes[i].style.marginTop = '-8px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '88px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
@@ -7554,7 +7554,7 @@ function syncH() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; iframes[i].style.marginTop = '-55px';break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; iframes[i].style.marginTop = '-32px';break; }} }} catch(e) {{}}
     }}
 }}
 if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
