@@ -3519,8 +3519,8 @@ function triggerTab(label) {{
     if not st.secrets.get("APIFY_TOKEN", ""):
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
 
-    # ══════════════════════════════════════════════════════════════════
-    # ABA: CONFIGURAÇÃO — Cards de empresa estilo imagem 2
+# ══════════════════════════════════════════════════════════════════
+    # ABA: CONFIGURAÇÃO — Cards de empresa
     # ══════════════════════════════════════════════════════════════════
     if main_tab == "configuracao":
 
@@ -3644,7 +3644,7 @@ function triggerTab(label) {{
                         st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
                         st.rerun()
 
-        # ── Renderizar cards de configuração — estilo imagem 2
+        # ── Renderizar cards de configuração
         config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
         editando_empresa = st.session_state.ads_editando_empresa
 
@@ -3680,26 +3680,34 @@ function triggerTab(label) {{
                 })
             paginas_json = _json.dumps(pg_data, ensure_ascii=False)
 
+        n_empresas = len(empresas_json_list)
+        # Altura base: header(56) + padding(40) + por empresa: ~160px no grid de 3 cols
+        import math
+        n_rows = math.ceil(n_empresas / 3)
+        altura_estimada = 56 + 40 + (n_rows * 180) + 40
+        altura_inicial = max(altura_estimada, 400)
+
         components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:8px; }}
+body {{ padding-bottom:12px; }}
 
-/* ── Container geral com borda ── */
 .config-wrap {{
     background:#fff;
     border:1px solid #e5e7eb;
     border-radius:16px;
-    overflow:hidden;
+    overflow:visible;
 }}
 .config-header {{
     padding:16px 22px;
     border-bottom:1px solid #e5e7eb;
     font-size:13px; font-weight:800; color:#1a2e4a;
     text-transform:uppercase; letter-spacing:0.5px;
+    background:#f9fafb;
+    border-radius:16px 16px 0 0;
 }}
 .config-body {{
     padding:20px 22px;
@@ -3708,12 +3716,12 @@ body {{ padding-bottom:8px; }}
     gap:16px;
 }}
 
-/* ── Card de empresa — estilo imagem 2 ── */
+/* ── Card de empresa ── */
 .emp-card {{
     background:#f9fafb;
     border:1px solid #e5e7eb;
     border-radius:12px;
-    overflow:hidden;
+    overflow:visible;
     transition:border-color 0.15s, box-shadow 0.15s;
     display:flex;
     flex-direction:column;
@@ -3803,6 +3811,7 @@ body {{ padding-bottom:8px; }}
     border-top:1px solid #e5e7eb;
     padding:14px 16px;
     background:#fff;
+    border-radius:0 0 12px 12px;
 }}
 .edit-form.open {{ display:block; }}
 .input-label {{
@@ -3817,7 +3826,7 @@ body {{ padding-bottom:8px; }}
     transition:border-color 0.15s; margin-bottom:10px;
 }}
 .input-field:focus {{ border-color:#3a9fd6; background:#fff; }}
-.btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }}
+.btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }}
 .btn-buscar {{
     padding:9px; border:none; border-radius:8px;
     background:#0e2a47; color:#fff;
@@ -3837,10 +3846,11 @@ body {{ padding-bottom:8px; }}
 }}
 .btn-salvar:hover {{ background:#dbeafe; }}
 .btn-cancelar {{
-    grid-column:1/-1; padding:7px; border:none; border-radius:8px;
+    width:100%; padding:7px; border:none; border-radius:8px;
     background:transparent; color:#9ca3af;
     font-size:12px; font-weight:600; cursor:pointer;
     font-family:'DM Sans',sans-serif; transition:color 0.15s;
+    margin-top:2px;
 }}
 .btn-cancelar:hover {{ color:#374151; }}
 
@@ -3868,14 +3878,41 @@ body {{ padding-bottom:8px; }}
 .pg-thumb img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; }}
 .pg-nome {{ font-size:12px; font-weight:700; color:#111827; }}
 .pg-id {{ font-size:10px; color:#9ca3af; font-family:monospace; }}
-.pg-ads {{ font-size:11px; font-weight:600; color:#3a9fd6; }}
+.pg-ads {{ font-size:11px; font-weight:600; color:#3a9fd6; margin-left:auto; flex-shrink:0; }}
+
+/* ── Info box ── */
+.info-box {{
+    margin:0 22px 20px;
+    background:#f0f9ff;
+    border:1px solid #bae6fd;
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:13px;
+    color:#0369a1;
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    line-height:1.6;
+}}
+.info-box svg {{ flex-shrink:0; margin-top:1px; }}
 </style>
 </head>
 <body>
 <div class="config-wrap">
-    <div class="config-header">Configure as páginas do Facebook / Instagram</div>
+    <div class="config-header">⚙️ Configure as páginas do Facebook / Instagram</div>
+
+    <div class="info-box" id="info-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>
+            Clique no <strong>lápis ✏️</strong> de cada empresa para configurar. Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong> do Facebook, depois clique em <strong>Buscar páginas</strong> para encontrar ou <strong>Salvar ID</strong> para salvar diretamente.
+        </div>
+    </div>
+
     <div class="config-body" id="cards-grid"></div>
 </div>
+
 <script>
 var EMPRESAS = {empresas_json};
 var PAGINAS  = {paginas_json};
@@ -3890,18 +3927,25 @@ function toggleForm(ci) {{
     var form = document.getElementById('form_' + ci);
     var card = document.getElementById('card_' + ci);
     var isOpen = form.classList.contains('open');
+    // fechar todos primeiro
     document.querySelectorAll('.edit-form').forEach(function(f) {{ f.classList.remove('open'); }});
     document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('editing'); }});
     if (!isOpen) {{
         form.classList.add('open');
         card.classList.add('editing');
+        // focar no input
+        var inp = document.getElementById('inp_' + ci);
+        if (inp) setTimeout(function() {{ inp.focus(); inp.select(); }}, 50);
     }}
-    setTimeout(syncHeight, 50);
+    setTimeout(syncHeight, 80);
+    setTimeout(syncHeight, 300);
 }}
 
 function buildCards() {{
     var grid = document.getElementById('cards-grid');
+    if (!grid) return;
     grid.innerHTML = '';
+
     EMPRESAS.forEach(function(e) {{
         var hasId = e.ads_id && e.ads_id.trim() !== '';
         var card = document.createElement('div');
@@ -3915,7 +3959,7 @@ function buildCards() {{
         var idDot   = hasId ? '<div class="id-dot"></div>' : '<div class="id-dot empty"></div>';
         var idVal   = hasId
             ? '<div class="id-val">' + e.ads_id + '</div>'
-            : '<div class="id-val empty">Não configurado</div>';
+            : '<div class="id-val empty">Não configurado — clique em ✏️</div>';
         var idClass = hasId ? 'id-strip configured' : 'id-strip';
 
         card.innerHTML =
@@ -3932,7 +3976,7 @@ function buildCards() {{
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
             + '</div>'
-            + '<button class="lapiz-btn" onclick="toggleForm(' + e.ci + ')" title="Editar">'
+            + '<button class="lapiz-btn" onclick="toggleForm(' + e.ci + ')" title="Editar configuração">'
             + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
             + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
             + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
@@ -3943,23 +3987,25 @@ function buildCards() {{
             + idDot + idVal
             + '</div>'
             + '<div class="edit-form" id="form_' + e.ci + '">'
-            + '<div class="input-label">Nome ou ID numérico da página</div>'
-            + '<input class="input-field" id="inp_' + e.ci + '" type="text" value="' + (e.ads_id || '') + '" '
-            + 'placeholder="Ex: Nome da Página  ou  102803918240129" '
-            + 'oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
+            + '<div class="input-label">Nome da página ou ID numérico do Facebook</div>'
+            + '<input class="input-field" id="inp_' + e.ci + '" type="text"'
+            + ' value="' + (e.ads_id || '') + '"'
+            + ' placeholder="Ex: Marketylics  ou  102803918240129"'
+            + ' oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
             + '<div class="btn-row">'
             + '<button class="btn-buscar" onclick="triggerAction(\'buscar\',' + e.ci + ')">'
             + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-            + 'Buscar páginas'
+            + ' Buscar páginas'
             + '</button>'
             + '<button class="btn-salvar" onclick="triggerSalvar(' + e.ci + ')">'
             + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
-            + 'Salvar ID'
+            + ' Salvar ID'
             + '</button>'
-            + '<button class="btn-cancelar" onclick="toggleForm(' + e.ci + ')">Cancelar</button>'
             + '</div>'
+            + '<button class="btn-cancelar" onclick="toggleForm(' + e.ci + ')">✕ Cancelar</button>'
             + getPaginasHtml(e.nome)
             + '</div>';
+
         grid.appendChild(card);
     }});
 
@@ -3970,20 +4016,25 @@ function buildCards() {{
     if (targetNome) {{
         EMPRESAS.forEach(function(e) {{
             if (e.nome === targetNome) {{
-                setTimeout(function() {{ toggleForm(e.ci); }}, 200);
+                setTimeout(function() {{
+                    toggleForm(e.ci);
+                }}, 300);
             }}
         }});
     }}
+
     syncHeight();
 }}
 
 function getPaginasHtml(nomeEmpresa) {{
     if (!PAGINAS || PAGINAS.length === 0 || PAGINAS_EMPRESA !== nomeEmpresa) return '';
-    var html = '<div class="paginas-wrap"><div class="paginas-title">📋 Páginas encontradas — clique para selecionar</div>';
+    var html = '<div class="paginas-wrap">'
+        + '<div class="paginas-title">📋 ' + PAGINAS.length + ' página(s) encontrada(s) — clique para selecionar</div>';
     PAGINAS.forEach(function(pg) {{
+        var initial = (pg.nome && pg.nome[0]) ? pg.nome[0].toUpperCase() : 'P';
         var thumb = pg.profile_picture
-            ? '<img src="' + pg.profile_picture + '" onerror="this.outerHTML=\'<span>' + (pg.nome[0]||'P') + '</span>\'" />'
-            : '<span>' + (pg.nome[0]||'P') + '</span>';
+            ? '<img src="' + pg.profile_picture + '" onerror="this.outerHTML=\'<span>' + initial + '</span>\'" />'
+            : '<span>' + initial + '</span>';
         html += '<div class="pg-card" onclick="triggerSelectPg(' + pg.pi + ')">'
             + '<div class="pg-thumb">' + thumb + '</div>'
             + '<div style="flex:1;min-width:0">'
@@ -4004,28 +4055,42 @@ function getSkByIndex(ci) {{
 }}
 
 function syncInputToSt(ci, val) {{
-    var keyPattern = 'cfg_input_' + getSkByIndex(ci) + '_' + ci;
-    var allInputs = window.parent.document.querySelectorAll('input[id*="' + keyPattern + '"]');
+    var sk = getSkByIndex(ci);
+    var keyPattern = 'cfg_input_' + sk + '_' + ci;
+    var allInputs = window.parent.document.querySelectorAll('input');
     allInputs.forEach(function(inp) {{
-        var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        setter.call(inp, val);
-        inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        var id = inp.id || '';
+        if (id.indexOf(keyPattern) !== -1 || (inp.getAttribute('data-key') || '').indexOf(keyPattern) !== -1) {{
+            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            setter.call(inp, val);
+            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            inp.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        }}
+    }});
+    // fallback: buscar pelo aria-label
+    window.parent.document.querySelectorAll('[data-testid="stTextInput"] input').forEach(function(inp) {{
+        var label = inp.closest('[data-testid="stTextInput"]');
+        if (label && label.textContent && label.textContent.indexOf(keyPattern) !== -1) {{
+            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            setter.call(inp, val);
+            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        }}
     }});
 }}
 
 function triggerAction(action, ci) {{
     var val = document.getElementById('inp_' + ci);
-    if (val) {{ syncInputToSt(ci, val.value); }}
+    if (val) syncInputToSt(ci, val.value);
     var sk = getSkByIndex(ci);
     var label = 'cfg_' + action + '_' + sk;
-    triggerBtn(label);
+    setTimeout(function() {{ triggerBtn(label); }}, 80);
 }}
 
 function triggerSalvar(ci) {{
     var val = document.getElementById('inp_' + ci);
-    if (val) {{ syncInputToSt(ci, val.value); }}
+    if (val) syncInputToSt(ci, val.value);
     var sk = getSkByIndex(ci);
-    triggerBtn('cfg_salvar_' + sk);
+    setTimeout(function() {{ triggerBtn('cfg_salvar_' + sk); }}, 80);
 }}
 
 function triggerSelectPg(pi) {{
@@ -4035,29 +4100,58 @@ function triggerSelectPg(pi) {{
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
 
 function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var h = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        300
+    );
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 12) + 'px'; break;
-        }} }} catch(e) {{}}
+        try {{
+            if (frames[i].contentWindow === window) {{
+                frames[i].style.height = (h + 20) + 'px';
+                frames[i].style.minHeight = '0';
+                break;
+            }}
+        }} catch(ex) {{}}
     }}
 }}
 
-buildCards();
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+// Executar buildCards assim que o DOM estiver pronto
+if (document.readyState === 'loading') {{
+    document.addEventListener('DOMContentLoaded', function() {{
+        buildCards();
+    }});
+}} else {{
+    buildCards();
+}}
+
+// ResizeObserver para ajuste dinâmico
+if (window.ResizeObserver) {{
+    new ResizeObserver(function() {{ syncHeight(); }}).observe(document.body);
+}}
+
+window.addEventListener('load', function() {{
+    buildCards();
+    syncHeight();
+}});
+
+// Múltiplos timeouts para garantir renderização
+setTimeout(function() {{ buildCards(); syncHeight(); }}, 50);
+setTimeout(syncHeight, 200);
+setTimeout(syncHeight, 500);
+setTimeout(syncHeight, 1000);
+setTimeout(syncHeight, 2000);
 </script>
 </body></html>
-""", height=600, scrolling=False)
+""", height=altura_inicial, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
