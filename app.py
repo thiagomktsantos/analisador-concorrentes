@@ -2134,7 +2134,7 @@ setTimeout(ajustarAltura, 400);
     else:
         st.markdown("""
         <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
-                    padding:48px 32px;text-align:center;margin-top:-65px'>
+                    padding:48px 32px;text-align:center;margin-top:10px;'>
             <div style='font-size:32px;margin-bottom:12px'>🎯</div>
             <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum concorrente cadastrado</div>
             <div style='font-size:14px;color:#9ca3af'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
@@ -3607,7 +3607,7 @@ function triggerTab(label) {{
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
                     padding:11px 16px;font-size:13px;color:#0369a1;
                     display:flex;align-items:flex-start;gap:10px;
-                    line-height:1.6;margin-bottom:10px">
+                    line-height:1.6;margin-top:-65px">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                  style="flex-shrink:0;margin-top:2px">
