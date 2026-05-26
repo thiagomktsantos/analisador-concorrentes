@@ -6720,13 +6720,13 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
-
+ 
     import datetime
     import json
-
+ 
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
-
+ 
     # ── Cabeçalho ──────────────────────────────────────────────────
     h1, h2 = st.columns([7, 3])
     with h1:
@@ -6749,7 +6749,7 @@ html, body { background: transparent; overflow: hidden; }
 <div class="titulo">Redes Sociais</div>
 <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
 """, height=65)
-
+ 
     with h2:
         coletar = st.button("Coletar dados", type="primary", use_container_width=True)
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
@@ -6759,16 +6759,16 @@ html, body { background: transparent; overflow: hidden; }
                 f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
                 unsafe_allow_html=True,
             )
-
+ 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
-
+ 
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
         n = int(n or 0)
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(n)
-
+ 
     def salvar_cache_redes(dados: list):
         try:
             payload = {
@@ -6783,7 +6783,7 @@ html, body { background: transparent; overflow: hidden; }
             supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache: {e}", icon="⚠️")
-
+ 
     def carregar_cache_redes() -> dict:
         try:
             res = (
@@ -6797,7 +6797,7 @@ html, body { background: transparent; overflow: hidden; }
         except Exception:
             pass
         return {}
-
+ 
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_rapidapi(handle: str) -> dict:
         handle_limpo = handle.lstrip("@").strip()
@@ -6807,12 +6807,12 @@ html, body { background: transparent; overflow: hidden; }
             rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
             if not rapidapi_key:
                 return {"erro": "RAPIDAPI_KEY não configurada"}
-
+ 
             headers = {
                 "x-rapidapi-key": rapidapi_key,
                 "x-rapidapi-host": "instagram-looter2.p.rapidapi.com",
             }
-
+ 
             r = requests.get(
                 f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}",
                 headers=headers,
@@ -6823,14 +6823,14 @@ html, body { background: transparent; overflow: hidden; }
             if isinstance(data, dict):
                 if "data" in data:   user_data = data["data"]
                 elif "user" in data: user_data = data["user"]
-
+ 
             if not user_data or "message" in user_data:
                 return {"erro": user_data.get("message", "Perfil não encontrado")}
-
+ 
             seg         = int(user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count") or 0)
             total_posts = int(user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count") or 0)
             pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
-
+ 
             posts_data = []
             if pk:
                 for endpoint in [
@@ -6876,14 +6876,14 @@ html, body { background: transparent; overflow: hidden; }
                             break
                     except Exception:
                         continue
-
+ 
             if posts_data:
                 eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 eng_pct   = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
             else:
                 eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
-
+ 
             return {
                 "handle":       "@" + handle_limpo,
                 "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
@@ -6900,7 +6900,7 @@ html, body { background: transparent; overflow: hidden; }
             }
         except Exception as e:
             return {"erro": str(e)}
-
+ 
     # ── Lista de perfis ─────────────────────────────────────────────
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
@@ -6908,16 +6908,16 @@ html, body { background: transparent; overflow: hidden; }
     for i, c in enumerate(concorrentes):
         if c.get("instagram") and c["instagram"] not in ("@", ""):
             todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c["instagram"], "tipo": "concorrente"})
-
+ 
     if not todas:
         st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
         st.stop()
-
+ 
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
-
+ 
     cache = carregar_cache_redes()
-
+ 
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
@@ -6931,20 +6931,20 @@ html, body { background: transparent; overflow: hidden; }
             "dados": resultados_lista,
         }
         st.toast("✅ Dados coletados e salvos!", icon="✅")
-
+ 
     ok = []
     if cache.get("dados"):
         ok    = [r for r in cache["dados"] if not r.get("erro")]
         erros = [r for r in cache["dados"] if r.get("erro")]
         for r in erros:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
-
+ 
     # ── Estado de navegação ─────────────────────────────────────────
     if "redes_main_tab" not in st.session_state:
         st.session_state.redes_main_tab = "perfis"
     if "redes_aba_ativa" not in st.session_state:
         st.session_state.redes_aba_ativa = 0
-
+ 
     # ── Ghost buttons — abas principais ────────────────────────────
     st.markdown("""
     <style>
@@ -6961,14 +6961,14 @@ html, body { background: transparent; overflow: hidden; }
     }
     </style>
     """, unsafe_allow_html=True)
-
+ 
     if st.button("perfis_tab", key="_redes_ghost_tab_perfis_"):
         st.session_state.redes_main_tab = "perfis"
         st.rerun()
     if st.button("analise_tab", key="_redes_ghost_tab_analise_"):
         st.session_state.redes_main_tab = "analise"
         st.rerun()
-
+ 
     # ── Ghost buttons — abas de empresa ────────────────────────────
     aba_empresa_ghost_css = []
     for i in range(len(ok)):
@@ -6986,18 +6986,18 @@ html, body { background: transparent; overflow: hidden; }
         """)
     if aba_empresa_ghost_css:
         st.markdown(f"<style>{''.join(aba_empresa_ghost_css)}</style>", unsafe_allow_html=True)
-
+ 
     for i in range(len(ok)):
         if st.button(f"redes_aba_{i}", key=f"btn_redes_aba_{i}"):
             st.session_state.redes_aba_ativa = i
             st.rerun()
-
+ 
     main_tab = st.session_state.redes_main_tab
-
+ 
     # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas) — mesmo estilo Ads
     # ══════════════════════════════════════════════════════════════════
-
+ 
     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7078,13 +7078,13 @@ function triggerTab(label) {{
 }})();
 </script>
 """, height=90, scrolling=False)
-
+ 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: PERFIS CONFIGURADOS
+    # ABA: PERFIS CONFIGURADOS — mesmo layout que Ads "empresas"
     # ══════════════════════════════════════════════════════════════════
-
+ 
     if main_tab == "perfis":
-
+ 
         if not ok:
             st.markdown("""
             <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
@@ -7095,10 +7095,10 @@ function triggerTab(label) {{
             </div>
             """, unsafe_allow_html=True)
             st.stop()
-
+ 
         aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
-
-        # ── Cards de empresa no topo — mesmo estilo Biblioteca de Ads ─────
+ 
+        # ── Cards de empresa no topo (mesmo estilo Ads) ─────────────
         empresas_redes_json = []
         for i, r in enumerate(ok):
             is_minha = r.get("tipo") == "minha"
@@ -7108,13 +7108,15 @@ function triggerTab(label) {{
                 "nome": r["nome"],
                 "tipo": r.get("tipo", "concorrente"),
                 "handle": r.get("handle", ""),
+                "seguidores": r.get("seguidores", 0),
+                "eng_pct": r.get("eng_pct", 0.0),
                 "is_minha": is_minha,
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
                 "cor": cor,
             })
-
+ 
         empresas_redes_str = json.dumps(empresas_redes_json, ensure_ascii=False)
-
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7131,7 +7133,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     cursor:pointer; transition:all 0.15s; position:relative;
 }}
 .emp-card:hover {{ border-color:#3a9fd6; background:#fff; box-shadow:0 2px 10px rgba(58,159,214,0.1); }}
-.emp-card.active {{ background:#fff; border: 2px solid #3b82f6; }}
+.emp-card.active {{ background:#fff; border:2px solid #3b82f6; }}
 .emp-icon {{
     width:44px; height:44px; border-radius:10px; background:#e9eef5;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
@@ -7139,10 +7141,10 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .emp-card.active .emp-icon {{ background:#dbeafe; }}
 .emp-icon svg {{ width:22px; height:22px; }}
 .emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{ font-size:14px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
+.emp-nome {{ font-size:14px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }}
 .emp-handle {{ font-size:12px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
 .badge-minha {{ display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-.badge-conc {{ display:inline-flex; align-items:center; gap:5px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
+.badge-conc  {{ display:inline-flex; align-items:center; gap:5px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
 </style>
 <div class="main-wrap">
     <div class="cards-grid" id="cards-grid"></div>
@@ -7150,6 +7152,12 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 <script>
 var EMPRESAS = {empresas_redes_str};
 var ABA_ATIVA = {aba_ativa};
+function fmtNum(n) {{
+    n = Math.round(n || 0);
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
+    return String(n);
+}}
 function buildUI() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
@@ -7157,15 +7165,16 @@ function buildUI() {{
         var card = document.createElement('div');
         card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
         card.id = 'emp_card_' + e.i;
+        var activeColor = e.i === ABA_ATIVA ? '#3b82f6' : '#64748b';
         var badgeHtml = e.is_minha
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
         card.innerHTML =
             '<div class="emp-icon">'
-            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + activeColor + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
             + '<rect x="2" y="2" width="20" height="20" rx="5"/>'
             + '<circle cx="12" cy="12" r="4.5" stroke-width="1.5" fill="none"/>'
-            + '<circle cx="17.5" cy="6.5" r="1.2" fill="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '"/>'
+            + '<circle cx="17.5" cy="6.5" r="1.2" fill="' + activeColor + '"/>'
             + '</svg></div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
@@ -7208,32 +7217,27 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
-
-        # ── Renderiza perfil da aba ativa ───────────────────────────
+ 
+        # ── Perfil da aba ativa ─────────────────────────────────────
         r = ok[aba_ativa]
-        is_minha  = r.get("tipo") == "minha"
-        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-        cor = get_avatar_color(aba_ativa)
-        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
-        eng_est   = len(r.get("posts", [])) == 0
+        is_minha   = r.get("tipo") == "minha"
+        cor        = get_avatar_color(aba_ativa)
+        bio_txt    = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
         posts_list = r.get("posts", [])
-
+ 
         seg_val      = r.get("seguidores", 0)
         posts_val    = r.get("total_posts", 0)
         eng_med_val  = r.get("eng_medio", 0)
         eng_pct_val  = r.get("eng_pct", 0.0)
-
-        # ── Header do perfil — mesmo estilo Biblioteca de Ads ──────
-        page_pic_redes = ""  # Instagram não retorna pic diretamente
+        badge_lbl    = "Minha Empresa" if is_minha else "Concorrente"
+ 
         avatar_empresa_html = (
             f'<div style="width:44px;height:44px;border-radius:50%;background:{cor};'
             f'display:flex;align-items:center;justify-content:center;font-size:16px;'
             f'font-weight:700;color:#fff;flex-shrink:0">{gerar_avatar(r["nome"])}</div>'
         )
-
+ 
+        # ── Header do perfil (mesmo estilo Ads) ─────────────────────
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
                     border-radius:12px 12px 0 0;overflow:hidden;margin-top:-45px;'>
@@ -7261,13 +7265,12 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                 </div>
             </div>
         </div>""", unsafe_allow_html=True)
-
-        # ── Sub-abas: Postagens / Análise de IA ────────────────────
+ 
+        # ── Sub-abas: Anúncios / Análise de IA ─────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
-
-        # Ghost buttons sub-abas
+ 
         for sub in ["postagens", "ia"]:
             ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
             st.markdown(f"""
@@ -7286,9 +7289,10 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             if st.button(f"redes_sub_{aba_ativa}_{sub}", key=ghost_k):
                 st.session_state[redes_subtab_key] = sub
                 st.rerun()
-
+ 
         subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
-
+ 
+        # ── Barra de sub-abas (mesmo estilo Ads) ────────────────────
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7347,86 +7351,56 @@ function triggerSub(sub) {{
 }})();
 </script>
 """, height=52, scrolling=False)
-
-        # ── SUB-ABA: POSTAGENS ──────────────────────────────────────
+ 
+        # ══════════════════════════════════════════════════════════════
+        # SUB-ABA: POSTAGENS — mesmo estilo dos cards de Ads
+        # ══════════════════════════════════════════════════════════════
         if subtab_atual == "postagens":
-
-            # ── Ghost buttons para filtros ──────────────────────────
-            for fk in ["redes_filtro_tipo", "redes_filtro_ordem"]:
-                full_key = f"btn_{fk}_{aba_ativa}"
-                st.markdown(f"""
-                <style>
-                .st-key-{full_key} {{
-                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                    width:0 !important; height:0 !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important; display:none !important;
-                }}
-                .stElementContainer:has(.st-key-{full_key}) {{
-                    display:none !important; height:0 !important; min-height:0 !important;
-                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
-
-            # ── State para filtros ──────────────────────────────────
-            filtro_tipo_key  = f"redes_filtro_tipo_{aba_ativa}"
-            filtro_ordem_key = f"redes_filtro_ordem_{aba_ativa}"
-            if filtro_tipo_key not in st.session_state:
-                st.session_state[filtro_tipo_key] = "todos"
-            if filtro_ordem_key not in st.session_state:
-                st.session_state[filtro_ordem_key] = "recentes"
-
-            # ── Calcular stats para os stat cards ──────────────────
-            posts_filtered = posts_list
+ 
             n_fotos    = sum(1 for p in posts_list if not p.get("is_video"))
             n_videos   = sum(1 for p in posts_list if p.get("is_video"))
             n_total    = len(posts_list)
             eng_medio_calc = round(
                 sum(p["likes"] + p["comments"] for p in posts_list) / len(posts_list), 1
             ) if posts_list else 0
-
-            # Ghost selects para tipo e ordem (Streamlit)
-            tipo_sel_css  = f"st-key-redes_tipo_sel_{aba_ativa}"
-            ordem_sel_css = f"st-key-redes_ordem_sel_{aba_ativa}"
-            st.markdown(f"""
-            <style>
-            .{tipo_sel_css}, .{ordem_sel_css} {{
-                position:fixed !important; top:-9999px !important; left:-9999px !important;
-                width:0 !important; height:0 !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important; display:none !important;
-            }}
-            .stElementContainer:has(.{tipo_sel_css}),
-            .stElementContainer:has(.{ordem_sel_css}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-
+ 
+            # Filtros ghost
+            for fk in [f"redes_tipo_sel_{aba_ativa}", f"redes_ordem_sel_{aba_ativa}"]:
+                st.markdown(f"""
+                <style>
+                .st-key-{fk} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:0 !important; height:0 !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; display:none !important;
+                }}
+                .stElementContainer:has(.st-key-{fk}) {{
+                    display:none !important; height:0 !important; min-height:0 !important;
+                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+ 
             filtro_tipo_val  = st.selectbox("tipo",  ["todos","fotos","videos"], key=f"redes_tipo_sel_{aba_ativa}", label_visibility="hidden")
             filtro_ordem_val = st.selectbox("ordem", ["recentes","curtidas","comentarios","engajamento"], key=f"redes_ordem_sel_{aba_ativa}", label_visibility="hidden")
-
-            # Aplicar filtros
-            posts_filtered = posts_list
+ 
+            posts_filtered = list(posts_list)
             if filtro_tipo_val == "fotos":
                 posts_filtered = [p for p in posts_list if not p.get("is_video")]
             elif filtro_tipo_val == "videos":
                 posts_filtered = [p for p in posts_list if p.get("is_video")]
-
+ 
             if filtro_ordem_val == "curtidas":
                 posts_filtered = sorted(posts_filtered, key=lambda p: p.get("likes", 0), reverse=True)
             elif filtro_ordem_val == "comentarios":
                 posts_filtered = sorted(posts_filtered, key=lambda p: p.get("comments", 0), reverse=True)
             elif filtro_ordem_val == "engajamento":
                 posts_filtered = sorted(posts_filtered, key=lambda p: p.get("likes", 0) + p.get("comments", 0), reverse=True)
-            # recentes = manter ordem original
-
-            # ── Stats + Bio section ─────────────────────────────────
-            # ── Bio IA ghost button ─────────────────────────────────
+ 
+            # Bio IA ghost
             chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
             if chave_bio_ia not in st.session_state:
                 st.session_state[chave_bio_ia] = ""
-
+ 
             st.markdown(f"""
             <style>
             .st-key-btn_bio_ia_{aba_ativa} {{
@@ -7436,8 +7410,8 @@ function triggerSub(sub) {{
             }}
             </style>
             """, unsafe_allow_html=True)
-
-            analisar_bio = st.button(f"__bio_{aba_ativa}__", key=f"btn_bio_ia_{aba_ativa}", use_container_width=True)
+ 
+            analisar_bio = st.button(f"__bio_{aba_ativa}__", key=f"btn_bio_ia_{aba_ativa}")
             if analisar_bio:
                 if gemini_model is None:
                     st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
@@ -7459,36 +7433,31 @@ Responda com:
                             st.session_state[chave_bio_ia] = resp_bio.text
                         except Exception as e_bio:
                             st.session_state[chave_bio_ia] = f"Erro: {e_bio}"
-
-            bio_resultado     = st.session_state.get(chave_bio_ia, "")
+ 
+            bio_resultado      = st.session_state.get(chave_bio_ia, "")
             bio_resultado_html = bio_resultado.replace("\n","<br>") if bio_resultado else ""
-
-            # ── Filtros + Stats + Grid de postagens (HTML unificado) ─
+ 
+            # Posts JSON para HTML
             posts_cards_data = []
             for p in posts_filtered:
-                thumb   = p.get("thumb", "")
                 cap     = p.get("caption", "")
-                likes   = p.get("likes", 0)
-                coms    = p.get("comments", 0)
-                isVid   = p.get("is_video", False)
-                date_p  = p.get("date", "")
                 cap_esc = cap.replace("\\","\\\\").replace("'","\\'").replace('"',"&quot;").replace("\n"," ").replace("\r","")
                 cap_prev = cap_esc[:90] + ("…" if len(cap) > 90 else "")
                 posts_cards_data.append({
-                    "thumb": thumb,
-                    "cap": cap_esc,
+                    "thumb":    p.get("thumb", ""),
+                    "cap":      cap_esc,
                     "cap_prev": cap_prev,
-                    "likes": likes,
-                    "comments": coms,
-                    "eng": likes + coms,
-                    "is_video": isVid,
-                    "date": date_p,
+                    "likes":    p.get("likes", 0),
+                    "comments": p.get("comments", 0),
+                    "eng":      p.get("likes", 0) + p.get("comments", 0),
+                    "is_video": p.get("is_video", False),
+                    "date":     p.get("date", ""),
                 })
-
+ 
             posts_json_str  = json.dumps(posts_cards_data, ensure_ascii=False)
             filtro_tipo_cur = filtro_tipo_val
             filtro_ord_cur  = filtro_ordem_val
-
+ 
             components.html(f"""
 <!DOCTYPE html><html>
 <head>
@@ -7497,43 +7466,31 @@ Responda com:
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
-
-/* ── Filtros bar ── */
+ 
+/* ── Filtros (mesmo estilo barra de filtros dos Ads) ── */
 .filters-wrap {{
     background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-bottom:none;
+    border:1px solid #e5e7eb; border-top:none; border-bottom:none;
     padding:14px 18px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
 }}
-.filter-group {{ display:flex; align-items:center; gap:6px; }}
 .filter-label {{ font-size:12px; font-weight:700; color:#9ca3af; white-space:nowrap; }}
 .filter-btn {{
     padding:6px 14px; border-radius:20px; border:1px solid #e5e7eb;
     background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s;
-    white-space:nowrap;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap;
 }}
 .filter-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
 .filter-btn.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
 .filter-sep {{ width:1px; height:24px; background:#e5e7eb; flex-shrink:0; }}
-
-/* ── Stats row ── */
+ 
+/* ── Stats (mesmo estilo stats dos Ads) ── */
 .stats-outer {{
     background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-bottom:none;
+    border:1px solid #e5e7eb; border-top:none; border-bottom:none;
     padding:14px 18px 0;
 }}
-.stats-row {{
-    display:flex; gap:10px; flex-wrap:wrap; padding-bottom:14px;
-    border-bottom:1px solid #f3f4f6;
-}}
+.stats-row {{ display:flex; gap:10px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid #f3f4f6; }}
 .stat-card {{
     flex:1; min-width:80px; background:#f9fafb; border:1px solid #e5e7eb;
     border-radius:10px; padding:12px 16px; text-align:center;
@@ -7541,7 +7498,7 @@ body {{ padding-bottom:8px; }}
 .stat-num {{ font-size:22px; font-weight:800; color:#111827; }}
 .stat-num-green {{ font-size:22px; font-weight:800; color:#15803d; }}
 .stat-lbl {{ color:#6b7280; font-size:12px; font-weight:600; text-transform:uppercase; margin-top:2px; }}
-
+ 
 /* ── Bio card ── */
 .bio-card {{
     background:#f9fafb; border-radius:10px; padding:14px 16px;
@@ -7549,8 +7506,7 @@ body {{ padding-bottom:8px; }}
 }}
 .bio-card-hdr {{
     font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:0.8px;
-    margin-bottom:8px;
+    text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;
 }}
 .bio-text {{ font-style:italic; margin-bottom:10px; }}
 .btn-bio {{
@@ -7563,80 +7519,56 @@ body {{ padding-bottom:8px; }}
 .bio-resultado {{
     margin-top:10px; background:#f0fdf4; border:1px solid #86efac;
     border-radius:8px; padding:10px 14px;
-    font-size:12px; color:#374151; line-height:1.7;
-    max-height:160px; overflow-y:auto;
+    font-size:12px; color:#374151; line-height:1.7; max-height:160px; overflow-y:auto;
 }}
-
-/* ── Grid de postagens ── */
+ 
+/* ── Grid de postagens (mesmo estilo cards dos Ads) ── */
 .posts-section {{
     background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-radius:0 0 12px 12px;
-    overflow:hidden;
+    border:1px solid #e5e7eb; border-top:none;
+    border-radius:0 0 12px 12px; overflow:hidden;
 }}
 .posts-hdr {{
-    padding:14px 18px;
-    font-size:12px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.5px;
-    border-bottom:1px solid #e5e7eb;
+    padding:14px 18px; font-size:12px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #e5e7eb;
 }}
 .posts-grid {{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:12px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
     padding:14px 18px 18px;
 }}
 .post-card {{
-    background:#f9fafb;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
-    transition:box-shadow 0.15s;
+    background:#fff; border:1px solid #dde1e7; border-radius:12px;
+    overflow:hidden; display:flex; flex-direction:column;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06); transition:box-shadow 0.15s;
 }}
 .post-card:hover {{ box-shadow:0 4px 16px rgba(0,0,0,0.10); }}
 .post-thumb {{
-    width:100%; aspect-ratio:1/1;
-    background:#e5e7eb;
-    position:relative;
-    cursor:pointer;
-    overflow:hidden;
-    flex-shrink:0;
+    width:100%; aspect-ratio:1/1; background:#e5e7eb;
+    position:relative; cursor:pointer; overflow:hidden; flex-shrink:0;
 }}
-.post-thumb img {{
-    width:100%; height:100%; object-fit:cover; display:block;
-}}
+.post-thumb img {{ width:100%; height:100%; object-fit:cover; display:block; }}
 .post-thumb-fallback {{
-    width:100%; height:100%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:28px; background:#f3f4f6;
+    width:100%; height:100%; display:flex; align-items:center;
+    justify-content:center; font-size:28px; background:#f3f4f6;
 }}
 .post-video-badge {{
-    position:absolute; top:6px; right:6px;
-    background:rgba(0,0,0,0.55); color:#fff;
-    font-size:10px; font-weight:700;
-    padding:2px 7px; border-radius:4px;
+    position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.55);
+    color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px;
 }}
 .post-stats {{
     display:flex; justify-content:space-between; align-items:center;
-    padding:8px 10px 6px;
-    border-bottom:1px solid #f3f4f6;
+    padding:8px 10px 6px; border-bottom:1px solid #f3f4f6;
     font-size:12px; color:#6b7280;
 }}
 .post-stat {{ display:flex; align-items:center; gap:4px; font-weight:600; }}
 .post-copy {{
-    padding:6px 10px 10px;
-    font-size:11px; color:#374151; line-height:1.5;
-    display:-webkit-box; -webkit-line-clamp:2;
-    -webkit-box-orient:vertical; overflow:hidden;
-    flex:1;
-    cursor:pointer;
+    padding:6px 10px 10px; font-size:11px; color:#374151; line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; flex:1; cursor:pointer;
 }}
 .post-copy:hover {{ color:#1d4ed8; }}
 .post-date {{ font-size:10px; color:#9ca3af; padding:0 10px 8px; }}
-
+ 
 /* ── Modal ── */
 .modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9000; align-items:center; justify-content:center; }}
 .modal-bg.open {{ display:flex; }}
@@ -7648,25 +7580,21 @@ body {{ padding-bottom:8px; }}
 </style>
 </head>
 <body>
-
+ 
 <!-- Filtros -->
 <div class="filters-wrap">
-    <div class="filter-group">
-        <span class="filter-label">Tipo:</span>
-        <button class="filter-btn {'active' if filtro_tipo_cur == 'todos' else ''}" onclick="setTipo('todos',this)">Todos</button>
-        <button class="filter-btn {'active' if filtro_tipo_cur == 'fotos' else ''}" onclick="setTipo('fotos',this)">📷 Fotos</button>
-        <button class="filter-btn {'active' if filtro_tipo_cur == 'videos' else ''}" onclick="setTipo('videos',this)">🎬 Vídeos</button>
-    </div>
+    <span class="filter-label">Tipo:</span>
+    <button class="filter-btn {'active' if filtro_tipo_cur == 'todos' else ''}" onclick="setFiltro('tipo','todos',this)">Todos</button>
+    <button class="filter-btn {'active' if filtro_tipo_cur == 'fotos' else ''}" onclick="setFiltro('tipo','fotos',this)">📷 Fotos</button>
+    <button class="filter-btn {'active' if filtro_tipo_cur == 'videos' else ''}" onclick="setFiltro('tipo','videos',this)">🎬 Vídeos</button>
     <div class="filter-sep"></div>
-    <div class="filter-group">
-        <span class="filter-label">Ordenar:</span>
-        <button class="filter-btn {'active' if filtro_ord_cur == 'recentes' else ''}" onclick="setOrdem('recentes',this)">Mais recentes</button>
-        <button class="filter-btn {'active' if filtro_ord_cur == 'curtidas' else ''}" onclick="setOrdem('curtidas',this)">Mais curtidas</button>
-        <button class="filter-btn {'active' if filtro_ord_cur == 'comentarios' else ''}" onclick="setOrdem('comentarios',this)">Mais comentários</button>
-        <button class="filter-btn {'active' if filtro_ord_cur == 'engajamento' else ''}" onclick="setOrdem('engajamento',this)">Mais engajamento</button>
-    </div>
+    <span class="filter-label">Ordenar:</span>
+    <button class="filter-btn {'active' if filtro_ord_cur == 'recentes' else ''}" onclick="setFiltro('ordem','recentes',this)">Mais recentes</button>
+    <button class="filter-btn {'active' if filtro_ord_cur == 'curtidas' else ''}" onclick="setFiltro('ordem','curtidas',this)">Mais curtidas</button>
+    <button class="filter-btn {'active' if filtro_ord_cur == 'comentarios' else ''}" onclick="setFiltro('ordem','comentarios',this)">Mais comentários</button>
+    <button class="filter-btn {'active' if filtro_ord_cur == 'engajamento' else ''}" onclick="setFiltro('ordem','engajamento',this)">Mais engajamento</button>
 </div>
-
+ 
 <!-- Stats + Bio -->
 <div class="stats-outer">
     <div class="stats-row">
@@ -7676,7 +7604,6 @@ body {{ padding-bottom:8px; }}
         <div class="stat-card"><div class="stat-num">{fmt_num(int(eng_med_val))}</div><div class="stat-lbl">Eng. médio</div></div>
         <div class="stat-card"><div class="stat-num">{eng_pct_val:.2f}%</div><div class="stat-lbl">Engajamento</div></div>
     </div>
-    <!-- Bio -->
     <div class="bio-card">
         <div class="bio-card-hdr">Bio do Perfil</div>
         <div class="bio-text">{"&ldquo;" + bio_txt + "&rdquo;" if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}</div>
@@ -7695,13 +7622,13 @@ body {{ padding-bottom:8px; }}
         {'<div class="bio-resultado">' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
     </div>
 </div>
-
-<!-- Grid de postagens -->
+ 
+<!-- Grid -->
 <div class="posts-section">
     <div class="posts-hdr">Postagens ({len(posts_filtered)})</div>
     <div class="posts-grid" id="posts-grid"></div>
 </div>
-
+ 
 <!-- Modal -->
 <div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
@@ -7711,59 +7638,58 @@ body {{ padding-bottom:8px; }}
         <div class="modal-text" id="modal-text"></div>
     </div>
 </div>
-
+ 
 <script>
 var POSTS = {posts_json_str};
-
-function buildGrid() {{
-    var grid = document.getElementById('posts-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    if (POSTS.length === 0) {{
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:32px;font-size:14px">Sem postagens disponíveis.</div>';
-        syncHeight(); return;
-    }}
-
-    POSTS.forEach(function(p, idx) {{
-        var card = document.createElement('div');
-        card.className = 'post-card';
-
-        var thumbHtml = '';
-        if (p.thumb) {{
-            thumbHtml = '<div class="post-thumb" onclick="openImg(\'' + p.thumb.replace(/'/g,"") + '\')">'
-                + '<img src="' + p.thumb + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=&quot;post-thumb-fallback&quot;>' + (p.is_video ? '🎬' : '📷') + '</div>\'" />'
-                + (p.is_video ? '<div class="post-video-badge">▶ Vídeo</div>' : '')
-                + '</div>';
-        }} else {{
-            thumbHtml = '<div class="post-thumb"><div class="post-thumb-fallback">' + (p.is_video ? '🎬' : '📷') + '</div></div>';
-        }}
-
-        var statsHtml = '<div class="post-stats">'
-            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes) + '</span>'
-            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments) + '</span>'
-            + '<span class="post-stat" style="color:#8b5cf6"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' + fmtNum(p.eng) + '</span>'
-            + '</div>';
-
-        var copyHtml = p.cap
-            ? '<div class="post-copy" onclick="openCopy(\'' + p.cap + '\')">' + p.cap_prev + '</div>'
-            : '<div class="post-copy" style="color:#d1d5db;font-style:italic">Sem legenda</div>';
-
-        var dateHtml = p.date ? '<div class="post-date">' + p.date + '</div>' : '';
-
-        card.innerHTML = thumbHtml + statsHtml + copyHtml + dateHtml;
-        grid.appendChild(card);
-    }});
-    syncHeight();
-}}
-
+ 
 function fmtNum(n) {{
     n = Math.round(n || 0);
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n/1000).toFixed(1) + 'K';
     return String(n);
 }}
-
+ 
+function buildGrid() {{
+    var grid = document.getElementById('posts-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    if (!POSTS.length) {{
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:32px;font-size:14px">Sem postagens disponíveis.</div>';
+        syncHeight(); return;
+    }}
+    POSTS.forEach(function(p) {{
+        var card = document.createElement('div');
+        card.className = 'post-card';
+        var thumbHtml = p.thumb
+            ? '<div class="post-thumb" onclick="openImg(\'' + p.thumb.replace(/'/g,'') + '\')">'
+              + '<img src="' + p.thumb + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=&quot;post-thumb-fallback&quot;>' + (p.is_video ? '🎬' : '📷') + '</div>\'" />'
+              + (p.is_video ? '<div class="post-video-badge">▶ Vídeo</div>' : '')
+              + '</div>'
+            : '<div class="post-thumb"><div class="post-thumb-fallback">' + (p.is_video ? '🎬' : '📷') + '</div></div>';
+        var statsHtml = '<div class="post-stats">'
+            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes) + '</span>'
+            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments) + '</span>'
+            + '<span class="post-stat" style="color:#8b5cf6"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' + fmtNum(p.eng) + '</span>'
+            + '</div>';
+        var copyHtml = p.cap
+            ? '<div class="post-copy" onclick="openCopy(\'' + p.cap + '\')">' + p.cap_prev + '</div>'
+            : '<div class="post-copy" style="color:#d1d5db;font-style:italic">Sem legenda</div>';
+        var dateHtml = p.date ? '<div class="post-date">' + p.date + '</div>' : '';
+        card.innerHTML = thumbHtml + statsHtml + copyHtml + dateHtml;
+        grid.appendChild(card);
+    }});
+    syncHeight();
+}}
+ 
+function setFiltro(tipo, val, el) {{
+    var ariaLabel = tipo === 'tipo' ? 'redes_tipo_sel_{aba_ativa}' : 'redes_ordem_sel_{aba_ativa}';
+    var inputs = window.parent.document.querySelectorAll('input[aria-label="' + ariaLabel + '"]');
+    if (!inputs.length) return;
+    var setter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype, 'value').set;
+    setter.call(inputs[0], val);
+    inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
+}}
+ 
 function openImg(url) {{
     document.getElementById('modal-title').textContent = 'Imagem da Postagem';
     var img = document.getElementById('modal-img');
@@ -7771,52 +7697,23 @@ function openImg(url) {{
     document.getElementById('modal-text').textContent = '';
     document.getElementById('modal-bg').classList.add('open');
 }}
-
 function openCopy(txt) {{
     document.getElementById('modal-title').textContent = 'Legenda Completa';
     document.getElementById('modal-img').style.display = 'none';
     document.getElementById('modal-text').textContent = txt;
     document.getElementById('modal-bg').classList.add('open');
 }}
-
-function closeModal() {{
-    document.getElementById('modal-bg').classList.remove('open');
-}}
-
-function setTipo(val, el) {{
-    syncStreamlitSelect('redes_tipo_sel_{aba_ativa}', val);
-}}
-
-function setOrdem(val, el) {{
-    syncStreamlitSelect('redes_ordem_sel_{aba_ativa}', val);
-}}
-
-function syncStreamlitSelect(ariaLabel, value) {{
-    var inputs = window.parent.document.querySelectorAll('input[aria-label="' + ariaLabel + '"]');
-    if (!inputs.length) return;
-    var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype, 'value').set;
-    nativeInputValueSetter.call(inputs[0], value);
-    inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
-    setTimeout(function() {{
-        var btns = window.parent.document.querySelectorAll('button');
-        for (var b of btns) {{
-            if ((b.textContent||'').trim() === value) {{ b.click(); break; }}
-        }}
-    }}, 100);
-}}
-
+function closeModal() {{ document.getElementById('modal-bg').classList.remove('open'); }}
+ 
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 8) + 'px';
-            frames[i].style.minHeight = '0';
-            break;
+            frames[i].style.height = (h + 8) + 'px'; frames[i].style.minHeight = '0'; break;
         }} }} catch(e) {{}}
     }}
 }}
-
 buildGrid();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
@@ -7825,299 +7722,156 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </script>
 </body></html>
 """, height=600, scrolling=False)
-
-        # ── SUB-ABA: ANÁLISE DE IA ──────────────────────────────────
+ 
+        # ══════════════════════════════════════════════════════════════
+        # SUB-ABA: ANÁLISE DE IA (por perfil)
+        # ══════════════════════════════════════════════════════════════
         else:
-            chave_criativo = f"ia_criativo_{r['handle']}"
-            chave_copy     = f"ia_copy_{r['handle']}"
-            chave_geral    = f"ia_geral_{r['handle']}"
-            for ch in [chave_criativo, chave_copy, chave_geral]:
-                if ch not in st.session_state:
-                    st.session_state[ch] = ""
-
-            resumo_posts = "\n".join([
-                f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
-                f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
-                for p in posts_list[:12]
-            ]) if posts_list else "Sem posts disponíveis."
-
-            perfil_ctx = f"""
+            chave_geral_ia = f"ia_geral_perfil_{r['handle']}"
+            if chave_geral_ia not in st.session_state:
+                st.session_state[chave_geral_ia] = ""
+ 
+            # Ghost button IA geral do perfil
+            st.markdown(f"""
+            <style>
+            .st-key-btn_ia_perfil_{aba_ativa} {{
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:1px !important; height:1px !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+ 
+            if st.button(f"__ia_perfil_{aba_ativa}__", key=f"btn_ia_perfil_{aba_ativa}"):
+                if gemini_model is None:
+                    st.session_state[chave_geral_ia] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    resumo_posts_ia = "\n".join([
+                        f"- {p.get('date','')} | {p.get('likes',0)} curtidas {p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+                        for p in posts_list[:12]
+                    ]) if posts_list else "Sem posts disponíveis."
+                    n_fotos_ia  = sum(1 for p in posts_list if not p.get("is_video"))
+                    n_videos_ia = sum(1 for p in posts_list if p.get("is_video"))
+                    with st.spinner("Gerando análise…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""Você é especialista em redes sociais e marketing digital.
+Analise o perfil do Instagram abaixo e gere uma análise estratégica completa em português.
+ 
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
-Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
+Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)}
+Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
+Fotos: {n_fotos_ia} | Vídeos: {n_videos_ia}
+ 
 Últimos posts:
-{resumo_posts}
-"""
-
-            # Ghost buttons IA
-            for btn_sfx in ["criativo", "copy", "geral"]:
-                ghost_k_ia = f"btn_{btn_sfx}_{aba_ativa}_ia"
-                st.markdown(f"""
-                <style>
-                .st-key-{ghost_k_ia} {{
-                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                    width:1px !important; height:1px !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
-
-            if st.button(f"__criativo_{aba_ativa}__", key=f"btn_criativo_{aba_ativa}_ia"):
-                if gemini_model is None:
-                    st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Analisando criativos…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""
-{perfil_ctx}
-Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
-Responda em português com:
-### Análise de Criativo
-**Estilo visual predominante:** ...
-**Formatos mais usados:** ...
-**Posts com melhor desempenho:** ...
-**Pontos fortes visuais:** (3 pontos)
-**O que melhorar:** (2 pontos)
-Seja direto e objetivo.
-""")
-                            st.session_state[chave_criativo] = resp.text
+{resumo_posts_ia}
+ 
+---
+### 🎯 Posicionamento e Tom de Voz
+### 📊 Análise de Métricas
+### 🎨 Análise de Criativos e Formatos
+### ✍️ Análise de Copys e Legendas
+### ✅ Pontos Fortes (3 pontos)
+### ⚠️ Pontos de Atenção (2 pontos)
+### 💡 Recomendações Estratégicas (3 ações concretas)
+Seja direto e objetivo.""")
+                            st.session_state[chave_geral_ia] = resp.text
                             st.rerun()
                         except Exception as e:
-                            st.session_state[chave_criativo] = f"Erro: {e}"
-
-            if st.button(f"__copy_{aba_ativa}__", key=f"btn_copy_{aba_ativa}_ia"):
-                if gemini_model is None:
-                    st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Analisando copies…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""
-{perfil_ctx}
-Analise as LEGENDAS (copy) deste perfil Instagram.
-Responda em português com:
-### Análise de Copy
-**Tom de voz predominante:** ...
-**Uso de CTAs:** ...
-**Uso de hashtags:** ...
-**Pontos fortes nas legendas:** (3 pontos)
-**O que melhorar:** (2 pontos)
-Seja direto e objetivo.
-""")
-                            st.session_state[chave_copy] = resp.text
+                            st.session_state[chave_geral_ia] = f"Erro: {e}"
                             st.rerun()
-                        except Exception as e:
-                            st.session_state[chave_copy] = f"Erro: {e}"
-
-            if st.button(f"__geral_{aba_ativa}__", key=f"btn_geral_{aba_ativa}_ia"):
-                if gemini_model is None:
-                    st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Gerando análise geral…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""
-{perfil_ctx}
-Faça uma análise geral estratégica deste perfil Instagram.
-Responda em português com:
-### Análise Geral
-**Posicionamento:** ...
-**Frequência de posts:** ...
-### Pontos Fortes (3 pontos)
-### Pontos de Atenção (2 pontos)
-### Recomendações Estratégicas (3 ações concretas)
-Seja direto e objetivo.
-""")
-                            st.session_state[chave_geral] = resp.text
-                            st.rerun()
-                        except Exception as e:
-                            st.session_state[chave_geral] = f"Erro: {e}"
-
-            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
-            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
-            geral_html_ia = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
-
-            # ── Métricas inline no painel IA ─────────────────────
-            seg_f      = r.get("seguidores", 0)
-            posts_f    = r.get("total_posts", 0)
-            eng_med_f  = r.get("eng_medio", 0)
-            eng_pct_f  = r.get("eng_pct", 0.0)
-            n_fotos_f  = sum(1 for p in posts_list if not p.get("is_video"))
-            n_videos_f = sum(1 for p in posts_list if p.get("is_video"))
-
-            def _panel_ia_redes(html_content, btn_label, btn_trigger):
-                btn_html = f"""
-                    <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
-                        <button onclick="
-                            const btns = window.parent.document.querySelectorAll('button');
-                            for (const b of btns) {{
-                                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{
-                                    b.click(); break;
-                                }}
-                            }}
-                        " style="
-                            width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
-                            background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
-                            cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;
-                        "
-                        onmouseover="this.style.background='#dbeafe'"
-                        onmouseout="this.style.background='#eff6ff'">
-                            {btn_label}
-                        </button>
-                    </div>
-                """
-                if html_content:
-                    return (
-                        f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">'
-                        f'{html_content}</div>'
-                        f'{btn_html}'
-                    )
-                return (
-                    f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">'
-                    f'Clique no botão abaixo para gerar a análise.</div>'
-                    f'{btn_html}'
-                )
-
-            ia_html = f"""
+ 
+            ia_resultado_html = st.session_state.get(chave_geral_ia, "").replace("\n","<br>")
+            n_fotos_s  = sum(1 for p in posts_list if not p.get("is_video"))
+            n_videos_s = sum(1 for p in posts_list if p.get("is_video"))
+ 
+            components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
-body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
-
-/* ── Métricas ── */
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
+body {{ padding-bottom:8px; }}
 .metrics-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-bottom:none;
+    background:#fff; border:1px solid #e5e7eb; border-top:none; border-bottom:none;
     padding:16px 18px;
 }}
-.metrics-hdr {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:0.8px;
-    margin-bottom:12px;
-}}
-.metrics-grid {{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-}}
-.metric-card {{
-    background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
-    padding:14px 12px; text-align:center;
-}}
+.metrics-hdr {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:12px; }}
+.metrics-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }}
+.metric-card {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:14px 12px; text-align:center; }}
 .metric-num {{ font-size:22px; font-weight:800; color:#111827; }}
 .metric-num-green {{ font-size:22px; font-weight:800; color:#15803d; }}
 .metric-lbl {{ font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; margin-top:3px; }}
-
-/* ── Tabs de análise ── */
-.ia-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-radius:0 0 12px 12px;
-    overflow:hidden;
+.ia-wrap {{ background:#fff; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 12px 12px; overflow:hidden; }}
+.ia-hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
+.ia-hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
+.ia-body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
+.ia-empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:60px 24px; }}
+.ia-footer {{ padding:16px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
+.btn-gerar {{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 28px; border:none; border-radius:10px;
+    background:#0e2a47; font-size:15px; font-weight:700; color:#fff;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
 }}
-.ia-header {{
-    padding:14px 18px;
-    font-size:14px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.3px;
-    border-bottom:1px solid #e5e7eb;
-    background:#fff;
-}}
-.tabs {{ display:flex; border-bottom:1px solid #e5e7eb; background:#f9fafb; }}
-.tab {{
-    flex:1; padding:11px 0; text-align:center;
-    font-size:13px; font-weight:600; color:#9ca3af;
-    cursor:pointer; border:none; background:transparent;
-    border-bottom:2px solid transparent; margin-bottom:-1px;
-    font-family:'DM Sans',sans-serif; transition:color 0.15s;
-}}
-.tab:hover {{ color:#374151; background:#f3f4f6; }}
-.tab.active {{ color:#1a2e4a; border-bottom:2px solid #3a9fd6; background:#fff; }}
-.panel {{ display:none; }}
-.panel.active {{ display:block; }}
+.btn-gerar:hover {{ background:#1a3a5c; }}
 </style>
-
+ 
 <!-- Métricas -->
 <div class="metrics-wrap">
     <div class="metrics-hdr">Métricas do perfil</div>
     <div class="metrics-grid">
-        <div class="metric-card">
-            <div class="metric-num-green">{fmt_num(seg_f)}</div>
-            <div class="metric-lbl">Seguidores</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-num">{fmt_num(posts_f)}</div>
-            <div class="metric-lbl">Postagens</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-num">{eng_pct_f:.2f}%</div>
-            <div class="metric-lbl">Engajamento</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-num">{fmt_num(int(eng_med_f))}</div>
-            <div class="metric-lbl">Eng. médio</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-num">{n_fotos_f}</div>
-            <div class="metric-lbl">Fotos</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-num">{n_videos_f}</div>
-            <div class="metric-lbl">Vídeos</div>
-        </div>
+        <div class="metric-card"><div class="metric-num-green">{fmt_num(seg_val)}</div><div class="metric-lbl">Seguidores</div></div>
+        <div class="metric-card"><div class="metric-num">{fmt_num(posts_val)}</div><div class="metric-lbl">Postagens</div></div>
+        <div class="metric-card"><div class="metric-num">{eng_pct_val:.2f}%</div><div class="metric-lbl">Engajamento</div></div>
+        <div class="metric-card"><div class="metric-num">{fmt_num(int(eng_med_val))}</div><div class="metric-lbl">Eng. médio</div></div>
+        <div class="metric-card"><div class="metric-num">{n_fotos_s}</div><div class="metric-lbl">Fotos</div></div>
+        <div class="metric-card"><div class="metric-num">{n_videos_s}</div><div class="metric-lbl">Vídeos</div></div>
     </div>
 </div>
-
-<!-- Análises IA -->
+ 
+<!-- Análise IA -->
 <div class="ia-wrap">
-    <div class="ia-header">Análise de Conteúdos</div>
-    <div class="tabs">
-        <button class="tab active" onclick="showTab('geral',this)">📊 Geral</button>
-        <button class="tab"        onclick="showTab('criativo',this)">🎨 Criativos</button>
-        <button class="tab"        onclick="showTab('copy',this)">✍️ Copys</button>
+    <div class="ia-hdr">
+        <div class="ia-hdr-title">✨ Análise Estratégica do Perfil</div>
     </div>
-    <div id="panel-geral" class="panel active">
-        {_panel_ia_redes(geral_html_ia, "Gerar Análise de Postagens 🤖", f"__geral_{aba_ativa}__")}
+    <div class="ia-body">
+        {'<div>' + ia_resultado_html + '</div>' if ia_resultado_html else '<div class="ia-empty">Clique em <b>Gerar Análise</b> para uma análise completa deste perfil.</div>'}
     </div>
-    <div id="panel-criativo" class="panel">
-        {_panel_ia_redes(criativo_html, "Gerar Análise de Criativos 🤖", f"__criativo_{aba_ativa}__")}
-    </div>
-    <div id="panel-copy" class="panel">
-        {_panel_ia_redes(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{aba_ativa}__")}
+    <div class="ia-footer">
+        <button class="btn-gerar" onclick="triggerBtn('__ia_perfil_{aba_ativa}__')">
+            {'🔄 Regerar Análise' if ia_resultado_html else '⚡ Gerar Análise do Perfil'}
+        </button>
     </div>
 </div>
-
+ 
 <script>
-function syncHeight() {{
-    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+8)+'px'; break; }} }} catch(e) {{}}
+function triggerBtn(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
     }}
 }}
-function showTab(name, el) {{
-    document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
-    document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
-    document.getElementById('panel-' + name).classList.add('active');
-    el.classList.add('active');
-    setTimeout(syncHeight, 50);
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 8) + 'px'; break; }} }} catch(e) {{}}
+    }}
 }}
-var ro = new ResizeObserver(syncHeight);
-ro.observe(document.body);
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight, 1000);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
-"""
-            components.html(ia_html, height=600, scrolling=False)
-
+""", height=500, scrolling=False)
+ 
     # ══════════════════════════════════════════════════════════════════
-    # ABA: ANÁLISE DE IA — Comparativo geral
+    # ABA: ANÁLISE DE IA — só o comparativo geral
     # ══════════════════════════════════════════════════════════════════
-
+ 
     elif main_tab == "analise":
-
+ 
         if not ok:
             st.markdown("""
             <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
@@ -8128,11 +7882,11 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight,
             </div>
             """, unsafe_allow_html=True)
             st.stop()
-
+ 
         chave_comp_redes = "ia_redes_comparativo"
         if chave_comp_redes not in st.session_state:
             st.session_state[chave_comp_redes] = ""
-
+ 
         st.markdown("""
         <style>
         .st-key-btn_redes_comp_geral {
@@ -8146,7 +7900,7 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight,
         }
         </style>
         """, unsafe_allow_html=True)
-
+ 
         if st.button("redes_comparativo", key="btn_redes_comp_geral"):
             if gemini_model is None:
                 st.session_state[chave_comp_redes] = "Configure GEMINI_API_KEY nos secrets."
@@ -8163,9 +7917,9 @@ Eng. médio: {rr.get('eng_medio',0)} ({rr.get('eng_pct',0):.2f}%)
                     try:
                         resp = gemini_model.generate_content(f"""Você é especialista em inteligência competitiva e redes sociais.
 Compare os perfis do Instagram abaixo e gere uma análise competitiva completa em português.
-
+ 
 {'---'.join(resumos_comp)}
-
+ 
 ---
 ### 🏆 Ranking de Presença no Instagram
 ### 📊 Comparativo de Métricas
@@ -8178,14 +7932,11 @@ Compare os perfis do Instagram abaixo e gere uma análise competitiva completa e
                     except Exception as ex:
                         st.session_state[chave_comp_redes] = f"Erro: {ex}"
                         st.rerun()
-
-        # ── Métricas comparativas (no lugar dos gráficos) ──────────
-        nomes_ok   = [x["nome"] for x in ok]
-        cores_ok   = [get_avatar_color(i) for i in range(len(ok))]
-
+ 
+        # ── Tabela comparativa de métricas ──────────────────────────
         metricas_rows = ""
         for i, rr in enumerate(ok):
-            cor_av  = cores_ok[i]
+            cor_av  = get_avatar_color(i)
             av_txt  = gerar_avatar(rr["nome"])
             seg_v   = rr.get("seguidores", 0)
             posts_v = rr.get("total_posts", 0)
@@ -8197,7 +7948,7 @@ Compare os perfis do Instagram abaixo e gere uma análise competitiva completa e
             bdg_col = "#15803d" if is_m else "#1d4ed8"
             bdg_brd = "#bbf7d0" if is_m else "#bfdbfe"
             bdg_lbl = "Minha empresa" if is_m else "Concorrente"
-
+ 
             metricas_rows += f"""
             <tr>
                 <td>
@@ -8220,7 +7971,7 @@ Compare os perfis do Instagram abaixo e gere uma análise competitiva completa e
                 <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(int(eng_m)) if seg_v else "—"}</td>
             </tr>
             """
-
+ 
         components.html(f"""
 <!DOCTYPE html><html>
 <head>
@@ -8254,9 +8005,7 @@ tr:hover td {{ background:#f9fafb; }}
                 <th style="text-align:center">Eng. Médio</th>
             </tr>
         </thead>
-        <tbody>
-            {metricas_rows}
-        </tbody>
+        <tbody>{metricas_rows}</tbody>
     </table>
 </div>
 <script>
@@ -8268,16 +8017,14 @@ function syncHeight() {{
     }}
 }}
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
 setTimeout(syncHeight,200); setTimeout(syncHeight,600);
 </script>
 </body></html>
 """, height=200, scrolling=False)
-
+ 
         # ── Painel de análise comparativa ──────────────────────────
         comp_html_redes = st.session_state.get(chave_comp_redes, "").replace("\n", "<br>")
-
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
