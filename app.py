@@ -4053,8 +4053,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     display:grid;
     grid-template-columns: repeat(3,1fr);
     gap:0;
-    padding:20px;
-    gap:16px;
+    padding:15px;
+    gap:15px;
 }}
 
 /* ── Card individual — estilo da imagem 2 ── */
