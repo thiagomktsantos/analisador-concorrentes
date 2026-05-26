@@ -3529,28 +3529,27 @@ function triggerTab(label) {{
         onboarding_empresa = st.session_state.ads_onboarding_empresa
         onboarding_paginas = st.session_state.ads_onboarding_paginas
 
-        # ── CSS
         st.markdown("""
         <style>
         .cfg-outer-wrap {
-            background: #d2dde9;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 8px;
+            background: #d2dde9; border: 1px solid #cbd5e1;
+            border-radius: 16px; padding: 20px; margin-bottom: 8px;
         }
         .cfg-info-box {
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 13px;
-            color: #0369a1;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            line-height: 1.6;
-            margin-bottom: 16px;
+            background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px;
+            padding: 12px 16px; font-size: 13px; color: #0369a1;
+            display: flex; align-items: flex-start; gap: 10px;
+            line-height: 1.6; margin-bottom: 16px;
+        }
+        /* Zera padding/border do container Streamlit dentro do cfg */
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            box-shadow: none !important;
+        }
+        .cfg-card-inner [data-testid="stVerticalBlockBorderWrapper"] {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 0 !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -3560,15 +3559,16 @@ function triggerTab(label) {{
         st.markdown("""
         <div class="cfg-info-box">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px">
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                 style="flex-shrink:0;margin-top:1px">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <div>
                 Clique em <strong>✏️ Editar</strong> em cada empresa para configurar.
-                Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong> do Facebook,
-                depois clique em <strong>Buscar páginas</strong> para encontrar
+                Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong>
+                do Facebook, depois clique em <strong>Buscar páginas</strong> para encontrar
                 ou <strong>Salvar ID</strong> para salvar diretamente.
             </div>
         </div>
@@ -3577,29 +3577,26 @@ function triggerTab(label) {{
         cols_cfg = st.columns(3)
 
         for ci, e in enumerate(todas_empresas):
-            is_minha   = e["tipo"] == "minha"
-            ads_id     = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            page_pic   = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
-            sk         = safe_key(e["nome"])
-            has_id     = bool(ads_id.strip())
+            is_minha = e["tipo"] == "minha"
+            ads_id   = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+            page_pic = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
+            sk       = safe_key(e["nome"])
+            has_id   = bool(ads_id.strip())
             is_editing = (editando_empresa == e["nome"])
             cor        = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             avatar_txt = gerar_avatar(e["nome"])
+            badge_lbl  = "Minha empresa" if is_minha else "Concorrente"
 
-            badge_cls = "cfg-badge-minha" if is_minha else "cfg-badge-conc"
-            badge_lbl = "Minha empresa"   if is_minha else "Concorrente"
-            border_style = "border: 2px solid #3a9fd6; box-shadow: 0 0 0 3px rgba(58,159,214,0.12);" if is_editing else "border: 1px solid #e5e7eb;"
-
-            # ── Avatar: foto da página ou iniciais
+            # Avatar HTML
             if page_pic and page_pic.startswith("http"):
                 avatar_html = (
                     f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;'
-                    f'flex-shrink:0;border:2px solid #e5e7eb;">'
+                    f'flex-shrink:0;border:2px solid #e5e7eb">'
                     f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block" '
                     f'onerror="this.parentElement.style.background=\'{cor}\';'
-                    f'this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;'
-                    f'justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;'
-                    f'color:#fff&quot;>{avatar_txt}</div>\'" /></div>'
+                    f'this.outerHTML=\'<div style=&quot;width:44px;height:44px;border-radius:50%;'
+                    f'background:{cor};display:flex;align-items:center;justify-content:center;'
+                    f'font-size:15px;font-weight:700;color:#fff&quot;>{avatar_txt}</div>\'" /></div>'
                 )
             else:
                 avatar_html = (
@@ -3608,46 +3605,99 @@ function triggerTab(label) {{
                     f'font-weight:700;color:#fff;flex-shrink:0">{avatar_txt}</div>'
                 )
 
+            border_css = (
+                "border:2px solid #3a9fd6;box-shadow:0 0 0 3px rgba(58,159,214,0.12);"
+                if is_editing else "border:1px solid #e5e7eb;"
+            )
+            badge_bg  = "#f0fdf4" if is_minha else "#eff6ff"
+            badge_col = "#15803d" if is_minha else "#1d4ed8"
+            badge_brd = "#bbf7d0" if is_minha else "#bfdbfe"
+            dot_col   = "#22c55e" if is_minha else "#3b82f6"
+            id_bg     = "#f0fdf4" if has_id else "#f3f4f6"
+            id_brd    = "#bbf7d0" if has_id else "#e5e7eb"
+            id_dot_c  = "#22c55e" if has_id else "#d1d5db"
+            id_fw     = "600" if has_id else "400"
+            id_color  = "#15803d" if has_id else "#9ca3af"
+            id_ff     = "monospace" if has_id else "inherit"
+            id_text   = ads_id if has_id else "Não configurado — clique em ✏️"
+
             with cols_cfg[ci % 3]:
-                # ── Card visual (sempre renderizado)
-                st.markdown(f"""
-                <div style="background:#ffffff;{border_style}border-radius:12px;overflow:hidden;margin-bottom:0">
-                    <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 12px">
-                        {avatar_html}
-                        <div style="flex:1;min-width:0">
-                            <div style="font-size:14px;font-weight:700;color:#1a2e4a;
-                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{e["nome"]}</div>
-                            <div style="display:inline-flex;align-items:center;gap:5px;
-                                        background:{"#f0fdf4" if is_minha else "#eff6ff"};
-                                        color:{"#15803d" if is_minha else "#1d4ed8"};
-                                        border:1px solid {"#bbf7d0" if is_minha else "#bfdbfe"};
-                                        padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-top:4px">
-                                <span style="width:7px;height:7px;border-radius:50%;
-                                             background:{"#22c55e" if is_minha else "#3b82f6"};
-                                             display:inline-block;flex-shrink:0"></span>
-                                {badge_lbl}
-                            </div>
-                        </div>
-                    </div>
-                    <div style="margin:0 12px 12px;border-radius:8px;padding:8px 12px;
-                                display:flex;align-items:center;gap:7px;font-size:12px;
-                                background:{"#f0fdf4" if has_id else "#f3f4f6"};
-                                border:1px solid {"#bbf7d0" if has_id else "#e5e7eb"}">
-                        <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;
-                                    background:{"#22c55e" if has_id else "#d1d5db"}"></div>
-                        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-                                    font-weight:{"600" if has_id else "400"};
-                                    color:{"#15803d" if has_id else "#9ca3af"};
-                                    font-family:{"monospace" if has_id else "inherit"}">
-                            {ads_id if has_id else "Não configurado — clique em ✏️"}
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                # ── Card header sempre visível
+                components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.card {{
+    background:#ffffff;
+    {border_css}
+    border-radius:12px;
+    overflow:hidden;
+}}
+.card-top {{
+    display:flex; align-items:center; gap:12px; padding:16px 16px 12px;
+}}
+.nome {{
+    font-size:14px; font-weight:700; color:#1a2e4a;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.badge {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:{badge_bg}; color:{badge_col};
+    border:1px solid {badge_brd};
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700; margin-top:4px;
+}}
+.badge::before {{
+    content:''; width:7px; height:7px; border-radius:50%;
+    background:{dot_col}; flex-shrink:0;
+}}
+.id-strip {{
+    margin:0 12px 12px; border-radius:8px; padding:8px 12px;
+    display:flex; align-items:center; gap:7px; font-size:12px;
+    background:{id_bg}; border:1px solid {id_brd};
+}}
+.id-dot {{ width:7px; height:7px; border-radius:50%; flex-shrink:0; background:{id_dot_c}; }}
+.id-val {{
+    font-weight:{id_fw}; color:{id_color}; font-family:{id_ff};
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}}
+</style>
+<div class="card">
+    <div class="card-top">
+        {avatar_html}
+        <div style="flex:1;min-width:0">
+            <div class="nome">{e["nome"]}</div>
+            <div class="badge">{badge_lbl}</div>
+        </div>
+    </div>
+    <div class="id-strip">
+        <div class="id-dot"></div>
+        <div class="id-val">{id_text}</div>
+    </div>
+</div>
+<script>
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = '108px';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=108, scrolling=False)
 
                 # ── Botão editar (quando NÃO está editando)
                 if not is_editing:
-                    if st.button("✏️ Editar", key=f"btn_edit_open_{sk}_{ci}", use_container_width=True):
+                    if st.button(
+                        "✏️ Editar",
+                        key=f"btn_edit_open_{sk}_{ci}",
+                        use_container_width=True,
+                    ):
                         st.session_state.ads_editando_empresa = e["nome"]
                         st.session_state.ads_onboarding_empresa = None
                         st.session_state.ads_onboarding_paginas = []
@@ -3660,11 +3710,16 @@ function triggerTab(label) {{
                         value=ads_id,
                         key=f"cfg_inline_input_{sk}_{ci}",
                         placeholder="Ex: Marketylics  ou  102803918240129",
+                        label_visibility="visible",
                     )
 
                     col_b, col_s = st.columns(2)
                     with col_b:
-                        if st.button("🔍 Buscar", key=f"btn_inline_buscar_{sk}_{ci}", use_container_width=True):
+                        if st.button(
+                            "🔍 Buscar",
+                            key=f"btn_inline_buscar_{sk}_{ci}",
+                            use_container_width=True,
+                        ):
                             if novo_val.strip():
                                 st.session_state.ads_onboarding_empresa = e["nome"]
                                 with st.spinner("Buscando…"):
@@ -3674,7 +3729,11 @@ function triggerTab(label) {{
                             else:
                                 st.warning("Digite um nome ou ID.")
                     with col_s:
-                        if st.button("💾 Salvar", key=f"btn_inline_salvar_{sk}_{ci}", use_container_width=True):
+                        if st.button(
+                            "💾 Salvar",
+                            key=f"btn_inline_salvar_{sk}_{ci}",
+                            use_container_width=True,
+                        ):
                             if novo_val.strip():
                                 salvar_ads_id(e, novo_val.strip())
                                 st.session_state.ads_editando_empresa = None
@@ -3685,36 +3744,39 @@ function triggerTab(label) {{
                             else:
                                 st.warning("Digite um nome ou ID.")
 
-                    if st.button("✕ Cancelar", key=f"btn_inline_cancelar_{sk}_{ci}", use_container_width=True):
+                    if st.button(
+                        "✕ Cancelar",
+                        key=f"btn_inline_cancelar_{sk}_{ci}",
+                        use_container_width=True,
+                    ):
                         st.session_state.ads_editando_empresa = None
                         st.session_state.ads_onboarding_empresa = None
                         st.session_state.ads_onboarding_paginas = []
                         st.rerun()
 
-                    # ── Lista de páginas encontradas
+                    # ── Páginas encontradas
                     if onboarding_empresa == e["nome"] and onboarding_paginas:
-                        st.markdown(f"""
-                        <div style='font-size:11px;font-weight:700;color:#6b7280;
-                                    text-transform:uppercase;letter-spacing:0.5px;
-                                    margin:10px 0 6px'>
-                            📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)
-                        </div>
-                        """, unsafe_allow_html=True)
+                        st.markdown(
+                            f"<div style='font-size:11px;font-weight:700;color:#6b7280;"
+                            f"text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px'>"
+                            f"📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)</div>",
+                            unsafe_allow_html=True,
+                        )
 
                         for pi, pg in enumerate(onboarding_paginas[:8]):
                             initial = (pg.get("nome", "P") or "P")[0].upper()
                             pic     = pg.get("profile_picture", "")
 
-                            # Avatar da página encontrada
                             if pic and pic.startswith("http"):
                                 thumb_html = (
-                                    f'<img src="{pic}" style="width:32px;height:32px;border-radius:50%;'
-                                    f'object-fit:cover;display:block" '
+                                    f'<img src="{pic}" style="width:32px;height:32px;'
+                                    f'border-radius:50%;object-fit:cover;display:block" '
                                     f'onerror="this.style.display=\'none\'" />'
                                 )
                             else:
                                 thumb_html = (
-                                    f'<span style="font-size:13px;font-weight:700;color:#6b7280">{initial}</span>'
+                                    f'<span style="font-size:13px;font-weight:700;'
+                                    f'color:#6b7280">{initial}</span>'
                                 )
 
                             col_pg, col_usar = st.columns([3, 1])
@@ -3722,10 +3784,12 @@ function triggerTab(label) {{
                                 st.markdown(f"""
                                 <div style="display:flex;align-items:center;gap:10px;
                                             padding:9px 11px;background:#f9fafb;
-                                            border:1px solid #e5e7eb;border-radius:9px;margin-bottom:6px">
+                                            border:1px solid #e5e7eb;border-radius:9px;
+                                            margin-bottom:6px">
                                     <div style="width:32px;height:32px;border-radius:50%;
-                                                background:#e5e7eb;display:flex;align-items:center;
-                                                justify-content:center;flex-shrink:0;overflow:hidden">
+                                                background:#e5e7eb;display:flex;
+                                                align-items:center;justify-content:center;
+                                                flex-shrink:0;overflow:hidden">
                                         {thumb_html}
                                     </div>
                                     <div style="flex:1;min-width:0">
@@ -3736,23 +3800,31 @@ function triggerTab(label) {{
                                             ID: {pg.get("page_id","—")}
                                         </div>
                                     </div>
-                                    <div style="font-size:11px;font-weight:600;color:#3a9fd6;flex-shrink:0">
+                                    <div style="font-size:11px;font-weight:600;
+                                                color:#3a9fd6;flex-shrink:0">
                                         {pg.get("total_ads",0)} ads
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)
                             with col_usar:
-                                if st.button("Usar", key=f"btn_pg_usar_{sk}_{ci}_{pi}", use_container_width=True):
+                                if st.button(
+                                    "Usar",
+                                    key=f"btn_pg_usar_{sk}_{ci}_{pi}",
+                                    use_container_width=True,
+                                ):
                                     page_id_val = pg.get("page_id") or pg.get("nome", "")
-                                    page_pic    = pg.get("profile_picture", "")
-                                    salvar_ads_id(e, page_id_val, page_pic)
+                                    page_pic_val = pg.get("profile_picture", "")
+                                    salvar_ads_id(e, page_id_val, page_pic_val)
                                     st.session_state.ads_editando_empresa = None
                                     st.session_state.ads_onboarding_empresa = None
                                     st.session_state.ads_onboarding_paginas = []
-                                    st.toast(f"✅ {pg.get('nome', page_id_val)} selecionado!", icon="✅")
+                                    st.toast(
+                                        f"✅ {pg.get('nome', page_id_val)} selecionado!",
+                                        icon="✅",
+                                    )
                                     st.rerun()
 
-                st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
+                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
