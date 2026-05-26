@@ -3523,7 +3523,7 @@ function triggerTab(label) {{
 # ABA: CONFIGURAÇÃO — Cards de empresa
 # ══════════════════════════════════════════════════════════════════
 
-if main_tab == "configuracao":
+    if main_tab == "configuracao":
 
         # Ghost buttons para salvar/buscar/cancelar por empresa
         config_action_css_parts = []
@@ -3863,7 +3863,7 @@ if main_tab == "configuracao":
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
     # ══════════════════════════════════════════════════════════════════
-elif main_tab == "empresas":
+    elif main_tab == "empresas":
 
         if not empresas_configuradas:
             st.markdown("""
