@@ -3494,6 +3494,7 @@ function triggerTab(label) {{
         try {{
           if (iframes[i].contentWindow === window) {{
             iframes[i].style.height = '90px';
+            iframes[i].style.marginTop = '-15px';
             break;
           }}
         }} catch(e) {{}}
@@ -4103,14 +4104,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     margin-bottom:4px;
 }}
 .badge-minha {{
-    display:inline-flex; align-items:center;
+    display:inline-flex; align-items:center; gap:5px;
     background:#f0fdf4; color:#15803d;
     border:1px solid #bbf7d0;
     padding:3px 10px; border-radius:20px;
     font-size:11px; font-weight:700;
 }}
 .badge-conc {{
-    display:inline-flex; align-items:center;
+    display:inline-flex; align-items:center; gap:5px;
     background:#eff6ff; color:#1d4ed8;
     border:1px solid #bfdbfe;
     padding:3px 10px; border-radius:20px;
@@ -4187,11 +4188,16 @@ function buildUI() {{
         var badgeHtml = e.is_minha
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
-        var avatarHtml = e.page_pic
-            ? '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb"><img src="' + e.page_pic + '" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentElement.style.background=\'' + e.cor + '\';this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;color:#fff&quot;>' + e.av + '</div>\'" /></div>'
-            : '<div style="width:44px;height:44px;border-radius:50%;background:' + e.cor + ';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0">' + e.av + '</div>';
         card.innerHTML =
-            avatarHtml
+            + (function() {
+                var pic = e.page_pic;  // adicione page_pic ao empresas_cards_json
+                if (pic) {
+                    return '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb">'
+                        + '<img src="' + pic + '" style="width:100%;height:100%;object-fit:cover;display:block"'
+                        + ' onerror="this.parentElement.style.background=\'' + e.cor + '\';this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;color:#fff&quot;>' + e.av + '</div>\'" /></div>';
+                }
+                return '<div style="width:44px;height:44px;border-radius:50%;background:' + e.cor + ';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0">' + e.av + '</div>';
+            })()
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
@@ -4258,7 +4264,7 @@ function syncHeight() {{
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
             frames[i].style.height = (h + 2) + 'px';
-            break;
+            frames[i].style.marginTop = '-60px'; break;
         }} }} catch(e) {{}}
     }}
 }}
