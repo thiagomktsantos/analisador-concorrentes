@@ -7534,7 +7534,7 @@ function syncH() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; iframes[i].style.marginTop = '-32px';break; }} }} catch(e) {{}}
     }}
 }}
 if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
@@ -7624,7 +7624,7 @@ function triggerSub(sub) {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '52px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '52px'; iframes[i].style.marginTop = '-12px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
