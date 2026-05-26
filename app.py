@@ -3211,143 +3211,286 @@ function triggerTab(label) {{
 """, height=90, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════
-    # ABA: SITES CONFIGURADOS — Cards lado a lado
+    # ABA: SITES CONFIGURADOS — Wrapper geral + cards lado a lado
     # ══════════════════════════════════════════════════════════════
 
     if main_tab == "sites":
 
-        n_sites = len(sites_disponiveis)
-        # Determina número de colunas: max 3
-        n_cols = min(n_sites, 3)
-        cols = st.columns(n_cols, gap="large")
+        import json as _json_sites
 
+        # Monta dados dos cards para o HTML
+        cards_data = []
         for idx_s, s in enumerate(sites_disponiveis):
             is_minha   = s["tipo"] == "minha"
             cor_avatar = get_minha_empresa_color() if is_minha else get_concorrente_color(idx_s - 1 if not is_minha else 0)
-            badge_bg   = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt  = "#1d4ed8" if is_minha else "#6b7280"
-            badge_brd  = "#bfdbfe" if is_minha else "#e5e7eb"
+            badge_bg   = "#f0fdf4" if is_minha else "#eff6ff"
+            badge_txt  = "#15803d" if is_minha else "#1d4ed8"
+            badge_brd  = "#bbf7d0" if is_minha else "#bfdbfe"
             badge_lbl  = "Minha Empresa" if is_minha else "Concorrente"
             avatar_letras = gerar_avatar(s["nome"])
-            uid = f"site_{idx_s}"
             analise_ind = st.session_state.get(f"sites_analise_{idx_s}", "")
+            analise_html = analise_ind.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>") if analise_ind else ""
 
-            with cols[idx_s % n_cols]:
+            cards_data.append({
+                "idx": idx_s,
+                "nome": s["nome"],
+                "url": s["url"],
+                "tipo": s["tipo"],
+                "cor": cor_avatar,
+                "badge_bg": badge_bg,
+                "badge_txt": badge_txt,
+                "badge_brd": badge_brd,
+                "badge_lbl": badge_lbl,
+                "avatar": avatar_letras,
+                "analise": analise_html,
+                "tem_analise": bool(analise_ind),
+            })
 
-                # Card principal com preview + botão analisar
-                card_html = f"""<!DOCTYPE html>
-<html>
+        cards_json = _json_sites.dumps(cards_data, ensure_ascii=False)
+
+        components.html(f"""
+<!DOCTYPE html><html>
 <head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{
-    background: transparent;
-    font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
+    background:transparent;
+    font-family:'DM Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:visible;
 }}
-.card {{
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    overflow: hidden;
-    margin-top: 0;
+body {{ padding-bottom:8px; }}
+
+/* ── Wrapper geral (mesmo estilo da imagem 2) ── */
+.outer-wrap {{
+    background:#d2dde9;
+    border:1px solid #c4cdd8;
+    border-radius:16px;
+    padding:16px;
+    margin-top:-55px;
 }}
+
+/* ── Grid de cards ── */
+.cards-grid {{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+    gap:16px;
+}}
+
+/* ── Card individual ── */
+.site-card {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    transition:box-shadow 0.15s;
+}}
+.site-card:hover {{
+    box-shadow:0 4px 20px rgba(0,0,0,0.10);
+}}
+
+/* ── Header do card ── */
 .card-header {{
-    display: flex; align-items: center; gap: 12px;
-    padding: 18px 20px 16px 20px;
-    border-bottom: 1px solid #f3f4f6;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:16px 18px 14px;
+    border-bottom:1px solid #f3f4f6;
 }}
 .avatar {{
-    width: 44px; height: 44px; border-radius: 50%;
-    background: {cor_avatar};
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0;
+    width:40px;height:40px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:700;color:#fff;flex-shrink:0;
 }}
-.nome-wrap {{ flex: 1; min-width: 0; }}
-.nome {{
-    font-size: 16px; font-weight: 700; color: #111827;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.card-name {{
+    font-size:16px;font-weight:700;color:#111827;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:4px;
 }}
 .badge {{
-    display: inline-block;
-    background: {badge_bg}; color: {badge_txt};
-    border: 1px solid {badge_brd};
-    padding: 2px 10px; border-radius: 20px;
-    font-size: 11px; font-weight: 600; margin-top: 4px;
+    display:inline-block;
+    padding:2px 10px;border-radius:20px;
+    font-size:11px;font-weight:700;
 }}
+
+/* ── URL row ── */
 .url-row {{
-    padding: 10px 20px;
-    font-size: 13px; color: #6b7280;
-    word-break: break-all;
-    border-bottom: 1px solid #f3f4f6;
-    display: flex; align-items: center; gap: 6px;
+    display:flex;align-items:center;gap:6px;
+    padding:9px 18px;
+    font-size:13px;font-weight:600;color:#374151;
+    border-bottom:1px solid #f3f4f6;
+    background:#fafbfc;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
 }}
-.url-val {{ font-size: 13px; font-weight: 600; color: #0d1117; }}
+
+/* ── Preview do site ── */
 .preview-wrap {{
-    margin: 14px;
-    border-radius: 10px; overflow: hidden;
-    border: 1px solid #e5e7eb; background: #f9fafb;
-    aspect-ratio: 16 / 9;
-    position: relative;
+    margin:14px;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    aspect-ratio:16/9;
+    position:relative;
+    flex-shrink:0;
 }}
 .preview-wrap img {{
-    width: 100%; height: 100%; display: block;
-    border-radius: 10px; object-fit: cover; object-position: top;
+    width:100%;height:100%;
+    display:block;
+    object-fit:cover;
+    object-position:top;
+    border-radius:10px;
 }}
 .preview-fallback {{
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 8px; background: #f3f4f6;
-    border-radius: 10px;
+    width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:8px;
+    background:#f3f4f6;border-radius:10px;
 }}
-.btn-wrap {{ padding: 0 14px 16px 14px; }}
+
+/* ── Análise individual ── */
+.analise-panel {{
+    margin:0 14px 14px;
+    background:#f0fdf4;
+    border:1px solid #86efac;
+    border-radius:10px;
+    overflow:hidden;
+}}
+.analise-hdr {{
+    padding:10px 14px;
+    font-size:11px;font-weight:800;color:#15803d;
+    text-transform:uppercase;letter-spacing:0.5px;
+    border-bottom:1px solid #bbf7d0;
+    background:#f0fdf4;
+    display:flex;align-items:center;gap:6px;
+}}
+.analise-body {{
+    padding:12px 14px;
+    font-size:13px;color:#374151;line-height:1.75;
+    max-height:200px;overflow-y:auto;
+}}
+
+/* ── Botão analisar ── */
+.btn-wrap {{ padding:0 14px 16px; }}
 .btn-analisar {{
-    width: 100%; padding: 11px 0;
-    border: 1px solid #3a9fd6; border-radius: 8px;
-    background: #eff6ff; font-size: 14px; font-weight: 700; color: #1d4ed8;
-    cursor: pointer; font-family: 'DM Sans', sans-serif;
-    transition: background 0.15s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width:100%;padding:11px 0;
+    border:1px solid #3a9fd6;border-radius:8px;
+    background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
+    cursor:pointer;font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;
+    display:flex;align-items:center;justify-content:center;gap:7px;
 }}
-.btn-analisar:hover {{ background: #dbeafe; }}
+.btn-analisar:hover {{ background:#dbeafe; }}
 </style>
 </head>
 <body>
-<div class="card" id="card_{uid}">
-    <div class="card-header">
-        <div class="avatar">{avatar_letras}</div>
-        <div class="nome-wrap">
-            <div class="nome">{s['nome']}</div>
-            <div class="badge">{badge_lbl}</div>
-        </div>
-    </div>
-    <div class="url-row">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-        </svg>
-        <span class="url-val">{s['url']}</span>
-    </div>
-    <div class="preview-wrap">
-        <img
-            src="https://api.microlink.io/?url=https://{s['url']}&screenshot=true&meta=false&embed=screenshot.url"
-            onerror="this.parentElement.innerHTML='<div class=\\'preview-fallback\\'><svg width=\\'32\\' height=\\'32\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'#d1d5db\\' stroke-width=\\'1.5\\'><circle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/><line x1=\\'2\\' y1=\\'12\\' x2=\\'22\\' y2=\\'12\\'/><path d=\\'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\\'/></svg><span style=\\'font-size:12px;color:#9ca3af\\'>Prévia indisponível</span></div>'"
-            loading="lazy"
-            alt="Preview {s['nome']}"
-        />
-    </div>
-    <div class="btn-wrap">
-        <button class="btn-analisar" onclick="triggerAnalise({idx_s})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-            </svg>
-            {'🔄 Reanalisar com IA' if analise_ind else 'Analisar este site com IA 🤖'}
-        </button>
-    </div>
+<div class="outer-wrap">
+    <div class="cards-grid" id="cards-grid"></div>
 </div>
+
 <script>
+var CARDS = {cards_json};
+
+function buildCards() {{
+    var grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+
+    CARDS.forEach(function(c) {{
+        var card = document.createElement('div');
+        card.className = 'site-card';
+        card.id = 'site_card_' + c.idx;
+
+        /* ── header ── */
+        var hdr = document.createElement('div');
+        hdr.className = 'card-header';
+        hdr.innerHTML =
+            '<div class="avatar" style="background:' + c.cor + '">' + c.avatar + '</div>'
+            + '<div style="flex:1;min-width:0">'
+            + '<div class="card-name">' + c.nome + '</div>'
+            + '<span class="badge" style="background:' + c.badge_bg + ';color:' + c.badge_txt + ';border:1px solid ' + c.badge_brd + '">' + c.badge_lbl + '</span>'
+            + '</div>';
+        card.appendChild(hdr);
+
+        /* ── url row ── */
+        var urlRow = document.createElement('div');
+        urlRow.className = 'url-row';
+        urlRow.innerHTML =
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>'
+            + '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
+            + '</svg>'
+            + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + c.url + '</span>';
+        card.appendChild(urlRow);
+
+        /* ── preview ── */
+        var prevWrap = document.createElement('div');
+        prevWrap.className = 'preview-wrap';
+        var img = document.createElement('img');
+        img.src = 'https://api.microlink.io/?url=https://' + c.url + '&screenshot=true&meta=false&embed=screenshot.url';
+        img.loading = 'lazy';
+        img.alt = 'Preview ' + c.nome;
+        img.onerror = function() {{
+            prevWrap.innerHTML =
+                '<div class="preview-fallback">'
+                + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">'
+                + '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>'
+                + '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
+                + '</svg>'
+                + '<span style="font-size:12px;color:#9ca3af">Prévia indisponível</span>'
+                + '</div>';
+        }};
+        img.addEventListener('load', function() {{ setTimeout(syncHeight, 100); }});
+        prevWrap.appendChild(img);
+        card.appendChild(prevWrap);
+
+        /* ── painel de análise (se existir) ── */
+        if (c.analise) {{
+            var ap = document.createElement('div');
+            ap.className = 'analise-panel';
+            ap.id = 'analise_panel_' + c.idx;
+            ap.innerHTML =
+                '<div class="analise-hdr">'
+                + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
+                + '<circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>'
+                + '</svg>'
+                + 'Análise de IA'
+                + '</div>'
+                + '<div class="analise-body">' + c.analise + '</div>';
+            card.appendChild(ap);
+        }}
+
+        /* ── botão analisar ── */
+        var btnWrap = document.createElement('div');
+        btnWrap.className = 'btn-wrap';
+        var btn = document.createElement('button');
+        btn.className = 'btn-analisar';
+        btn.id = 'btn_analisar_' + c.idx;
+        btn.innerHTML =
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            + '<circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>'
+            + '</svg>'
+            + (c.tem_analise ? '🔄 Reanalisar com IA' : 'Analisar este site com IA 🤖');
+        btn.onclick = (function(idx) {{
+            return function() {{
+                var b = document.getElementById('btn_analisar_' + idx);
+                if (b) {{ b.textContent = 'Analisando…'; b.style.opacity = '0.6'; b.style.pointerEvents = 'none'; }}
+                triggerAnalise(idx);
+            }};
+        }})(c.idx);
+        btnWrap.appendChild(btn);
+        card.appendChild(btnWrap);
+
+        grid.appendChild(card);
+    }});
+
+    syncHeight();
+}}
+
 function triggerAnalise(idx) {{
     var targetText = '_site_ia_trigger_' + idx + '_';
     var btns = window.parent.document.querySelectorAll('button');
@@ -3356,10 +3499,9 @@ function triggerAnalise(idx) {{
         if (txt === targetText) {{ btns[i].click(); return; }}
     }}
 }}
-function ajustarAltura() {{
-    var card = document.getElementById('card_{uid}');
-    if (!card) return;
-    var h = card.getBoundingClientRect().height;
+
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
@@ -3370,68 +3512,17 @@ function ajustarAltura() {{
         }} catch(e) {{}}
     }}
 }}
-if (window.ResizeObserver) {{
-    var ro = new ResizeObserver(ajustarAltura);
-    ro.observe(document.body);
-}}
-document.addEventListener('DOMContentLoaded', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
-setTimeout(ajustarAltura, 200);
-setTimeout(ajustarAltura, 600);
-setTimeout(ajustarAltura, 1200);
-</script>
-</body>
-</html>"""
 
-                components.html(card_html, height=420, scrolling=False)
-
-                # Painel de análise individual abaixo do card
-                if analise_ind:
-                    components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
-body {{ padding-bottom:4px; }}
-.wrap {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;
-}}
-.hdr {{
-    padding:14px 18px; font-size:13px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.3px;
-    border-bottom:1px solid #e5e7eb; background:#f9fafb;
-    display:flex; align-items:center; gap:8px;
-}}
-.body {{
-    padding:18px; font-size:14px; color:#374151; line-height:1.75;
-    overflow-y:auto;
-}}
-</style>
-<div class="wrap" id="wrap">
-    <div class="hdr">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3a9fd6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-        </svg>
-        Análise de IA — {s['nome']}
-    </div>
-    <div class="body">{analise_ind.replace(chr(10), "<br>")}</div>
-</div>
-<script>
-function syncH() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 8) + 'px'; break;
-        }} }} catch(e) {{}}
-    }}
-}}
-if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncH);
-window.addEventListener('load', syncH);
-setTimeout(syncH, 100); setTimeout(syncH, 400);
+buildCards();
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 300);
+setTimeout(syncHeight, 800);
+setTimeout(syncHeight, 1500);
 </script>
-""", height=400, scrolling=False)
+</body></html>
+""", height=500, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA — Relatório geral + análises salvas
@@ -3497,6 +3588,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     background:#fff; border:1px dashed #d1d5db; border-radius:14px;
     padding:64px 48px; text-align:center;
     display:flex; flex-direction:column; align-items:center; gap:14px;
+    margin-top:-55px;
 }}
 .empty-icon {{ font-size:40px; }}
 .empty-title {{ font-size:18px; font-weight:700; color:#374151; }}
