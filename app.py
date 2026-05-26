@@ -3520,9 +3520,10 @@ function triggerTab(label) {{
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
 
 # ══════════════════════════════════════════════════════════════════
-    # ABA: CONFIGURAÇÃO — Cards de empresa
-    # ══════════════════════════════════════════════════════════════════
-    if main_tab == "configuracao":
+# ABA: CONFIGURAÇÃO — Cards de empresa
+# ══════════════════════════════════════════════════════════════════
+
+if main_tab == "configuracao":
 
         # Ghost buttons para salvar/buscar/cancelar por empresa
         config_action_css_parts = []
@@ -3644,514 +3645,220 @@ function triggerTab(label) {{
                         st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
                         st.rerun()
 
-        # ── Renderizar cards de configuração
-        config_empresa_selecionada = st.session_state.ads_config_empresa_selecionada
-        editando_empresa = st.session_state.ads_editando_empresa
+        # ── INFO BOX
+        st.markdown("""
+        <div style='background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
+                    padding:12px 16px;font-size:13px;color:#0369a1;
+                    display:flex;align-items:flex-start;gap:10px;line-height:1.6;margin-bottom:20px'>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div>
+                Clique em <strong>✏️ Editar</strong> em cada empresa para configurar.
+                Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong> do Facebook,
+                depois clique em <strong>Buscar páginas</strong> para encontrar
+                ou <strong>Salvar ID</strong> para salvar diretamente.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        empresas_json_list = []
+        # ── HEADER DO PAINEL
+        st.markdown("""
+        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px 12px 0 0;
+                    padding:14px 20px;font-size:13px;font-weight:800;color:#1a2e4a;
+                    text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb'>
+            ⚙️ Configure as páginas do Facebook / Instagram
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── CARDS DE EMPRESA — renderizados diretamente em Python/HTML
+        editando_empresa = st.session_state.ads_editando_empresa
+        onboarding_empresa = st.session_state.ads_onboarding_empresa
+        onboarding_paginas = st.session_state.ads_onboarding_paginas
+
+        # Grid de 3 colunas
+        cols_cfg = st.columns(3)
+
         for ci, e in enumerate(todas_empresas):
             is_minha = e["tipo"] == "minha"
             cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            empresas_json_list.append({
-                "ci": ci,
-                "nome": e["nome"],
-                "tipo": e["tipo"],
-                "ads_id": ads_id,
-                "cor": cor,
-                "avatar": gerar_avatar(e["nome"]),
-                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
-                "is_minha": is_minha,
-            })
+            avatar = gerar_avatar(e["nome"])
+            sk = safe_key(e["nome"])
+            has_id = bool(ads_id.strip())
+            is_editing = (editando_empresa == e["nome"])
 
-        empresas_json = _json.dumps(empresas_json_list, ensure_ascii=False)
+            badge_html = (
+                '<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;'
+                'color:#15803d;border:1px solid #bbf7d0;padding:3px 10px;border-radius:20px;'
+                'font-size:11px;font-weight:700">Minha empresa</span>'
+                if is_minha else
+                '<span style="display:inline-flex;align-items:center;gap:5px;background:#eff6ff;'
+                'color:#1d4ed8;border:1px solid #bfdbfe;padding:3px 10px;border-radius:20px;'
+                'font-size:11px;font-weight:700">Concorrente</span>'
+            )
 
-        paginas_json = "[]"
-        paginas_empresa_nome = st.session_state.ads_onboarding_empresa or ""
-        if st.session_state.ads_onboarding_paginas:
-            pg_data = []
-            for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
-                pg_data.append({
-                    "pi": pi,
-                    "nome": pg.get("nome", "—"),
-                    "page_id": pg.get("page_id", ""),
-                    "total_ads": pg.get("total_ads", 0),
-                    "profile_picture": pg.get("profile_picture", ""),
-                })
-            paginas_json = _json.dumps(pg_data, ensure_ascii=False)
+            id_strip_bg  = "#f0fdf4" if has_id else "#f3f4f6"
+            id_strip_brd = "#bbf7d0" if has_id else "#e5e7eb"
+            id_dot_color = "#22c55e" if has_id else "#d1d5db"
+            id_val_color = "#15803d" if has_id else "#9ca3af"
+            id_val_text  = ads_id if has_id else "Não configurado — clique em ✏️"
+            id_font      = "monospace" if has_id else "'DM Sans', sans-serif"
 
-        n_empresas = len(empresas_json_list)
-        # Altura base: header(56) + padding(40) + por empresa: ~160px no grid de 3 cols
-        import math
-        n_rows = math.ceil(n_empresas / 3)
-        altura_estimada = 56 + 40 + (n_rows * 180) + 40
-        altura_inicial = max(altura_estimada, 600)
+            with cols_cfg[ci % 3]:
+                # Card visual
+                st.markdown(f"""
+                <div style='background:{"#fff" if is_editing else "#f9fafb"};
+                            border:{"2px solid #3a9fd6" if is_editing else "1px solid #e5e7eb"};
+                            border-radius:12px;overflow:hidden;margin-bottom:4px;
+                            {"box-shadow:0 0 0 3px rgba(58,159,214,0.12)" if is_editing else ""}'>
+                    <div style='display:flex;align-items:center;gap:12px;padding:16px 16px 14px'>
+                        <div style='width:44px;height:44px;border-radius:10px;background:#e9eef5;
+                                    display:flex;align-items:center;justify-content:center;flex-shrink:0'>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                 stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                                <line x1="12" y1="12" x2="12" y2="16"/>
+                                <line x1="10" y1="14" x2="14" y2="14"/>
+                            </svg>
+                        </div>
+                        <div style='flex:1;min-width:0'>
+                            <div style='font-size:14px;font-weight:700;color:#1a2e4a;
+                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>
+                                {e["nome"]}
+                            </div>
+                            <div style='margin-top:4px'>{badge_html}</div>
+                        </div>
+                    </div>
+                    <div style='margin:0 12px 12px;background:{id_strip_bg};
+                                border:1px solid {id_strip_brd};border-radius:8px;
+                                padding:8px 12px;display:flex;align-items:center;gap:7px'>
+                        <div style='width:7px;height:7px;border-radius:50%;
+                                    background:{id_dot_color};flex-shrink:0'></div>
+                        <div style='font-size:12px;font-weight:{"600" if has_id else "400"};
+                                    color:{id_val_color};font-family:{id_font};
+                                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>
+                            {id_val_text}
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        components.html(f"""
-<!DOCTYPE html><html><head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:12px; }}
+                # Botão editar (visível)
+                if not is_editing:
+                    if st.button(f"✏️ Editar", key=f"btn_edit_open_{sk}_{ci}", use_container_width=True):
+                        st.session_state.ads_editando_empresa = e["nome"]
+                        st.session_state.ads_onboarding_empresa = None
+                        st.session_state.ads_onboarding_paginas = []
+                        st.rerun()
 
-.config-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:16px;
-    overflow:visible;
-}}
-.config-header {{
-    padding:16px 22px;
-    border-bottom:1px solid #e5e7eb;
-    font-size:13px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.5px;
-    background:#f9fafb;
-    border-radius:16px 16px 0 0;
-}}
-.config-body {{
-    padding:20px 22px;
-    display:grid;
-    grid-template-columns: repeat(3,1fr);
-    gap:16px;
-}}
+                # Formulário de edição inline
+                if is_editing:
+                    novo_val = st.text_input(
+                        "Nome ou ID da página",
+                        value=ads_id,
+                        key=f"cfg_inline_input_{sk}_{ci}",
+                        placeholder='Ex: Marketylics  ou  102803918240129',
+                    )
 
-/* ── Card de empresa ── */
-.emp-card {{
-    background:#f9fafb;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    overflow:visible;
-    transition:border-color 0.15s, box-shadow 0.15s;
-    display:flex;
-    flex-direction:column;
-}}
-.emp-card.editing {{
-    border-color:#3a9fd6;
-    box-shadow:0 0 0 3px rgba(58,159,214,0.12);
-    background:#fff;
-}}
-.emp-card-top {{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:16px 16px 14px;
-}}
-.emp-icon {{
-    width:44px; height:44px; border-radius:10px;
-    background:#e9eef5;
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-}}
-.emp-icon svg {{ width:22px; height:22px; }}
-.emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{
-    font-size:14px; font-weight:700; color:#1a2e4a;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}}
-.badge-minha {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#f0fdf4; color:#15803d;
-    border:1px solid #bbf7d0;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700; margin-top:4px;
-}}
-.badge-minha::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#22c55e; flex-shrink:0;
-}}
-.badge-conc {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#eff6ff; color:#1d4ed8;
-    border:1px solid #bfdbfe;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700; margin-top:4px;
-}}
-.badge-conc::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#3b82f6; flex-shrink:0;
-}}
-.lapiz-btn {{
-    width:32px; height:32px;
-    border:1px solid #e5e7eb; border-radius:8px;
-    background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:#9ca3af; flex-shrink:0;
-    transition:all 0.12s;
-}}
-.lapiz-btn:hover {{
-    background:#f3f4f6; color:#374151; border-color:#9ca3af;
-}}
-.id-strip {{
-    margin:0 12px 12px;
-    background:#f3f4f6;
-    border-radius:8px;
-    padding:8px 12px;
-    display:flex; align-items:center; gap:7px;
-    font-size:12px;
-}}
-.id-strip.configured {{
-    background:#f0fdf4; border:1px solid #bbf7d0;
-}}
-.id-dot {{
-    width:7px; height:7px; border-radius:50%;
-    background:#22c55e; flex-shrink:0;
-}}
-.id-dot.empty {{ background:#d1d5db; }}
-.id-val {{
-    font-size:12px; font-weight:600;
-    color:#15803d; font-family:monospace;
-    flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}}
-.id-val.empty {{ color:#9ca3af; font-family:'DM Sans',sans-serif; font-weight:400; }}
+                    col_b, col_s = st.columns(2)
+                    with col_b:
+                        if st.button("🔍 Buscar páginas", key=f"btn_inline_buscar_{sk}_{ci}", use_container_width=True):
+                            if novo_val.strip():
+                                st.session_state.ads_onboarding_empresa = e["nome"]
+                                st.session_state.ads_onboarding_termo = novo_val.strip()
+                                with st.spinner(f"Buscando «{novo_val.strip()}»…"):
+                                    paginas = buscar_paginas_facebook(novo_val.strip())
+                                st.session_state.ads_onboarding_paginas = paginas
+                                st.rerun()
+                            else:
+                                st.warning("Digite um nome ou ID para buscar.")
 
-/* ── Formulário de edição inline ── */
-.edit-form {{
-    display:none;
-    border-top:1px solid #e5e7eb;
-    padding:14px 16px;
-    background:#fff;
-    border-radius:0 0 12px 12px;
-}}
-.edit-form.open {{ display:block; }}
-.input-label {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px;
-}}
-.input-field {{
-    width:100%; padding:9px 12px;
-    border:1.5px solid #e5e7eb; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif;
-    color:#111827; outline:none; background:#fafafa;
-    transition:border-color 0.15s; margin-bottom:10px;
-}}
-.input-field:focus {{ border-color:#3a9fd6; background:#fff; }}
-.btn-row {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }}
-.btn-buscar {{
-    padding:9px; border:none; border-radius:8px;
-    background:#0e2a47; color:#fff;
-    font-size:12px; font-weight:700; cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:5px;
-    transition:background 0.15s;
-}}
-.btn-buscar:hover {{ background:#1a3a5c; }}
-.btn-salvar {{
-    padding:9px; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; color:#1d4ed8;
-    font-size:12px; font-weight:700; cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:5px;
-    transition:background 0.15s;
-}}
-.btn-salvar:hover {{ background:#dbeafe; }}
-.btn-cancelar {{
-    width:100%; padding:7px; border:none; border-radius:8px;
-    background:transparent; color:#9ca3af;
-    font-size:12px; font-weight:600; cursor:pointer;
-    font-family:'DM Sans',sans-serif; transition:color 0.15s;
-    margin-top:2px;
-}}
-.btn-cancelar:hover {{ color:#374151; }}
+                    with col_s:
+                        if st.button("💾 Salvar ID", key=f"btn_inline_salvar_{sk}_{ci}", use_container_width=True):
+                            if novo_val.strip():
+                                salvar_ads_id(e, novo_val.strip())
+                                st.session_state.ads_editando_empresa = None
+                                st.session_state.ads_onboarding_empresa = None
+                                st.session_state.ads_onboarding_paginas = []
+                                st.toast(f"✅ {e['nome']} salvo!", icon="✅")
+                                st.rerun()
+                            else:
+                                st.warning("Digite um nome ou ID.")
 
-/* ── Páginas encontradas ── */
-.paginas-wrap {{
-    margin-top:12px; border-top:1px solid #f3f4f6; padding-top:12px;
-}}
-.paginas-title {{
-    font-size:11px; font-weight:700; color:#6b7280;
-    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
-}}
-.pg-card {{
-    display:flex; align-items:center; gap:10px;
-    padding:9px 11px; background:#f9fafb;
-    border:1px solid #e5e7eb; border-radius:9px;
-    cursor:pointer; margin-bottom:6px; transition:all 0.12s;
-}}
-.pg-card:hover {{ background:#eff6ff; border-color:#3a9fd6; }}
-.pg-thumb {{
-    width:32px; height:32px; border-radius:50%;
-    overflow:hidden; background:#e5e7eb; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; color:#6b7280;
-}}
-.pg-thumb img {{ width:100%; height:100%; object-fit:cover; border-radius:50%; }}
-.pg-nome {{ font-size:12px; font-weight:700; color:#111827; }}
-.pg-id {{ font-size:10px; color:#9ca3af; font-family:monospace; }}
-.pg-ads {{ font-size:11px; font-weight:600; color:#3a9fd6; margin-left:auto; flex-shrink:0; }}
+                    if st.button("✕ Cancelar", key=f"btn_inline_cancelar_{sk}_{ci}", use_container_width=True):
+                        st.session_state.ads_editando_empresa = None
+                        st.session_state.ads_onboarding_empresa = None
+                        st.session_state.ads_onboarding_paginas = []
+                        st.rerun()
 
-/* ── Info box ── */
-.info-box {{
-    margin:0 22px 20px;
-    background:#f0f9ff;
-    border:1px solid #bae6fd;
-    border-radius:10px;
-    padding:12px 16px;
-    font-size:13px;
-    color:#0369a1;
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    line-height:1.6;
-}}
-.info-box svg {{ flex-shrink:0; margin-top:1px; }}
-</style>
-</head>
-<body>
-<div class="config-wrap">
-    <div class="config-header">⚙️ Configure as páginas do Facebook / Instagram</div>
+                    # Páginas encontradas para este card
+                    if onboarding_empresa == e["nome"] and onboarding_paginas:
+                        st.markdown(f"""
+                        <div style='font-size:11px;font-weight:700;color:#6b7280;
+                                    text-transform:uppercase;letter-spacing:0.5px;
+                                    margin:10px 0 6px'>
+                            📋 {len(onboarding_paginas[:8])} página(s) encontrada(s) — clique para selecionar
+                        </div>
+                        """, unsafe_allow_html=True)
 
-    <div class="info-box" id="info-box">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <div>
-            Clique no <strong>lápis ✏️</strong> de cada empresa para configurar. Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong> do Facebook, depois clique em <strong>Buscar páginas</strong> para encontrar ou <strong>Salvar ID</strong> para salvar diretamente.
+                        for pi, pg in enumerate(onboarding_paginas[:8]):
+                            initial = (pg.get("nome", "P") or "P")[0].upper()
+                            pic = pg.get("profile_picture", "")
+                            thumb_html = (
+                                f'<img src="{pic}" style="width:32px;height:32px;border-radius:50%;'
+                                f'object-fit:cover" onerror="this.outerHTML=\'<span style=&quot;'
+                                f'font-size:13px;font-weight:700;color:#6b7280&quot;>{initial}</span>\'" />'
+                                if pic else
+                                f'<span style="font-size:13px;font-weight:700;color:#6b7280">{initial}</span>'
+                            )
+
+                            col_pg, col_pg_btn = st.columns([3, 1])
+                            with col_pg:
+                                st.markdown(f"""
+                                <div style='display:flex;align-items:center;gap:10px;
+                                            padding:8px 10px;background:#f9fafb;
+                                            border:1px solid #e5e7eb;border-radius:9px;margin-bottom:4px'>
+                                    <div style='width:32px;height:32px;border-radius:50%;
+                                                background:#e5e7eb;display:flex;align-items:center;
+                                                justify-content:center;flex-shrink:0;overflow:hidden'>
+                                        {thumb_html}
+                                    </div>
+                                    <div style='flex:1;min-width:0'>
+                                        <div style='font-size:12px;font-weight:700;color:#111827'>
+                                            {pg.get("nome","—")}
+                                        </div>
+                                        <div style='font-size:10px;color:#9ca3af;font-family:monospace'>
+                                            ID: {pg.get("page_id","—")}
+                                        </div>
+                                    </div>
+                                    <div style='font-size:11px;font-weight:600;color:#3a9fd6;flex-shrink:0'>
+                                        {pg.get("total_ads",0)} ads
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            with col_pg_btn:
+                                if st.button("Usar", key=f"btn_pg_usar_{sk}_{ci}_{pi}", use_container_width=True):
+                                    page_id_val = pg.get("page_id") or pg.get("nome", "")
+                                    page_pic    = pg.get("profile_picture", "")
+                                    salvar_ads_id(e, page_id_val, page_pic)
+                                    st.session_state.ads_editando_empresa = None
+                                    st.session_state.ads_onboarding_empresa = None
+                                    st.session_state.ads_onboarding_paginas = []
+                                    st.toast(f"✅ {pg.get('nome', page_id_val)} selecionado!", icon="✅")
+                                    st.rerun()
+
+                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+
+        # Fechar o painel visual
+        st.markdown("""
+        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:0 0 12px 12px;
+                    border-top:none;padding:14px 20px;margin-top:-8px'>
         </div>
-    </div>
-
-    <div class="config-body" id="cards-grid"></div>
-</div>
-
-<script>
-var EMPRESAS = {empresas_json};
-var PAGINAS  = {paginas_json};
-var PAGINAS_EMPRESA = "{paginas_empresa_nome}";
-var INPUT_VALS = {{}};
-
-EMPRESAS.forEach(function(e) {{
-    INPUT_VALS[e.ci] = e.ads_id || '';
-}});
-
-function toggleForm(ci) {{
-    var form = document.getElementById('form_' + ci);
-    var card = document.getElementById('card_' + ci);
-    var isOpen = form.classList.contains('open');
-    // fechar todos primeiro
-    document.querySelectorAll('.edit-form').forEach(function(f) {{ f.classList.remove('open'); }});
-    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('editing'); }});
-    if (!isOpen) {{
-        form.classList.add('open');
-        card.classList.add('editing');
-        // focar no input
-        var inp = document.getElementById('inp_' + ci);
-        if (inp) setTimeout(function() {{ inp.focus(); inp.select(); }}, 50);
-    }}
-    setTimeout(syncHeight, 80);
-    setTimeout(syncHeight, 300);
-}}
-
-function buildCards() {{
-    var grid = document.getElementById('cards-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    EMPRESAS.forEach(function(e) {{
-        var hasId = e.ads_id && e.ads_id.trim() !== '';
-        var card = document.createElement('div');
-        card.className = 'emp-card';
-        card.id = 'card_' + e.ci;
-
-        var badgeHtml = e.is_minha
-            ? '<span class="badge-minha">Minha empresa</span>'
-            : '<span class="badge-conc">Concorrente</span>';
-
-        var idDot   = hasId ? '<div class="id-dot"></div>' : '<div class="id-dot empty"></div>';
-        var idVal   = hasId
-            ? '<div class="id-val">' + e.ads_id + '</div>'
-            : '<div class="id-val empty">Não configurado — clique em ✏️</div>';
-        var idClass = hasId ? 'id-strip configured' : 'id-strip';
-
-        card.innerHTML =
-            '<div class="emp-card-top">'
-            + '<div class="emp-icon">'
-            + '<svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
-            + '<rect x="2" y="7" width="20" height="14" rx="2"/>'
-            + '<path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'
-            + '<line x1="12" y1="12" x2="12" y2="16"/>'
-            + '<line x1="10" y1="14" x2="14" y2="14"/>'
-            + '</svg>'
-            + '</div>'
-            + '<div class="emp-info">'
-            + '<div class="emp-nome">' + e.nome + '</div>'
-            + badgeHtml
-            + '</div>'
-            + '<button class="lapiz-btn" onclick="toggleForm(' + e.ci + ')" title="Editar configuração">'
-            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-            + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
-            + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
-            + '</svg>'
-            + '</button>'
-            + '</div>'
-            + '<div class="' + idClass + '">'
-            + idDot + idVal
-            + '</div>'
-            + '<div class="edit-form" id="form_' + e.ci + '">'
-            + '<div class="input-label">Nome da página ou ID numérico do Facebook</div>'
-            + '<input class="input-field" id="inp_' + e.ci + '" type="text"'
-            + ' value="' + (e.ads_id || '') + '"'
-            + ' placeholder="Ex: Marketylics  ou  102803918240129"'
-            + ' oninput="INPUT_VALS[' + e.ci + ']=this.value" />'
-            + '<div class="btn-row">'
-            + '<button class="btn-buscar" onclick="triggerAction(\'buscar\',' + e.ci + ')">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-            + ' Buscar páginas'
-            + '</button>'
-            + '<button class="btn-salvar" onclick="triggerSalvar(' + e.ci + ')">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>'
-            + ' Salvar ID'
-            + '</button>'
-            + '</div>'
-            + '<button class="btn-cancelar" onclick="toggleForm(' + e.ci + ')">✕ Cancelar</button>'
-            + getPaginasHtml(e.nome)
-            + '</div>';
-
-        grid.appendChild(card);
-    }});
-
-    // Abrir form da empresa selecionada automaticamente
-    var selectedEmpresa = "{config_empresa_selecionada or ''}";
-    var editandoEmpresa = "{editando_empresa or ''}";
-    var targetNome = selectedEmpresa || editandoEmpresa;
-    if (targetNome) {{
-        EMPRESAS.forEach(function(e) {{
-            if (e.nome === targetNome) {{
-                setTimeout(function() {{
-                    toggleForm(e.ci);
-                }}, 300);
-            }}
-        }});
-    }}
-
-    syncHeight();
-}}
-
-function getPaginasHtml(nomeEmpresa) {{
-    if (!PAGINAS || PAGINAS.length === 0 || PAGINAS_EMPRESA !== nomeEmpresa) return '';
-    var html = '<div class="paginas-wrap">'
-        + '<div class="paginas-title">📋 ' + PAGINAS.length + ' página(s) encontrada(s) — clique para selecionar</div>';
-    PAGINAS.forEach(function(pg) {{
-        var initial = (pg.nome && pg.nome[0]) ? pg.nome[0].toUpperCase() : 'P';
-        var thumb = pg.profile_picture
-            ? '<img src="' + pg.profile_picture + '" onerror="this.outerHTML=\'<span>' + initial + '</span>\'" />'
-            : '<span>' + initial + '</span>';
-        html += '<div class="pg-card" onclick="triggerSelectPg(' + pg.pi + ')">'
-            + '<div class="pg-thumb">' + thumb + '</div>'
-            + '<div style="flex:1;min-width:0">'
-            + '<div class="pg-nome">' + pg.nome + '</div>'
-            + '<div class="pg-id">ID: ' + (pg.page_id || '—') + '</div>'
-            + '</div>'
-            + '<div class="pg-ads">' + pg.total_ads + ' ads</div>'
-            + '</div>';
-    }});
-    html += '</div>';
-    return html;
-}}
-
-function getSkByIndex(ci) {{
-    var e = EMPRESAS[ci];
-    if (!e) return '';
-    return e.nome.replace(/[^a-zA-Z0-9_]/g, '_');
-}}
-
-function syncInputToSt(ci, val) {{
-    var sk = getSkByIndex(ci);
-    var keyPattern = 'cfg_input_' + sk + '_' + ci;
-    var allInputs = window.parent.document.querySelectorAll('input');
-    allInputs.forEach(function(inp) {{
-        var id = inp.id || '';
-        if (id.indexOf(keyPattern) !== -1 || (inp.getAttribute('data-key') || '').indexOf(keyPattern) !== -1) {{
-            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            setter.call(inp, val);
-            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
-            inp.dispatchEvent(new Event('change', {{ bubbles: true }}));
-        }}
-    }});
-    // fallback: buscar pelo aria-label
-    window.parent.document.querySelectorAll('[data-testid="stTextInput"] input').forEach(function(inp) {{
-        var label = inp.closest('[data-testid="stTextInput"]');
-        if (label && label.textContent && label.textContent.indexOf(keyPattern) !== -1) {{
-            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            setter.call(inp, val);
-            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
-        }}
-    }});
-}}
-
-function triggerAction(action, ci) {{
-    var val = document.getElementById('inp_' + ci);
-    if (val) syncInputToSt(ci, val.value);
-    var sk = getSkByIndex(ci);
-    var label = 'cfg_' + action + '_' + sk;
-    setTimeout(function() {{ triggerBtn(label); }}, 80);
-}}
-
-function triggerSalvar(ci) {{
-    var val = document.getElementById('inp_' + ci);
-    if (val) syncInputToSt(ci, val.value);
-    var sk = getSkByIndex(ci);
-    setTimeout(function() {{ triggerBtn('cfg_salvar_' + sk); }}, 80);
-}}
-
-function triggerSelectPg(pi) {{
-    triggerBtn('select_pg_' + pi);
-}}
-
-function triggerBtn(label) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
-}}
-
-function syncHeight() {{
-    var h = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight,
-        document.body.offsetHeight,
-        300
-    );
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{
-            if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 20) + 'px';
-                frames[i].style.minHeight = '0';
-                break;
-            }}
-        }} catch(ex) {{}}
-    }}
-}}
-
-// Executar buildCards assim que o DOM estiver pronto
-if (document.readyState === 'loading') {{
-    document.addEventListener('DOMContentLoaded', function() {{
-        buildCards();
-    }});
-}} else {{
-    buildCards();
-}}
-
-// ResizeObserver para ajuste dinâmico
-if (window.ResizeObserver) {{
-    new ResizeObserver(function() {{ syncHeight(); }}).observe(document.body);
-}}
-
-window.addEventListener('load', function() {{
-    buildCards();
-    syncHeight();
-}});
-
-// Múltiplos timeouts para garantir renderização
-setTimeout(function() {{ buildCards(); syncHeight(); }}, 50);
-setTimeout(syncHeight, 200);
-setTimeout(syncHeight, 500);
-setTimeout(syncHeight, 1000);
-setTimeout(syncHeight, 2000);
-</script>
-</body></html>
-""", height=altura_inicial, scrolling=True)
+        """, unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
