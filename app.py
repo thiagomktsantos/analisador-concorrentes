@@ -7305,6 +7305,11 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
         eng_est   = len(r.get("posts", [])) == 0
         posts_list = r.get("posts", [])
+
+        # DEBUG TEMPORÁRIO
+        st.write(f"**Debug:** {len(posts_list)} posts | Seguidores: {r.get('seguidores', 0)} | Handle: {r.get('handle', '')}")
+        if not posts_list:
+            st.write(f"**Chaves no cache:** {list(r.keys())}")
  
         # ── Header do perfil ────────────────────────────────────────
         components.html(f"""
