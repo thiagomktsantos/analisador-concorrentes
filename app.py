@@ -3519,16 +3519,157 @@ function triggerTab(label) {{
     if not st.secrets.get("APIFY_TOKEN", ""):
         st.warning("Configure `APIFY_TOKEN` no secrets.toml para usar esta funcionalidade.")
 
+def render_ads_empresa(e: dict):
+    ck         = e["nome"]
+    cache_entry = st.session_state.ads_cache.get(ck, {})
+    ads_data   = cache_entry.get("data", [])
+    ativos     = [a for a in ads_data if a.get("ativo", True)]
+    inativos   = [a for a in ads_data if not a.get("ativo", True)]
+ 
+    if not ads_data:
+        st.markdown("""
+        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                    padding:48px 32px;text-align:center;margin-top:8px'>
+            <div style='font-size:32px;margin-bottom:12px'>📢</div>
+            <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>
+                Nenhum anúncio encontrado
+            </div>
+            <div style='font-size:14px;color:#9ca3af'>
+                Clique em <b>Buscar / Atualizar Anúncios</b> para buscar os dados.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+ 
+    # ── Cabeçalho de resumo
+    ts  = cache_entry.get("ts", "")
+    st.markdown(
+        f"<div style='font-size:13px;color:#6b7280;margin-bottom:16px'>"
+        f"✅ <b>{len(ativos)}</b> ativos &nbsp;|&nbsp; "
+        f"🗂️ <b>{len(inativos)}</b> no histórico"
+        f"{'&nbsp;|&nbsp; 🕒 ' + ts if ts else ''}"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+ 
+    # ── Filtro de formato
+    formatos_disponiveis = sorted({a.get("formato", "—") for a in ativos})
+    filtro_fmt = st.selectbox(
+        "Filtrar por formato",
+        ["Todos"] + formatos_disponiveis,
+        key=f"filtro_fmt_{safe_key(ck)}",
+        label_visibility="collapsed",
+    )
+    lista = ativos if filtro_fmt == "Todos" else [a for a in ativos if a.get("formato") == filtro_fmt]
+ 
+    if not lista:
+        st.info("Nenhum anúncio encontrado com esse filtro.")
+        return
+ 
+    # ── Grid de cards (3 colunas)
+    cols = st.columns(3)
+    for i, ad in enumerate(lista[:30]):
+        with cols[i % 3]:
+            titulo  = _truncar(ad.get("title") or ad.get("body") or "Sem título", 60)
+            body    = _truncar(ad.get("body") or "", 120)
+            fmt     = ad.get("formato", "—")
+            data_i  = ad.get("data_inicio", "—")
+            imp     = ad.get("impressoes", "")
+            snap    = ad.get("snapshot_url", "")
+            imgs    = ad.get("images", [])
+            thumb   = imgs[0] if imgs else ""
+            plats   = ", ".join(ad.get("plataformas", [])) if ad.get("plataformas") else "—"
+            cta     = ad.get("cta", "")
+ 
+            # Ícone de formato
+            fmt_icon = {"Vídeo": "🎬", "Imagem": "🖼️", "Carrossel": "🎠", "Texto": "📝"}.get(fmt, "📢")
+ 
+            img_html = (
+                f'<img src="{thumb}" style="width:100%;height:160px;object-fit:cover;'
+                f'border-radius:8px 8px 0 0;display:block" '
+                f'onerror="this.style.display=\'none\'" />'
+                if thumb else
+                f'<div style="width:100%;height:100px;background:#f3f4f6;'
+                f'border-radius:8px 8px 0 0;display:flex;align-items:center;'
+                f'justify-content:center;font-size:36px">{fmt_icon}</div>'
+            )
+ 
+            imp_badge = (
+                f'<span style="background:#fef9c3;color:#854d0e;padding:3px 9px;'
+                f'border-radius:20px;font-size:11px;font-weight:600">{imp}</span>'
+                if imp else ""
+            )
+ 
+            cta_badge = (
+                f'<span style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;'
+                f'padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600">{cta}</span>'
+                if cta else ""
+            )
+ 
+            link_html = (
+                f'<a href="{snap}" target="_blank" style="font-size:12px;color:#3a9fd6;'
+                f'text-decoration:none;font-weight:600;display:inline-flex;'
+                f'align-items:center;gap:4px">Ver anúncio ↗</a>'
+                if snap else ""
+            )
+ 
+            st.markdown(f"""
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+                        overflow:hidden;margin-bottom:14px;
+                        box-shadow:0 1px 4px rgba(0,0,0,0.05)">
+                {img_html}
+                <div style="padding:12px 14px">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                        <span style="font-size:13px">{fmt_icon}</span>
+                        <span style="font-size:13px;font-weight:700;color:#111827;
+                                     line-height:1.4;flex:1;min-width:0;
+                                     overflow:hidden;text-overflow:ellipsis;
+                                     white-space:nowrap">{titulo}</span>
+                    </div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;
+                                line-height:1.5;max-height:54px;overflow:hidden">{body}</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+                        <span style="background:#f3f4f6;color:#374151;padding:3px 9px;
+                                     border-radius:20px;font-size:11px;font-weight:600">{fmt}</span>
+                        {imp_badge}
+                        {cta_badge}
+                    </div>
+                    <div style="font-size:11px;color:#9ca3af;margin-bottom:8px">
+                        📅 {data_i}<br>📱 {plats}
+                    </div>
+                    {link_html}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+ 
+    # ── Histórico (inativos)
+    if inativos:
+        with st.expander(f"🗂️ Ver histórico ({len(inativos)} anúncios inativos)"):
+            for ad in inativos[:20]:
+                titulo = _truncar(ad.get("title") or ad.get("body") or "Sem título", 80)
+                snap   = ad.get("snapshot_url", "")
+                fmt    = ad.get("formato", "—")
+                data_i = ad.get("data_inicio", "—")
+                link   = f'<a href="{snap}" target="_blank" style="color:#3a9fd6;font-size:12px">Ver ↗</a>' if snap else ""
+                st.markdown(
+                    f"<div style='font-size:13px;color:#9ca3af;padding:6px 0;"
+                    f"border-bottom:1px solid #f3f4f6'>"
+                    f"⬜ [{fmt}] {titulo} &nbsp;·&nbsp; {data_i} &nbsp; {link}"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+ 
+ 
 # ══════════════════════════════════════════════════════════════════
 # ABA: CONFIGURAÇÃO — Cards de empresa
 # ══════════════════════════════════════════════════════════════════
-
+ 
     if main_tab == "configuracao":
-
+ 
         editando_empresa   = st.session_state.ads_editando_empresa
         onboarding_empresa = st.session_state.ads_onboarding_empresa
         onboarding_paginas = st.session_state.ads_onboarding_paginas
-
+ 
         # ── Ghost buttons ocultos via CSS
         all_ghost_css = "".join([f"""
         .st-key-cfg_ghost_edit_{ci},
@@ -3549,16 +3690,16 @@ function triggerTab(label) {{
             max-height:0!important;padding:0!important;margin:0!important;overflow:hidden!important;
         }}
         """ for ci in range(len(todas_empresas))])
-
+ 
         st.markdown(f"<style>{all_ghost_css}</style>", unsafe_allow_html=True)
-
+ 
         # ── Ghost triggers
         ghost_edit    = {}
         ghost_save    = {}
         ghost_cancel  = {}
         ghost_buscar  = {}
         input_vals    = {}
-
+ 
         for ci, e in enumerate(todas_empresas):
             ghost_edit[ci]   = st.button(str(ci),          key=f"cfg_ghost_edit_{ci}")
             ghost_save[ci]   = st.button(f"save_{ci}",     key=f"cfg_ghost_save_{ci}")
@@ -3570,7 +3711,7 @@ function triggerTab(label) {{
                 f"val_{ci}", value=ads_id_e,
                 key=f"cfg_input_val_{ci}", label_visibility="hidden",
             )
-
+ 
         # ── Processar ações
         for ci, e in enumerate(todas_empresas):
             if ghost_edit[ci]:
@@ -3601,7 +3742,7 @@ function triggerTab(label) {{
                         paginas = buscar_paginas_facebook(val)
                     st.session_state.ads_onboarding_paginas = paginas
                     st.rerun()
-
+ 
         # ── INFO BOX
         st.markdown("""
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
@@ -3623,7 +3764,7 @@ function triggerTab(label) {{
             </div>
         </div>
         """, unsafe_allow_html=True)
-
+ 
         # ── Monta HTML dos cards
         cards_html = ""
         for ci, e in enumerate(todas_empresas):
@@ -3638,15 +3779,13 @@ function triggerTab(label) {{
             badge_bg  = "#f0fdf4" if is_minha else "#eff6ff"
             badge_col = "#15803d" if is_minha else "#1d4ed8"
             badge_brd = "#bbf7d0" if is_minha else "#bfdbfe"
-            dot_col   = "#22c55e" if is_minha else "#3b82f6"
             id_bg     = "#f0fdf4" if has_id else "#f3f4f6"
             id_brd    = "#bbf7d0" if has_id else "#e5e7eb"
-            id_dot    = "#22c55e" if has_id else "#d1d5db"
             id_fw     = "600"     if has_id else "400"
             id_color  = "#15803d" if has_id else "#9ca3af"
             id_ff     = "monospace" if has_id else "inherit"
             id_text   = ads_id if has_id else "Não configurado"
-
+ 
             if page_pic and page_pic.startswith("http"):
                 av_html = (
                     f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;'
@@ -3663,13 +3802,12 @@ function triggerTab(label) {{
                     f'display:flex;align-items:center;justify-content:center;font-size:15px;'
                     f'font-weight:700;color:#fff;flex-shrink:0">{av_txt}</div>'
                 )
-
+ 
             border_style = (
                 "border:2px solid #3a9fd6;box-shadow:0 0 0 3px rgba(58,159,214,0.12);"
                 if is_editing else "border:1px solid #e5e7eb;"
             )
-
-            # Seção de edição inline (aparece quando is_editing)
+ 
             edit_section = f"""
             <div class="edit-section">
                 <div style="font-size:11px;font-weight:700;color:#9ca3af;
@@ -3712,7 +3850,7 @@ function triggerTab(label) {{
                 </div>
             </div>
             """ if is_editing else ""
-
+ 
             cancel_btn = f"""
             <button class="cancel-btn" onclick="triggerGhost('cancel_{ci}')">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -3734,7 +3872,7 @@ function triggerTab(label) {{
                 Editar
             </button>
             """
-
+ 
             cards_html += f"""
             <div class="card" style="{border_style}">
                 <div class="card-header">
@@ -3771,7 +3909,7 @@ function triggerTab(label) {{
                     {cancel_btn}
                 </div>
             </div>"""
-
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3780,7 +3918,6 @@ html, body {{
     background:transparent;
     font-family:'DM Sans',sans-serif;
     overflow:hidden;
-    /* remove qualquer margem do iframe em relação à nav bar */
     margin-top:0 !important;
     padding-top:0 !important;
 }}
@@ -3900,8 +4037,8 @@ setTimeout(syncHeight, 80);
 setTimeout(syncHeight, 300);
 </script>
 """, height=250, scrolling=False)
-
-        # ── Páginas encontradas
+ 
+        # ── Páginas encontradas (onboarding)
         if onboarding_empresa and onboarding_paginas:
             e_ob = next((x for x in todas_empresas if x["nome"] == onboarding_empresa), None)
             if e_ob:
@@ -3963,26 +4100,33 @@ setTimeout(syncHeight, 300);
                             st.session_state.ads_onboarding_paginas = []
                             st.toast(f"✅ {pg.get('nome','')} selecionado!", icon="✅")
                             st.rerun()
-
-    # ══════════════════════════════════════════════════════════════════
-    # ABA: EMPRESAS CONFIGURADAS
-    # ══════════════════════════════════════════════════════════════════
+ 
+ 
+# ══════════════════════════════════════════════════════════════════
+# ABA: EMPRESAS CONFIGURADAS
+# ══════════════════════════════════════════════════════════════════
+ 
     elif main_tab == "empresas":
-
+ 
         if not empresas_configuradas:
             st.markdown("""
             <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
                         padding:48px 32px;text-align:center;margin-top:8px'>
                 <div style='font-size:32px;margin-bottom:12px'>⚙️</div>
-                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhuma página configurada</div>
-                <div style='font-size:14px;color:#9ca3af'>Clique em <b>Configuração</b> acima para configurar suas páginas.</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>
+                    Nenhuma página configurada
+                </div>
+                <div style='font-size:14px;color:#9ca3af'>
+                    Clique em <b>Configuração</b> acima para configurar suas páginas.
+                </div>
             </div>
             """, unsafe_allow_html=True)
             st.stop()
-
+ 
         if "ads_aba_ativa" not in st.session_state:
             st.session_state.ads_aba_ativa = 0
-
+ 
+        # ── Ghost buttons para seleção de aba
         aba_ghost_css = []
         for i in range(len(empresas_configuradas)):
             k = f"btn_aba_ads_{i}"
@@ -3994,19 +4138,21 @@ setTimeout(syncHeight, 300);
             }}
             .stElementContainer:has(.st-key-{k}) {{
                 display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important;
+                overflow:hidden !important;
             }}
             """)
         if aba_ghost_css:
             st.markdown(f"<style>{''.join(aba_ghost_css)}</style>", unsafe_allow_html=True)
-
+ 
         for i in range(len(empresas_configuradas)):
             if st.button(f"aba_ads_{i}", key=f"btn_aba_ads_{i}"):
                 st.session_state.ads_aba_ativa = i
                 st.rerun()
-
+ 
         aba_ativa = min(st.session_state.ads_aba_ativa, len(empresas_configuradas) - 1)
-
+ 
+        # ── Monta JSON para o HTML das abas
         empresas_cards_json = []
         for i, e in enumerate(empresas_configuradas):
             is_minha = e["tipo"] == "minha"
@@ -4021,23 +4167,37 @@ setTimeout(syncHeight, 300);
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
                 "page_pic": page_pic,
             })
-
+ 
         empresas_cards_str = _json.dumps(empresas_cards_json, ensure_ascii=False)
-
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.main-wrap {{ background:#d2dde9; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; }}
-.cards-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; padding:20px; }}
+html, body {{
+    background:transparent; font-family:'DM Sans',sans-serif;
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+}}
+.main-wrap {{
+    background:#d2dde9; border:1px solid #e5e7eb;
+    border-radius:16px; overflow:hidden;
+}}
+.cards-grid {{
+    display:grid; grid-template-columns:repeat(3,1fr);
+    gap:16px; padding:20px;
+}}
 .emp-card {{
     background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px;
     padding:16px; display:flex; align-items:center; gap:12px;
     cursor:pointer; transition:all 0.15s; position:relative;
 }}
-.emp-card:hover {{ border-color:#3a9fd6; background:#fff; box-shadow:0 2px 10px rgba(58,159,214,0.1); }}
-.emp-card.active {{ background:#fff; border:2px solid #3b82f6; }}
+.emp-card:hover {{
+    border-color:#3a9fd6; background:#fff;
+    box-shadow:0 2px 10px rgba(58,159,214,0.1);
+}}
+.emp-card.active {{
+    background:#fff; border:2px solid #3b82f6;
+}}
 .emp-icon {{
     width:44px; height:44px; border-radius:10px; background:#e9eef5;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
@@ -4061,19 +4221,21 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 }}
 .lapiz-btn {{
     width:28px; height:28px; border:1px solid #e5e7eb; border-radius:7px;
-    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    color:#9ca3af; flex-shrink:0; transition:all 0.12s;
+    background:#fff; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; color:#9ca3af; flex-shrink:0; transition:all 0.12s;
     position:absolute; top:12px; right:12px;
 }}
-.lapiz-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.lapiz-btn:hover {{
+    background:#f3f4f6; color:#374151; border-color:#9ca3af;
+}}
 </style>
 <div class="main-wrap">
     <div class="cards-grid" id="cards-grid"></div>
 </div>
 <script>
-var EMPRESAS = {empresas_cards_str};
+var EMPRESAS  = {empresas_cards_str};
 var ABA_ATIVA = {aba_ativa};
-
+ 
 function buildUI() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
@@ -4081,38 +4243,45 @@ function buildUI() {{
         var card = document.createElement('div');
         card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
         card.id = 'emp_card_' + e.i;
-
+ 
         var badgeHtml = e.is_minha
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
-
+ 
         var picUrl = e.page_pic || '';
         var iconHtml = picUrl
             ? '<div class="emp-icon" style="padding:0;overflow:hidden;border-radius:10px">'
-              + '<img src="' + picUrl + '" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:10px" '
-              + 'onerror="this.parentElement.style.background=\'#e9eef5\';this.innerHTML=\'<svg viewBox=\\\"0 0 24 24\\\" fill=\\\"none\\\" stroke=\\\"#64748b\\\" stroke-width=\\\"1.5\\\" style=\\\"width:22px;height:22px;margin:auto\\\"><rect x=\\\"2\\\" y=\\\"7\\\" width=\\\"20\\\" height=\\\"14\\\" rx=\\\"2\\\"/></svg>\'" />'
-              + '</div>'
+              + '<img src="' + picUrl + '" style="width:100%;height:100%;object-fit:cover;'
+              + 'display:block;border-radius:10px" '
+              + 'onerror="this.parentElement.style.background=\'#e9eef5\';'
+              + 'this.innerHTML=\'<svg viewBox=\\\\\"0 0 24 24\\\\\" fill=\\\\\"none\\\\\" '
+              + 'stroke=\\\\\"#64748b\\\\\" stroke-width=\\\\\"1.5\\\\\" '
+              + 'style=\\\\\"width:22px;height:22px;margin:auto\\\\\">'
+              + '<rect x=\\\\\"2\\\\\" y=\\\\\"7\\\\\" width=\\\\\"20\\\\\" height=\\\\\"14\\\\\" rx=\\\\\"2\\\\\"/>'
+              + '</svg>\'" /></div>'
             : '<div class="emp-icon">'
-              + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px">'
+              + '<svg viewBox="0 0 24 24" fill="none" stroke="'
+              + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b')
+              + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'
+              + ' style="width:22px;height:22px">'
               + '<rect x="2" y="7" width="20" height="14" rx="2"/>'
               + '<path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'
               + '<line x1="12" y1="12" x2="12" y2="16"/>'
               + '<line x1="10" y1="14" x2="14" y2="14"/>'
-              + '</svg>'
-              + '</div>';
-
+              + '</svg></div>';
+ 
         card.innerHTML = iconHtml
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
             + '</div>'
             + '<button class="lapiz-btn" onclick="goConfig(' + e.i + ',event)" title="Configurar">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+            + ' stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
             + '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
             + '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'
-            + '</svg>'
-            + '</button>';
-
+            + '</svg></button>';
+ 
         card.addEventListener('click', function(ev) {{
             if (ev.target.closest('.lapiz-btn')) return;
             selectAba(e.i);
@@ -4121,20 +4290,22 @@ function buildUI() {{
     }});
     syncHeight();
 }}
-
+ 
 function selectAba(i) {{
     ABA_ATIVA = i;
-    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
+    document.querySelectorAll('.emp-card').forEach(function(c) {{
+        c.classList.remove('active');
+    }});
     var card = document.getElementById('emp_card_' + i);
     if (card) card.classList.add('active');
     triggerBtn('aba_ads_' + i);
 }}
-
+ 
 function goConfig(i, ev) {{
     ev.stopPropagation();
     triggerBtn('tab_cfg');
 }}
-
+ 
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -4142,27 +4313,31 @@ function triggerBtn(label) {{
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
-
+ 
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 2) + 'px';
-            frames[i].style.marginTop = '-60px'; break;
-        }} }} catch(e) {{}}
+        try {{
+            if (frames[i].contentWindow === window) {{
+                frames[i].style.height = (h + 2) + 'px';
+                frames[i].style.marginTop = '-60px';
+                break;
+            }}
+        }} catch(e) {{}}
     }}
 }}
-
+ 
 buildUI();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+setTimeout(syncHeight, 200);
+setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
-
-        # ── Sub-abas ghost
+ 
+        # ── Ghost buttons de sub-abas por empresa
         conteudo_tab_ghost_css = []
         for e in empresas_configuradas:
             sk = safe_key(e["nome"])
@@ -4176,12 +4351,13 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                 }}
                 .stElementContainer:has(.st-key-{k}) {{
                     display:none !important; height:0 !important; min-height:0 !important;
-                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                    max-height:0 !important; padding:0 !important; margin:0 !important;
+                    overflow:hidden !important;
                 }}
                 """)
         if conteudo_tab_ghost_css:
             st.markdown(f"<style>{''.join(conteudo_tab_ghost_css)}</style>", unsafe_allow_html=True)
-
+ 
         for e in empresas_configuradas:
             sk = safe_key(e["nome"])
             ck = e["nome"]
@@ -4190,22 +4366,30 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                 if st.button(f"tab_{sk}_{tab_name}", key=btn_key):
                     st.session_state.ads_aba_conteudo[ck] = tab_name
                     st.rerun()
-
+ 
+        # ── Filtra apenas empresas com dados no cache
         empresas_com_dados = [
             e for e in todas_empresas
-            if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
+            if e["nome"] in st.session_state.ads_cache
+            or e["nome"] in st.session_state.ads_erro
         ]
-
+ 
         if not empresas_com_dados:
             st.markdown("""
-            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                        padding:48px 32px;text-align:center;margin-top:8px'>
                 <div style='font-size:32px;margin-bottom:12px'>📢</div>
-                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
-                <div style='font-size:14px;color:#9ca3af'>Configure as páginas e clique em <b>Buscar / Atualizar</b>.</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>
+                    Nenhum dado carregado ainda
+                </div>
+                <div style='font-size:14px;color:#9ca3af'>
+                    Configure as páginas e clique em <b>Buscar / Atualizar</b>.
+                </div>
             </div>
             """, unsafe_allow_html=True)
             st.stop()
-
+ 
+        # ── Chama render_ads_empresa com a empresa da aba ativa
         aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
         render_ads_empresa(empresas_com_dados[aba_idx])
 
