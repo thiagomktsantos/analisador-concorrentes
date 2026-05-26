@@ -6995,7 +6995,7 @@ html, body { background: transparent; overflow: hidden; }
     main_tab = st.session_state.redes_main_tab
  
     # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas) — mesmo estilo Ads
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
     # ══════════════════════════════════════════════════════════════════
  
     components.html(f"""
@@ -7080,7 +7080,7 @@ function triggerTab(label) {{
 """, height=90, scrolling=False)
  
     # ══════════════════════════════════════════════════════════════════
-    # ABA: PERFIS CONFIGURADOS — mesmo layout que Ads "empresas"
+    # ABA: PERFIS CONFIGURADOS
     # ══════════════════════════════════════════════════════════════════
  
     if main_tab == "perfis":
@@ -7098,7 +7098,7 @@ function triggerTab(label) {{
  
         aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
  
-        # ── Cards de empresa no topo (mesmo estilo Ads) ─────────────
+        # ── Cards de empresa no topo ────────────────────────────────
         empresas_redes_json = []
         for i, r in enumerate(ok):
             is_minha = r.get("tipo") == "minha"
@@ -7237,7 +7237,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             f'font-weight:700;color:#fff;flex-shrink:0">{gerar_avatar(r["nome"])}</div>'
         )
  
-        # ── Header do perfil (mesmo estilo Ads) ─────────────────────
+        # ── Header do perfil ────────────────────────────────────────
         st.markdown(f"""
         <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
                     border-radius:12px 12px 0 0;overflow:hidden;margin-top:-45px;'>
@@ -7266,7 +7266,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             </div>
         </div>""", unsafe_allow_html=True)
  
-        # ── Sub-abas: Anúncios / Análise de IA ─────────────────────
+        # ── Sub-abas ────────────────────────────────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
@@ -7292,7 +7292,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
  
         subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
  
-        # ── Barra de sub-abas (mesmo estilo Ads) ────────────────────
+        # ── Barra de sub-abas ────────────────────────────────────────
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7353,7 +7353,7 @@ function triggerSub(sub) {{
 """, height=52, scrolling=False)
  
         # ══════════════════════════════════════════════════════════════
-        # SUB-ABA: POSTAGENS — mesmo estilo dos cards de Ads
+        # SUB-ABA: POSTAGENS — cards estilo Ads
         # ══════════════════════════════════════════════════════════════
         if subtab_atual == "postagens":
  
@@ -7364,7 +7364,7 @@ function triggerSub(sub) {{
                 sum(p["likes"] + p["comments"] for p in posts_list) / len(posts_list), 1
             ) if posts_list else 0
  
-            # Filtros ghost
+            # ── Ghost selects para filtros ──────────────────────────
             for fk in [f"redes_tipo_sel_{aba_ativa}", f"redes_ordem_sel_{aba_ativa}"]:
                 st.markdown(f"""
                 <style>
@@ -7396,7 +7396,7 @@ function triggerSub(sub) {{
             elif filtro_ordem_val == "engajamento":
                 posts_filtered = sorted(posts_filtered, key=lambda p: p.get("likes", 0) + p.get("comments", 0), reverse=True)
  
-            # Bio IA ghost
+            # ── Bio IA ghost ────────────────────────────────────────
             chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
             if chave_bio_ia not in st.session_state:
                 st.session_state[chave_bio_ia] = ""
@@ -7437,12 +7437,17 @@ Responda com:
             bio_resultado      = st.session_state.get(chave_bio_ia, "")
             bio_resultado_html = bio_resultado.replace("\n","<br>") if bio_resultado else ""
  
-            # Posts JSON para HTML
+            # ── Montar cards de posts como HTML ─────────────────────
             posts_cards_data = []
             for p in posts_filtered:
                 cap     = p.get("caption", "")
-                cap_esc = cap.replace("\\","\\\\").replace("'","\\'").replace('"',"&quot;").replace("\n"," ").replace("\r","")
-                cap_prev = cap_esc[:90] + ("…" if len(cap) > 90 else "")
+                cap_esc = (cap
+                    .replace("\\","\\\\")
+                    .replace("'","\\'")
+                    .replace('"',"&quot;")
+                    .replace("\n"," ")
+                    .replace("\r",""))
+                cap_prev = cap_esc[:100] + ("…" if len(cap) > 100 else "")
                 posts_cards_data.append({
                     "thumb":    p.get("thumb", ""),
                     "cap":      cap_esc,
@@ -7458,16 +7463,39 @@ Responda com:
             filtro_tipo_cur = filtro_tipo_val
             filtro_ord_cur  = filtro_ordem_val
  
+            # ── n_cols toggle ghost ─────────────────────────────────
+            col_key_redes = f"redes_cols_{aba_ativa}"
+            if col_key_redes not in st.session_state:
+                st.session_state[col_key_redes] = 3
+            n_cols_redes = st.session_state[col_key_redes]
+ 
+            toggle_ghost_k = f"btn_redes_toggle_cols_{aba_ativa}"
+            st.markdown(f"""
+            <style>
+            .st-key-{toggle_ghost_k} {{
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:0 !important; height:0 !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; display:none !important;
+            }}
+            .stElementContainer:has(.st-key-{toggle_ghost_k}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+            if st.button(f"redes_toggle_cols_{aba_ativa}", key=toggle_ghost_k):
+                st.session_state[col_key_redes] = 4 if n_cols_redes == 3 else 3
+                st.rerun()
+ 
             components.html(f"""
-<!DOCTYPE html><html>
-<head>
+<!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
 body {{ padding-bottom:8px; }}
  
-/* ── Filtros (mesmo estilo barra de filtros dos Ads) ── */
+/* ── Filtros ── */
 .filters-wrap {{
     background:#fff;
     border:1px solid #e5e7eb; border-top:none; border-bottom:none;
@@ -7483,8 +7511,15 @@ body {{ padding-bottom:8px; }}
 .filter-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
 .filter-btn.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
 .filter-sep {{ width:1px; height:24px; background:#e5e7eb; flex-shrink:0; }}
+.cols-btn {{
+    margin-left:auto; width:34px; height:34px; border-radius:8px;
+    border:1px solid #e5e7eb; background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#6b7280; transition:all 0.12s; flex-shrink:0;
+}}
+.cols-btn:hover {{ background:#f3f4f6; border-color:#9ca3af; color:#374151; }}
  
-/* ── Stats (mesmo estilo stats dos Ads) ── */
+/* ── Stats ── */
 .stats-outer {{
     background:#fff;
     border:1px solid #e5e7eb; border-top:none; border-bottom:none;
@@ -7522,64 +7557,188 @@ body {{ padding-bottom:8px; }}
     font-size:12px; color:#374151; line-height:1.7; max-height:160px; overflow-y:auto;
 }}
  
-/* ── Grid de postagens (mesmo estilo cards dos Ads) ── */
+/* ── Posts section ── */
 .posts-section {{
     background:#fff;
     border:1px solid #e5e7eb; border-top:none;
     border-radius:0 0 12px 12px; overflow:hidden;
+    padding-bottom:4px;
 }}
 .posts-hdr {{
-    padding:14px 18px; font-size:12px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #e5e7eb;
+    padding:14px 18px;
+    font-size:12px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.5px;
+    border-bottom:1px solid #e5e7eb;
+    display:flex; align-items:center; gap:8px;
 }}
 .posts-grid {{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+    display:grid;
+    grid-template-columns:repeat({n_cols_redes},1fr);
+    gap:12px;
     padding:14px 18px 18px;
+    align-items:start;
 }}
-.post-card {{
-    background:#fff; border:1px solid #dde1e7; border-radius:12px;
-    overflow:hidden; display:flex; flex-direction:column;
-    box-shadow:0 1px 4px rgba(0,0,0,0.06); transition:box-shadow 0.15s;
-}}
-.post-card:hover {{ box-shadow:0 4px 16px rgba(0,0,0,0.10); }}
-.post-thumb {{
-    width:100%; aspect-ratio:1/1; background:#e5e7eb;
-    position:relative; cursor:pointer; overflow:hidden; flex-shrink:0;
-}}
-.post-thumb img {{ width:100%; height:100%; object-fit:cover; display:block; }}
-.post-thumb-fallback {{
-    width:100%; height:100%; display:flex; align-items:center;
-    justify-content:center; font-size:28px; background:#f3f4f6;
-}}
-.post-video-badge {{
-    position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.55);
-    color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px;
-}}
-.post-stats {{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:8px 10px 6px; border-bottom:1px solid #f3f4f6;
-    font-size:12px; color:#6b7280;
-}}
-.post-stat {{ display:flex; align-items:center; gap:4px; font-weight:600; }}
-.post-copy {{
-    padding:6px 10px 10px; font-size:11px; color:#374151; line-height:1.5;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-    overflow:hidden; flex:1; cursor:pointer;
-}}
-.post-copy:hover {{ color:#1d4ed8; }}
-.post-date {{ font-size:10px; color:#9ca3af; padding:0 10px 8px; }}
  
-/* ── Modal ── */
-.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9000; align-items:center; justify-content:center; }}
-.modal-bg.open {{ display:flex; }}
-.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:440px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative; }}
-.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
-.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
-.modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }}
-.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
+/* ── Post card (estilo Ads) ── */
+.post-card {{
+    background:#fff;
+    border:1px solid #dde1e7;
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    transition:box-shadow 0.15s;
+}}
+.post-card:hover {{ box-shadow:0 4px 16px rgba(0,0,0,0.12); }}
+ 
+/* Status bar (igual aos ads) */
+.post-status-bar {{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 12px 6px;
+    border-bottom:1px solid #f0f2f5;
+    background:#fafbfc;
+}}
+.status-dot {{
+    display:flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; color:#1aab40;
+}}
+.status-dot::before {{
+    content:''; width:7px; height:7px; border-radius:50%;
+    background:#1aab40; flex-shrink:0;
+}}
+.post-type-badge {{
+    font-size:10px; color:#6b7280; font-weight:600;
+    background:#f3f4f6; border:1px solid #e5e7eb;
+    padding:1px 7px; border-radius:20px;
+}}
+.post-date-top {{ font-size:10px; color:#9ca3af; }}
+ 
+/* Meta row (igual ads) */
+.post-meta-bar {{
+    display:flex; align-items:center; gap:6px;
+    padding:7px 12px 8px;
+    border-bottom:1px solid #f0f2f5;
+    background:#fafbfc;
+    flex-wrap:wrap;
+}}
+.meta-stat {{
+    display:flex; align-items:center; gap:4px;
+    font-size:11px; font-weight:700; color:#374151;
+}}
+ 
+/* Imagem (igual ads) */
+.post-media {{
+    width:100%; aspect-ratio:1/1;
+    background:#000; position:relative; overflow:hidden;
+    cursor:pointer; flex-shrink:0;
+}}
+.post-media img {{
+    width:100%; height:100%; object-fit:cover; display:block;
+}}
+.post-media-fallback {{
+    width:100%; height:100%; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    background:#7592cc; gap:6px;
+    font-size:12px; color:#fff; font-weight:600;
+    cursor:pointer;
+}}
+.video-badge {{
+    position:absolute; top:7px; right:7px;
+    background:rgba(0,0,0,0.6); color:#fff;
+    font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px;
+}}
+.zoom-hint {{
+    position:absolute; top:8px; left:8px;
+    background:rgba(0,0,0,0.45); border-radius:6px;
+    padding:3px 7px; font-size:11px; color:#fff; font-weight:600;
+}}
+ 
+/* Copy section (igual ads) */
+.post-copy-section {{
+    padding:10px 12px 8px;
+    border-bottom:1px solid #f0f2f5;
+}}
+.profile-header {{
+    display:flex; align-items:center; gap:8px; margin-bottom:8px;
+}}
+.profile-avatar {{
+    width:30px; height:30px; border-radius:50%;
+    background:{cor};
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.profile-name {{ font-size:12px; font-weight:700; color:#050505; }}
+.profile-sub  {{ font-size:10px; color:#65676b; }}
+.copy-text {{
+    font-size:13px; color:#050505; line-height:1.55;
+    word-break:break-word;
+    padding-top:8px; border-top:2px solid #f3f4f6;
+    min-height:36px;
+}}
+.no-copy {{
+    font-size:12px; color:#bcc0c4; font-style:italic;
+    min-height:36px; padding-top:8px; border-top:2px solid #f3f4f6;
+}}
+ 
+/* Footer (igual ads) */
+.post-footer {{
+    display:grid; grid-template-columns:1fr 1fr;
+    border-top:1px solid #e4e6ea;
+}}
+.footer-btn {{
+    display:flex; align-items:center; justify-content:center; gap:5px;
+    padding:9px 6px; font-size:11px; font-weight:700;
+    border:none; background:transparent; cursor:pointer;
+    font-family:'DM Sans',sans-serif; transition:background 0.12s;
+    color:#6b7280;
+}}
+.footer-btn:hover {{ background:#f9fafb; color:#111827; }}
+.footer-btn.danger {{ border-left:1px solid #e4e6ea; color:#dc2626; }}
+.footer-btn.danger:hover {{ background:#fef2f2; }}
+ 
+/* Modal */
+#modal-overlay {{
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.88); z-index:999999;
+    align-items:center; justify-content:center; padding:20px;
+}}
+#modal-overlay.open {{ display:flex; }}
+#modal-box {{
+    background:#111; border-radius:16px; overflow:hidden;
+    position:relative; display:inline-flex; flex-direction:column;
+    align-items:center; max-width:min(88vw,860px); max-height:90vh;
+}}
+#modal-close {{
+    position:absolute; top:10px; right:12px;
+    background:rgba(255,255,255,0.18); border:none; border-radius:50%;
+    width:34px; height:34px; font-size:17px; color:#fff;
+    cursor:pointer; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+}}
+#modal-img {{
+    display:block; max-width:min(84vw,820px);
+    max-height:min(82vh,820px); width:auto; height:auto;
+    object-fit:contain; border-radius:10px;
+}}
+#modal-cap {{
+    background:#fff; padding:16px 20px;
+    font-size:14px; color:#374151; line-height:1.7;
+    max-height:160px; overflow-y:auto;
+    width:100%; border-radius:0 0 16px 16px;
+}}
 </style>
 </head>
 <body>
+ 
+<!-- Modal -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div id="modal-box">
+        <button id="modal-close" onclick="closeModal()">✕</button>
+        <div id="modal-content"></div>
+        <div id="modal-cap" style="display:none"></div>
+    </div>
+</div>
  
 <!-- Filtros -->
 <div class="filters-wrap">
@@ -7593,6 +7752,11 @@ body {{ padding-bottom:8px; }}
     <button class="filter-btn {'active' if filtro_ord_cur == 'curtidas' else ''}" onclick="setFiltro('ordem','curtidas',this)">Mais curtidas</button>
     <button class="filter-btn {'active' if filtro_ord_cur == 'comentarios' else ''}" onclick="setFiltro('ordem','comentarios',this)">Mais comentários</button>
     <button class="filter-btn {'active' if filtro_ord_cur == 'engajamento' else ''}" onclick="setFiltro('ordem','engajamento',this)">Mais engajamento</button>
+    <button class="cols-btn" onclick="triggerColsToggle()" title="Alternar colunas">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/>
+        </svg>
+    </button>
 </div>
  
 <!-- Stats + Bio -->
@@ -7623,24 +7787,22 @@ body {{ padding-bottom:8px; }}
     </div>
 </div>
  
-<!-- Grid -->
+<!-- Grid de cards -->
 <div class="posts-section">
-    <div class="posts-hdr">Postagens ({len(posts_filtered)})</div>
-    <div class="posts-grid" id="posts-grid"></div>
-</div>
- 
-<!-- Modal -->
-<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
-        <button class="modal-close" onclick="closeModal()">✕</button>
-        <div class="modal-title" id="modal-title"></div>
-        <img id="modal-img" class="modal-img" src="" style="display:none" />
-        <div class="modal-text" id="modal-text"></div>
+    <div class="posts-hdr">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        Postagens ({len(posts_filtered)})
     </div>
+    <div class="posts-grid" id="posts-grid"></div>
 </div>
  
 <script>
 var POSTS = {posts_json_str};
+var AVATAR_LABEL = '{gerar_avatar(r["nome"])}';
+var PERFIL_NOME  = '{(r.get("nome_exibido") or r.get("handle","")).replace("'","\\'")}';
  
 function fmtNum(n) {{
     n = Math.round(n || 0);
@@ -7653,33 +7815,162 @@ function buildGrid() {{
     var grid = document.getElementById('posts-grid');
     if (!grid) return;
     grid.innerHTML = '';
+ 
     if (!POSTS.length) {{
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:32px;font-size:14px">Sem postagens disponíveis.</div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:48px;font-size:14px">Sem postagens disponíveis.</div>';
         syncHeight(); return;
     }}
-    POSTS.forEach(function(p) {{
+ 
+    POSTS.forEach(function(p, idx) {{
         var card = document.createElement('div');
         card.className = 'post-card';
-        var thumbHtml = p.thumb
-            ? '<div class="post-thumb" onclick="openImg(\'' + p.thumb.replace(/'/g,'') + '\')">'
-              + '<img src="' + p.thumb + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=&quot;post-thumb-fallback&quot;>' + (p.is_video ? '🎬' : '📷') + '</div>\'" />'
-              + (p.is_video ? '<div class="post-video-badge">▶ Vídeo</div>' : '')
-              + '</div>'
-            : '<div class="post-thumb"><div class="post-thumb-fallback">' + (p.is_video ? '🎬' : '📷') + '</div></div>';
-        var statsHtml = '<div class="post-stats">'
-            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes) + '</span>'
-            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments) + '</span>'
-            + '<span class="post-stat" style="color:#8b5cf6"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' + fmtNum(p.eng) + '</span>'
+        card.id = 'pcard_' + idx;
+ 
+        var typeLabel = p.is_video ? '🎬 Vídeo' : '📷 Imagem';
+ 
+        // ── Status bar (igual ads) ──
+        var statusBar = '<div class="post-status-bar">'
+            + '<div class="status-dot">Publicado</div>'
+            + '<div style="display:flex;gap:6px;align-items:center">'
+            + '<span class="post-type-badge">' + typeLabel + '</span>'
+            + (p.date ? '<span class="post-date-top">' + p.date + '</span>' : '')
+            + '</div></div>';
+ 
+        // ── Meta bar com engajamento ──
+        var metaBar = '<div class="post-meta-bar">'
+            + '<span class="meta-stat">'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+            + fmtNum(p.likes) + ' curtidas</span>'
+            + '<span style="color:#d1d5db;font-size:11px">·</span>'
+            + '<span class="meta-stat">'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+            + fmtNum(p.comments) + ' comentários</span>'
+            + '<span style="color:#d1d5db;font-size:11px">·</span>'
+            + '<span class="meta-stat" style="color:#8b5cf6">'
+            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
+            + fmtNum(p.eng) + ' eng.</span>'
             + '</div>';
-        var copyHtml = p.cap
-            ? '<div class="post-copy" onclick="openCopy(\'' + p.cap + '\')">' + p.cap_prev + '</div>'
-            : '<div class="post-copy" style="color:#d1d5db;font-style:italic">Sem legenda</div>';
-        var dateHtml = p.date ? '<div class="post-date">' + p.date + '</div>' : '';
-        card.innerHTML = thumbHtml + statsHtml + copyHtml + dateHtml;
+ 
+        // ── Mídia ──
+        var mediaBlock = '';
+        if (p.thumb) {{
+            mediaBlock = '<div class="post-media" onclick="openModal(' + idx + ')">'
+                + '<img id="pimg_' + idx + '" src="' + p.thumb + '" loading="lazy"'
+                + ' onerror="this.parentElement.innerHTML=\'<div class=&quot;post-media-fallback&quot; onclick=&quot;openModal(' + idx + ')&quot;><svg width=&quot;32&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#fff&quot; stroke-width=&quot;1.2&quot;><rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot;/><circle cx=&quot;8.5&quot; cy=&quot;8.5&quot; r=&quot;1.5&quot;/><polyline points=&quot;21 15 16 10 5 21&quot;/></svg>Sem prévia</div>\'" />'
+                + (p.is_video ? '<div class="video-badge">▶ Vídeo</div>' : '')
+                + '<div class="zoom-hint">🔍 Ampliar</div>'
+                + '</div>';
+        }} else {{
+            mediaBlock = '<div class="post-media-fallback" onclick="openModal(' + idx + ')" style="height:180px">'
+                + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+                + (p.is_video ? '🎬 Vídeo' : 'Sem prévia')
+                + '</div>';
+        }}
+ 
+        // ── Copy section (igual ads) ──
+        var copySection = '<div class="post-copy-section">'
+            + '<div class="profile-header">'
+            + '<div class="profile-avatar">' + AVATAR_LABEL + '</div>'
+            + '<div><div class="profile-name">' + PERFIL_NOME + '</div>'
+            + '<div class="profile-sub">Publicado</div></div></div>';
+ 
+        if (p.cap_prev) {{
+            var short = p.cap_prev.slice(0,80);
+            var rest  = p.cap_prev.slice(80);
+            if (rest) {{
+                copySection += '<div class="copy-text" id="cp_' + idx + '">'
+                    + short
+                    + '<span id="cpell_' + idx + '" style="color:#9ca3af"> …</span>'
+                    + '<span id="cprest_' + idx + '" style="display:none">' + rest + '</span>'
+                    + ' <button onclick="var r=document.getElementById(\'cprest_' + idx + '\');var b=this;var e=document.getElementById(\'cpell_' + idx + '\');if(r.style.display===\'none\'){{r.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}else{{r.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:12px;cursor:pointer;padding:0;">ver mais</button>'
+                    + '</div>';
+            }} else {{
+                copySection += '<div class="copy-text">' + p.cap_prev + '</div>';
+            }}
+        }} else {{
+            copySection += '<div class="no-copy">Sem legenda disponível.</div>';
+        }}
+        copySection += '</div>';
+ 
+        // ── Footer (igual ads) ──
+        var footer = '<div class="post-footer">'
+            + '<button class="footer-btn" onclick="openModal(' + idx + ')">'
+            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+            + 'Ver imagem</button>'
+            + '<button class="footer-btn danger" onclick="openCaption(' + idx + ')">'
+            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+            + 'Legenda</button>'
+            + '</div>';
+ 
+        card.innerHTML = statusBar + metaBar + mediaBlock + copySection + footer;
         grid.appendChild(card);
     }});
+ 
     syncHeight();
 }}
+ 
+function openModal(idx) {{
+    var p = POSTS[idx];
+    var overlay = document.getElementById('modal-overlay');
+    var content = document.getElementById('modal-content');
+    var capEl   = document.getElementById('modal-cap');
+    content.innerHTML = '';
+    capEl.style.display = 'none';
+    capEl.textContent = '';
+ 
+    if (p.thumb) {{
+        var loading = document.createElement('div');
+        loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px';
+        loading.textContent = 'Carregando…';
+        content.appendChild(loading);
+        overlay.classList.add('open');
+ 
+        var tmp = new Image();
+        tmp.onload = function() {{
+            content.innerHTML = '';
+            var img = document.createElement('img');
+            img.id = 'modal-img';
+            img.src = p.thumb;
+            img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:' + (p.cap ? '16px 16px 0 0' : '16px') + ';';
+            content.appendChild(img);
+            if (p.cap) {{
+                capEl.textContent = p.cap;
+                capEl.style.display = 'block';
+            }}
+        }};
+        tmp.onerror = function() {{
+            content.innerHTML = '<div style="padding:32px;color:#aaa;font-size:14px;text-align:center">Imagem não disponível.</div>';
+        }};
+        tmp.src = p.thumb;
+    }} else {{
+        content.innerHTML = '<div style="padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center">Sem imagem disponível.</div>';
+        if (p.cap) {{
+            capEl.textContent = p.cap;
+            capEl.style.display = 'block';
+        }}
+        overlay.classList.add('open');
+    }}
+}}
+ 
+function openCaption(idx) {{
+    var p = POSTS[idx];
+    var overlay = document.getElementById('modal-overlay');
+    var content = document.getElementById('modal-content');
+    var capEl   = document.getElementById('modal-cap');
+    content.innerHTML = '<div style="padding:24px 20px;color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid rgba(255,255,255,0.1)">📝 Legenda completa</div>';
+    capEl.textContent = p.cap || 'Sem legenda disponível.';
+    capEl.style.display = 'block';
+    overlay.classList.add('open');
+}}
+ 
+function closeModal() {{
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.getElementById('modal-content').innerHTML = '';
+    var capEl = document.getElementById('modal-cap');
+    capEl.style.display = 'none';
+    capEl.textContent = '';
+}}
+document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
  
 function setFiltro(tipo, val, el) {{
     var ariaLabel = tipo === 'tipo' ? 'redes_tipo_sel_{aba_ativa}' : 'redes_ordem_sel_{aba_ativa}';
@@ -7690,35 +7981,33 @@ function setFiltro(tipo, val, el) {{
     inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
 }}
  
-function openImg(url) {{
-    document.getElementById('modal-title').textContent = 'Imagem da Postagem';
-    var img = document.getElementById('modal-img');
-    img.src = url; img.style.display = 'block';
-    document.getElementById('modal-text').textContent = '';
-    document.getElementById('modal-bg').classList.add('open');
+function triggerColsToggle() {{
+    var label = 'redes_toggle_cols_{aba_ativa}';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if ((b.textContent||b.innerText||'').split(/\s+/).join(' ').trim() === label) {{ b.click(); return; }}
+    }}
 }}
-function openCopy(txt) {{
-    document.getElementById('modal-title').textContent = 'Legenda Completa';
-    document.getElementById('modal-img').style.display = 'none';
-    document.getElementById('modal-text').textContent = txt;
-    document.getElementById('modal-bg').classList.add('open');
-}}
-function closeModal() {{ document.getElementById('modal-bg').classList.remove('open'); }}
  
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 8) + 'px'; frames[i].style.minHeight = '0'; break;
+            frames[i].style.height = (h + 8) + 'px';
+            frames[i].style.minHeight = '0';
+            break;
         }} }} catch(e) {{}}
     }}
 }}
+ 
 buildGrid();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1200);
+setTimeout(syncHeight, 200);
+setTimeout(syncHeight, 600);
+setTimeout(syncHeight, 1200);
 </script>
 </body></html>
 """, height=600, scrolling=False)
@@ -7731,7 +8020,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
             if chave_geral_ia not in st.session_state:
                 st.session_state[chave_geral_ia] = ""
  
-            # Ghost button IA geral do perfil
             st.markdown(f"""
             <style>
             .st-key-btn_ia_perfil_{aba_ativa} {{
@@ -7815,8 +8103,6 @@ body {{ padding-bottom:8px; }}
 }}
 .btn-gerar:hover {{ background:#1a3a5c; }}
 </style>
- 
-<!-- Métricas -->
 <div class="metrics-wrap">
     <div class="metrics-hdr">Métricas do perfil</div>
     <div class="metrics-grid">
@@ -7828,8 +8114,6 @@ body {{ padding-bottom:8px; }}
         <div class="metric-card"><div class="metric-num">{n_videos_s}</div><div class="metric-lbl">Vídeos</div></div>
     </div>
 </div>
- 
-<!-- Análise IA -->
 <div class="ia-wrap">
     <div class="ia-hdr">
         <div class="ia-hdr-title">✨ Análise Estratégica do Perfil</div>
@@ -7843,7 +8127,6 @@ body {{ padding-bottom:8px; }}
         </button>
     </div>
 </div>
- 
 <script>
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
@@ -7867,7 +8150,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 """, height=500, scrolling=False)
  
     # ══════════════════════════════════════════════════════════════════
-    # ABA: ANÁLISE DE IA — só o comparativo geral
+    # ABA: ANÁLISE DE IA — comparativo geral
     # ══════════════════════════════════════════════════════════════════
  
     elif main_tab == "analise":
