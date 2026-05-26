@@ -7490,8 +7490,6 @@ body {{ padding-bottom:4px; }}
     color:#9ca3af;
     text-transform:uppercase;
     letter-spacing:1px;
-    writing-mode:vertical-rl;
-    transform:rotate(180deg);
 }}
 .bio-left {{
     padding:18px 20px;
