@@ -4104,14 +4104,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     margin-bottom:4px;
 }}
 .badge-minha {{
-    display:inline-flex; align-items:center; gap:5px;
+    display:inline-flex; align-items:center;
     background:#f0fdf4; color:#15803d;
     border:1px solid #bbf7d0;
     padding:3px 10px; border-radius:20px;
     font-size:11px; font-weight:700;
 }}
 .badge-conc {{
-    display:inline-flex; align-items:center; gap:5px;
+    display:inline-flex; align-items:center;
     background:#eff6ff; color:#1d4ed8;
     border:1px solid #bfdbfe;
     padding:3px 10px; border-radius:20px;
@@ -4259,7 +4259,7 @@ function syncHeight() {{
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
             frames[i].style.height = (h + 2) + 'px';
-            frames[i].style.marginTop = '-60px'; break;
+            break;
         }} }} catch(e) {{}}
     }}
 }}
