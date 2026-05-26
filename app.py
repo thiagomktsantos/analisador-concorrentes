@@ -3746,8 +3746,6 @@ function triggerTab(label) {{
                                     border:1px solid {badge_brd};
                                     padding:3px 10px;border-radius:20px;
                                     font-size:11px;font-weight:700;margin-top:4px">
-                            <span style="width:7px;height:7px;border-radius:50%;
-                                         background:{dot_col};display:inline-block;flex-shrink:0"></span>
                             {badge_lbl}
                         </div>
                     </div>
