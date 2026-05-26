@@ -1112,7 +1112,7 @@ body {{
 <div class="nav-list">
     <a class="nav-item {'active' if pagina_atual == 'geral' else ''}" onclick="nav('geral')">
         <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>
-        <span class="nav-label">Visão Geral</span>
+        <span class="nav-label">Dashboard Geral</span>
         <span class="nav-arrow"><i class="fa-solid fa-chevron-right"></i></span>
     </a>
     <a class="nav-item {'active' if pagina_atual == 'redes' else ''}" onclick="nav('redes')">
@@ -2142,7 +2142,7 @@ setTimeout(ajustarAltura, 400);
         """, unsafe_allow_html=True)
 
 # ---------------------------------------------------
-# PAGINA - VISÃO GERAL
+# PAGINA - DASHBOARD GERAL
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "geral":
@@ -2172,7 +2172,7 @@ html, body { background: transparent; overflow: hidden; }
 }
 .sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
 </style>
-<div class="titulo">Visão Geral</div>
+<div class="titulo">Dashboard Geral</div>
 <div class="sub">Panorama competitivo da sua empresa e concorrentes.</div>
 """, height=70)
 
@@ -7295,7 +7295,7 @@ function syncHeight() {{
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
             frames[i].style.height = (h + 2) + 'px';
-            frames[i].style.marginTop = '-58px';
+            frames[i].style.marginTop = '-23px';
             break;
         }} }} catch(e) {{}}
     }}
