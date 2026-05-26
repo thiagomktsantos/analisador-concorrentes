@@ -3268,7 +3268,6 @@ body {{ padding-bottom:8px; }}
     border:1px solid #c4cdd8;
     border-radius:16px;
     padding:16px;
-    margin-top:-55px;
 }}
 
 /* ── Grid de cards ── */
