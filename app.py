@@ -3545,17 +3545,6 @@ function triggerTab(label) {{
         if config_action_css_parts:
             st.markdown(f"<style>{''.join(config_action_css_parts)}</style>", unsafe_allow_html=True)
 
-        config_actions = {}
-        for ci, e in enumerate(todas_empresas):
-            sk = safe_key(e["nome"])
-            for action in ["buscar", "salvar", "cancelar"]:
-                btn_key = f"_cfg_{action}_{sk}_{ci}_".strip('_')
-                if st.button(f"cfg_{action}_{sk}", key=btn_key):
-                    config_actions[f"{action}_{ci}"] = True
-                else:
-                    config_actions[f"{action}_{ci}"] = False
-
-        # Campos de input por empresa (ocultos)
         config_inputs = {}
         input_css_parts = []
         for ci, e in enumerate(todas_empresas):
@@ -3579,36 +3568,8 @@ function triggerTab(label) {{
                 label_visibility="collapsed"
             )
 
-        # Processar ações
-        for ci, e in enumerate(todas_empresas):
-            novo_id = config_inputs.get(ci, "").strip()
-
-            if config_actions.get(f"buscar_{ci}") and novo_id:
-                st.session_state.ads_onboarding_empresa = e["nome"]
-                st.session_state.ads_onboarding_termo   = novo_id
-                st.session_state.ads_config_empresa_selecionada = e["nome"]
-                with st.spinner(f"Buscando «{novo_id}»…"):
-                    paginas = buscar_paginas_facebook(novo_id)
-                st.session_state.ads_onboarding_paginas = paginas
-                st.rerun()
-
-            if config_actions.get(f"salvar_{ci}") and novo_id:
-                salvar_ads_id(e, novo_id)
-                st.session_state.ads_editando_empresa = None
-                st.session_state.ads_onboarding_empresa = None
-                st.session_state.ads_onboarding_paginas = []
-                st.session_state.ads_config_empresa_selecionada = None
-                st.toast(f"✅ {e['nome']} salvo: {novo_id}", icon="✅")
-                st.rerun()
-
-            if config_actions.get(f"cancelar_{ci}"):
-                st.session_state.ads_editando_empresa = None
-                st.session_state.ads_onboarding_empresa = None
-                st.session_state.ads_onboarding_paginas = []
-                st.session_state.ads_config_empresa_selecionada = None
-                st.rerun()
-
-        # Ghost select de página
+        # Processar seleção de página
+        pg_triggers = {}
         if st.session_state.ads_onboarding_paginas:
             pg_select_css = []
             for pi in range(len(st.session_state.ads_onboarding_paginas[:8])):
@@ -3619,16 +3580,12 @@ function triggerTab(label) {{
                 """)
             if pg_select_css:
                 st.markdown(f"<style>{''.join(pg_select_css)}</style>", unsafe_allow_html=True)
-
-        pg_triggers = {}
-        if st.session_state.ads_onboarding_paginas:
             for pi, pg in enumerate(st.session_state.ads_onboarding_paginas[:8]):
                 if st.button(f"select_pg_{pi}", key=f"cfg_select_pg_{pi}"):
                     pg_triggers[pi] = True
                 else:
                     pg_triggers[pi] = False
 
-        # Processar seleção de página
         if pg_triggers and st.session_state.ads_onboarding_empresa:
             ck_on = st.session_state.ads_onboarding_empresa
             e_on  = next((x for x in todas_empresas if x["nome"] == ck_on), None)
@@ -3645,14 +3602,132 @@ function triggerTab(label) {{
                         st.toast(f"✅ Página selecionada: {pg.get('nome', page_id_val)}", icon="✅")
                         st.rerun()
 
-        # ── INFO BOX
+        editando_empresa   = st.session_state.ads_editando_empresa
+        onboarding_empresa = st.session_state.ads_onboarding_empresa
+        onboarding_paginas = st.session_state.ads_onboarding_paginas
+
+        # ── CSS da seção
         st.markdown("""
-        <div style='background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
-                    padding:12px 16px;font-size:13px;color:#0369a1;
-                    display:flex;align-items:flex-start;gap:10px;line-height:1.6;margin-bottom:20px'>
+        <style>
+        .cfg-outer-wrap {
+            background: #d2dde9;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 8px;
+        }
+        .cfg-info-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #0369a1;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .cfg-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .cfg-card.editing {
+            border: 2px solid #3a9fd6 !important;
+            box-shadow: 0 0 0 3px rgba(58,159,214,0.12);
+        }
+        .cfg-card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 16px 14px;
+        }
+        .cfg-icon {
+            width: 44px; height: 44px;
+            border-radius: 10px;
+            background: #e9eef5;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .cfg-nome {
+            font-size: 14px; font-weight: 700; color: #1a2e4a;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .cfg-badge-minha {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #f0fdf4; color: #15803d;
+            border: 1px solid #bbf7d0;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; margin-top: 4px;
+        }
+        .cfg-badge-minha::before {
+            content: ''; width: 7px; height: 7px;
+            border-radius: 50%; background: #22c55e; flex-shrink: 0;
+        }
+        .cfg-badge-conc {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #eff6ff; color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; margin-top: 4px;
+        }
+        .cfg-badge-conc::before {
+            content: ''; width: 7px; height: 7px;
+            border-radius: 50%; background: #3b82f6; flex-shrink: 0;
+        }
+        .cfg-id-strip {
+            margin: 0 12px 12px;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex; align-items: center; gap: 7px;
+            font-size: 12px;
+        }
+        .cfg-id-strip.has { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .cfg-id-strip.empty { background: #f3f4f6; border: 1px solid #e5e7eb; }
+        .cfg-id-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .cfg-id-dot.has { background: #22c55e; }
+        .cfg-id-dot.empty { background: #d1d5db; }
+        .cfg-id-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cfg-id-val.has { font-weight: 600; color: #15803d; font-family: monospace; }
+        .cfg-id-val.empty { color: #9ca3af; }
+        .cfg-edit-btn {
+            width: 100%;
+            padding: 10px 0;
+            background: #ffffff;
+            border: none;
+            border-top: 1px solid #f3f4f6;
+            font-size: 14px; font-weight: 600; color: #6b7280;
+            cursor: pointer;
+            border-radius: 0 0 12px 12px;
+            font-family: 'DM Sans', sans-serif;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: background 0.12s;
+        }
+        .cfg-edit-btn:hover { background: #f9fafb; color: #111827; }
+        .cfg-pg-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 11px;
+            background: #f9fafb; border: 1px solid #e5e7eb;
+            border-radius: 9px; margin-bottom: 6px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # ── OUTER WRAP (fundo azul-acinzentado igual ao da aba Empresas)
+        st.markdown('<div class="cfg-outer-wrap">', unsafe_allow_html=True)
+
+        # Info box
+        st.markdown("""
+        <div class="cfg-info-box">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <div>
@@ -3664,59 +3739,27 @@ function triggerTab(label) {{
         </div>
         """, unsafe_allow_html=True)
 
-        # ── HEADER DO PAINEL
-        st.markdown("""
-        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px 12px 0 0;
-                    padding:14px 20px;font-size:13px;font-weight:800;color:#1a2e4a;
-                    text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb'>
-            ⚙️ Configure as páginas do Facebook / Instagram
-        </div>
-        """, unsafe_allow_html=True)
-
-        # ── CARDS DE EMPRESA — renderizados diretamente em Python/HTML
-        editando_empresa = st.session_state.ads_editando_empresa
-        onboarding_empresa = st.session_state.ads_onboarding_empresa
-        onboarding_paginas = st.session_state.ads_onboarding_paginas
-
-        # Grid de 3 colunas
+        # Grid de cards
         cols_cfg = st.columns(3)
 
         for ci, e in enumerate(todas_empresas):
-            is_minha = e["tipo"] == "minha"
-            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-            ads_id = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            avatar = gerar_avatar(e["nome"])
-            sk = safe_key(e["nome"])
-            has_id = bool(ads_id.strip())
+            is_minha   = e["tipo"] == "minha"
+            ads_id     = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+            sk         = safe_key(e["nome"])
+            has_id     = bool(ads_id.strip())
             is_editing = (editando_empresa == e["nome"])
 
-            badge_html = (
-                '<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;'
-                'color:#15803d;border:1px solid #bbf7d0;padding:3px 10px;border-radius:20px;'
-                'font-size:11px;font-weight:700">Minha empresa</span>'
-                if is_minha else
-                '<span style="display:inline-flex;align-items:center;gap:5px;background:#eff6ff;'
-                'color:#1d4ed8;border:1px solid #bfdbfe;padding:3px 10px;border-radius:20px;'
-                'font-size:11px;font-weight:700">Concorrente</span>'
-            )
-
-            id_strip_bg  = "#f0fdf4" if has_id else "#f3f4f6"
-            id_strip_brd = "#bbf7d0" if has_id else "#e5e7eb"
-            id_dot_color = "#22c55e" if has_id else "#d1d5db"
-            id_val_color = "#15803d" if has_id else "#9ca3af"
-            id_val_text  = ads_id if has_id else "Não configurado — clique em ✏️"
-            id_font      = "monospace" if has_id else "'DM Sans', sans-serif"
+            badge_cls = "cfg-badge-minha" if is_minha else "cfg-badge-conc"
+            badge_lbl = "Minha empresa"   if is_minha else "Concorrente"
+            card_cls  = "cfg-card editing" if is_editing else "cfg-card"
 
             with cols_cfg[ci % 3]:
-                # Card visual
+
+                # ── Card visual
                 st.markdown(f"""
-                <div style='background:{"#fff" if is_editing else "#f9fafb"};
-                            border:{"2px solid #3a9fd6" if is_editing else "1px solid #e5e7eb"};
-                            border-radius:12px;overflow:hidden;margin-bottom:4px;
-                            {"box-shadow:0 0 0 3px rgba(58,159,214,0.12)" if is_editing else ""}'>
-                    <div style='display:flex;align-items:center;gap:12px;padding:16px 16px 14px'>
-                        <div style='width:44px;height:44px;border-radius:10px;background:#e9eef5;
-                                    display:flex;align-items:center;justify-content:center;flex-shrink:0'>
+                <div class="{card_cls}">
+                    <div class="cfg-card-top">
+                        <div class="cfg-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
                                  stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="7" width="20" height="14" rx="2"/>
@@ -3725,60 +3768,59 @@ function triggerTab(label) {{
                                 <line x1="10" y1="14" x2="14" y2="14"/>
                             </svg>
                         </div>
-                        <div style='flex:1;min-width:0'>
-                            <div style='font-size:14px;font-weight:700;color:#1a2e4a;
-                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>
-                                {e["nome"]}
-                            </div>
-                            <div style='margin-top:4px'>{badge_html}</div>
+                        <div style="flex:1;min-width:0">
+                            <div class="cfg-nome">{e["nome"]}</div>
+                            <div class="{badge_cls}">{badge_lbl}</div>
                         </div>
                     </div>
-                    <div style='margin:0 12px 12px;background:{id_strip_bg};
-                                border:1px solid {id_strip_brd};border-radius:8px;
-                                padding:8px 12px;display:flex;align-items:center;gap:7px'>
-                        <div style='width:7px;height:7px;border-radius:50%;
-                                    background:{id_dot_color};flex-shrink:0'></div>
-                        <div style='font-size:12px;font-weight:{"600" if has_id else "400"};
-                                    color:{id_val_color};font-family:{id_font};
-                                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>
-                            {id_val_text}
+                    <div class="cfg-id-strip {'has' if has_id else 'empty'}">
+                        <div class="cfg-id-dot {'has' if has_id else 'empty'}"></div>
+                        <div class="cfg-id-val {'has' if has_id else 'empty'}">
+                            {ads_id if has_id else "Não configurado — clique em ✏️"}
                         </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Botão editar (visível)
+                # ── Botão editar (quando não está editando)
                 if not is_editing:
+                    st.markdown("""
+                    <style>
+                    .cfg-edit-native > div > button {
+                        border-radius: 0 0 12px 12px !important;
+                        border-top: 1px solid #f3f4f6 !important;
+                        margin-top: -2px !important;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
                     if st.button(f"✏️ Editar", key=f"btn_edit_open_{sk}_{ci}", use_container_width=True):
                         st.session_state.ads_editando_empresa = e["nome"]
                         st.session_state.ads_onboarding_empresa = None
                         st.session_state.ads_onboarding_paginas = []
                         st.rerun()
 
-                # Formulário de edição inline
+                # ── Formulário inline (quando está editando)
                 if is_editing:
                     novo_val = st.text_input(
                         "Nome ou ID da página",
                         value=ads_id,
                         key=f"cfg_inline_input_{sk}_{ci}",
-                        placeholder='Ex: Marketylics  ou  102803918240129',
+                        placeholder="Ex: Marketylics  ou  102803918240129",
                     )
 
                     col_b, col_s = st.columns(2)
                     with col_b:
-                        if st.button("🔍 Buscar páginas", key=f"btn_inline_buscar_{sk}_{ci}", use_container_width=True):
+                        if st.button("🔍 Buscar", key=f"btn_inline_buscar_{sk}_{ci}", use_container_width=True):
                             if novo_val.strip():
                                 st.session_state.ads_onboarding_empresa = e["nome"]
-                                st.session_state.ads_onboarding_termo = novo_val.strip()
-                                with st.spinner(f"Buscando «{novo_val.strip()}»…"):
+                                with st.spinner(f"Buscando…"):
                                     paginas = buscar_paginas_facebook(novo_val.strip())
                                 st.session_state.ads_onboarding_paginas = paginas
                                 st.rerun()
                             else:
-                                st.warning("Digite um nome ou ID para buscar.")
-
+                                st.warning("Digite um nome ou ID.")
                     with col_s:
-                        if st.button("💾 Salvar ID", key=f"btn_inline_salvar_{sk}_{ci}", use_container_width=True):
+                        if st.button("💾 Salvar", key=f"btn_inline_salvar_{sk}_{ci}", use_container_width=True):
                             if novo_val.strip():
                                 salvar_ads_id(e, novo_val.strip())
                                 st.session_state.ads_editando_empresa = None
@@ -3795,13 +3837,13 @@ function triggerTab(label) {{
                         st.session_state.ads_onboarding_paginas = []
                         st.rerun()
 
-                    # Páginas encontradas para este card
+                    # ── Páginas encontradas
                     if onboarding_empresa == e["nome"] and onboarding_paginas:
                         st.markdown(f"""
                         <div style='font-size:11px;font-weight:700;color:#6b7280;
                                     text-transform:uppercase;letter-spacing:0.5px;
                                     margin:10px 0 6px'>
-                            📋 {len(onboarding_paginas[:8])} página(s) encontrada(s) — clique para selecionar
+                            📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)
                         </div>
                         """, unsafe_allow_html=True)
 
@@ -3810,18 +3852,15 @@ function triggerTab(label) {{
                             pic = pg.get("profile_picture", "")
                             thumb_html = (
                                 f'<img src="{pic}" style="width:32px;height:32px;border-radius:50%;'
-                                f'object-fit:cover" onerror="this.outerHTML=\'<span style=&quot;'
-                                f'font-size:13px;font-weight:700;color:#6b7280&quot;>{initial}</span>\'" />'
+                                f'object-fit:cover;display:block" '
+                                f'onerror="this.style.display=\'none\'" />'
                                 if pic else
                                 f'<span style="font-size:13px;font-weight:700;color:#6b7280">{initial}</span>'
                             )
-
-                            col_pg, col_pg_btn = st.columns([3, 1])
+                            col_pg, col_usar = st.columns([3, 1])
                             with col_pg:
                                 st.markdown(f"""
-                                <div style='display:flex;align-items:center;gap:10px;
-                                            padding:8px 10px;background:#f9fafb;
-                                            border:1px solid #e5e7eb;border-radius:9px;margin-bottom:4px'>
+                                <div class="cfg-pg-card">
                                     <div style='width:32px;height:32px;border-radius:50%;
                                                 background:#e5e7eb;display:flex;align-items:center;
                                                 justify-content:center;flex-shrink:0;overflow:hidden'>
@@ -3840,7 +3879,7 @@ function triggerTab(label) {{
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)
-                            with col_pg_btn:
+                            with col_usar:
                                 if st.button("Usar", key=f"btn_pg_usar_{sk}_{ci}_{pi}", use_container_width=True):
                                     page_id_val = pg.get("page_id") or pg.get("nome", "")
                                     page_pic    = pg.get("profile_picture", "")
@@ -3851,14 +3890,10 @@ function triggerTab(label) {{
                                     st.toast(f"✅ {pg.get('nome', page_id_val)} selecionado!", icon="✅")
                                     st.rerun()
 
-                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
+                st.markdown("<div style='height:4px'/>", unsafe_allow_html=True)
 
-        # Fechar o painel visual
-        st.markdown("""
-        <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:0 0 12px 12px;
-                    border-top:none;padding:14px 20px;margin-top:-8px'>
-        </div>
-        """, unsafe_allow_html=True)
+        # Fechar outer wrap
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
