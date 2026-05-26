@@ -6722,51 +6722,12 @@ elif st.session_state.pagina == "insights":
 elif st.session_state.pagina == "redes":
  
     import datetime
-    import plotly.graph_objects as go
     import json
  
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
  
-    st.markdown("""
-    <style>
-    @import url(https://db.onlinewebfonts.com/c/411b9832f1ad24e045b36f92814dac58?family=Animo+DEMO);
- 
-    div[data-testid="stTabs"] > div:first-child {
-        background: #ffffff !important;
-        border: 1px solid #e5e7eb !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-        gap: 4px !important;
-        margin-bottom: 20px !important;
-    }
-    div[data-testid="stTabs"] button[role="tab"] {
-        font-size: 18px !important;
-        font-weight: 900 !important;
-        font-family: 'DM Sans', sans-serif !important;
-        color: #6b7280 !important;
-        border-bottom: none !important;
-        border-radius: 8px 8px 0px 0px !important;
-        padding: 10px 24px !important;
-        background: transparent !important;
-        transition: all 0.15s !important;
-    }
-    div[data-testid="stTabs"] button[role="tab"]:hover {
-        background: #f3f4f6 !important;
-        color: #111827 !important;
-    }
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        background: #0e2a47 !important;
-        color: #ffffff !important;
-        border-bottom: none !important;
-        box-shadow: 0 2px 8px rgba(14,42,71,0.18) !important;
-    }
-    div[data-baseweb="tab-highlight"] {
-        display: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
- 
+    # ── Cabeçalho ──────────────────────────────────────────────────
     h1, h2 = st.columns([7, 3])
     with h1:
         components.html("""
@@ -6780,23 +6741,15 @@ elif st.session_state.pagina == "redes":
 html, body { background: transparent; overflow: hidden; }
 .titulo {
     font-family: 'Animo', 'DM Sans', sans-serif;
-    font-size: 32px;
-    font-weight: 700;
-    color: #1a2e4a;
-    text-transform: uppercase;
-    margin: 0 0 6px 0;
-    letter-spacing: 0.5px;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
 }
-.sub {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    color: #6b7280;
-}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
 </style>
 <div class="titulo">Redes Sociais</div>
 <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
 """, height=65)
-
+ 
     with h2:
         coletar = st.button(
             "Coletar dados",
@@ -6810,15 +6763,18 @@ html, body { background: transparent; overflow: hidden; }
                 f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
                 unsafe_allow_html=True,
             )
+ 
     st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px 0'/>",
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
         unsafe_allow_html=True,
     )
  
+    # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
+        n = int(n or 0)
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
-        return str(int(n))
+        return str(n)
  
     def salvar_cache_redes(dados: list):
         try:
@@ -6952,6 +6908,7 @@ html, body { background: transparent; overflow: hidden; }
         except Exception as e:
             return {"erro": str(e)}
  
+    # ── Lista de perfis ─────────────────────────────────────────────
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
         todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp["instagram"], "tipo": "minha"})
@@ -6989,77 +6946,437 @@ html, body { background: transparent; overflow: hidden; }
         for r in erros:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
  
-    if not ok:
-        st.info("Clique em **Coletar dados** para buscar os dados do Instagram.")
-        st.stop()
+    # ── Estado de navegação ─────────────────────────────────────────
+    if "redes_main_tab" not in st.session_state:
+        st.session_state.redes_main_tab = "perfis"
+    if "redes_aba_ativa" not in st.session_state:
+        st.session_state.redes_aba_ativa = 0
  
-# ══════════════════════════════════════════════════════════════════════
-# PAGINA - REDES SOCIAIS - GRÁFICOS COMPARATIVOS
-# ══════════════════════════════════════════════════════════════════════
+    # ── Ghost buttons — abas principais ────────────────────────────
+    st.markdown("""
+    <style>
+    .st-key-_redes_ghost_tab_perfis_,
+    .st-key-_redes_ghost_tab_analise_ {
+        position: fixed !important; top: -9999px !important; left: -9999px !important;
+        width: 0 !important; height: 0 !important; overflow: hidden !important;
+        opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; display: none !important;
+    }
+    .stElementContainer:has(.st-key-_redes_ghost_tab_perfis_),
+    .stElementContainer:has(.st-key-_redes_ghost_tab_analise_) {
+        display: none !important; height: 0 !important; min-height: 0 !important;
+        max-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
  
-    # ← USANDO a paleta global para as cores dos gráficos
-    CORES = AVATAR_COLORS
-
-    nomes_ok   = [x["nome"] for x in ok]
-    segs_ok    = [x.get("seguidores", 0) for x in ok]
-    eng_pct_ok = [x.get("eng_pct", 0.0) for x in ok]
-    cores_ok   = [get_avatar_color(i) for i in range(len(ok))]
+    if st.button("perfis_tab", key="_redes_ghost_tab_perfis_"):
+        st.session_state.redes_main_tab = "perfis"
+        st.rerun()
+    if st.button("analise_tab", key="_redes_ghost_tab_analise_"):
+        st.session_state.redes_main_tab = "analise"
+        st.rerun()
  
-# ══════════════════════════════════════════════════════════════════════
-# PAGINA - REDES SOCIAIS - ABAS POR PERFIL
-# ══════════════════════════════════════════════════════════════════════
-    abas = st.tabs([r["nome"] for r in ok])
+    # ── Ghost buttons — abas de empresa ────────────────────────────
+    aba_empresa_ghost_css = []
+    for i in range(len(ok)):
+        k = f"btn_redes_aba_{i}"
+        aba_empresa_ghost_css.append(f"""
+        .st-key-{k} {{
+            position:fixed !important; top:-9999px !important; left:-9999px !important;
+            width:0 !important; height:0 !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important; display:none !important;
+        }}
+        .stElementContainer:has(.st-key-{k}) {{
+            display:none !important; height:0 !important; min-height:0 !important;
+            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+        }}
+        """)
+    if aba_empresa_ghost_css:
+        st.markdown(f"<style>{''.join(aba_empresa_ghost_css)}</style>", unsafe_allow_html=True)
  
-    for idx, (aba, r) in enumerate(zip(abas, ok)):
-        with aba:
-            is_minha  = r["tipo"] == "minha"
-            badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-            badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-            badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-            badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-            # ← USANDO a função global de cor
-            cor = get_avatar_color(idx)
-            bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
-            eng_est   = len(r.get("posts", [])) == 0
-            posts_list = r.get("posts", [])
+    for i in range(len(ok)):
+        if st.button(f"redes_aba_{i}", key=f"btn_redes_aba_{i}"):
+            st.session_state.redes_aba_ativa = i
+            st.rerun()
  
-            components.html(f"""
-            <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-            <style>
-            * {{ margin:0; padding:0; box-sizing:border-box; }}
-            html, body {{ background: transparent; font-family: 'DM Sans', sans-serif; overflow: hidden; }}
-            .header {{
-                display: flex; align-items: center; gap: 16px;
-                padding: 16px 0 20px 0; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px;
-            }}
-            .avatar {{
-                width: 52px; height: 52px; border-radius: 50%;
-                background: {cor};
-                display: flex; align-items: center; justify-content: center;
-                font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
-            }}
-            .nome {{ font-size: 20px; font-weight: 700; color: #111827; letter-spacing: -0.3px; }}
-            .handle {{ font-size: 14px; font-weight: 400; color: #9ca3af; margin-left: 6px; }}
-            .badge {{
-                display: inline-block; background: {badge_bg}; color: {badge_txt};
-                border: 1px solid {badge_brd}; padding: 2px 10px; border-radius: 20px;
-                font-size: 11px; font-weight: 600; margin-top: 4px;
-            }}
-            </style>
-            <div class="header">
-                <div class="avatar">{gerar_avatar(r["nome"])}</div>
-                <div>
-                    <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
-                    <div class="badge">{badge_lbl}</div>
-                </div>
+    main_tab = st.session_state.redes_main_tab
+ 
+    # ══════════════════════════════════════════════════════════════════
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas) — igual ao Confronto de Sites
+    # ══════════════════════════════════════════════════════════════════
+ 
+    components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+.nav-bar {{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+    width:100%;
+}}
+.nav-item {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:16px 20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    transition:all 0.15s;
+    position:relative;
+    overflow:hidden;
+}}
+.nav-item:hover {{
+    border-color:#3a9fd6;
+    box-shadow:0 2px 12px rgba(58,159,214,0.12);
+}}
+.nav-item.active {{
+    background:#0e2a47;
+    border-color:#0e2a47;
+    box-shadow:0 4px 20px rgba(14,42,71,0.22);
+}}
+.nav-item.active::after {{
+    content:'';
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:3px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    border-radius:0 0 14px 14px;
+}}
+.nav-icon {{
+    width:40px;height:40px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    background:#f3f4f6;
+    transition:background 0.15s;
+}}
+.nav-item.active .nav-icon {{
+    background:rgba(255,255,255,0.12);
+}}
+.nav-icon svg {{ width:20px;height:20px; }}
+.nav-content {{ flex:1;min-width:0; }}
+.nav-title {{
+    font-size:15px;font-weight:700;color:#1a2e4a;
+    display:block;margin-bottom:2px;
+}}
+.nav-item.active .nav-title {{ color:#ffffff; }}
+.nav-sub {{
+    font-size:12px;color:#9ca3af;
+}}
+.nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
+</style>
+<div class="nav-bar">
+    <div class="nav-item {'active' if main_tab == 'perfis' else ''}" onclick="triggerTab('perfis_tab')">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Perfis configurados</span>
+            <span class="nav-sub">Visualize e analise cada perfil individualmente</span>
+        </div>
+    </div>
+    <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('analise_tab')">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Análise de IA</span>
+            <span class="nav-sub">Relatório comparativo completo</span>
+        </div>
+    </div>
+</div>
+<script>
+function triggerTab(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+          if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = '90px';
+            iframes[i].style.marginTop = '-10px';
+            break;
+          }}
+        }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=90, scrolling=False)
+ 
+    # ══════════════════════════════════════════════════════════════════
+    # ABA: PERFIS CONFIGURADOS
+    # ══════════════════════════════════════════════════════════════════
+ 
+    if main_tab == "perfis":
+ 
+        if not ok:
+            st.markdown("""
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                        padding:48px 32px;text-align:center;margin-top:8px'>
+                <div style='font-size:32px;margin-bottom:12px'>📱</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
+                <div style='font-size:14px;color:#9ca3af'>Clique em <b>Coletar dados</b> para buscar os dados do Instagram.</div>
             </div>
-            """, height=90, scrolling=False)
+            """, unsafe_allow_html=True)
+            st.stop()
  
-            col_metricas, col_bio = st.columns([1, 1], gap="large")
+        aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
  
-            with col_metricas:
-                st.markdown(f"""
-<div style='background:#fff;border-radius:12px'>
+        # ── Cards de empresa no topo — estilo Biblioteca de Ads ─────
+        empresas_redes_json = []
+        for i, r in enumerate(ok):
+            is_minha = r.get("tipo") == "minha"
+            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(i)
+            empresas_redes_json.append({
+                "i": i,
+                "nome": r["nome"],
+                "tipo": r.get("tipo", "concorrente"),
+                "handle": r.get("handle", ""),
+                "is_minha": is_minha,
+                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
+                "cor": cor,
+            })
+ 
+        empresas_redes_str = json.dumps(empresas_redes_json, ensure_ascii=False)
+ 
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+ 
+.main-wrap {{
+    background:#d2dde9;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    overflow:hidden;
+    margin-bottom:0;
+}}
+.cards-grid {{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:15px;
+    padding:15px;
+}}
+.emp-card {{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    transition:all 0.15s;
+    position:relative;
+}}
+.emp-card:hover {{
+    border-color:#3a9fd6;
+    background:#fff;
+    box-shadow:0 2px 10px rgba(58,159,214,0.1);
+}}
+.emp-card.active {{
+    background:#fff;
+    border: 2px solid #3b82f6;
+}}
+.emp-card.active::after {{
+    content:'';
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height:3px;
+    border-radius:0 0 12px 12px;
+}}
+.emp-icon {{
+    width:44px; height:44px; border-radius:10px;
+    background:#e9eef5;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+}}
+.emp-card.active .emp-icon {{ background:#dbeafe; }}
+.emp-icon svg {{ width:22px; height:22px; }}
+.emp-info {{ flex:1; min-width:0; }}
+.emp-nome {{
+    font-size:14px; font-weight:700; color:#1a2e4a;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
+}}
+.emp-handle {{
+    font-size:12px; color:#9ca3af;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
+}}
+.badge-minha {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#f0fdf4; color:#15803d;
+    border:1px solid #bbf7d0;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
+.badge-conc {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#eff6ff; color:#1d4ed8;
+    border:1px solid #bfdbfe;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
+</style>
+<div class="main-wrap">
+    <div class="cards-grid" id="cards-grid"></div>
+</div>
+<script>
+var EMPRESAS = {empresas_redes_str};
+var ABA_ATIVA = {aba_ativa};
+ 
+function buildUI() {{
+    var grid = document.getElementById('cards-grid');
+    grid.innerHTML = '';
+    EMPRESAS.forEach(function(e) {{
+        var card = document.createElement('div');
+        card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
+        card.id = 'emp_card_' + e.i;
+        var badgeHtml = e.is_minha
+            ? '<span class="badge-minha">Minha empresa</span>'
+            : '<span class="badge-conc">Concorrente</span>';
+        card.innerHTML =
+            '<div class="emp-icon">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<rect x="2" y="2" width="20" height="20" rx="5"/>'
+            + '<circle cx="12" cy="12" r="4.5" stroke-width="1.5" fill="none"/>'
+            + '<circle cx="17.5" cy="6.5" r="1.2" fill="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '"/>'
+            + '</svg>'
+            + '</div>'
+            + '<div class="emp-info">'
+            + '<div class="emp-nome">' + e.nome + '</div>'
+            + '<div class="emp-handle">' + (e.handle || '') + '</div>'
+            + badgeHtml
+            + '</div>';
+        card.addEventListener('click', function() {{
+            selectAba(e.i);
+        }});
+        grid.appendChild(card);
+    }});
+    syncHeight();
+}}
+ 
+function selectAba(i) {{
+    ABA_ATIVA = i;
+    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
+    var card = document.getElementById('emp_card_' + i);
+    if (card) card.classList.add('active');
+    triggerBtn('redes_aba_' + i);
+}}
+ 
+function triggerBtn(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+ 
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 2) + 'px';
+            frames[i].style.marginTop = '-58px';
+            break;
+        }} }} catch(e) {{}}
+    }}
+}}
+ 
+buildUI();
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+</script>
+""", height=100, scrolling=False)
+ 
+        # ── Renderiza perfil da aba ativa ───────────────────────────
+        r = ok[aba_ativa]
+        is_minha  = r.get("tipo") == "minha"
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+        cor = get_avatar_color(aba_ativa)
+        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+        eng_est   = len(r.get("posts", [])) == 0
+        posts_list = r.get("posts", [])
+ 
+        # ── Header do perfil ────────────────────────────────────────
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.header {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-bottom:none;
+    border-radius:14px 14px 0 0;
+    display:flex; align-items:center; gap:16px;
+    padding:18px 22px 16px;
+    margin-top:-42px;
+}}
+.avatar {{
+    width:52px; height:52px; border-radius:50%;
+    background:{cor};
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
+.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
+.badge {{
+    display:inline-block;
+    background:{badge_bg}; color:{badge_txt};
+    border:1px solid {badge_brd};
+    padding:2px 10px; border-radius:20px;
+    font-size:11px; font-weight:600; margin-top:4px;
+}}
+</style>
+<div class="header">
+    <div class="avatar">{gerar_avatar(r["nome"])}</div>
+    <div>
+        <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
+        <div class="badge">{badge_lbl}</div>
+    </div>
+</div>
+<script>
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '88px'; break; }} }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=88, scrolling=False)
+ 
+        # ── Métricas + Bio ──────────────────────────────────────────
+        col_metricas, col_bio = st.columns([1, 1], gap="large")
+ 
+        with col_metricas:
+            st.markdown(f"""
+<div style='background:#fff;border:1px solid #e5e7eb;border-top:none;padding:18px 20px 20px;'>
+    <div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;
+                letter-spacing:1px;margin-bottom:14px'>Métricas</div>
     <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                     display:flex;flex-direction:column;align-items:center;text-align:center'>
@@ -7069,8 +7386,7 @@ html, body { background: transparent; overflow: hidden; }
                     {fmt_num(r.get("seguidores",0))}
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Seguidores</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Seguidores</span>
         </div>
         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                     display:flex;flex-direction:column;align-items:center;text-align:center'>
@@ -7080,8 +7396,7 @@ html, body { background: transparent; overflow: hidden; }
                     {fmt_num(r.get("total_posts",0))}
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Posts</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Posts</span>
         </div>
         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                     display:flex;flex-direction:column;align-items:center;text-align:center'>
@@ -7091,8 +7406,7 @@ html, body { background: transparent; overflow: hidden; }
                     {fmt_num(int(r.get("eng_medio",0)))}
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Engajamento Médio</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Eng. Médio</span>
         </div>
         <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
                     display:flex;flex-direction:column;align-items:center;text-align:center'>
@@ -7102,86 +7416,41 @@ html, body { background: transparent; overflow: hidden; }
                     {r.get("eng_pct",0):.2f}%
                 </span>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;
-                         letter-spacing:0.8px'>Engajamento %{"*" if eng_est else ""}</span>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Engajamento%{"*" if eng_est else ""}</span>
         </div>
     </div>
-    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark (posts não disponíveis)</div>" if eng_est else ""}
+    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark</div>" if eng_est else ""}
 </div>
 """, unsafe_allow_html=True)
  
-            with col_bio:
-                chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
-                if chave_bio_ia not in st.session_state:
-                    st.session_state[chave_bio_ia] = ""
+        with col_bio:
+            chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
+            if chave_bio_ia not in st.session_state:
+                st.session_state[chave_bio_ia] = ""
  
-                components.html(f"""
-                <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-                <style>
-                * {{ margin:0; padding:0; box-sizing:border-box; }}
-                html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-                .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;margin-left: 16px; }}
-                .hdr {{ padding:12px 16px; font-size:14px; font-weight:800; color:#1a2e4a;
-                        text-transform:uppercase; letter-spacing:0.3px;
-                        border-bottom:1px solid #e5e7eb; background:#fff; }}
-                .body {{ padding:14px 16px; }}
-                .bio-text {{ font-size:14px; color:#374151; line-height:1.7; min-height:40px;
-                             font-style:italic; margin-bottom:16px; }}
-                .btn-ia {{
-                    width:100%; padding:10px; border: 1px solid rgb(58, 159, 214); border-radius:8px;
-                    background: rgb(239, 246, 255); font-size:14px; font-weight:600; color: rgb(29, 78, 216);
-                    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-                }}
-                .btn-ia:hover {{ background:#f3f4f6; }}
-                </style>
-                <div class="wrap">
-                    <div class="hdr">Bio</div>
-                    <div class="body">
-                        <div class="bio-text">
-                            {f'&ldquo;{bio_txt}&rdquo;' if bio_txt
-                              else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
-                        </div>
-                        <div style="border-top:1px solid #f3f4f6;padding-top:14px">
-                            <button class="btn-ia" onclick="
-                                const btns = window.parent.document.querySelectorAll('button');
-                                for (const b of btns) {{
-                                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{idx}__') {{ b.click(); break; }}
-                                }}
-                            ">Analisar Bio 🤖</button>
-                        </div>
-                    </div>
-                </div>
-                """, height=200, scrolling=False)
+            # Ghost button bio IA
+            st.markdown(f"""
+            <style>
+            .st-key-btn_bio_ia_{aba_ativa} {{
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
  
-                st.markdown(f"""
-                <style>
-                div[data-testid="stButton"][data-key="btn_bio_ia_{idx}"],
-                .st-key-btn_bio_ia_{idx} {{
-                    position: fixed !important;
-                    top: -9999px !important;
-                    left: -9999px !important;
-                    width: 1px !important;
-                    height: 1px !important;
-                    overflow: hidden !important;
-                    opacity: 0 !important;
-                    pointer-events: none !important;
-                    visibility: hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
- 
-                analisar_bio = st.button(
-                    f"__bio_{idx}__",
-                    key=f"btn_bio_ia_{idx}",
-                    use_container_width=True,
-                )
-                if analisar_bio:
-                    if gemini_model is None:
-                        st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
-                    else:
-                        with st.spinner("Analisando bio…"):
-                            try:
-                                prompt_bio = f"""
+            analisar_bio = st.button(
+                f"__bio_{aba_ativa}__",
+                key=f"btn_bio_ia_{aba_ativa}",
+                use_container_width=True,
+            )
+            if analisar_bio:
+                if gemini_model is None:
+                    st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando bio…"):
+                        try:
+                            prompt_bio = f"""
 Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
  
 Bio: "{bio_txt}"
@@ -7201,38 +7470,184 @@ Qual é o posicionamento transmitido pela bio?
 ### Bio sugerida
 Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
-                                resp = gemini_model.generate_content(prompt_bio)
-                                st.session_state[chave_bio_ia] = resp.text
-                            except Exception as e:
-                                st.session_state[chave_bio_ia] = f"Erro: {e}"
+                            resp = gemini_model.generate_content(prompt_bio)
+                            st.session_state[chave_bio_ia] = resp.text
+                        except Exception as e:
+                            st.session_state[chave_bio_ia] = f"Erro: {e}"
  
-                if st.session_state.get(chave_bio_ia):
-                    st.markdown(f"""
-                    <div style='background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
-                                padding:14px 16px;font-size:13px;color:#374151;line-height:1.7;
-                                max-height:220px;overflow-y:auto;margin-top:10px'>
-                        {st.session_state[chave_bio_ia].replace(chr(10), "<br>")}
-                    </div>
-                    """, unsafe_allow_html=True)
+            bio_resultado = st.session_state.get(chave_bio_ia, "")
+            bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
  
-            st.markdown(
-                "<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 14px 0'/>",
-                unsafe_allow_html=True,
-            )
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; -webkit-font-smoothing:antialiased; }}
+body {{ padding-bottom:4px; }}
+.wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-radius:0;
+    overflow:hidden;
+    height:100%;
+}}
+.hdr {{
+    padding:12px 18px;
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1px;
+    border-bottom:1px solid #e5e7eb; background:#fff;
+}}
+.body {{ padding:14px 18px; }}
+.bio-text {{
+    font-size:14px; color:#374151; line-height:1.7;
+    min-height:40px; font-style:italic; margin-bottom:16px;
+}}
+.btn-ia {{
+    width:100%; padding:10px; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:600; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}}
+.btn-ia:hover {{ background:#dbeafe; }}
+.resultado {{
+    margin-top:12px; background:#f0fdf4; border:1px solid #86efac;
+    border-radius:8px; padding:12px 14px;
+    font-size:13px; color:#374151; line-height:1.7;
+    max-height:220px; overflow-y:auto;
+}}
+</style>
+<div class="wrap">
+    <div class="hdr">Bio</div>
+    <div class="body">
+        <div class="bio-text">
+            {f'&ldquo;{bio_txt}&rdquo;' if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
+        </div>
+        <div style="border-top:1px solid #f3f4f6;padding-top:14px">
+            <button class="btn-ia" onclick="
+                const btns = window.parent.document.querySelectorAll('button');
+                for (const b of btns) {{
+                    if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
+                }}
+            ">Analisar Bio 🤖</button>
+        </div>
+        {'<div class="resultado">' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
+    </div>
+</div>
+<script>
+function syncH() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncH);
+window.addEventListener('load', syncH);
+setTimeout(syncH, 100); setTimeout(syncH, 400);
+</script>
+""", height=200, scrolling=False)
  
-# ══════════════════════════════════════════════════════════════
-# PAGINA - REDES SOCIAIS - POSTAGENS
-# ══════════════════════════════════════════════════════════════
-
+        # ── Sub-abas: Postagens / Análise de IA ────────────────────
+        redes_subtab_key = f"redes_subtab_{aba_ativa}"
+        if redes_subtab_key not in st.session_state:
+            st.session_state[redes_subtab_key] = "postagens"
+ 
+        # Ghost buttons sub-abas
+        for sub in ["postagens", "ia"]:
+            ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
+            st.markdown(f"""
+            <style>
+            .st-key-{ghost_k} {{
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:0 !important; height:0 !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; display:none !important;
+            }}
+            .stElementContainer:has(.st-key-{ghost_k}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+            if st.button(f"redes_sub_{aba_ativa}_{sub}", key=ghost_k):
+                st.session_state[redes_subtab_key] = sub
+                st.rerun()
+ 
+        subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
+ 
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.tabs-bar {{
+    display:flex; background:#f9fafb;
+    border:1px solid #e5e7eb; border-top:none; border-bottom:none;
+}}
+.tab-btn {{
+    flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af;
+    background:transparent; border:none; cursor:pointer;
+    font-family:'DM Sans',sans-serif;
+    border-bottom:3px solid transparent; transition:all 0.15s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+}}
+.tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
+.tab-btn.active {{
+    color:#1a2e4a; border-bottom:3px solid #3a9fd6;
+    background:#fff; font-weight:800;
+    border-top:1px solid #d8d9da;
+}}
+.tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
+</style>
+<div class="tabs-bar">
+    <button class="tab-btn {'active' if subtab_atual == 'postagens' else ''}" onclick="triggerSub('postagens')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        Postagens
+    </button>
+    <div class="tab-sep"></div>
+    <button class="tab-btn {'active' if subtab_atual == 'ia' else ''}" onclick="triggerSub('ia')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Análise de IA
+    </button>
+</div>
+<script>
+function triggerSub(sub) {{
+    var label = 'redes_sub_{aba_ativa}_' + sub;
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '52px'; break; }} }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=52, scrolling=False)
+ 
+        # ── SUB-ABA: POSTAGENS ──────────────────────────────────────
+        if subtab_atual == "postagens":
+ 
             def _fmt(n):
                 n = int(n or 0)
                 if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
                 if n >= 1_000:     return f"{n/1_000:.1f}K"
                 return str(n)
-
+ 
             def _esc(s):
+                import unicodedata as _ud2
                 return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
-
+ 
             if not posts_list:
                 tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
             else:
@@ -7246,7 +7661,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     isVid    = p.get("is_video", False)
                     likes    = p.get("likes", 0)
                     coms     = p.get("comments", 0)
-
+ 
                     img_cell = (
                         f'<img src="{thumb}" style="width:48px;height:48px;border-radius:8px;'
                         f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
@@ -7256,11 +7671,11 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f'<div style="width:48px;height:48px;border-radius:8px;background:#f3f4f6;'
                         f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
                     )
-
+ 
                     ver_copy = ""
                     if cap:
                         ver_copy = "<span style='color:#1e3050;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[🔍 ver copy]</span>"
-
+ 
                     copy_cell = (
                         f'<div onclick="openCopy2(\'{cap_esc}\')" '
                         f'style="cursor:pointer;display:flex;align-items:center;width:100%;overflow:hidden">'
@@ -7269,7 +7684,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f'{ver_copy}'
                         f'</div>'
                     ) if cap else '<span style="color:#d1d5db">—</span>'
-
+ 
                     tbl_rows += (
                         f"<tr>"
                         f"<td>{p.get('date','—')}</td>"
@@ -7281,44 +7696,41 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                         f"<td>{copy_cell}</td>"
                         f"</tr>"
                     )
-
+ 
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }}
-table {{ width:100%; border-collapse:collapse; font-size:14px; table-layout:fixed; }}
-th {{
-    background:#f9fafb; color:#6b7280; font-weight:700;
-    padding:12px 14px; text-align:left; border-bottom:2px solid #e5e7eb;
-    font-size:11px; text-transform:uppercase; letter-spacing:0.6px;
-    position:sticky; top:0; z-index:1;
-}}
-td {{
-    padding:8px 14px; border-bottom:1px solid #f3f4f6;
-    color:#374151; background:#fff; vertical-align:middle;
-    line-height:1.4; overflow:hidden;
-}}
-tr:last-child td {{ border-bottom:none; }}
-tr:hover td {{ background:#f9fafb; }}
-th:nth-child(1), td:nth-child(1) {{ width:90px; }}
-th:nth-child(2), td:nth-child(2) {{ width:68px; text-align:center; }}
-th:nth-child(3), td:nth-child(3) {{ width:60px; text-align:center; }}
-th:nth-child(4), td:nth-child(4) {{ width:80px; text-align:center; }}
-th:nth-child(5), td:nth-child(5) {{ width:100px; text-align:center; }}
-th:nth-child(6), td:nth-child(6) {{ width:100px; text-align:center; }}
-th:nth-child(7), td:nth-child(7) {{ width:auto; min-width:0; }}
-td:nth-child(7) {{ overflow:hidden; }}
-.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center; }}
-.modal-bg.open {{ display:flex; }}
-.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:400px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }}
-.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
-.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
-.modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }}
-.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
-.modal-close:hover {{ color:#111827; }}
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}}
+table{{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;}}
+th{{background:#f9fafb;color:#6b7280;font-weight:700;padding:12px 14px;text-align:left;
+    border-bottom:2px solid #e5e7eb;font-size:11px;text-transform:uppercase;letter-spacing:0.6px;
+    position:sticky;top:0;z-index:1;}}
+td{{padding:8px 14px;border-bottom:1px solid #f3f4f6;color:#374151;background:#fff;
+    vertical-align:middle;line-height:1.4;overflow:hidden;}}
+tr:last-child td{{border-bottom:none;}}
+tr:hover td{{background:#f9fafb;}}
+th:nth-child(1),td:nth-child(1){{width:90px;}}
+th:nth-child(2),td:nth-child(2){{width:68px;text-align:center;}}
+th:nth-child(3),td:nth-child(3){{width:60px;text-align:center;}}
+th:nth-child(4),td:nth-child(4){{width:80px;text-align:center;}}
+th:nth-child(5),td:nth-child(5){{width:100px;text-align:center;}}
+th:nth-child(6),td:nth-child(6){{width:100px;text-align:center;}}
+th:nth-child(7),td:nth-child(7){{width:auto;min-width:0;}}
+td:nth-child(7){{overflow:hidden;}}
+.modal-bg{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;}}
+.modal-bg.open{{display:flex;}}
+.modal{{background:#fff;border-radius:14px;padding:24px;max-width:400px;width:90%;max-height:80vh;
+        overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;}}
+.modal-title{{font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.5px;
+              margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f3f4f6;}}
+.modal-text{{font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap;}}
+.modal-img{{width:100%;border-radius:10px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:10px;}}
+.modal-close{{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;
+              color:#9ca3af;cursor:pointer;}}
+.modal-close:hover{{color:#111827;}}
 </style>
-<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+<div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;overflow:hidden">
     <div style="padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
                 text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;
                 background:#fff;">Postagens</div>
@@ -7326,13 +7738,8 @@ td:nth-child(7) {{ overflow:hidden; }}
         <table>
             <thead>
                 <tr>
-                    <th>Data</th>
-                    <th>Criativo</th>
-                    <th>Tipo</th>
-                    <th>Curtidas</th>
-                    <th>Comentários</th>
-                    <th>Engaj.</th>
-                    <th>Copy</th>
+                    <th>Data</th><th>Criativo</th><th>Tipo</th>
+                    <th>Curtidas</th><th>Comentários</th><th>Engaj.</th><th>Copy</th>
                 </tr>
             </thead>
             <tbody>{tbl_rows}</tbody>
@@ -7348,28 +7755,30 @@ td:nth-child(7) {{ overflow:hidden; }}
     </div>
 </div>
 <script>
-function openImg(url) {{
-    document.getElementById('modal2-title').textContent = 'Imagem do Post';
-    var img = document.getElementById('modal2-img');
-    img.src = url; img.style.display = 'block';
-    document.getElementById('modal2-text').textContent = '';
+function openImg(url){{
+    document.getElementById('modal2-title').textContent='Imagem do Post';
+    var img=document.getElementById('modal2-img');
+    img.src=url;img.style.display='block';
+    document.getElementById('modal2-text').textContent='';
     document.getElementById('modal2').classList.add('open');
 }}
-function openCopy2(txt) {{
-    document.getElementById('modal2-title').textContent = 'Copy Completa';
-    document.getElementById('modal2-img').style.display = 'none';
-    document.getElementById('modal2-text').textContent = txt;
+function openCopy2(txt){{
+    document.getElementById('modal2-title').textContent='Copy Completa';
+    document.getElementById('modal2-img').style.display='none';
+    document.getElementById('modal2-text').textContent=txt;
     document.getElementById('modal2').classList.add('open');
 }}
+(function(){{
+    var iframes=window.parent.document.querySelectorAll('iframe');
+    for(var i=0;i<iframes.length;i++){{
+        try{{if(iframes[i].contentWindow===window){{iframes[i].style.height='540px';break;}}}}catch(e){{}}
+    }}
+}})();
 </script>
-""", height=520, scrolling=False)
+""", height=540, scrolling=False)
  
-# ══════════════════════════════════════════════════════════════
-# REDES SOCIAIS - ANÁLISE DE IA
-# ══════════════════════════════════════════════════════════════
- 
-            st.markdown("<div/>", unsafe_allow_html=True)
- 
+        # ── SUB-ABA: ANÁLISE DE IA ──────────────────────────────────
+        else:
             chave_criativo = f"ia_criativo_{r['handle']}"
             chave_copy     = f"ia_copy_{r['handle']}"
             chave_geral    = f"ia_geral_{r['handle']}"
@@ -7391,17 +7800,20 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 {resumo_posts}
 """
  
-            st.markdown(f"""
-            <style>
-            .st-key-btn_criativo_{idx}, .st-key-btn_copy_{idx}, .st-key-btn_geral_{idx} {{
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-
-            if st.button(f"__criativo_{idx}__", key=f"btn_criativo_{idx}", use_container_width=True):
+            # Ghost buttons IA
+            for btn_sfx in ["criativo", "copy", "geral"]:
+                ghost_k_ia = f"btn_{btn_sfx}_{aba_ativa}_ia"
+                st.markdown(f"""
+                <style>
+                .st-key-{ghost_k_ia} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:1px !important; height:1px !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+ 
+            if st.button(f"__criativo_{aba_ativa}__", key=f"btn_criativo_{aba_ativa}_ia"):
                 if gemini_model is None:
                     st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
                 else:
@@ -7423,8 +7835,8 @@ Seja direto e objetivo.
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_criativo] = f"Erro: {e}"
-
-            if st.button(f"__copy_{idx}__", key=f"btn_copy_{idx}", use_container_width=True):
+ 
+            if st.button(f"__copy_{aba_ativa}__", key=f"btn_copy_{aba_ativa}_ia"):
                 if gemini_model is None:
                     st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
                 else:
@@ -7446,8 +7858,8 @@ Seja direto e objetivo.
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_copy] = f"Erro: {e}"
-
-            if st.button(f"__geral_{idx}__", key=f"btn_geral_{idx}", use_container_width=True):
+ 
+            if st.button(f"__geral_{aba_ativa}__", key=f"btn_geral_{aba_ativa}_ia"):
                 if gemini_model is None:
                     st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
                 else:
@@ -7469,12 +7881,12 @@ Seja direto e objetivo.
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_geral] = f"Erro: {e}"
-
+ 
             criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
-            geral_html    = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
-
-            def _panel_ia(html_content, btn_label, btn_trigger):
+            geral_html_ia = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
+ 
+            def _panel_ia_redes(html_content, btn_label, btn_trigger):
                 btn_html = f"""
                     <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
                         <button onclick="
@@ -7507,7 +7919,7 @@ Seja direto e objetivo.
                     f'Clique no botão abaixo para gerar a análise.</div>'
                     f'{btn_html}'
                 )
-
+ 
             ia_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7517,7 +7929,8 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 .ia-wrap {{
     background:#fff;
     border:1px solid #e5e7eb;
-    border-radius:12px;
+    border-top:none;
+    border-radius:0 0 12px 12px;
     overflow:hidden;
 }}
 .ia-header {{
@@ -7548,72 +7961,314 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 .panel {{ display:none; }}
 .panel.active {{ display:block; }}
 </style>
-
+ 
 <div class="ia-wrap">
     <div class="ia-header">Análise de Conteúdos</div>
     <div class="tabs">
-        <button class="tab active"        onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
+        <button class="tab active" onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
         <button class="tab"        onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
         <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
     </div>
-    <div id="panel-geral" class="panel">
-        {_panel_ia(geral_html, "Gerar Análise de Postagens 🤖", f"__geral_{idx}__")}
+    <div id="panel-geral" class="panel active">
+        {_panel_ia_redes(geral_html_ia, "Gerar Análise de Postagens 🤖", f"__geral_{aba_ativa}__")}
     </div>
-    <div id="panel-criativo" class="panel active">
-        {_panel_ia(criativo_html, "Gerar Análise de Criativos 🤖", f"__criativo_{idx}__")}
+    <div id="panel-criativo" class="panel">
+        {_panel_ia_redes(criativo_html, "Gerar Análise de Criativos 🤖", f"__criativo_{aba_ativa}__")}
     </div>
     <div id="panel-copy" class="panel">
-        {_panel_ia(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{idx}__")}
+        {_panel_ia_redes(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{aba_ativa}__")}
     </div>
 </div>
-
+ 
 <script>
-function enviarAltura() {{
+function syncHeight() {{
     var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-    window.parent.postMessage({{ type: 'setHeight', height: h }}, '*');
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+8)+'px'; break; }} }} catch(e) {{}}
+    }}
 }}
-
 function showTab(name, el) {{
     document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
     document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
-    setTimeout(enviarAltura, 50);
+    setTimeout(syncHeight, 50);
 }}
-
-var ro = new ResizeObserver(enviarAltura);
+var ro = new ResizeObserver(syncHeight);
 ro.observe(document.body);
-document.addEventListener('DOMContentLoaded', enviarAltura);
-window.addEventListener('load', enviarAltura);
-setTimeout(enviarAltura, 100);
-setTimeout(enviarAltura, 500);
-setTimeout(enviarAltura, 1000);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight, 1000);
 </script>
 """
             components.html(ia_html, height=420, scrolling=False)
-
-    if ok:
-        idx_plus_1 = len(ok)
-        st.markdown(f"""
+ 
+    # ══════════════════════════════════════════════════════════════════
+    # ABA: ANÁLISE DE IA — Comparativo geral
+    # ══════════════════════════════════════════════════════════════════
+ 
+    elif main_tab == "analise":
+ 
+        if not ok:
+            st.markdown("""
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                        padding:48px 32px;text-align:center;margin-top:8px'>
+                <div style='font-size:32px;margin-bottom:12px'>📊</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Sem dados para análise</div>
+                <div style='font-size:14px;color:#9ca3af'>Colete dados primeiro clicando em <b>Coletar dados</b>.</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
+ 
+        chave_comp_redes = "ia_redes_comparativo"
+        if chave_comp_redes not in st.session_state:
+            st.session_state[chave_comp_redes] = ""
+ 
+        # Ghost button comparativo
+        st.markdown("""
+        <style>
+        .st-key-btn_redes_comp_geral {
+            position:fixed !important; top:-9999px !important; left:-9999px !important;
+            width:0 !important; height:0 !important; overflow:hidden !important;
+            opacity:0 !important; pointer-events:none !important; display:none !important;
+        }
+        .stElementContainer:has(.st-key-btn_redes_comp_geral) {
+            display:none !important; height:0 !important; min-height:0 !important;
+            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+ 
+        if st.button("redes_comparativo", key="btn_redes_comp_geral"):
+            if gemini_model is None:
+                st.session_state[chave_comp_redes] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                resumos_comp = []
+                for rr in ok:
+                    resumos_comp.append(f"""
+Empresa: {rr['nome']} ({rr.get('handle','')})
+Bio: {rr.get('bio','')}
+Seguidores: {rr.get('seguidores',0)} | Posts: {rr.get('total_posts',0)}
+Eng. médio: {rr.get('eng_medio',0)} ({rr.get('eng_pct',0):.2f}%)
+""")
+                with st.spinner("Gerando análise comparativa…"):
+                    try:
+                        resp = gemini_model.generate_content(f"""Você é especialista em inteligência competitiva e redes sociais.
+Compare os perfis do Instagram abaixo e gere uma análise competitiva completa em português.
+ 
+{'---'.join(resumos_comp)}
+ 
+---
+### 🏆 Ranking de Presença no Instagram
+### 📊 Comparativo de Métricas
+### 🎯 Estratégias Comparadas
+### ✍️ Tom de Voz e Posicionamento
+### ⚔️ Análise Competitiva
+### 💡 Recomendações Estratégicas (3 ações concretas)""")
+                        st.session_state[chave_comp_redes] = resp.text
+                        st.rerun()
+                    except Exception as ex:
+                        st.session_state[chave_comp_redes] = f"Erro: {ex}"
+                        st.rerun()
+ 
+        # ── Gráficos comparativos ───────────────────────────────────
+        nomes_ok   = [x["nome"] for x in ok]
+        segs_ok    = [x.get("seguidores", 0) for x in ok]
+        eng_pct_ok = [float(x.get("eng_pct", 0.0)) for x in ok]
+        posts_ok   = [x.get("total_posts", 0) for x in ok]
+        eng_med_ok = [float(x.get("eng_medio", 0.0)) for x in ok]
+        cores_ok   = [get_avatar_color(i) for i in range(len(ok))]
+ 
+        nomes_json   = json.dumps(nomes_ok, ensure_ascii=False)
+        segs_json    = json.dumps(segs_ok)
+        eng_pct_json = json.dumps([round(v, 2) for v in eng_pct_ok])
+        posts_json   = json.dumps(posts_ok)
+        eng_med_json = json.dumps([round(v, 1) for v in eng_med_ok])
+        cores_json   = json.dumps(cores_ok)
+ 
+        components.html(f"""
+<!DOCTYPE html><html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+body {{ padding-bottom:8px; margin-top:-55px; }}
+.grid {{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }}
+.card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:18px 20px 14px;
+}}
+.card-title {{
+    font-size:12px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.6px;
+    padding-bottom:10px; border-bottom:1px solid #f3f4f6;
+    margin-bottom:12px;
+}}
+.chart-wrap {{ position:relative; width:100%; height:180px; }}
+.legend {{
+    display:flex; flex-wrap:wrap; gap:10px;
+    margin-top:10px; font-size:11px; color:#6b7280;
+}}
+.leg-item {{ display:flex; align-items:center; gap:5px; }}
+.leg-dot {{ width:10px; height:10px; border-radius:2px; flex-shrink:0; }}
+</style>
+</head>
+<body>
+<div class="grid">
+    <div class="card">
+        <div class="card-title">Seguidores</div>
+        <div class="chart-wrap"><canvas id="ch_seg"></canvas></div>
+        <div class="legend" id="leg_seg"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Taxa de Engajamento (%)</div>
+        <div class="chart-wrap"><canvas id="ch_eng"></canvas></div>
+        <div class="legend" id="leg_eng"></div>
+    </div>
+</div>
+<div class="grid">
+    <div class="card">
+        <div class="card-title">Total de Publicações</div>
+        <div class="chart-wrap"><canvas id="ch_posts"></canvas></div>
+        <div class="legend" id="leg_posts"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Engajamento Médio por Post</div>
+        <div class="chart-wrap"><canvas id="ch_engmed"></canvas></div>
+        <div class="legend" id="leg_engmed"></div>
+    </div>
+</div>
 <script>
-(function() {{
-    var listeners = window._iaListeners || 0;
-    if (listeners >= {idx_plus_1}) return;
-    window._iaListeners = listeners + 1;
-
-    window.addEventListener('message', function(e) {{
-        if (!e.data || e.data.type !== 'setHeight') return;
-        var iframes = document.querySelectorAll('iframe');
-        iframes.forEach(function(iframe) {{
-            try {{
-                if (iframe.contentWindow === e.source) {{
-                    iframe.style.height = e.data.height + 'px';
-                    iframe.style.minHeight = 'unset';
-                    iframe.style.maxHeight = 'none';
-                }}
-            }} catch(err) {{}}
-        }});
+var NOMES   = {nomes_json};
+var SEGS    = {segs_json};
+var ENG_PCT = {eng_pct_json};
+var POSTS   = {posts_json};
+var ENG_MED = {eng_med_json};
+var CORES   = {cores_json};
+ 
+function fmtNum(n) {{
+    n = Math.round(n);
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
+    return String(n);
+}}
+ 
+function makeLegend(cid, vals, suffix) {{
+    var el = document.getElementById(cid);
+    if (!el) return;
+    NOMES.forEach(function(name, i) {{
+        var item = document.createElement('span');
+        item.className = 'leg-item';
+        var dot = document.createElement('span');
+        dot.className = 'leg-dot';
+        dot.style.background = CORES[i];
+        item.appendChild(dot);
+        var v = suffix === '%' ? vals[i].toFixed(1) + '%' : fmtNum(vals[i]);
+        item.appendChild(document.createTextNode(name + ' ' + v));
+        el.appendChild(item);
     }});
-}})();
+}}
+ 
+var DEFS = {{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{{ legend:{{display:false}} }},
+    scales:{{
+        x:{{ grid:{{display:false}}, ticks:{{font:{{family:"'DM Sans',sans-serif",size:11,weight:'600'}},color:'#6b7280',maxRotation:0}}, border:{{display:false}} }},
+        y:{{ grid:{{color:'#f3f4f6'}}, ticks:{{font:{{family:"'DM Sans',sans-serif",size:11}},color:'#9ca3af',callback:function(v){{return fmtNum(v);}}}}, border:{{display:false}} }}
+    }}
+}};
+ 
+function DEFS_PCT() {{
+    var d = JSON.parse(JSON.stringify(DEFS));
+    d.scales.y.ticks.callback = function(v){{ return v+'%'; }};
+    return d;
+}}
+ 
+new Chart(document.getElementById('ch_seg'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Seguidores',data:SEGS,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
+makeLegend('leg_seg', SEGS, '');
+new Chart(document.getElementById('ch_eng'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Engajamento %',data:ENG_PCT,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS_PCT()}});
+makeLegend('leg_eng', ENG_PCT, '%');
+new Chart(document.getElementById('ch_posts'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Publicações',data:POSTS,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
+makeLegend('leg_posts', POSTS, '');
+new Chart(document.getElementById('ch_engmed'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Eng. médio',data:ENG_MED,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
+makeLegend('leg_engmed', ENG_MED, '');
+ 
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i=0;i<frames.length;i++) {{
+        try {{ if (frames[i].contentWindow===window) {{ frames[i].style.height=(h+8)+'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight,300); setTimeout(syncHeight,800);
 </script>
-""", unsafe_allow_html=True)
+</body></html>
+""", height=560, scrolling=False)
+ 
+        # ── Painel de análise comparativa ──────────────────────────
+        comp_html_redes = st.session_state.get(chave_comp_redes, "").replace("\n", "<br>")
+ 
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
+.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
+.hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
+.hdr-sub {{ font-size:13px; color:#9ca3af; }}
+.body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
+.empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:60px 24px; }}
+.footer {{ padding:16px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
+.btn-gerar {{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 28px; border:none; border-radius:10px;
+    background:#0e2a47; font-size:15px; font-weight:700; color:#fff;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}}
+.btn-gerar:hover {{ background:#1a3a5c; }}
+</style>
+<div class="wrap">
+    <div class="hdr">
+        <div>
+            <div class="hdr-title">✨ Análise Comparativa de Redes Sociais</div>
+            <div class="hdr-sub">Comparativo inteligente de todos os perfis configurados</div>
+        </div>
+    </div>
+    <div class="body">
+        {'<div>' + comp_html_redes + '</div>' if comp_html_redes else '<div class="empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar todos os perfis com IA.</div>'}
+    </div>
+    <div class="footer">
+        <button class="btn-gerar" onclick="triggerBtn('redes_comparativo')">
+            {'🔄 Regerar Análise' if comp_html_redes else '⚡ Gerar Análise Comparativa'}
+        </button>
+    </div>
+</div>
+<script>
+function triggerBtn(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 12) + 'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+</script>
+""", height=200, scrolling=False)
