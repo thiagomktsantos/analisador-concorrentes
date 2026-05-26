@@ -7634,66 +7634,60 @@ function triggerSub(sub) {{
             def _esc_js(s):
                 return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"').replace("\n", " ").replace("\r", "").replace("`", "\\`")
  
-            if not posts_list:
-                st.markdown("""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
-                            border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
-                    <div style='font-size:28px;margin-bottom:10px'>📸</div>
-                    <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
-                    <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                # Estatísticas do topo
-                n_fotos  = sum(1 for p in posts_list if not p.get("is_video"))
-                n_videos = sum(1 for p in posts_list if p.get("is_video"))
-                total_likes = sum(p.get("likes", 0) for p in posts_list)
-                total_coms  = sum(p.get("comments", 0) for p in posts_list)
-                melhor_post = max(posts_list, key=lambda x: x.get("likes", 0) + x.get("comments", 0), default=None)
-                melhor_eng  = (melhor_post.get("likes", 0) + melhor_post.get("comments", 0)) if melhor_post else 0
+                if not posts_list:
+                    st.markdown("""
+                    <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
+                                border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
+                        <div style='font-size:28px;margin-bottom:10px'>📸</div>
+                        <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
+                        <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    # Número de colunas
+                    posts_col_key = f"posts_cols_{aba_ativa}"
+                    if posts_col_key not in st.session_state:
+                        st.session_state[posts_col_key] = 4
+                    n_cols_posts = st.session_state.get(posts_col_key, 4)
  
-                # Monta JSON dos posts para o HTML
-                posts_json_data = []
-                for p in posts_list:
-                    posts_json_data.append({
-                        "thumb":    p.get("thumb", ""),
-                        "caption":  p.get("caption", ""),
-                        "date":     p.get("date", ""),
-                        "likes":    p.get("likes", 0),
-                        "comments": p.get("comments", 0),
-                        "eng":      p.get("likes", 0) + p.get("comments", 0),
-                        "is_video": p.get("is_video", False),
-                    })
+                    # Ghost button toggle colunas
+                    ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
+                    st.markdown(f"""
+                    <style>
+                    .st-key-{ghost_toggle_key} {{
+                        position:fixed !important; top:-9999px !important; left:-9999px !important;
+                        width:0 !important; height:0 !important; overflow:hidden !important;
+                        opacity:0 !important; pointer-events:none !important; display:none !important;
+                    }}
+                    .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
+                        display:none !important; height:0 !important; min-height:0 !important;
+                        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                    }}
+                    </style>
+                    """, unsafe_allow_html=True)
  
-                posts_json_str = json.dumps(posts_json_data, ensure_ascii=False)
+                    if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
+                        st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
+                        st.rerun()
  
-                # Número de colunas
-                posts_col_key = f"posts_cols_{aba_ativa}"
-                if posts_col_key not in st.session_state:
-                    st.session_state[posts_col_key] = 4
-                n_cols_posts = st.session_state.get(posts_col_key, 4)
+                    # Monta JSON dos posts de forma segura (ensure_ascii=True evita quebra por emojis)
+                    posts_json_data = []
+                    for p in posts_list:
+                        posts_json_data.append({
+                            "thumb":    p.get("thumb", ""),
+                            "caption":  p.get("caption", ""),
+                            "date":     p.get("date", ""),
+                            "likes":    p.get("likes", 0),
+                            "comments": p.get("comments", 0),
+                            "eng":      p.get("likes", 0) + p.get("comments", 0),
+                            "is_video": p.get("is_video", False),
+                        })
  
-                # Ghost button toggle colunas
-                ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
-                st.markdown(f"""
-                <style>
-                .st-key-{ghost_toggle_key} {{
-                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                    width:0 !important; height:0 !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important; display:none !important;
-                }}
-                .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
-                    display:none !important; height:0 !important; min-height:0 !important;
-                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
+                    import json as _json_posts
+                    posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
+                    r_seg_val = r.get("seguidores", 0)
  
-                if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
-                    st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
-                    st.rerun()
- 
-                components.html(f"""
+                    components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -7707,7 +7701,6 @@ html, body {{
 }}
 body {{ padding-bottom:8px; }}
  
-/* ── Wrapper externo ── */
 .outer {{
     background:#fff;
     border:1px solid #e5e7eb;
@@ -7716,12 +7709,10 @@ body {{ padding-bottom:8px; }}
     overflow:hidden;
 }}
  
-/* ── Barra de stats + filtros ── */
 .stats-bar {{
     display:flex;
     align-items:center;
     gap:0;
-    padding:0;
     border-bottom:1px solid #e5e7eb;
     background:#f9fafb;
     overflow:hidden;
@@ -7752,7 +7743,6 @@ body {{ padding-bottom:8px; }}
     letter-spacing:0.8px;
 }}
  
-/* ── Filtros ── */
 .filters-bar {{
     display:flex;
     align-items:center;
@@ -7800,15 +7790,12 @@ body {{ padding-bottom:8px; }}
 }}
 .col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
  
-/* ── Grid de cards ── */
 .posts-grid {{
     display:grid;
-    grid-template-columns:repeat({n_cols_posts},1fr);
     gap:0;
     padding:0;
 }}
  
-/* ── Card individual ── */
 .post-card {{
     background:#fff;
     border-right:1px solid #f0f2f5;
@@ -7823,7 +7810,6 @@ body {{ padding-bottom:8px; }}
 .post-card:hover {{ background:#f9fafb; }}
 .post-card:hover .card-overlay {{ opacity:1; }}
  
-/* ── Thumbnail ── */
 .thumb-wrap {{
     position:relative;
     width:100%;
@@ -7850,7 +7836,6 @@ body {{ padding-bottom:8px; }}
     font-size:28px;
 }}
  
-/* ── Overlay hover ── */
 .card-overlay {{
     position:absolute;
     inset:0;
@@ -7874,7 +7859,6 @@ body {{ padding-bottom:8px; }}
 }}
 .overlay-stat svg {{ width:18px; height:18px; }}
  
-/* ── Tipo badge (Foto/Vídeo) ── */
 .type-badge {{
     position:absolute;
     top:8px;
@@ -7890,7 +7874,6 @@ body {{ padding-bottom:8px; }}
     letter-spacing:0.5px;
 }}
  
-/* ── Info do card ── */
 .card-info {{
     padding:10px 12px 12px;
     flex:1;
@@ -7941,7 +7924,6 @@ body {{ padding-bottom:8px; }}
     white-space:nowrap;
 }}
  
-/* ── Ver copy btn ── */
 .ver-copy-btn {{
     width:100%;
     padding:8px;
@@ -7961,7 +7943,6 @@ body {{ padding-bottom:8px; }}
 }}
 .ver-copy-btn:hover {{ background:#eff6ff; }}
  
-/* ── Modal ── */
 #modal-bg {{
     display:none;
     position:fixed;
@@ -7984,6 +7965,7 @@ body {{ padding-bottom:8px; }}
     display:flex;
     flex-direction:column;
     box-shadow:0 24px 80px rgba(0,0,0,0.3);
+    position:relative;
 }}
 #modal-img-wrap {{
     width:100%;
@@ -8034,7 +8016,6 @@ body {{ padding-bottom:8px; }}
     justify-content:center;
     z-index:10;
 }}
-#modal-box {{ position:relative; }}
 #modal-metrics {{
     display:flex;
     gap:16px;
@@ -8051,64 +8032,44 @@ body {{ padding-bottom:8px; }}
     font-weight:700;
     color:#374151;
 }}
-.modal-metric svg {{ width:16px; height:16px; }}
 </style>
 </head>
 <body>
  
+<!-- JSON dos posts embutido de forma segura -->
+<script id="posts-data" type="application/json">{posts_json_str}</script>
+ 
 <!-- Modal -->
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
+        <button id="modal-close" onclick="closeModal()">&#x2715;</button>
         <div id="modal-img-wrap" style="display:none">
             <img id="modal-img" src="" alt="" />
         </div>
         <div id="modal-content">
-            <div id="modal-title">Copy da publicação</div>
+            <div id="modal-title">Copy da publica&#xe7;&#xe3;o</div>
             <div id="modal-caption"></div>
         </div>
         <div id="modal-metrics"></div>
     </div>
 </div>
  
-<!-- Wrapper principal -->
 <div class="outer">
- 
-    <!-- Stats bar -->
     <div class="stats-bar">
-        <div class="stat-item">
-            <div class="stat-num" id="stat-total">—</div>
-            <div class="stat-lbl">Postagens</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="stat-fotos">—</div>
-            <div class="stat-lbl">Fotos</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="stat-videos">—</div>
-            <div class="stat-lbl">Vídeos</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="stat-likes">—</div>
-            <div class="stat-lbl">Total Curtidas</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="stat-coms">—</div>
-            <div class="stat-lbl">Total Comentários</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="stat-best">—</div>
-            <div class="stat-lbl">Melhor Engaj.</div>
-        </div>
+        <div class="stat-item"><div class="stat-num" id="stat-total">&#x2014;</div><div class="stat-lbl">Postagens</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-fotos">&#x2014;</div><div class="stat-lbl">Fotos</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-videos">&#x2014;</div><div class="stat-lbl">V&#xed;deos</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-likes">&#x2014;</div><div class="stat-lbl">Total Curtidas</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-coms">&#x2014;</div><div class="stat-lbl">Total Coment&#xe1;rios</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-best">&#x2014;</div><div class="stat-lbl">Melhor Engaj.</div></div>
     </div>
  
-    <!-- Filtros -->
     <div class="filters-bar">
         <span class="filter-label">Filtrar:</span>
         <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
             <option value="todos">Todos os tipos</option>
-            <option value="foto">Só Fotos</option>
-            <option value="video">Só Vídeos</option>
+            <option value="foto">S&#xf3; Fotos</option>
+            <option value="video">S&#xf3; V&#xed;deos</option>
         </select>
         <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
             <option value="recentes">Mais recentes</option>
@@ -8124,14 +8085,14 @@ body {{ padding-bottom:8px; }}
         </button>
     </div>
  
-    <!-- Grid de cards -->
     <div class="posts-grid" id="posts-grid"></div>
- 
 </div>
  
 <script>
-var ALL_POSTS = {posts_json_str};
+// Lê os dados do elemento JSON — evita quebra por emojis/aspas no inline JS
+var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
 var N_COLS = {n_cols_posts};
+var R_SEG  = {r_seg_val};
  
 function fmtNum(n) {{
     n = Math.round(n || 0);
@@ -8155,16 +8116,13 @@ function updateStats(posts) {{
 }}
  
 function getFiltered() {{
-    var tipo   = document.getElementById('filter-tipo').value;
-    var ordem  = document.getElementById('filter-ordem').value;
-    var posts  = ALL_POSTS.slice();
- 
+    var tipo  = document.getElementById('filter-tipo').value;
+    var ordem = document.getElementById('filter-ordem').value;
+    var posts = ALL_POSTS.slice();
     if (tipo === 'foto')  posts = posts.filter(function(p) {{ return !p.is_video; }});
     if (tipo === 'video') posts = posts.filter(function(p) {{ return p.is_video; }});
- 
     if (ordem === 'likes') posts.sort(function(a,b) {{ return (b.likes||0)-(a.likes||0); }});
     else if (ordem === 'eng') posts.sort(function(a,b) {{ return ((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0)); }});
- 
     return posts;
 }}
  
@@ -8177,41 +8135,62 @@ function buildGrid(posts) {{
         var card = document.createElement('div');
         card.className = 'post-card';
  
-        var capShort = (p.caption || '').substring(0, 80) + ((p.caption||'').length > 80 ? '…' : '');
+        var capShort = (p.caption || '').substring(0, 80) + ((p.caption||'').length > 80 ? '...' : '');
         var hasCaption = !!(p.caption && p.caption.trim());
-        var engRate = (r_seg > 0) ? (((p.likes||0)+(p.comments||0))/r_seg*100).toFixed(2)+'%' : '—';
  
-        var thumbHtml = p.thumb
-            ? '<img src="' + p.thumb + '" loading="lazy" alt="" onerror="this.parentElement.innerHTML=\'<div class=thumb-fallback>' + (p.is_video ? '🎬' : '📷') + '</div>\'" />'
-            : '<div class="thumb-fallback">' + (p.is_video ? '🎬' : '📷') + '</div>';
+        var thumbHtml;
+        if (p.thumb) {{
+            thumbHtml = '<img src="' + p.thumb + '" loading="lazy" alt="" />';
+        }} else {{
+            thumbHtml = '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>';
+        }}
+ 
+        var overlayHtml =
+            '<div class="card-overlay">'
+            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
+            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
+            + '</div>';
  
         card.innerHTML =
             '<div class="thumb-wrap">'
             + thumbHtml
-            + '<div class="type-badge">' + (p.is_video ? '▶ Vídeo' : '📷 Foto') + '</div>'
-            + '<div class="card-overlay">'
-            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
-            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
-            + '</div>'
+            + '<div class="type-badge">' + (p.is_video ? 'Video' : 'Foto') + '</div>'
+            + overlayHtml
             + '</div>'
             + '<div class="card-info">'
-            + (p.date ? '<div class="card-date">📅 ' + p.date + '</div>' : '')
-            + '<div class="card-caption">' + (capShort || '<span style="color:#d1d5db;font-style:italic">Sem legenda</span>') + '</div>'
+            + (p.date ? '<div class="card-date">' + p.date + '</div>' : '')
+            + '<div class="card-caption">' + (capShort || '') + '</div>'
             + '<div class="card-metrics">'
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="#e11d48"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</span>'
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
-            + '<span class="metric-eng">⚡ ' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
+            + '<span class="metric-eng">' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
             + '</div>'
-            + '</div>'
-            + (hasCaption ? '<button class="ver-copy-btn" onclick="openModal(event,' + idx + ')">🔍 Ver copy completa</button>' : '');
+            + '</div>';
+ 
+        if (hasCaption) {{
+            var btn = document.createElement('button');
+            btn.className = 'ver-copy-btn';
+            btn.textContent = 'Ver copy completa';
+            btn.onclick = (function(i) {{ return function(ev) {{ ev.stopPropagation(); openModal(i); }}; }})(idx);
+            card.appendChild(btn);
+        }}
+ 
+        // Corrige erro de imagem
+        var img = card.querySelector('img');
+        if (img) {{
+            img.onerror = function() {{
+                var wrap = this.parentElement;
+                wrap.innerHTML = '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>'
+                    + '<div class="type-badge">' + (p.is_video ? 'Video' : 'Foto') + '</div>'
+                    + overlayHtml;
+            }};
+        }}
  
         grid.appendChild(card);
     }});
  
     syncHeight();
 }}
- 
-var r_seg = 0; // será preenchido via Python inline
  
 function applyFilters() {{
     var posts = getFiltered();
@@ -8231,10 +8210,10 @@ function triggerGlobal(label) {{
     }}
 }}
  
-function openModal(ev, idx) {{
-    ev.stopPropagation();
-    var filtered = getFiltered();
-    var p = filtered[idx];
+var _filteredForModal = [];
+function openModal(idx) {{
+    _filteredForModal = getFiltered();
+    var p = _filteredForModal[idx];
     if (!p) return;
  
     var imgWrap = document.getElementById('modal-img-wrap');
@@ -8247,11 +8226,11 @@ function openModal(ev, idx) {{
         imgWrap.style.display = 'none';
     }}
  
-    document.getElementById('modal-caption').textContent = p.caption || 'Sem legenda disponível.';
+    document.getElementById('modal-caption').textContent = p.caption || 'Sem legenda disponivel.';
     document.getElementById('modal-metrics').innerHTML =
-        '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="#e11d48"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + ' curtidas</div>'
-        + '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + ' comentários</div>'
-        + (p.date ? '<div class="modal-metric" style="margin-left:auto;color:#9ca3af;font-size:12px">📅 ' + p.date + '</div>' : '');
+        '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + ' curtidas</div>'
+        + '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + ' comentarios</div>'
+        + (p.date ? '<div class="modal-metric" style="margin-left:auto;color:#9ca3af;font-size:12px">' + p.date + '</div>' : '');
  
     document.getElementById('modal-bg').classList.add('open');
 }}
@@ -8274,8 +8253,7 @@ function syncHeight() {{
     }}
 }}
  
-// Init
-r_seg = {r.get('seguidores', 0)};
+// Inicializa
 applyFilters();
  
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
