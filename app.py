@@ -3751,18 +3751,18 @@ function triggerTab(label) {{
                     </div>
                 </div>
                 <div class="card-body">
-                    <div style="border-radius:8px;padding:8px 12px;
-                                display:flex;align-items:center;gap:7px;font-size:12px;
+                    <div style="border-radius:8px;padding:10px 14px;
+                                display:flex;align-items:center;gap:10px;
                                 background:{id_bg};border:1px solid {id_brd}">
-                        <span style="flex-shrink:0;font-size:13px">{"✅" if has_id else "⬜"}</span>
-                        <div style="display:flex;flex-direction:column;min-width:0;flex:1">
-                            <span style="font-size:10px;font-weight:700;color:#9ca3af;
-                                         text-transform:uppercase;letter-spacing:0.6px;
-                                         margin-bottom:1px">ID / Nome da página</span>
-                            <span style="font-weight:{id_fw};color:{id_color};font-family:{id_ff};
-                                         overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                                {id_text}
-                            </span>
+                        <span style="font-size:16px;flex-shrink:0">{"✅" if has_id else "⬜"}</span>
+                        <div style="min-width:0;flex:1">
+                            <div style="font-size:10px;font-weight:700;color:#9ca3af;
+                                        text-transform:uppercase;letter-spacing:0.6px;
+                                        margin-bottom:3px">ID / Nome da página</div>
+                            <div style="font-weight:{id_fw};color:{id_color};
+                                        font-family:{id_ff};font-size:13px;
+                                        overflow:hidden;text-overflow:ellipsis;
+                                        white-space:nowrap">{id_text}</div>
                         </div>
                     </div>
                     {edit_section}
