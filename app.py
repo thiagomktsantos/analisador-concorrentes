@@ -7472,7 +7472,7 @@ body {{ padding-bottom:4px; }}
 }}
 .bio-body {{
     display:grid;
-    grid-template-columns:140px 1fr 220px;
+    grid-template-columns:15% 50% 35%;
     gap:0;
     min-height:80px;
 }}
@@ -7544,7 +7544,7 @@ body {{ padding-bottom:4px; }}
                     if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
                 }}
             ">🤖 Analisar Bio</button>
-            <div class="ia-hint">Análise de posicionamento<br>e sugestões de melhoria</div>
+            <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
         </div>
     </div>
     {'<div class="resultado"><div class="resultado-hdr">✨ Análise de IA</div>' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
