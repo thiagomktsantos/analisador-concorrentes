@@ -7629,7 +7629,7 @@ function triggerSub(sub) {{
                 st.markdown("""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
                             border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
-                    <div style='font-size:28px;margin-bottom:10px'>📸</div>
+                    <div style='font-size:28px;margin-bottom:10px'>&#128248;</div>
                     <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
                     <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
                 </div>
@@ -7779,6 +7779,9 @@ body {{ padding-bottom:8px; }}
 var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
 var N_COLS = {n_cols_posts};
 var R_SEG = {r_seg_val};
+
+var ICON_VIDEO = '&#127916;';
+var ICON_FOTO  = '&#128247;';
  
 function fmtNum(n) {{
     n = Math.round(n || 0);
@@ -7821,17 +7824,19 @@ function buildGrid(posts) {{
         card.className = 'post-card';
         var capShort = (p.caption||'').substring(0,80) + ((p.caption||'').length > 80 ? '...' : '');
         var hasCaption = !!(p.caption && p.caption.trim());
-        var thumbHtml = p.thumb
-            ? '<img src="' + p.thumb + '" loading="lazy" alt="" />'
-            : '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>';
+        var iconFallback = p.is_video ? ICON_VIDEO : ICON_FOTO;
+        var typeLbl = p.is_video ? 'Video' : 'Foto';
         var overlayHtml = '<div class="card-overlay">'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
             + '</div>';
+        var thumbHtml = p.thumb
+            ? '<img src="' + p.thumb + '" loading="lazy" alt="" />'
+            : '<div class="thumb-fallback">' + iconFallback + '</div>';
         card.innerHTML =
             '<div class="thumb-wrap">'
             + thumbHtml
-            + '<div class="type-badge">' + (p.is_video ? 'Video' : 'Foto') + '</div>'
+            + '<div class="type-badge">' + typeLbl + '</div>'
             + overlayHtml
             + '</div>'
             + '<div class="card-info">'
@@ -7842,20 +7847,23 @@ function buildGrid(posts) {{
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
             + '<span class="metric-eng">' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
             + '</div></div>';
+        if (p.thumb) {{
+            var img = card.querySelector('img');
+            if (img) {{
+                img.onerror = function() {{
+                    this.parentElement.innerHTML =
+                        '<div class="thumb-fallback">' + iconFallback + '</div>'
+                        + '<div class="type-badge">' + typeLbl + '</div>'
+                        + overlayHtml;
+                }};
+            }}
+        }}
         if (hasCaption) {{
             var btn = document.createElement('button');
             btn.className = 'ver-copy-btn';
             btn.textContent = 'Ver copy completa';
             btn.onclick = (function(i){{ return function(ev){{ ev.stopPropagation(); openModal(i); }}; }})(idx);
             card.appendChild(btn);
-        }}
-        var img = card.querySelector('img');
-        if (img) {{
-            img.onerror = function() {{
-                this.parentElement.innerHTML = '<div class="thumb-fallback">' + (p.is_video ? '\uD83C\uDFAC' : '\uD83D\uDCF7') + '</div>'
-                    + '<div class="type-badge">' + (p.is_video ? 'Video' : 'Foto') + '</div>'
-                    + overlayHtml;
-            }};
         }}
         grid.appendChild(card);
     }});
