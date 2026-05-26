@@ -4107,20 +4107,12 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     padding:3px 10px; border-radius:20px;
     font-size:11px; font-weight:700;
 }}
-.badge-minha::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#22c55e; flex-shrink:0;
-}}
 .badge-conc {{
     display:inline-flex; align-items:center; gap:5px;
     background:#eff6ff; color:#1d4ed8;
     border:1px solid #bfdbfe;
     padding:3px 10px; border-radius:20px;
     font-size:11px; font-weight:700;
-}}
-.badge-conc::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#3b82f6; flex-shrink:0;
 }}
 .lapiz-btn {{
     width:28px; height:28px;
