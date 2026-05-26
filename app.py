@@ -6751,7 +6751,11 @@ html, body { background: transparent; overflow: hidden; }
 """, height=65)
  
     with h2:
-        coletar = st.button("Coletar dados", type="primary", use_container_width=True)
+        coletar = st.button(
+            "Coletar dados",
+            type="primary",
+            use_container_width=True,
+        )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         if ultima_coleta:
             st.markdown(
@@ -6760,7 +6764,10 @@ html, body { background: transparent; overflow: hidden; }
                 unsafe_allow_html=True,
             )
  
-    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
+    st.markdown(
+        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
+        unsafe_allow_html=True,
+    )
  
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
@@ -6995,7 +7002,7 @@ html, body { background: transparent; overflow: hidden; }
     main_tab = st.session_state.redes_main_tab
  
     # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas) — igual ao Confronto de Sites
     # ══════════════════════════════════════════════════════════════════
  
     components.html(f"""
@@ -7003,31 +7010,62 @@ html, body { background: transparent; overflow: hidden; }
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.nav-bar {{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; width:100%; }}
-.nav-item {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
-    padding:16px 20px; cursor:pointer; display:flex; align-items:center;
-    gap:14px; transition:all 0.15s; position:relative; overflow:hidden;
+.nav-bar {{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+    width:100%;
 }}
-.nav-item:hover {{ border-color:#3a9fd6; box-shadow:0 2px 12px rgba(58,159,214,0.12); }}
+.nav-item {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:16px 20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    transition:all 0.15s;
+    position:relative;
+    overflow:hidden;
+}}
+.nav-item:hover {{
+    border-color:#3a9fd6;
+    box-shadow:0 2px 12px rgba(58,159,214,0.12);
+}}
 .nav-item.active {{
-    background:#0e2a47; border-color:#0e2a47;
+    background:#0e2a47;
+    border-color:#0e2a47;
     box-shadow:0 4px 20px rgba(14,42,71,0.22);
 }}
 .nav-item.active::after {{
-    content:''; position:absolute; bottom:0;left:0;right:0; height:3px;
-    background:linear-gradient(90deg,#3a9fd6,#2ecc71); border-radius:0 0 14px 14px;
+    content:'';
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:3px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    border-radius:0 0 14px 14px;
 }}
 .nav-icon {{
-    width:40px;height:40px;border-radius:10px; display:flex;align-items:center;
-    justify-content:center; flex-shrink:0; background:#f3f4f6; transition:background 0.15s;
+    width:40px;height:40px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    background:#f3f4f6;
+    transition:background 0.15s;
 }}
-.nav-item.active .nav-icon {{ background:rgba(255,255,255,0.12); }}
+.nav-item.active .nav-icon {{
+    background:rgba(255,255,255,0.12);
+}}
 .nav-icon svg {{ width:20px;height:20px; }}
 .nav-content {{ flex:1;min-width:0; }}
-.nav-title {{ font-size:15px;font-weight:700;color:#1a2e4a; display:block;margin-bottom:2px; }}
+.nav-title {{
+    font-size:15px;font-weight:700;color:#1a2e4a;
+    display:block;margin-bottom:2px;
+}}
 .nav-item.active .nav-title {{ color:#ffffff; }}
-.nav-sub {{ font-size:12px;color:#9ca3af; }}
+.nav-sub {{
+    font-size:12px;color:#9ca3af;
+}}
 .nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
 </style>
 <div class="nav-bar">
@@ -7036,7 +7074,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
         </div>
         <div class="nav-content">
@@ -7098,7 +7137,7 @@ function triggerTab(label) {{
  
         aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
  
-        # ── Cards de empresa no topo ────────────────────────────────
+        # ── Cards de empresa no topo — estilo Biblioteca de Ads ─────
         empresas_redes_json = []
         for i, r in enumerate(ok):
             is_minha = r.get("tipo") == "minha"
@@ -7108,8 +7147,6 @@ function triggerTab(label) {{
                 "nome": r["nome"],
                 "tipo": r.get("tipo", "concorrente"),
                 "handle": r.get("handle", ""),
-                "seguidores": r.get("seguidores", 0),
-                "eng_pct": r.get("eng_pct", 0.0),
                 "is_minha": is_minha,
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
                 "cor": cor,
@@ -7122,29 +7159,81 @@ function triggerTab(label) {{
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+ 
 .main-wrap {{
-    background:#d2dde9; border:1px solid #e5e7eb;
-    border-radius:16px; overflow:hidden; margin-bottom:0;
+    background:#d2dde9;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    overflow:hidden;
+    margin-bottom:0;
 }}
-.cards-grid {{ display:grid; grid-template-columns: repeat(3,1fr); gap:15px; padding:15px; }}
+.cards-grid {{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:15px;
+    padding:15px;
+}}
 .emp-card {{
-    background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px;
-    padding:16px; display:flex; align-items:center; gap:12px;
-    cursor:pointer; transition:all 0.15s; position:relative;
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    transition:all 0.15s;
+    position:relative;
 }}
-.emp-card:hover {{ border-color:#3a9fd6; background:#fff; box-shadow:0 2px 10px rgba(58,159,214,0.1); }}
-.emp-card.active {{ background:#fff; border:2px solid #3b82f6; }}
+.emp-card:hover {{
+    border-color:#3a9fd6;
+    background:#fff;
+    box-shadow:0 2px 10px rgba(58,159,214,0.1);
+}}
+.emp-card.active {{
+    background:#fff;
+    border: 2px solid #3b82f6;
+}}
+.emp-card.active::after {{
+    content:'';
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height:3px;
+    border-radius:0 0 12px 12px;
+}}
 .emp-icon {{
-    width:44px; height:44px; border-radius:10px; background:#e9eef5;
-    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    width:44px; height:44px; border-radius:10px;
+    background:#e9eef5;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
 }}
 .emp-card.active .emp-icon {{ background:#dbeafe; }}
 .emp-icon svg {{ width:22px; height:22px; }}
 .emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{ font-size:14px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }}
-.emp-handle {{ font-size:12px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
-.badge-minha {{ display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-.badge-conc  {{ display:inline-flex; align-items:center; gap:5px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
+.emp-nome {{
+    font-size:14px; font-weight:700; color:#1a2e4a;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
+}}
+.emp-handle {{
+    font-size:12px; color:#9ca3af;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
+}}
+.badge-minha {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#f0fdf4; color:#15803d;
+    border:1px solid #bbf7d0;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
+.badge-conc {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#eff6ff; color:#1d4ed8;
+    border:1px solid #bfdbfe;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
 </style>
 <div class="main-wrap">
     <div class="cards-grid" id="cards-grid"></div>
@@ -7152,12 +7241,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 <script>
 var EMPRESAS = {empresas_redes_str};
 var ABA_ATIVA = {aba_ativa};
-function fmtNum(n) {{
-    n = Math.round(n || 0);
-    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
-    return String(n);
-}}
+ 
 function buildUI() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
@@ -7165,26 +7249,30 @@ function buildUI() {{
         var card = document.createElement('div');
         card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
         card.id = 'emp_card_' + e.i;
-        var activeColor = e.i === ABA_ATIVA ? '#3b82f6' : '#64748b';
         var badgeHtml = e.is_minha
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
         card.innerHTML =
             '<div class="emp-icon">'
-            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + activeColor + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
             + '<rect x="2" y="2" width="20" height="20" rx="5"/>'
             + '<circle cx="12" cy="12" r="4.5" stroke-width="1.5" fill="none"/>'
-            + '<circle cx="17.5" cy="6.5" r="1.2" fill="' + activeColor + '"/>'
-            + '</svg></div>'
+            + '<circle cx="17.5" cy="6.5" r="1.2" fill="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '"/>'
+            + '</svg>'
+            + '</div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + '<div class="emp-handle">' + (e.handle || '') + '</div>'
-            + badgeHtml + '</div>';
-        card.addEventListener('click', function() {{ selectAba(e.i); }});
+            + badgeHtml
+            + '</div>';
+        card.addEventListener('click', function() {{
+            selectAba(e.i);
+        }});
         grid.appendChild(card);
     }});
     syncHeight();
 }}
+ 
 function selectAba(i) {{
     ABA_ATIVA = i;
     document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
@@ -7192,13 +7280,15 @@ function selectAba(i) {{
     if (card) card.classList.add('active');
     triggerBtn('redes_aba_' + i);
 }}
+ 
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
+ 
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -7210,6 +7300,7 @@ function syncHeight() {{
         }} }} catch(e) {{}}
     }}
 }}
+ 
 buildUI();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
@@ -7218,59 +7309,250 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
  
-        # ── Perfil da aba ativa ─────────────────────────────────────
+        # ── Renderiza perfil da aba ativa ───────────────────────────
         r = ok[aba_ativa]
-        is_minha   = r.get("tipo") == "minha"
-        cor        = get_avatar_color(aba_ativa)
-        bio_txt    = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+        is_minha  = r.get("tipo") == "minha"
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+        cor = get_avatar_color(aba_ativa)
+        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+        eng_est   = len(r.get("posts", [])) == 0
         posts_list = r.get("posts", [])
  
-        seg_val      = r.get("seguidores", 0)
-        posts_val    = r.get("total_posts", 0)
-        eng_med_val  = r.get("eng_medio", 0)
-        eng_pct_val  = r.get("eng_pct", 0.0)
-        badge_lbl    = "Minha Empresa" if is_minha else "Concorrente"
- 
-        avatar_empresa_html = (
-            f'<div style="width:44px;height:44px;border-radius:50%;background:{cor};'
-            f'display:flex;align-items:center;justify-content:center;font-size:16px;'
-            f'font-weight:700;color:#fff;flex-shrink:0">{gerar_avatar(r["nome"])}</div>'
-        )
- 
         # ── Header do perfil ────────────────────────────────────────
-        st.markdown(f"""
-        <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
-                    border-radius:12px 12px 0 0;overflow:hidden;margin-top:-45px;'>
-            <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
-                {avatar_empresa_html}
-                <div style='flex:1;min-width:0'>
-                    <div style='font-size:17px;font-weight:700;color:#111827'>{r["nome"]}</div>
-                    <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
-                        <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
-                        <span style='color:#d1d5db;font-size:12px'>·</span>
-                        <span style='font-size:13px;color:#6b7280'>{r.get("handle","")}</span>
-                    </div>
-                </div>
-                <div style='display:flex;align-items:center;gap:0;flex-shrink:0'>
-                    <div style='width:1px;height:40px;background:#e5e7eb;margin-right:20px'></div>
-                    <div style='text-align:center;min-width:80px;margin-right:20px'>
-                        <div style='font-size:28px;font-weight:800;color:#111827;line-height:1'>{fmt_num(seg_val)}</div>
-                        <div style='font-size:11px;color:#394252;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px'>seguidores</div>
-                    </div>
-                    <div style='width:1px;height:40px;background:#e5e7eb;margin-right:20px'></div>
-                    <div style='text-align:center;min-width:60px'>
-                        <div style='font-size:28px;font-weight:800;color:#111827;line-height:1'>{fmt_num(posts_val)}</div>
-                        <div style='font-size:11px;color:#394252;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px'>postagens</div>
-                    </div>
-                </div>
-            </div>
-        </div>""", unsafe_allow_html=True)
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.header {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-bottom:none;
+    border-radius:14px 14px 0 0;
+    display:flex; align-items:center; gap:16px;
+    padding:18px 22px 16px;
+}}
+.avatar {{
+    width:52px; height:52px; border-radius:50%;
+    background:{cor};
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
+.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
+.badge {{
+    display:inline-block;
+    background:{badge_bg}; color:{badge_txt};
+    border:1px solid {badge_brd};
+    padding:2px 10px; border-radius:20px;
+    font-size:11px; font-weight:600; margin-top:4px;
+}}
+</style>
+<div class="header">
+    <div class="avatar">{gerar_avatar(r["nome"])}</div>
+    <div>
+        <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
+        <div class="badge">{badge_lbl}</div>
+    </div>
+</div>
+<script>
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '88px'; break; }} }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=88, scrolling=False)
  
-        # ── Sub-abas ────────────────────────────────────────────────
+        # ── Métricas + Bio ──────────────────────────────────────────
+        col_metricas, col_bio = st.columns([1, 1], gap="large")
+ 
+        with col_metricas:
+            st.markdown(f"""
+<div style='background:#fff;border:1px solid #e5e7eb;border-top:none;padding:18px 20px 20px;'>
+    <div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;
+                letter-spacing:1px;margin-bottom:14px'>Métricas</div>
+    <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
+        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+            <div style='display:flex;align-items:center;gap:8px'>
+                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/users-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
+                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                    {fmt_num(r.get("seguidores",0))}
+                </span>
+            </div>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Seguidores</span>
+        </div>
+        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+            <div style='display:flex;align-items:center;gap:8px'>
+                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/camera-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
+                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                    {fmt_num(r.get("total_posts",0))}
+                </span>
+            </div>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Posts</span>
+        </div>
+        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+            <div style='display:flex;align-items:center;gap:8px'>
+                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/heart-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
+                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                    {fmt_num(int(r.get("eng_medio",0)))}
+                </span>
+            </div>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Eng. Médio</span>
+        </div>
+        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
+                    display:flex;flex-direction:column;align-items:center;text-align:center'>
+            <div style='display:flex;align-items:center;gap:8px'>
+                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/chart-line-solid.png" style="width:28px;height:28px;object-fit:contain" />
+                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
+                    {r.get("eng_pct",0):.2f}%
+                </span>
+            </div>
+            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Engajamento%{"*" if eng_est else ""}</span>
+        </div>
+    </div>
+    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark</div>" if eng_est else ""}
+</div>
+""", unsafe_allow_html=True)
+ 
+        with col_bio:
+            chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
+            if chave_bio_ia not in st.session_state:
+                st.session_state[chave_bio_ia] = ""
+ 
+            # Ghost button bio IA
+            st.markdown(f"""
+            <style>
+            .st-key-btn_bio_ia_{aba_ativa} {{
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+ 
+            analisar_bio = st.button(
+                f"__bio_{aba_ativa}__",
+                key=f"btn_bio_ia_{aba_ativa}",
+                use_container_width=True,
+            )
+            if analisar_bio:
+                if gemini_model is None:
+                    st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando bio…"):
+                        try:
+                            prompt_bio = f"""
+Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
+ 
+Bio: "{bio_txt}"
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
+ 
+Responda com:
+### Posicionamento
+Qual é o posicionamento transmitido pela bio?
+ 
+### Pontos Fortes
+(2 pontos positivos da bio)
+ 
+### O que melhorar
+(2 sugestões concretas de melhoria)
+ 
+### Bio sugerida
+Escreva uma versão melhorada da bio (máx. 150 caracteres).
+"""
+                            resp = gemini_model.generate_content(prompt_bio)
+                            st.session_state[chave_bio_ia] = resp.text
+                        except Exception as e:
+                            st.session_state[chave_bio_ia] = f"Erro: {e}"
+ 
+            bio_resultado = st.session_state.get(chave_bio_ia, "")
+            bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
+ 
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; -webkit-font-smoothing:antialiased; }}
+body {{ padding-bottom:4px; }}
+.wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-radius:0;
+    overflow:hidden;
+    height:100%;
+}}
+.hdr {{
+    padding:12px 18px;
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1px;
+    border-bottom:1px solid #e5e7eb; background:#fff;
+}}
+.body {{ padding:14px 18px; }}
+.bio-text {{
+    font-size:14px; color:#374151; line-height:1.7;
+    min-height:40px; font-style:italic; margin-bottom:16px;
+}}
+.btn-ia {{
+    width:100%; padding:10px; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:600; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}}
+.btn-ia:hover {{ background:#dbeafe; }}
+.resultado {{
+    margin-top:12px; background:#f0fdf4; border:1px solid #86efac;
+    border-radius:8px; padding:12px 14px;
+    font-size:13px; color:#374151; line-height:1.7;
+    max-height:220px; overflow-y:auto;
+}}
+</style>
+<div class="wrap">
+    <div class="hdr">Bio</div>
+    <div class="body">
+        <div class="bio-text">
+            {f'&ldquo;{bio_txt}&rdquo;' if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
+        </div>
+        <div style="border-top:1px solid #f3f4f6;padding-top:14px">
+            <button class="btn-ia" onclick="
+                const btns = window.parent.document.querySelectorAll('button');
+                for (const b of btns) {{
+                    if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
+                }}
+            ">Analisar Bio 🤖</button>
+        </div>
+        {'<div class="resultado">' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
+    </div>
+</div>
+<script>
+function syncH() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncH);
+window.addEventListener('load', syncH);
+setTimeout(syncH, 100); setTimeout(syncH, 400);
+</script>
+""", height=200, scrolling=False)
+ 
+        # ── Sub-abas: Postagens / Análise de IA ────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
  
+        # Ghost buttons sub-abas
         for sub in ["postagens", "ia"]:
             ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
             st.markdown(f"""
@@ -7292,7 +7574,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
  
         subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
  
-        # ── Barra de sub-abas ────────────────────────────────────────
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7312,7 +7593,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
 .tab-btn.active {{
     color:#1a2e4a; border-bottom:3px solid #3a9fd6;
-    background:#fff; font-weight:800; border-top:1px solid #d8d9da;
+    background:#fff; font-weight:800;
+    border-top:1px solid #d8d9da;
 }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
 </style>
@@ -7339,7 +7621,7 @@ function triggerSub(sub) {{
     var label = 'redes_sub_{aba_ativa}_' + sub;
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -7352,805 +7634,377 @@ function triggerSub(sub) {{
 </script>
 """, height=52, scrolling=False)
  
-        # ══════════════════════════════════════════════════════════════
-        # SUB-ABA: POSTAGENS — cards estilo Ads
-        # ══════════════════════════════════════════════════════════════
+        # ── SUB-ABA: POSTAGENS ──────────────────────────────────────
         if subtab_atual == "postagens":
  
-            n_fotos    = sum(1 for p in posts_list if not p.get("is_video"))
-            n_videos   = sum(1 for p in posts_list if p.get("is_video"))
-            n_total    = len(posts_list)
-            eng_medio_calc = round(
-                sum(p["likes"] + p["comments"] for p in posts_list) / len(posts_list), 1
-            ) if posts_list else 0
+            def _fmt(n):
+                n = int(n or 0)
+                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+                if n >= 1_000:     return f"{n/1_000:.1f}K"
+                return str(n)
  
-            # ── Ghost selects para filtros ──────────────────────────
-            for fk in [f"redes_tipo_sel_{aba_ativa}", f"redes_ordem_sel_{aba_ativa}"]:
-                st.markdown(f"""
-                <style>
-                .st-key-{fk} {{
-                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                    width:0 !important; height:0 !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important; display:none !important;
-                }}
-                .stElementContainer:has(.st-key-{fk}) {{
-                    display:none !important; height:0 !important; min-height:0 !important;
-                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
+            def _esc(s):
+                import unicodedata as _ud2
+                return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
  
-            filtro_tipo_val  = st.selectbox("tipo",  ["todos","fotos","videos"], key=f"redes_tipo_sel_{aba_ativa}", label_visibility="hidden")
-            filtro_ordem_val = st.selectbox("ordem", ["recentes","curtidas","comentarios","engajamento"], key=f"redes_ordem_sel_{aba_ativa}", label_visibility="hidden")
+            if not posts_list:
+                tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
+            else:
+                tbl_rows = ""
+                for p in posts_list:
+                    thumb    = p.get("thumb", "")
+                    cap      = p.get("caption", "")
+                    cap_esc  = _esc(cap)
+                    cap_preview = _esc(cap[:95]) if len(cap) > 95 else _esc(cap)
+                    has_more = len(cap) > 110
+                    isVid    = p.get("is_video", False)
+                    likes    = p.get("likes", 0)
+                    coms     = p.get("comments", 0)
  
-            posts_filtered = list(posts_list)
-            if filtro_tipo_val == "fotos":
-                posts_filtered = [p for p in posts_list if not p.get("is_video")]
-            elif filtro_tipo_val == "videos":
-                posts_filtered = [p for p in posts_list if p.get("is_video")]
+                    img_cell = (
+                        f'<img src="{thumb}" style="width:48px;height:48px;border-radius:8px;'
+                        f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
+                        f'onclick="openImg(\'{_esc(thumb)}\')" '
+                        f'onerror="this.outerHTML=\'&lt;div style=&quot;width:48px;height:48px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af&quot;&gt;📷&lt;/div&gt;\'" />'
+                    ) if thumb else (
+                        f'<div style="width:48px;height:48px;border-radius:8px;background:#f3f4f6;'
+                        f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
+                    )
  
-            if filtro_ordem_val == "curtidas":
-                posts_filtered = sorted(posts_filtered, key=lambda p: p.get("likes", 0), reverse=True)
-            elif filtro_ordem_val == "comentarios":
-                posts_filtered = sorted(posts_filtered, key=lambda p: p.get("comments", 0), reverse=True)
-            elif filtro_ordem_val == "engajamento":
-                posts_filtered = sorted(posts_filtered, key=lambda p: p.get("likes", 0) + p.get("comments", 0), reverse=True)
+                    ver_copy = ""
+                    if cap:
+                        ver_copy = "<span style='color:#1e3050;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[🔍 ver copy]</span>"
  
-            # ── Bio IA ghost ────────────────────────────────────────
-            chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
-            if chave_bio_ia not in st.session_state:
-                st.session_state[chave_bio_ia] = ""
+                    copy_cell = (
+                        f'<div onclick="openCopy2(\'{cap_esc}\')" '
+                        f'style="cursor:pointer;display:flex;align-items:center;width:100%;overflow:hidden">'
+                        f'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
+                        f'color:#374151;font-style:italic">{cap_preview}{"…" if has_more else ""}</span>'
+                        f'{ver_copy}'
+                        f'</div>'
+                    ) if cap else '<span style="color:#d1d5db">—</span>'
  
-            st.markdown(f"""
-            <style>
-            .st-key-btn_bio_ia_{aba_ativa} {{
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
- 
-            analisar_bio = st.button(f"__bio_{aba_ativa}__", key=f"btn_bio_ia_{aba_ativa}")
-            if analisar_bio:
-                if gemini_model is None:
-                    st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Analisando bio…"):
-                        try:
-                            prompt_bio = f"""
-Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
-Bio: "{bio_txt}"
-Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
-Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
-Responda com:
-### Posicionamento
-### Pontos Fortes (2 pontos)
-### O que melhorar (2 sugestões)
-### Bio sugerida (máx. 150 caracteres)
-"""
-                            resp_bio = gemini_model.generate_content(prompt_bio)
-                            st.session_state[chave_bio_ia] = resp_bio.text
-                        except Exception as e_bio:
-                            st.session_state[chave_bio_ia] = f"Erro: {e_bio}"
- 
-            bio_resultado      = st.session_state.get(chave_bio_ia, "")
-            bio_resultado_html = bio_resultado.replace("\n","<br>") if bio_resultado else ""
- 
-            # ── Montar cards de posts como HTML ─────────────────────
-            posts_cards_data = []
-            for p in posts_filtered:
-                cap     = p.get("caption", "")
-                cap_esc = (cap
-                    .replace("\\","\\\\")
-                    .replace("'","\\'")
-                    .replace('"',"&quot;")
-                    .replace("\n"," ")
-                    .replace("\r",""))
-                cap_prev = cap_esc[:100] + ("…" if len(cap) > 100 else "")
-                posts_cards_data.append({
-                    "thumb":    p.get("thumb", ""),
-                    "cap":      cap_esc,
-                    "cap_prev": cap_prev,
-                    "likes":    p.get("likes", 0),
-                    "comments": p.get("comments", 0),
-                    "eng":      p.get("likes", 0) + p.get("comments", 0),
-                    "is_video": p.get("is_video", False),
-                    "date":     p.get("date", ""),
-                })
- 
-            posts_json_str  = json.dumps(posts_cards_data, ensure_ascii=False)
-            filtro_tipo_cur = filtro_tipo_val
-            filtro_ord_cur  = filtro_ordem_val
- 
-            # ── n_cols toggle ghost ─────────────────────────────────
-            col_key_redes = f"redes_cols_{aba_ativa}"
-            if col_key_redes not in st.session_state:
-                st.session_state[col_key_redes] = 3
-            n_cols_redes = st.session_state[col_key_redes]
- 
-            toggle_ghost_k = f"btn_redes_toggle_cols_{aba_ativa}"
-            st.markdown(f"""
-            <style>
-            .st-key-{toggle_ghost_k} {{
-                position:fixed !important; top:-9999px !important; left:-9999px !important;
-                width:0 !important; height:0 !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important; display:none !important;
-            }}
-            .stElementContainer:has(.st-key-{toggle_ghost_k}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-            if st.button(f"redes_toggle_cols_{aba_ativa}", key=toggle_ghost_k):
-                st.session_state[col_key_redes] = 4 if n_cols_redes == 3 else 3
-                st.rerun()
- 
-            components.html(f"""
-<!DOCTYPE html><html><head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
-body {{ padding-bottom:8px; }}
- 
-/* ── Filtros ── */
-.filters-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb; border-top:none; border-bottom:none;
-    padding:14px 18px;
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-}}
-.filter-label {{ font-size:12px; font-weight:700; color:#9ca3af; white-space:nowrap; }}
-.filter-btn {{
-    padding:6px 14px; border-radius:20px; border:1px solid #e5e7eb;
-    background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s; white-space:nowrap;
-}}
-.filter-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
-.filter-btn.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
-.filter-sep {{ width:1px; height:24px; background:#e5e7eb; flex-shrink:0; }}
-.cols-btn {{
-    margin-left:auto; width:34px; height:34px; border-radius:8px;
-    border:1px solid #e5e7eb; background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:#6b7280; transition:all 0.12s; flex-shrink:0;
-}}
-.cols-btn:hover {{ background:#f3f4f6; border-color:#9ca3af; color:#374151; }}
- 
-/* ── Stats ── */
-.stats-outer {{
-    background:#fff;
-    border:1px solid #e5e7eb; border-top:none; border-bottom:none;
-    padding:14px 18px 0;
-}}
-.stats-row {{ display:flex; gap:10px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid #f3f4f6; }}
-.stat-card {{
-    flex:1; min-width:80px; background:#f9fafb; border:1px solid #e5e7eb;
-    border-radius:10px; padding:12px 16px; text-align:center;
-}}
-.stat-num {{ font-size:22px; font-weight:800; color:#111827; }}
-.stat-num-green {{ font-size:22px; font-weight:800; color:#15803d; }}
-.stat-lbl {{ color:#6b7280; font-size:12px; font-weight:600; text-transform:uppercase; margin-top:2px; }}
- 
-/* ── Bio card ── */
-.bio-card {{
-    background:#f9fafb; border-radius:10px; padding:14px 16px;
-    margin-top:14px; font-size:13px; color:#374151; line-height:1.7;
-}}
-.bio-card-hdr {{
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;
-}}
-.bio-text {{ font-style:italic; margin-bottom:10px; }}
-.btn-bio {{
-    width:100%; padding:9px; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; font-size:13px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-    display:flex; align-items:center; justify-content:center; gap:6px;
-}}
-.btn-bio:hover {{ background:#dbeafe; }}
-.bio-resultado {{
-    margin-top:10px; background:#f0fdf4; border:1px solid #86efac;
-    border-radius:8px; padding:10px 14px;
-    font-size:12px; color:#374151; line-height:1.7; max-height:160px; overflow-y:auto;
-}}
- 
-/* ── Posts section ── */
-.posts-section {{
-    background:#fff;
-    border:1px solid #e5e7eb; border-top:none;
-    border-radius:0 0 12px 12px; overflow:hidden;
-    padding-bottom:4px;
-}}
-.posts-hdr {{
-    padding:14px 18px;
-    font-size:12px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.5px;
-    border-bottom:1px solid #e5e7eb;
-    display:flex; align-items:center; gap:8px;
-}}
-.posts-grid {{
-    display:grid;
-    grid-template-columns:repeat({n_cols_redes},1fr);
-    gap:12px;
-    padding:14px 18px 18px;
-    align-items:start;
-}}
- 
-/* ── Post card (estilo Ads) ── */
-.post-card {{
-    background:#fff;
-    border:1px solid #dde1e7;
-    border-radius:12px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
-    box-shadow:0 1px 4px rgba(0,0,0,0.06);
-    transition:box-shadow 0.15s;
-}}
-.post-card:hover {{ box-shadow:0 4px 16px rgba(0,0,0,0.12); }}
- 
-/* Status bar (igual aos ads) */
-.post-status-bar {{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:8px 12px 6px;
-    border-bottom:1px solid #f0f2f5;
-    background:#fafbfc;
-}}
-.status-dot {{
-    display:flex; align-items:center; gap:5px;
-    font-size:11px; font-weight:600; color:#1aab40;
-}}
-.status-dot::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:#1aab40; flex-shrink:0;
-}}
-.post-type-badge {{
-    font-size:10px; color:#6b7280; font-weight:600;
-    background:#f3f4f6; border:1px solid #e5e7eb;
-    padding:1px 7px; border-radius:20px;
-}}
-.post-date-top {{ font-size:10px; color:#9ca3af; }}
- 
-/* Meta row (igual ads) */
-.post-meta-bar {{
-    display:flex; align-items:center; gap:6px;
-    padding:7px 12px 8px;
-    border-bottom:1px solid #f0f2f5;
-    background:#fafbfc;
-    flex-wrap:wrap;
-}}
-.meta-stat {{
-    display:flex; align-items:center; gap:4px;
-    font-size:11px; font-weight:700; color:#374151;
-}}
- 
-/* Imagem (igual ads) */
-.post-media {{
-    width:100%; aspect-ratio:1/1;
-    background:#000; position:relative; overflow:hidden;
-    cursor:pointer; flex-shrink:0;
-}}
-.post-media img {{
-    width:100%; height:100%; object-fit:cover; display:block;
-}}
-.post-media-fallback {{
-    width:100%; height:100%; display:flex; flex-direction:column;
-    align-items:center; justify-content:center;
-    background:#7592cc; gap:6px;
-    font-size:12px; color:#fff; font-weight:600;
-    cursor:pointer;
-}}
-.video-badge {{
-    position:absolute; top:7px; right:7px;
-    background:rgba(0,0,0,0.6); color:#fff;
-    font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px;
-}}
-.zoom-hint {{
-    position:absolute; top:8px; left:8px;
-    background:rgba(0,0,0,0.45); border-radius:6px;
-    padding:3px 7px; font-size:11px; color:#fff; font-weight:600;
-}}
- 
-/* Copy section (igual ads) */
-.post-copy-section {{
-    padding:10px 12px 8px;
-    border-bottom:1px solid #f0f2f5;
-}}
-.profile-header {{
-    display:flex; align-items:center; gap:8px; margin-bottom:8px;
-}}
-.profile-avatar {{
-    width:30px; height:30px; border-radius:50%;
-    background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.profile-name {{ font-size:12px; font-weight:700; color:#050505; }}
-.profile-sub  {{ font-size:10px; color:#65676b; }}
-.copy-text {{
-    font-size:13px; color:#050505; line-height:1.55;
-    word-break:break-word;
-    padding-top:8px; border-top:2px solid #f3f4f6;
-    min-height:36px;
-}}
-.no-copy {{
-    font-size:12px; color:#bcc0c4; font-style:italic;
-    min-height:36px; padding-top:8px; border-top:2px solid #f3f4f6;
-}}
- 
-/* Footer (igual ads) */
-.post-footer {{
-    display:grid; grid-template-columns:1fr 1fr;
-    border-top:1px solid #e4e6ea;
-}}
-.footer-btn {{
-    display:flex; align-items:center; justify-content:center; gap:5px;
-    padding:9px 6px; font-size:11px; font-weight:700;
-    border:none; background:transparent; cursor:pointer;
-    font-family:'DM Sans',sans-serif; transition:background 0.12s;
-    color:#6b7280;
-}}
-.footer-btn:hover {{ background:#f9fafb; color:#111827; }}
-.footer-btn.danger {{ border-left:1px solid #e4e6ea; color:#dc2626; }}
-.footer-btn.danger:hover {{ background:#fef2f2; }}
- 
-/* Modal */
-#modal-overlay {{
-    display:none; position:fixed; inset:0;
-    background:rgba(0,0,0,0.88); z-index:999999;
-    align-items:center; justify-content:center; padding:20px;
-}}
-#modal-overlay.open {{ display:flex; }}
-#modal-box {{
-    background:#111; border-radius:16px; overflow:hidden;
-    position:relative; display:inline-flex; flex-direction:column;
-    align-items:center; max-width:min(88vw,860px); max-height:90vh;
-}}
-#modal-close {{
-    position:absolute; top:10px; right:12px;
-    background:rgba(255,255,255,0.18); border:none; border-radius:50%;
-    width:34px; height:34px; font-size:17px; color:#fff;
-    cursor:pointer; z-index:10;
-    display:flex; align-items:center; justify-content:center;
-}}
-#modal-img {{
-    display:block; max-width:min(84vw,820px);
-    max-height:min(82vh,820px); width:auto; height:auto;
-    object-fit:contain; border-radius:10px;
-}}
-#modal-cap {{
-    background:#fff; padding:16px 20px;
-    font-size:14px; color:#374151; line-height:1.7;
-    max-height:160px; overflow-y:auto;
-    width:100%; border-radius:0 0 16px 16px;
-}}
-</style>
-</head>
-<body>
- 
-<!-- Modal -->
-<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
-        <div id="modal-content"></div>
-        <div id="modal-cap" style="display:none"></div>
-    </div>
-</div>
- 
-<!-- Filtros -->
-<div class="filters-wrap">
-    <span class="filter-label">Tipo:</span>
-    <button class="filter-btn {'active' if filtro_tipo_cur == 'todos' else ''}" onclick="setFiltro('tipo','todos',this)">Todos</button>
-    <button class="filter-btn {'active' if filtro_tipo_cur == 'fotos' else ''}" onclick="setFiltro('tipo','fotos',this)">📷 Fotos</button>
-    <button class="filter-btn {'active' if filtro_tipo_cur == 'videos' else ''}" onclick="setFiltro('tipo','videos',this)">🎬 Vídeos</button>
-    <div class="filter-sep"></div>
-    <span class="filter-label">Ordenar:</span>
-    <button class="filter-btn {'active' if filtro_ord_cur == 'recentes' else ''}" onclick="setFiltro('ordem','recentes',this)">Mais recentes</button>
-    <button class="filter-btn {'active' if filtro_ord_cur == 'curtidas' else ''}" onclick="setFiltro('ordem','curtidas',this)">Mais curtidas</button>
-    <button class="filter-btn {'active' if filtro_ord_cur == 'comentarios' else ''}" onclick="setFiltro('ordem','comentarios',this)">Mais comentários</button>
-    <button class="filter-btn {'active' if filtro_ord_cur == 'engajamento' else ''}" onclick="setFiltro('ordem','engajamento',this)">Mais engajamento</button>
-    <button class="cols-btn" onclick="triggerColsToggle()" title="Alternar colunas">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/>
-        </svg>
-    </button>
-</div>
- 
-<!-- Stats + Bio -->
-<div class="stats-outer">
-    <div class="stats-row">
-        <div class="stat-card"><div class="stat-num-green">{n_total}</div><div class="stat-lbl">Postagens</div></div>
-        <div class="stat-card"><div class="stat-num">{n_fotos}</div><div class="stat-lbl">Imagens</div></div>
-        <div class="stat-card"><div class="stat-num">{n_videos}</div><div class="stat-lbl">Vídeos</div></div>
-        <div class="stat-card"><div class="stat-num">{fmt_num(int(eng_med_val))}</div><div class="stat-lbl">Eng. médio</div></div>
-        <div class="stat-card"><div class="stat-num">{eng_pct_val:.2f}%</div><div class="stat-lbl">Engajamento</div></div>
-    </div>
-    <div class="bio-card">
-        <div class="bio-card-hdr">Bio do Perfil</div>
-        <div class="bio-text">{"&ldquo;" + bio_txt + "&rdquo;" if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}</div>
-        <button class="btn-bio" onclick="
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {{
-                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
-            }}
-        ">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-            </svg>
-            Analisar Bio com IA 🤖
-        </button>
-        {'<div class="bio-resultado">' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
-    </div>
-</div>
- 
-<!-- Grid de cards -->
-<div class="posts-section">
-    <div class="posts-hdr">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-        </svg>
-        Postagens ({len(posts_filtered)})
-    </div>
-    <div class="posts-grid" id="posts-grid"></div>
-</div>
- 
-<script>
-var POSTS = {posts_json_str};
-var AVATAR_LABEL = '{gerar_avatar(r["nome"])}';
-var PERFIL_NOME  = '{(r.get("nome_exibido") or r.get("handle","")).replace("'","\\'")}';
- 
-function fmtNum(n) {{
-    n = Math.round(n || 0);
-    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n/1000).toFixed(1) + 'K';
-    return String(n);
-}}
- 
-function buildGrid() {{
-    var grid = document.getElementById('posts-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
- 
-    if (!POSTS.length) {{
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:48px;font-size:14px">Sem postagens disponíveis.</div>';
-        syncHeight(); return;
-    }}
- 
-    POSTS.forEach(function(p, idx) {{
-        var card = document.createElement('div');
-        card.className = 'post-card';
-        card.id = 'pcard_' + idx;
- 
-        var typeLabel = p.is_video ? '🎬 Vídeo' : '📷 Imagem';
- 
-        // ── Status bar (igual ads) ──
-        var statusBar = '<div class="post-status-bar">'
-            + '<div class="status-dot">Publicado</div>'
-            + '<div style="display:flex;gap:6px;align-items:center">'
-            + '<span class="post-type-badge">' + typeLabel + '</span>'
-            + (p.date ? '<span class="post-date-top">' + p.date + '</span>' : '')
-            + '</div></div>';
- 
-        // ── Meta bar com engajamento ──
-        var metaBar = '<div class="post-meta-bar">'
-            + '<span class="meta-stat">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
-            + fmtNum(p.likes) + ' curtidas</span>'
-            + '<span style="color:#d1d5db;font-size:11px">·</span>'
-            + '<span class="meta-stat">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
-            + fmtNum(p.comments) + ' comentários</span>'
-            + '<span style="color:#d1d5db;font-size:11px">·</span>'
-            + '<span class="meta-stat" style="color:#8b5cf6">'
-            + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
-            + fmtNum(p.eng) + ' eng.</span>'
-            + '</div>';
- 
-        // ── Mídia ──
-        var mediaBlock = '';
-        if (p.thumb) {{
-            mediaBlock = '<div class="post-media" onclick="openModal(' + idx + ')">'
-                + '<img id="pimg_' + idx + '" src="' + p.thumb + '" loading="lazy"'
-                + ' onerror="this.parentElement.innerHTML=\'<div class=&quot;post-media-fallback&quot; onclick=&quot;openModal(' + idx + ')&quot;><svg width=&quot;32&quot; height=&quot;32&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#fff&quot; stroke-width=&quot;1.2&quot;><rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot;/><circle cx=&quot;8.5&quot; cy=&quot;8.5&quot; r=&quot;1.5&quot;/><polyline points=&quot;21 15 16 10 5 21&quot;/></svg>Sem prévia</div>\'" />'
-                + (p.is_video ? '<div class="video-badge">▶ Vídeo</div>' : '')
-                + '<div class="zoom-hint">🔍 Ampliar</div>'
-                + '</div>';
-        }} else {{
-            mediaBlock = '<div class="post-media-fallback" onclick="openModal(' + idx + ')" style="height:180px">'
-                + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
-                + (p.is_video ? '🎬 Vídeo' : 'Sem prévia')
-                + '</div>';
-        }}
- 
-        // ── Copy section (igual ads) ──
-        var copySection = '<div class="post-copy-section">'
-            + '<div class="profile-header">'
-            + '<div class="profile-avatar">' + AVATAR_LABEL + '</div>'
-            + '<div><div class="profile-name">' + PERFIL_NOME + '</div>'
-            + '<div class="profile-sub">Publicado</div></div></div>';
- 
-        if (p.cap_prev) {{
-            var short = p.cap_prev.slice(0,80);
-            var rest  = p.cap_prev.slice(80);
-            if (rest) {{
-                copySection += '<div class="copy-text" id="cp_' + idx + '">'
-                    + short
-                    + '<span id="cpell_' + idx + '" style="color:#9ca3af"> …</span>'
-                    + '<span id="cprest_' + idx + '" style="display:none">' + rest + '</span>'
-                    + ' <button onclick="var r=document.getElementById(\'cprest_' + idx + '\');var b=this;var e=document.getElementById(\'cpell_' + idx + '\');if(r.style.display===\'none\'){{r.style.display=\'inline\';b.textContent=\'ver menos\';if(e)e.style.display=\'none\'}}else{{r.style.display=\'none\';b.textContent=\'ver mais\';if(e)e.style.display=\'inline\'}}" style="background:none;border:none;color:#3a9fd6;font-weight:700;font-size:12px;cursor:pointer;padding:0;">ver mais</button>'
-                    + '</div>';
-            }} else {{
-                copySection += '<div class="copy-text">' + p.cap_prev + '</div>';
-            }}
-        }} else {{
-            copySection += '<div class="no-copy">Sem legenda disponível.</div>';
-        }}
-        copySection += '</div>';
- 
-        // ── Footer (igual ads) ──
-        var footer = '<div class="post-footer">'
-            + '<button class="footer-btn" onclick="openModal(' + idx + ')">'
-            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
-            + 'Ver imagem</button>'
-            + '<button class="footer-btn danger" onclick="openCaption(' + idx + ')">'
-            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
-            + 'Legenda</button>'
-            + '</div>';
- 
-        card.innerHTML = statusBar + metaBar + mediaBlock + copySection + footer;
-        grid.appendChild(card);
-    }});
- 
-    syncHeight();
-}}
- 
-function openModal(idx) {{
-    var p = POSTS[idx];
-    var overlay = document.getElementById('modal-overlay');
-    var content = document.getElementById('modal-content');
-    var capEl   = document.getElementById('modal-cap');
-    content.innerHTML = '';
-    capEl.style.display = 'none';
-    capEl.textContent = '';
- 
-    if (p.thumb) {{
-        var loading = document.createElement('div');
-        loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px';
-        loading.textContent = 'Carregando…';
-        content.appendChild(loading);
-        overlay.classList.add('open');
- 
-        var tmp = new Image();
-        tmp.onload = function() {{
-            content.innerHTML = '';
-            var img = document.createElement('img');
-            img.id = 'modal-img';
-            img.src = p.thumb;
-            img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:' + (p.cap ? '16px 16px 0 0' : '16px') + ';';
-            content.appendChild(img);
-            if (p.cap) {{
-                capEl.textContent = p.cap;
-                capEl.style.display = 'block';
-            }}
-        }};
-        tmp.onerror = function() {{
-            content.innerHTML = '<div style="padding:32px;color:#aaa;font-size:14px;text-align:center">Imagem não disponível.</div>';
-        }};
-        tmp.src = p.thumb;
-    }} else {{
-        content.innerHTML = '<div style="padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center">Sem imagem disponível.</div>';
-        if (p.cap) {{
-            capEl.textContent = p.cap;
-            capEl.style.display = 'block';
-        }}
-        overlay.classList.add('open');
-    }}
-}}
- 
-function openCaption(idx) {{
-    var p = POSTS[idx];
-    var overlay = document.getElementById('modal-overlay');
-    var content = document.getElementById('modal-content');
-    var capEl   = document.getElementById('modal-cap');
-    content.innerHTML = '<div style="padding:24px 20px;color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid rgba(255,255,255,0.1)">📝 Legenda completa</div>';
-    capEl.textContent = p.cap || 'Sem legenda disponível.';
-    capEl.style.display = 'block';
-    overlay.classList.add('open');
-}}
- 
-function closeModal() {{
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('modal-content').innerHTML = '';
-    var capEl = document.getElementById('modal-cap');
-    capEl.style.display = 'none';
-    capEl.textContent = '';
-}}
-document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
- 
-function setFiltro(tipo, val, el) {{
-    var ariaLabel = tipo === 'tipo' ? 'redes_tipo_sel_{aba_ativa}' : 'redes_ordem_sel_{aba_ativa}';
-    var inputs = window.parent.document.querySelectorAll('input[aria-label="' + ariaLabel + '"]');
-    if (!inputs.length) return;
-    var setter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype, 'value').set;
-    setter.call(inputs[0], val);
-    inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
-}}
- 
-function triggerColsToggle() {{
-    var label = 'redes_toggle_cols_{aba_ativa}';
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if ((b.textContent||b.innerText||'').split(/\s+/).join(' ').trim() === label) {{ b.click(); return; }}
-    }}
-}}
- 
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 8) + 'px';
-            frames[i].style.minHeight = '0';
-            break;
-        }} }} catch(e) {{}}
-    }}
-}}
- 
-buildGrid();
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200);
-setTimeout(syncHeight, 600);
-setTimeout(syncHeight, 1200);
-</script>
-</body></html>
-""", height=600, scrolling=False)
- 
-        # ══════════════════════════════════════════════════════════════
-        # SUB-ABA: ANÁLISE DE IA (por perfil)
-        # ══════════════════════════════════════════════════════════════
-        else:
-            chave_geral_ia = f"ia_geral_perfil_{r['handle']}"
-            if chave_geral_ia not in st.session_state:
-                st.session_state[chave_geral_ia] = ""
- 
-            st.markdown(f"""
-            <style>
-            .st-key-btn_ia_perfil_{aba_ativa} {{
-                position:fixed !important; top:-9999px !important; left:-9999px !important;
-                width:1px !important; height:1px !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
- 
-            if st.button(f"__ia_perfil_{aba_ativa}__", key=f"btn_ia_perfil_{aba_ativa}"):
-                if gemini_model is None:
-                    st.session_state[chave_geral_ia] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    resumo_posts_ia = "\n".join([
-                        f"- {p.get('date','')} | {p.get('likes',0)} curtidas {p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
-                        for p in posts_list[:12]
-                    ]) if posts_list else "Sem posts disponíveis."
-                    n_fotos_ia  = sum(1 for p in posts_list if not p.get("is_video"))
-                    n_videos_ia = sum(1 for p in posts_list if p.get("is_video"))
-                    with st.spinner("Gerando análise…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""Você é especialista em redes sociais e marketing digital.
-Analise o perfil do Instagram abaixo e gere uma análise estratégica completa em português.
- 
-Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
-Bio: {r.get('bio','')}
-Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)}
-Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
-Fotos: {n_fotos_ia} | Vídeos: {n_videos_ia}
- 
-Últimos posts:
-{resumo_posts_ia}
- 
----
-### 🎯 Posicionamento e Tom de Voz
-### 📊 Análise de Métricas
-### 🎨 Análise de Criativos e Formatos
-### ✍️ Análise de Copys e Legendas
-### ✅ Pontos Fortes (3 pontos)
-### ⚠️ Pontos de Atenção (2 pontos)
-### 💡 Recomendações Estratégicas (3 ações concretas)
-Seja direto e objetivo.""")
-                            st.session_state[chave_geral_ia] = resp.text
-                            st.rerun()
-                        except Exception as e:
-                            st.session_state[chave_geral_ia] = f"Erro: {e}"
-                            st.rerun()
- 
-            ia_resultado_html = st.session_state.get(chave_geral_ia, "").replace("\n","<br>")
-            n_fotos_s  = sum(1 for p in posts_list if not p.get("is_video"))
-            n_videos_s = sum(1 for p in posts_list if p.get("is_video"))
+                    tbl_rows += (
+                        f"<tr>"
+                        f"<td>{p.get('date','—')}</td>"
+                        f"<td>{img_cell}</td>"
+                        f"<td>{'Vídeo' if isVid else 'Foto'}</td>"
+                        f"<td>{_fmt(likes)}</td>"
+                        f"<td>{_fmt(coms)}</td>"
+                        f"<td>{_fmt(likes+coms)}</td>"
+                        f"<td>{copy_cell}</td>"
+                        f"</tr>"
+                    )
  
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
-body {{ padding-bottom:8px; }}
-.metrics-wrap {{
-    background:#fff; border:1px solid #e5e7eb; border-top:none; border-bottom:none;
-    padding:16px 18px;
-}}
-.metrics-hdr {{ font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:12px; }}
-.metrics-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }}
-.metric-card {{ background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:14px 12px; text-align:center; }}
-.metric-num {{ font-size:22px; font-weight:800; color:#111827; }}
-.metric-num-green {{ font-size:22px; font-weight:800; color:#15803d; }}
-.metric-lbl {{ font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; margin-top:3px; }}
-.ia-wrap {{ background:#fff; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 12px 12px; overflow:hidden; }}
-.ia-hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
-.ia-hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
-.ia-body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
-.ia-empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:60px 24px; }}
-.ia-footer {{ padding:16px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
-.btn-gerar {{
-    display:inline-flex; align-items:center; gap:8px;
-    padding:12px 28px; border:none; border-radius:10px;
-    background:#0e2a47; font-size:15px; font-weight:700; color:#fff;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-}}
-.btn-gerar:hover {{ background:#1a3a5c; }}
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}}
+table{{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;}}
+th{{background:#f9fafb;color:#6b7280;font-weight:700;padding:12px 14px;text-align:left;
+    border-bottom:2px solid #e5e7eb;font-size:11px;text-transform:uppercase;letter-spacing:0.6px;
+    position:sticky;top:0;z-index:1;}}
+td{{padding:8px 14px;border-bottom:1px solid #f3f4f6;color:#374151;background:#fff;
+    vertical-align:middle;line-height:1.4;overflow:hidden;}}
+tr:last-child td{{border-bottom:none;}}
+tr:hover td{{background:#f9fafb;}}
+th:nth-child(1),td:nth-child(1){{width:90px;}}
+th:nth-child(2),td:nth-child(2){{width:68px;text-align:center;}}
+th:nth-child(3),td:nth-child(3){{width:60px;text-align:center;}}
+th:nth-child(4),td:nth-child(4){{width:80px;text-align:center;}}
+th:nth-child(5),td:nth-child(5){{width:100px;text-align:center;}}
+th:nth-child(6),td:nth-child(6){{width:100px;text-align:center;}}
+th:nth-child(7),td:nth-child(7){{width:auto;min-width:0;}}
+td:nth-child(7){{overflow:hidden;}}
+.modal-bg{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;}}
+.modal-bg.open{{display:flex;}}
+.modal{{background:#fff;border-radius:14px;padding:24px;max-width:400px;width:90%;max-height:80vh;
+        overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;}}
+.modal-title{{font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.5px;
+              margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f3f4f6;}}
+.modal-text{{font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap;}}
+.modal-img{{width:100%;border-radius:10px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:10px;}}
+.modal-close{{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;
+              color:#9ca3af;cursor:pointer;}}
+.modal-close:hover{{color:#111827;}}
 </style>
-<div class="metrics-wrap">
-    <div class="metrics-hdr">Métricas do perfil</div>
-    <div class="metrics-grid">
-        <div class="metric-card"><div class="metric-num-green">{fmt_num(seg_val)}</div><div class="metric-lbl">Seguidores</div></div>
-        <div class="metric-card"><div class="metric-num">{fmt_num(posts_val)}</div><div class="metric-lbl">Postagens</div></div>
-        <div class="metric-card"><div class="metric-num">{eng_pct_val:.2f}%</div><div class="metric-lbl">Engajamento</div></div>
-        <div class="metric-card"><div class="metric-num">{fmt_num(int(eng_med_val))}</div><div class="metric-lbl">Eng. médio</div></div>
-        <div class="metric-card"><div class="metric-num">{n_fotos_s}</div><div class="metric-lbl">Fotos</div></div>
-        <div class="metric-card"><div class="metric-num">{n_videos_s}</div><div class="metric-lbl">Vídeos</div></div>
+<div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;overflow:hidden">
+    <div style="padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
+                text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;
+                background:#fff;">Postagens</div>
+    <div style="max-height:460px;overflow-y:auto;overflow-x:hidden">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th><th>Criativo</th><th>Tipo</th>
+                    <th>Curtidas</th><th>Comentários</th><th>Engaj.</th><th>Copy</th>
+                </tr>
+            </thead>
+            <tbody>{tbl_rows}</tbody>
+        </table>
     </div>
 </div>
-<div class="ia-wrap">
-    <div class="ia-hdr">
-        <div class="ia-hdr-title">✨ Análise Estratégica do Perfil</div>
-    </div>
-    <div class="ia-body">
-        {'<div>' + ia_resultado_html + '</div>' if ia_resultado_html else '<div class="ia-empty">Clique em <b>Gerar Análise</b> para uma análise completa deste perfil.</div>'}
-    </div>
-    <div class="ia-footer">
-        <button class="btn-gerar" onclick="triggerBtn('__ia_perfil_{aba_ativa}__')">
-            {'🔄 Regerar Análise' if ia_resultado_html else '⚡ Gerar Análise do Perfil'}
-        </button>
+<div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+        <button class="modal-close" onclick="document.getElementById('modal2').classList.remove('open')">✕</button>
+        <div class="modal-title" id="modal2-title"></div>
+        <img id="modal2-img" class="modal-img" src="" style="display:none" />
+        <div class="modal-text" id="modal2-text"></div>
     </div>
 </div>
 <script>
-function triggerBtn(label) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
+function openImg(url){{
+    document.getElementById('modal2-title').textContent='Imagem do Post';
+    var img=document.getElementById('modal2-img');
+    img.src=url;img.style.display='block';
+    document.getElementById('modal2-text').textContent='';
+    document.getElementById('modal2').classList.add('open');
 }}
+function openCopy2(txt){{
+    document.getElementById('modal2-title').textContent='Copy Completa';
+    document.getElementById('modal2-img').style.display='none';
+    document.getElementById('modal2-text').textContent=txt;
+    document.getElementById('modal2').classList.add('open');
+}}
+(function(){{
+    var iframes=window.parent.document.querySelectorAll('iframe');
+    for(var i=0;i<iframes.length;i++){{
+        try{{if(iframes[i].contentWindow===window){{iframes[i].style.height='540px';break;}}}}catch(e){{}}
+    }}
+}})();
+</script>
+""", height=540, scrolling=False)
+ 
+        # ── SUB-ABA: ANÁLISE DE IA ──────────────────────────────────
+        else:
+            chave_criativo = f"ia_criativo_{r['handle']}"
+            chave_copy     = f"ia_copy_{r['handle']}"
+            chave_geral    = f"ia_geral_{r['handle']}"
+            for ch in [chave_criativo, chave_copy, chave_geral]:
+                if ch not in st.session_state:
+                    st.session_state[ch] = ""
+ 
+            resumo_posts = "\n".join([
+                f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
+                f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+                for p in posts_list[:12]
+            ]) if posts_list else "Sem posts disponíveis."
+ 
+            perfil_ctx = f"""
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Bio: {r.get('bio','')}
+Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
+Últimos posts:
+{resumo_posts}
+"""
+ 
+            # Ghost buttons IA
+            for btn_sfx in ["criativo", "copy", "geral"]:
+                ghost_k_ia = f"btn_{btn_sfx}_{aba_ativa}_ia"
+                st.markdown(f"""
+                <style>
+                .st-key-{ghost_k_ia} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:1px !important; height:1px !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+ 
+            if st.button(f"__criativo_{aba_ativa}__", key=f"btn_criativo_{aba_ativa}_ia"):
+                if gemini_model is None:
+                    st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando criativos…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
+Responda em português com:
+### Análise de Criativo
+**Estilo visual predominante:** ...
+**Formatos mais usados:** ...
+**Posts com melhor desempenho:** ...
+**Pontos fortes visuais:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""")
+                            st.session_state[chave_criativo] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_criativo] = f"Erro: {e}"
+ 
+            if st.button(f"__copy_{aba_ativa}__", key=f"btn_copy_{aba_ativa}_ia"):
+                if gemini_model is None:
+                    st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando copies…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Analise as LEGENDAS (copy) deste perfil Instagram.
+Responda em português com:
+### Análise de Copy
+**Tom de voz predominante:** ...
+**Uso de CTAs:** ...
+**Uso de hashtags:** ...
+**Pontos fortes nas legendas:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""")
+                            st.session_state[chave_copy] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_copy] = f"Erro: {e}"
+ 
+            if st.button(f"__geral_{aba_ativa}__", key=f"btn_geral_{aba_ativa}_ia"):
+                if gemini_model is None:
+                    st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Gerando análise geral…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Faça uma análise geral estratégica deste perfil Instagram.
+Responda em português com:
+### Análise Geral
+**Posicionamento:** ...
+**Frequência de posts:** ...
+### Pontos Fortes (3 pontos)
+### Pontos de Atenção (2 pontos)
+### Recomendações Estratégicas (3 ações concretas)
+Seja direto e objetivo.
+""")
+                            st.session_state[chave_geral] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_geral] = f"Erro: {e}"
+ 
+            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
+            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
+            geral_html_ia = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
+ 
+            def _panel_ia_redes(html_content, btn_label, btn_trigger):
+                btn_html = f"""
+                    <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
+                        <button onclick="
+                            const btns = window.parent.document.querySelectorAll('button');
+                            for (const b of btns) {{
+                                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{
+                                    b.click();
+                                    break;
+                                }}
+                            }}
+                        " style="
+                            width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
+                            background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
+                            cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;
+                        "
+                        onmouseover="this.style.background='#dbeafe'"
+                        onmouseout="this.style.background='#eff6ff'">
+                            {btn_label}
+                        </button>
+                    </div>
+                """
+                if html_content:
+                    return (
+                        f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">'
+                        f'{html_content}</div>'
+                        f'{btn_html}'
+                    )
+                return (
+                    f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">'
+                    f'Clique no botão abaixo para gerar a análise.</div>'
+                    f'{btn_html}'
+                )
+ 
+            ia_html = f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
+.ia-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-radius:0 0 12px 12px;
+    overflow:hidden;
+}}
+.ia-header {{
+    padding:14px 18px;
+    font-size:14px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.3px;
+    border-bottom:1px solid #e5e7eb;
+    background:#fff;
+}}
+.tabs {{
+    display:flex;
+    border-bottom:1px solid #e5e7eb;
+    background:#f9fafb;
+}}
+.tab {{
+    flex:1; padding:11px 0; text-align:center;
+    font-size:14px; font-weight:600; color:#9ca3af;
+    cursor:pointer; border:none; background:transparent;
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    font-family:'DM Sans',sans-serif; transition:color 0.15s;
+}}
+.tab:hover {{ color:#374151; background:#f3f4f6; }}
+.tab.active {{
+    color:#1a2e4a;
+    border-bottom:2px solid #3a9fd6;
+    background:#fff;
+}}
+.panel {{ display:none; }}
+.panel.active {{ display:block; }}
+</style>
+ 
+<div class="ia-wrap">
+    <div class="ia-header">Análise de Conteúdos</div>
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
+        <button class="tab"        onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
+        <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
+    </div>
+    <div id="panel-geral" class="panel active">
+        {_panel_ia_redes(geral_html_ia, "Gerar Análise de Postagens 🤖", f"__geral_{aba_ativa}__")}
+    </div>
+    <div id="panel-criativo" class="panel">
+        {_panel_ia_redes(criativo_html, "Gerar Análise de Criativos 🤖", f"__criativo_{aba_ativa}__")}
+    </div>
+    <div id="panel-copy" class="panel">
+        {_panel_ia_redes(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{aba_ativa}__")}
+    </div>
+</div>
+ 
+<script>
 function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 8) + 'px'; break; }} }} catch(e) {{}}
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+8)+'px'; break; }} }} catch(e) {{}}
     }}
 }}
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+function showTab(name, el) {{
+    document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
+    document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+    setTimeout(syncHeight, 50);
+}}
+var ro = new ResizeObserver(syncHeight);
+ro.observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight, 1000);
 </script>
-""", height=500, scrolling=False)
+"""
+            components.html(ia_html, height=420, scrolling=False)
  
     # ══════════════════════════════════════════════════════════════════
-    # ABA: ANÁLISE DE IA — comparativo geral
+    # ABA: ANÁLISE DE IA — Comparativo geral
     # ══════════════════════════════════════════════════════════════════
  
     elif main_tab == "analise":
@@ -8170,6 +8024,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         if chave_comp_redes not in st.session_state:
             st.session_state[chave_comp_redes] = ""
  
+        # Ghost button comparativo
         st.markdown("""
         <style>
         .st-key-btn_redes_comp_geral {
@@ -8216,82 +8071,130 @@ Compare os perfis do Instagram abaixo e gere uma análise competitiva completa e
                         st.session_state[chave_comp_redes] = f"Erro: {ex}"
                         st.rerun()
  
-        # ── Tabela comparativa de métricas ──────────────────────────
-        metricas_rows = ""
-        for i, rr in enumerate(ok):
-            cor_av  = get_avatar_color(i)
-            av_txt  = gerar_avatar(rr["nome"])
-            seg_v   = rr.get("seguidores", 0)
-            posts_v = rr.get("total_posts", 0)
-            eng_p   = rr.get("eng_pct", 0.0)
-            eng_m   = rr.get("eng_medio", 0)
-            handle  = rr.get("handle", "")
-            is_m    = rr.get("tipo") == "minha"
-            bdg_bg  = "#f0fdf4" if is_m else "#eff6ff"
-            bdg_col = "#15803d" if is_m else "#1d4ed8"
-            bdg_brd = "#bbf7d0" if is_m else "#bfdbfe"
-            bdg_lbl = "Minha empresa" if is_m else "Concorrente"
+        # ── Gráficos comparativos ───────────────────────────────────
+        nomes_ok   = [x["nome"] for x in ok]
+        segs_ok    = [x.get("seguidores", 0) for x in ok]
+        eng_pct_ok = [float(x.get("eng_pct", 0.0)) for x in ok]
+        posts_ok   = [x.get("total_posts", 0) for x in ok]
+        eng_med_ok = [float(x.get("eng_medio", 0.0)) for x in ok]
+        cores_ok   = [get_avatar_color(i) for i in range(len(ok))]
  
-            metricas_rows += f"""
-            <tr>
-                <td>
-                    <div style="display:flex;align-items:center;gap:10px">
-                        <div style="width:34px;height:34px;border-radius:50%;background:{cor_av};
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-size:12px;font-weight:700;color:#fff;flex-shrink:0">{av_txt}</div>
-                        <div>
-                            <div style="font-weight:700;color:#111827;font-size:13px">{rr["nome"]}</div>
-                            <div style="font-size:11px;color:#9ca3af">{handle}</div>
-                            <span style="font-size:11px;background:{bdg_bg};color:{bdg_col};
-                                         border:1px solid {bdg_brd};
-                                         padding:1px 7px;border-radius:20px;font-weight:600">{bdg_lbl}</span>
-                        </div>
-                    </div>
-                </td>
-                <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(seg_v) if seg_v else "—"}</td>
-                <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(posts_v) if posts_v else "—"}</td>
-                <td style="text-align:center;font-weight:700;color:#111827">{f"{eng_p:.2f}%" if seg_v else "—"}</td>
-                <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(int(eng_m)) if seg_v else "—"}</td>
-            </tr>
-            """
+        nomes_json   = json.dumps(nomes_ok, ensure_ascii=False)
+        segs_json    = json.dumps(segs_ok)
+        eng_pct_json = json.dumps([round(v, 2) for v in eng_pct_ok])
+        posts_json   = json.dumps(posts_ok)
+        eng_med_json = json.dumps([round(v, 1) for v in eng_med_ok])
+        cores_json   = json.dumps(cores_ok)
  
         components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 body {{ padding-bottom:8px; margin-top:-55px; }}
-.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; margin-bottom:14px; }}
-.hdr {{ padding:14px 18px; font-size:12px; font-weight:800; color:#1a2e4a;
-        text-transform:uppercase; letter-spacing:0.6px; border-bottom:1px solid #e5e7eb; }}
-table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-th {{ background:#f9fafb; color:#9ca3af; font-size:11px; font-weight:700;
-      text-transform:uppercase; letter-spacing:0.6px; padding:11px 14px;
-      text-align:left; border-bottom:1px solid #e5e7eb; white-space:nowrap; }}
-td {{ padding:12px 14px; border-bottom:1px solid #f3f4f6; vertical-align:middle; color:#374151; }}
-tr:last-child td {{ border-bottom:none; }}
-tr:hover td {{ background:#f9fafb; }}
+.grid {{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }}
+.card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:18px 20px 14px;
+}}
+.card-title {{
+    font-size:12px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.6px;
+    padding-bottom:10px; border-bottom:1px solid #f3f4f6;
+    margin-bottom:12px;
+}}
+.chart-wrap {{ position:relative; width:100%; height:180px; }}
+.legend {{
+    display:flex; flex-wrap:wrap; gap:10px;
+    margin-top:10px; font-size:11px; color:#6b7280;
+}}
+.leg-item {{ display:flex; align-items:center; gap:5px; }}
+.leg-dot {{ width:10px; height:10px; border-radius:2px; flex-shrink:0; }}
 </style>
 </head>
 <body>
-<div class="wrap">
-    <div class="hdr">📊 Comparativo de Métricas</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Empresa</th>
-                <th style="text-align:center">Seguidores</th>
-                <th style="text-align:center">Postagens</th>
-                <th style="text-align:center">Engajamento %</th>
-                <th style="text-align:center">Eng. Médio</th>
-            </tr>
-        </thead>
-        <tbody>{metricas_rows}</tbody>
-    </table>
+<div class="grid">
+    <div class="card">
+        <div class="card-title">Seguidores</div>
+        <div class="chart-wrap"><canvas id="ch_seg"></canvas></div>
+        <div class="legend" id="leg_seg"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Taxa de Engajamento (%)</div>
+        <div class="chart-wrap"><canvas id="ch_eng"></canvas></div>
+        <div class="legend" id="leg_eng"></div>
+    </div>
+</div>
+<div class="grid">
+    <div class="card">
+        <div class="card-title">Total de Publicações</div>
+        <div class="chart-wrap"><canvas id="ch_posts"></canvas></div>
+        <div class="legend" id="leg_posts"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Engajamento Médio por Post</div>
+        <div class="chart-wrap"><canvas id="ch_engmed"></canvas></div>
+        <div class="legend" id="leg_engmed"></div>
+    </div>
 </div>
 <script>
+var NOMES   = {nomes_json};
+var SEGS    = {segs_json};
+var ENG_PCT = {eng_pct_json};
+var POSTS   = {posts_json};
+var ENG_MED = {eng_med_json};
+var CORES   = {cores_json};
+ 
+function fmtNum(n) {{
+    n = Math.round(n);
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
+    return String(n);
+}}
+ 
+function makeLegend(cid, vals, suffix) {{
+    var el = document.getElementById(cid);
+    if (!el) return;
+    NOMES.forEach(function(name, i) {{
+        var item = document.createElement('span');
+        item.className = 'leg-item';
+        var dot = document.createElement('span');
+        dot.className = 'leg-dot';
+        dot.style.background = CORES[i];
+        item.appendChild(dot);
+        var v = suffix === '%' ? vals[i].toFixed(1) + '%' : fmtNum(vals[i]);
+        item.appendChild(document.createTextNode(name + ' ' + v));
+        el.appendChild(item);
+    }});
+}}
+ 
+var DEFS = {{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{{ legend:{{display:false}} }},
+    scales:{{
+        x:{{ grid:{{display:false}}, ticks:{{font:{{family:"'DM Sans',sans-serif",size:11,weight:'600'}},color:'#6b7280',maxRotation:0}}, border:{{display:false}} }},
+        y:{{ grid:{{color:'#f3f4f6'}}, ticks:{{font:{{family:"'DM Sans',sans-serif",size:11}},color:'#9ca3af',callback:function(v){{return fmtNum(v);}}}}, border:{{display:false}} }}
+    }}
+}};
+ 
+function DEFS_PCT() {{
+    var d = JSON.parse(JSON.stringify(DEFS));
+    d.scales.y.ticks.callback = function(v){{ return v+'%'; }};
+    return d;
+}}
+ 
+new Chart(document.getElementById('ch_seg'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Seguidores',data:SEGS,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
+makeLegend('leg_seg', SEGS, '');
+new Chart(document.getElementById('ch_eng'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Engajamento %',data:ENG_PCT,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS_PCT()}});
+makeLegend('leg_eng', ENG_PCT, '%');
+new Chart(document.getElementById('ch_posts'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Publicações',data:POSTS,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
+makeLegend('leg_posts', POSTS, '');
+new Chart(document.getElementById('ch_engmed'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Eng. médio',data:ENG_MED,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
+makeLegend('leg_engmed', ENG_MED, '');
+ 
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -8300,10 +8203,12 @@ function syncHeight() {{
     }}
 }}
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-setTimeout(syncHeight,200); setTimeout(syncHeight,600);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight,300); setTimeout(syncHeight,800);
 </script>
 </body></html>
-""", height=200, scrolling=False)
+""", height=560, scrolling=False)
  
         # ── Painel de análise comparativa ──────────────────────────
         comp_html_redes = st.session_state.get(chave_comp_redes, "").replace("\n", "<br>")
@@ -8315,9 +8220,9 @@ setTimeout(syncHeight,200); setTimeout(syncHeight,600);
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
 body {{ padding-bottom:8px; }}
 .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
-.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; }}
+.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
 .hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
-.hdr-sub {{ font-size:13px; color:#9ca3af; margin-top:2px; }}
+.hdr-sub {{ font-size:13px; color:#9ca3af; }}
 .body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
 .empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:60px 24px; }}
 .footer {{ padding:16px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
@@ -8331,8 +8236,10 @@ body {{ padding-bottom:8px; }}
 </style>
 <div class="wrap">
     <div class="hdr">
-        <div class="hdr-title">✨ Análise Comparativa de Redes Sociais</div>
-        <div class="hdr-sub">Comparativo inteligente de todos os perfis configurados</div>
+        <div>
+            <div class="hdr-title">✨ Análise Comparativa de Redes Sociais</div>
+            <div class="hdr-sub">Comparativo inteligente de todos os perfis configurados</div>
+        </div>
     </div>
     <div class="body">
         {'<div>' + comp_html_redes + '</div>' if comp_html_redes else '<div class="empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar todos os perfis com IA.</div>'}
