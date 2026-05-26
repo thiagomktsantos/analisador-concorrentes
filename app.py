@@ -5330,7 +5330,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
 
-        # ── Sub-abas de conteúdo por empresa ─────────────────────────
+        # ── s de conteúdo por empresa ─────────────────────────
         conteudo_tab_ghost_css = []
         for e in empresas_configuradas:
             sk = safe_key(e["nome"])
@@ -7536,7 +7536,7 @@ setTimeout(syncH, 100); setTimeout(syncH, 400);
 </script>
 """, height=200, scrolling=False)
  
-        # ── Sub-abas: Postagens / Análise de IA ────────────────────
+        # ── s: Postagens / Análise de IA ────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
@@ -7675,12 +7675,31 @@ function triggerSub(sub) {{
                 posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
                 r_seg_val = r.get("seguidores", 0)
 
-                n_total    = len(posts_list)
-                n_fotos    = sum(1 for p in posts_list if not p.get("is_video"))
-                n_videos   = sum(1 for p in posts_list if p.get("is_video"))
+                n_total     = len(posts_list)
+                n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
+                n_videos    = sum(1 for p in posts_list if p.get("is_video"))
                 total_likes = sum(p.get("likes", 0) for p in posts_list)
                 total_coms  = sum(p.get("comments", 0) for p in posts_list)
                 best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
+
+                # ── DEBUG: mostra info dos primeiros posts para identificar problema de imagem
+                with st.expander("🔍 Debug — dados brutos dos posts", expanded=False):
+                    for idx_dbg, p_dbg in enumerate(posts_list[:5]):
+                        thumb_val = p_dbg.get("thumb", "")
+                        st.markdown(f"""
+**Post {idx_dbg + 1}**
+- `thumb`: `{thumb_val if thumb_val else '❌ VAZIO'}`
+- `likes`: `{p_dbg.get('likes', 0)}`
+- `comments`: `{p_dbg.get('comments', 0)}`
+- `is_video`: `{p_dbg.get('is_video', False)}`
+- `date`: `{p_dbg.get('date', '')}`
+- `caption`: `{str(p_dbg.get('caption', ''))[:80]}`
+---
+""")
+                    st.markdown(f"**Chaves disponíveis no post[0]:** `{list(posts_list[0].keys()) if posts_list else 'N/A'}`")
+                    st.markdown(f"**Total de posts na lista:** `{len(posts_list)}`")
+                    st.markdown(f"**Dados brutos do post[0]:**")
+                    st.json(posts_list[0] if posts_list else {})
 
                 def _fmt(n):
                     n = int(n or 0)
@@ -7702,7 +7721,6 @@ html, body {{
 }}
 body {{ padding-bottom:8px; }}
 
-/* ── WRAPPER PRINCIPAL ── */
 .outer {{
     background:#fff;
     border:1px solid #e5e7eb;
@@ -7711,7 +7729,7 @@ body {{ padding-bottom:8px; }}
     overflow:hidden;
 }}
 
-/* ── BARRA DE FILTROS ── */
+/* ── FILTROS ── */
 .filters-bar {{
     display:flex;
     align-items:center;
@@ -7772,7 +7790,7 @@ body {{ padding-bottom:8px; }}
 }}
 .col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
 
-/* ── STATS ROW ── */
+/* ── STATS ── */
 .stats-row {{
     display:flex;
     gap:12px;
@@ -7805,7 +7823,7 @@ body {{ padding-bottom:8px; }}
     letter-spacing:1px;
 }}
 
-/* ── GRID DE POSTS ── */
+/* ── GRID ── */
 .posts-grid {{ display:grid; gap:0; margin-top:16px; }}
 .post-card {{
     background:#fff;
@@ -7818,6 +7836,8 @@ body {{ padding-bottom:8px; }}
 }}
 .post-card:hover {{ background:#f9fafb; }}
 .post-card:hover .card-overlay {{ opacity:1; }}
+
+/* ── THUMB ── */
 .thumb-wrap {{
     position:relative;
     width:100%;
@@ -7838,11 +7858,38 @@ body {{ padding-bottom:8px; }}
     width:100%;
     height:100%;
     display:flex;
+    flex-direction:column;
     align-items:center;
     justify-content:center;
     background:linear-gradient(135deg,#e9eef5,#d2dde9);
-    font-size:28px;
+    gap:6px;
 }}
+.thumb-fallback-icon {{ font-size:28px; }}
+.thumb-fallback-url {{
+    font-size:9px;
+    color:#6b7280;
+    word-break:break-all;
+    text-align:center;
+    padding:0 8px;
+    max-width:100%;
+    font-family:monospace;
+}}
+.thumb-debug {{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    background:rgba(0,0,0,0.75);
+    color:#fff;
+    font-size:9px;
+    font-family:monospace;
+    padding:4px 6px;
+    word-break:break-all;
+    line-height:1.3;
+    pointer-events:none;
+    display:none;
+}}
+.post-card:hover .thumb-debug {{ display:block; }}
 .card-overlay {{
     position:absolute;
     inset:0;
@@ -7878,34 +7925,34 @@ body {{ padding-bottom:8px; }}
     text-transform:uppercase;
     letter-spacing:0.5px;
 }}
+
+/* ── CARD INFO ── */
 .card-info {{
-    padding:10px 12px 12px;
+    padding:10px 12px 4px;
     flex:1;
     display:flex;
     flex-direction:column;
-    gap:6px;
+    gap:5px;
 }}
 .card-date {{ font-size:11px; color:#9ca3af; font-weight:600; }}
 .card-caption {{
     font-size:12px;
     color:#374151;
     line-height:1.5;
-    display:-webkit-box;
-    -webkit-line-clamp:2;
-    -webkit-box-orient:vertical;
-    overflow:hidden;
-    text-overflow:ellipsis;
     flex:1;
-    min-height:36px;
     font-style:italic;
+    white-space:pre-line;
+    word-break:break-word;
+    min-height:36px;
 }}
 .card-metrics {{
     display:flex;
     align-items:center;
     gap:10px;
-    padding-top:8px;
+    padding:8px 0 6px;
     border-top:1px solid #f3f4f6;
     flex-wrap:wrap;
+    margin-top:4px;
 }}
 .metric {{
     display:flex;
@@ -7922,23 +7969,25 @@ body {{ padding-bottom:8px; }}
     color:#3a9fd6;
     white-space:nowrap;
 }}
+
+/* ── VER COPY — agora dentro do card-info, abaixo do texto ── */
 .ver-copy-btn {{
-    width:100%;
-    padding:8px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    background:none;
     border:none;
-    border-top:1px solid #f0f2f5;
-    background:#f9fafb;
+    padding:2px 0 6px;
     font-size:12px;
     font-weight:700;
-    color:#1d4ed8;
+    color:#3a9fd6;
     cursor:pointer;
     font-family:'DM Sans',sans-serif;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:5px;
+    text-align:left;
+    transition:color 0.12s;
+    align-self:flex-start;
 }}
-.ver-copy-btn:hover {{ background:#eff6ff; }}
+.ver-copy-btn:hover {{ color:#065f9e; }}
 
 /* ── MODAL ── */
 #modal-bg {{
@@ -8007,6 +8056,7 @@ body {{ padding-bottom:8px; }}
     border-top:1px solid #f3f4f6;
     background:#f9fafb;
     flex-shrink:0;
+    flex-wrap:wrap;
 }}
 .modal-metric {{
     display:flex;
@@ -8016,12 +8066,50 @@ body {{ padding-bottom:8px; }}
     font-weight:700;
     color:#374151;
 }}
+
+/* ── DEBUG PANEL ── */
+.debug-panel {{
+    background:#fffbeb;
+    border:1px solid #fcd34d;
+    border-radius:8px;
+    margin:12px 16px;
+    overflow:hidden;
+}}
+.debug-hdr {{
+    padding:8px 12px;
+    font-size:11px;
+    font-weight:800;
+    color:#92400e;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#fffbeb;
+    border-bottom:1px solid #fde68a;
+}}
+.debug-body {{
+    padding:10px 12px;
+    font-size:10px;
+    font-family:monospace;
+    color:#374151;
+    background:#fffef5;
+    max-height:180px;
+    overflow-y:auto;
+    line-height:1.6;
+}}
+.debug-row {{ margin-bottom:4px; }}
+.debug-key {{ color:#92400e; font-weight:700; }}
+.debug-val {{ color:#059669; }}
+.debug-val-empty {{ color:#dc2626; font-weight:700; }}
 </style>
 </head>
 <body>
 
 <script id="posts-data" type="application/json">{posts_json_str}</script>
 
+<!-- MODAL -->
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">&#x2715;</button>
@@ -8092,6 +8180,15 @@ body {{ padding-bottom:8px; }}
         </div>
     </div>
 
+    <!-- DEBUG PANEL (inline no HTML) -->
+    <div class="debug-panel" id="debug-panel">
+        <div class="debug-hdr" onclick="toggleDebug()">
+            <span>&#128270; Debug — imagens dos posts</span>
+            <span id="debug-chevron">&#9660;</span>
+        </div>
+        <div class="debug-body" id="debug-body" style="display:none"></div>
+    </div>
+
     <!-- GRID -->
     <div class="posts-grid" id="posts-grid"></div>
 
@@ -8099,12 +8196,52 @@ body {{ padding-bottom:8px; }}
 
 <script>
 var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
-var N_COLS = {n_cols_posts};
-var R_SEG  = {r_seg_val};
+var N_COLS   = {n_cols_posts};
+var R_SEG    = {r_seg_val};
 
 var ICON_VIDEO = '&#127916;';
 var ICON_FOTO  = '&#128247;';
 
+/* ── DEBUG ── */
+function buildDebug() {{
+    var body = document.getElementById('debug-body');
+    if (!body) return;
+    var html = '';
+    ALL_POSTS.forEach(function(p, i) {{
+        var thumbVal  = p.thumb || '';
+        var thumbCls  = thumbVal ? 'debug-val' : 'debug-val-empty';
+        var thumbDisp = thumbVal ? thumbVal.substring(0,80) + (thumbVal.length > 80 ? '...' : '') : 'VAZIO / NULL';
+        html +=
+            '<div class="debug-row"><span class="debug-key">Post ' + (i+1) + ':</span></div>'
+            + '<div class="debug-row" style="padding-left:10px">'
+            + '<span class="debug-key">thumb: </span><span class="' + thumbCls + '">' + thumbDisp + '</span>'
+            + '</div>'
+            + '<div class="debug-row" style="padding-left:10px">'
+            + '<span class="debug-key">is_video: </span><span class="debug-val">' + p.is_video + '</span> &nbsp;'
+            + '<span class="debug-key">likes: </span><span class="debug-val">' + (p.likes||0) + '</span> &nbsp;'
+            + '<span class="debug-key">date: </span><span class="debug-val">' + (p.date||'—') + '</span>'
+            + '</div>'
+            + '<div class="debug-row" style="padding-left:10px;color:#9ca3af;font-size:9px">'
+            + (p.caption ? p.caption.substring(0,60) + '...' : 'sem legenda')
+            + '</div>'
+            + '<div style="height:1px;background:#fde68a;margin:5px 0"></div>';
+    }});
+    body.innerHTML = html;
+}}
+
+function toggleDebug() {{
+    var body = document.getElementById('debug-body');
+    var chev = document.getElementById('debug-chevron');
+    if (!body) return;
+    var aberto = body.style.display !== 'none';
+    body.style.display = aberto ? 'none' : 'block';
+    chev.innerHTML = aberto ? '&#9660;' : '&#9650;';
+    setTimeout(syncHeight, 80);
+}}
+
+buildDebug();
+
+/* ── HELPERS ── */
 function fmtNum(n) {{
     n = Math.round(n || 0);
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
@@ -8113,17 +8250,17 @@ function fmtNum(n) {{
 }}
 
 function updateStats(posts) {{
-    var nF  = posts.filter(function(p){{ return !p.is_video; }}).length;
-    var nV  = posts.filter(function(p){{ return  p.is_video; }}).length;
-    var tL  = posts.reduce(function(s,p){{ return s+(p.likes||0); }}, 0);
-    var tC  = posts.reduce(function(s,p){{ return s+(p.comments||0); }}, 0);
-    var bE  = posts.reduce(function(mx,p){{ return Math.max(mx,(p.likes||0)+(p.comments||0)); }}, 0);
-    document.getElementById('stat-total').textContent = posts.length;
-    document.getElementById('stat-fotos').textContent = nF;
+    var nF = posts.filter(function(p){{ return !p.is_video; }}).length;
+    var nV = posts.filter(function(p){{ return  p.is_video; }}).length;
+    var tL = posts.reduce(function(s,p){{ return s+(p.likes||0); }}, 0);
+    var tC = posts.reduce(function(s,p){{ return s+(p.comments||0); }}, 0);
+    var bE = posts.reduce(function(mx,p){{ return Math.max(mx,(p.likes||0)+(p.comments||0)); }}, 0);
+    document.getElementById('stat-total').textContent  = posts.length;
+    document.getElementById('stat-fotos').textContent  = nF;
     document.getElementById('stat-videos').textContent = nV;
-    document.getElementById('stat-likes').textContent = fmtNum(tL);
-    document.getElementById('stat-coms').textContent  = fmtNum(tC);
-    document.getElementById('stat-best').textContent  = fmtNum(bE);
+    document.getElementById('stat-likes').textContent  = fmtNum(tL);
+    document.getElementById('stat-coms').textContent   = fmtNum(tC);
+    document.getElementById('stat-best').textContent   = fmtNum(bE);
 }}
 
 function getFiltered() {{
@@ -8148,60 +8285,107 @@ function buildGrid(posts) {{
         var card = document.createElement('div');
         card.className = 'post-card';
 
-        var capShort    = (p.caption||'').substring(0,80) + ((p.caption||'').length > 80 ? '...' : '');
-        var hasCaption  = !!(p.caption && p.caption.trim());
+        var hasCaption   = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? ICON_VIDEO : ICON_FOTO;
-        var typeLbl      = p.is_video ? 'V&#237;deo' : 'Foto';
+        var typeLbl      = p.is_video ? 'V&iacute;deo' : 'Foto';
+        var thumbUrl     = (p.thumb || '').trim();
 
+        /* ── overlay hover ── */
         var overlayHtml =
             '<div class="card-overlay">'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
             + '</div>';
 
-        var thumbHtml = p.thumb
-            ? '<img src="' + p.thumb + '" loading="lazy" alt="" />'
-            : '<div class="thumb-fallback">' + iconFallback + '</div>';
+        /* ── thumb: mostra URL resumida no debug tooltip ── */
+        var thumbDebugTxt = thumbUrl
+            ? 'URL: ' + thumbUrl.substring(0,60) + (thumbUrl.length > 60 ? '...' : '')
+            : 'SEM URL';
+
+        var thumbHtml;
+        if (thumbUrl) {{
+            thumbHtml =
+                '<img id="thumb_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />'
+                + '<div class="thumb-debug">' + thumbDebugTxt + '</div>';
+        }} else {{
+            thumbHtml =
+                '<div class="thumb-fallback">'
+                + '<span class="thumb-fallback-icon">' + iconFallback + '</span>'
+                + '<span class="thumb-fallback-url">Sem URL de imagem</span>'
+                + '</div>'
+                + '<div class="thumb-debug">SEM URL</div>';
+        }}
+
+        /* ── caption completa ou truncada ── */
+        var capDisplay = hasCaption ? p.caption : '';
 
         card.innerHTML =
-            '<div class="thumb-wrap">'
+            /* THUMB */
+            '<div class="thumb-wrap" id="tw_' + idx + '">'
             + thumbHtml
             + '<div class="type-badge">' + typeLbl + '</div>'
             + overlayHtml
             + '</div>'
+            /* INFO */
             + '<div class="card-info">'
             + (p.date ? '<div class="card-date">' + p.date + '</div>' : '')
-            + '<div class="card-caption">' + capShort + '</div>'
+            /* caption truncada com "ver copy" inline ao fim */
+            + '<div class="card-caption" id="cap_' + idx + '">'
+            + (hasCaption
+                ? (capDisplay.length > 100
+                    ? capDisplay.substring(0,100)
+                      + '<span id="cap_rest_' + idx + '" style="display:none">' + capDisplay.substring(100) + '</span>'
+                      + ' <button class="ver-copy-btn" id="vcb_' + idx + '" onclick="toggleCopy(' + idx + ')">'
+                      + '&#8230; ver mais'
+                      + '</button>'
+                    : capDisplay)
+                : '<span style="color:#d1d5db;font-style:italic">Sem legenda</span>')
+            + '</div>'
+            /* métricas */
             + '<div class="card-metrics">'
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="13" height="13"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</span>'
             + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
             + '<span class="metric-eng">' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
-            + '</div></div>';
+            + '</div>'
+            + '</div>';
 
-        if (p.thumb) {{
-            var img = card.querySelector('img');
-            if (img) {{
-                img.onerror = function() {{
-                    this.parentElement.innerHTML =
-                        '<div class="thumb-fallback">' + iconFallback + '</div>'
-                        + '<div class="type-badge">' + typeLbl + '</div>'
-                        + overlayHtml;
-                }};
+        /* ── onerror da imagem ── */
+        if (thumbUrl) {{
+            var imgEl = card.querySelector('#thumb_' + idx);
+            if (imgEl) {{
+                imgEl.onerror = (function(i, icon, lbl, ov, url) {{
+                    return function() {{
+                        var tw = document.getElementById('tw_' + i);
+                        if (tw) {{
+                            tw.innerHTML =
+                                '<div class="thumb-fallback">'
+                                + '<span class="thumb-fallback-icon">' + icon + '</span>'
+                                + '<span class="thumb-fallback-url">Erro ao carregar:<br>' + url.substring(0,50) + '</span>'
+                                + '</div>'
+                                + '<div class="type-badge">' + lbl + '</div>'
+                                + ov
+                                + '<div class="thumb-debug">ERRO ao carregar: ' + url.substring(0,60) + '</div>';
+                        }}
+                    }};
+                }})(idx, iconFallback, typeLbl, overlayHtml, thumbUrl);
             }}
-        }}
-
-        if (hasCaption) {{
-            var btn = document.createElement('button');
-            btn.className = 'ver-copy-btn';
-            btn.textContent = 'Ver copy completa';
-            btn.onclick = (function(i){{ return function(ev){{ ev.stopPropagation(); openModal(i); }}; }})(idx);
-            card.appendChild(btn);
         }}
 
         grid.appendChild(card);
     }});
 
     syncHeight();
+}}
+
+/* ── VER COPY: expande/recolhe inline ── */
+function toggleCopy(idx) {{
+    var rest = document.getElementById('cap_rest_' + idx);
+    var btn  = document.getElementById('vcb_' + idx);
+    if (!rest || !btn) return;
+    var aberto = rest.style.display !== 'none';
+    rest.style.display = aberto ? 'none' : 'inline';
+    btn.innerHTML = aberto ? '&#8230; ver mais' : ' ver menos';
+    setTimeout(syncHeight, 60);
 }}
 
 function applyFilters() {{
