@@ -6720,13 +6720,13 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
- 
+
     import datetime
     import json
- 
+
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
- 
+
     # ── Cabeçalho ──────────────────────────────────────────────────
     h1, h2 = st.columns([7, 3])
     with h1:
@@ -6749,13 +6749,9 @@ html, body { background: transparent; overflow: hidden; }
 <div class="titulo">Redes Sociais</div>
 <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
 """, height=65)
- 
+
     with h2:
-        coletar = st.button(
-            "Coletar dados",
-            type="primary",
-            use_container_width=True,
-        )
+        coletar = st.button("Coletar dados", type="primary", use_container_width=True)
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         if ultima_coleta:
             st.markdown(
@@ -6763,19 +6759,16 @@ html, body { background: transparent; overflow: hidden; }
                 f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
                 unsafe_allow_html=True,
             )
- 
-    st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
-        unsafe_allow_html=True,
-    )
- 
+
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
+
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
         n = int(n or 0)
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(n)
- 
+
     def salvar_cache_redes(dados: list):
         try:
             payload = {
@@ -6790,7 +6783,7 @@ html, body { background: transparent; overflow: hidden; }
             supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache: {e}", icon="⚠️")
- 
+
     def carregar_cache_redes() -> dict:
         try:
             res = (
@@ -6804,7 +6797,7 @@ html, body { background: transparent; overflow: hidden; }
         except Exception:
             pass
         return {}
- 
+
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_rapidapi(handle: str) -> dict:
         handle_limpo = handle.lstrip("@").strip()
@@ -6814,12 +6807,12 @@ html, body { background: transparent; overflow: hidden; }
             rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
             if not rapidapi_key:
                 return {"erro": "RAPIDAPI_KEY não configurada"}
- 
+
             headers = {
                 "x-rapidapi-key": rapidapi_key,
                 "x-rapidapi-host": "instagram-looter2.p.rapidapi.com",
             }
- 
+
             r = requests.get(
                 f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}",
                 headers=headers,
@@ -6830,14 +6823,14 @@ html, body { background: transparent; overflow: hidden; }
             if isinstance(data, dict):
                 if "data" in data:   user_data = data["data"]
                 elif "user" in data: user_data = data["user"]
- 
+
             if not user_data or "message" in user_data:
                 return {"erro": user_data.get("message", "Perfil não encontrado")}
- 
+
             seg         = int(user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count") or 0)
             total_posts = int(user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count") or 0)
             pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
- 
+
             posts_data = []
             if pk:
                 for endpoint in [
@@ -6883,14 +6876,14 @@ html, body { background: transparent; overflow: hidden; }
                             break
                     except Exception:
                         continue
- 
+
             if posts_data:
                 eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 eng_pct   = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
             else:
                 eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
- 
+
             return {
                 "handle":       "@" + handle_limpo,
                 "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
@@ -6907,7 +6900,7 @@ html, body { background: transparent; overflow: hidden; }
             }
         except Exception as e:
             return {"erro": str(e)}
- 
+
     # ── Lista de perfis ─────────────────────────────────────────────
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
@@ -6915,16 +6908,16 @@ html, body { background: transparent; overflow: hidden; }
     for i, c in enumerate(concorrentes):
         if c.get("instagram") and c["instagram"] not in ("@", ""):
             todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c["instagram"], "tipo": "concorrente"})
- 
+
     if not todas:
         st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
         st.stop()
- 
+
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
- 
+
     cache = carregar_cache_redes()
- 
+
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
@@ -6938,20 +6931,20 @@ html, body { background: transparent; overflow: hidden; }
             "dados": resultados_lista,
         }
         st.toast("✅ Dados coletados e salvos!", icon="✅")
- 
+
     ok = []
     if cache.get("dados"):
         ok    = [r for r in cache["dados"] if not r.get("erro")]
         erros = [r for r in cache["dados"] if r.get("erro")]
         for r in erros:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
- 
+
     # ── Estado de navegação ─────────────────────────────────────────
     if "redes_main_tab" not in st.session_state:
         st.session_state.redes_main_tab = "perfis"
     if "redes_aba_ativa" not in st.session_state:
         st.session_state.redes_aba_ativa = 0
- 
+
     # ── Ghost buttons — abas principais ────────────────────────────
     st.markdown("""
     <style>
@@ -6968,14 +6961,14 @@ html, body { background: transparent; overflow: hidden; }
     }
     </style>
     """, unsafe_allow_html=True)
- 
+
     if st.button("perfis_tab", key="_redes_ghost_tab_perfis_"):
         st.session_state.redes_main_tab = "perfis"
         st.rerun()
     if st.button("analise_tab", key="_redes_ghost_tab_analise_"):
         st.session_state.redes_main_tab = "analise"
         st.rerun()
- 
+
     # ── Ghost buttons — abas de empresa ────────────────────────────
     aba_empresa_ghost_css = []
     for i in range(len(ok)):
@@ -6993,79 +6986,48 @@ html, body { background: transparent; overflow: hidden; }
         """)
     if aba_empresa_ghost_css:
         st.markdown(f"<style>{''.join(aba_empresa_ghost_css)}</style>", unsafe_allow_html=True)
- 
+
     for i in range(len(ok)):
         if st.button(f"redes_aba_{i}", key=f"btn_redes_aba_{i}"):
             st.session_state.redes_aba_ativa = i
             st.rerun()
- 
+
     main_tab = st.session_state.redes_main_tab
- 
+
     # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas) — igual ao Confronto de Sites
+    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
     # ══════════════════════════════════════════════════════════════════
- 
+
     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.nav-bar {{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:12px;
-    width:100%;
-}}
+.nav-bar {{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; width:100%; }}
 .nav-item {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:14px;
-    padding:16px 20px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    gap:14px;
-    transition:all 0.15s;
-    position:relative;
-    overflow:hidden;
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:16px 20px; cursor:pointer; display:flex; align-items:center;
+    gap:14px; transition:all 0.15s; position:relative; overflow:hidden;
 }}
-.nav-item:hover {{
-    border-color:#3a9fd6;
-    box-shadow:0 2px 12px rgba(58,159,214,0.12);
-}}
+.nav-item:hover {{ border-color:#3a9fd6; box-shadow:0 2px 12px rgba(58,159,214,0.12); }}
 .nav-item.active {{
-    background:#0e2a47;
-    border-color:#0e2a47;
+    background:#0e2a47; border-color:#0e2a47;
     box-shadow:0 4px 20px rgba(14,42,71,0.22);
 }}
 .nav-item.active::after {{
-    content:'';
-    position:absolute;
-    bottom:0;left:0;right:0;
-    height:3px;
-    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
-    border-radius:0 0 14px 14px;
+    content:''; position:absolute; bottom:0;left:0;right:0; height:3px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71); border-radius:0 0 14px 14px;
 }}
 .nav-icon {{
-    width:40px;height:40px;border-radius:10px;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-    background:#f3f4f6;
-    transition:background 0.15s;
+    width:40px;height:40px;border-radius:10px; display:flex;align-items:center;
+    justify-content:center; flex-shrink:0; background:#f3f4f6; transition:background 0.15s;
 }}
-.nav-item.active .nav-icon {{
-    background:rgba(255,255,255,0.12);
-}}
+.nav-item.active .nav-icon {{ background:rgba(255,255,255,0.12); }}
 .nav-icon svg {{ width:20px;height:20px; }}
 .nav-content {{ flex:1;min-width:0; }}
-.nav-title {{
-    font-size:15px;font-weight:700;color:#1a2e4a;
-    display:block;margin-bottom:2px;
-}}
+.nav-title {{ font-size:15px;font-weight:700;color:#1a2e4a; display:block;margin-bottom:2px; }}
 .nav-item.active .nav-title {{ color:#ffffff; }}
-.nav-sub {{
-    font-size:12px;color:#9ca3af;
-}}
+.nav-sub {{ font-size:12px;color:#9ca3af; }}
 .nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
 </style>
 <div class="nav-bar">
@@ -7074,8 +7036,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
         </div>
         <div class="nav-content">
@@ -7117,13 +7078,13 @@ function triggerTab(label) {{
 }})();
 </script>
 """, height=90, scrolling=False)
- 
+
     # ══════════════════════════════════════════════════════════════════
     # ABA: PERFIS CONFIGURADOS
     # ══════════════════════════════════════════════════════════════════
- 
+
     if main_tab == "perfis":
- 
+
         if not ok:
             st.markdown("""
             <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
@@ -7134,10 +7095,10 @@ function triggerTab(label) {{
             </div>
             """, unsafe_allow_html=True)
             st.stop()
- 
+
         aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
- 
-        # ── Cards de empresa no topo — estilo Biblioteca de Ads ─────
+
+        # ── Cards de empresa no topo — mesmo estilo Biblioteca de Ads ─────
         empresas_redes_json = []
         for i, r in enumerate(ok):
             is_minha = r.get("tipo") == "minha"
@@ -7151,89 +7112,37 @@ function triggerTab(label) {{
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
                 "cor": cor,
             })
- 
+
         empresas_redes_str = json.dumps(empresas_redes_json, ensure_ascii=False)
- 
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
- 
 .main-wrap {{
-    background:#d2dde9;
-    border:1px solid #e5e7eb;
-    border-radius:16px;
-    overflow:hidden;
-    margin-bottom:0;
+    background:#d2dde9; border:1px solid #e5e7eb;
+    border-radius:16px; overflow:hidden; margin-bottom:0;
 }}
-.cards-grid {{
-    display:grid;
-    grid-template-columns: repeat(3,1fr);
-    gap:15px;
-    padding:15px;
-}}
+.cards-grid {{ display:grid; grid-template-columns: repeat(3,1fr); gap:15px; padding:15px; }}
 .emp-card {{
-    background:#f9fafb;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    padding:16px;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    cursor:pointer;
-    transition:all 0.15s;
-    position:relative;
+    background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px;
+    padding:16px; display:flex; align-items:center; gap:12px;
+    cursor:pointer; transition:all 0.15s; position:relative;
 }}
-.emp-card:hover {{
-    border-color:#3a9fd6;
-    background:#fff;
-    box-shadow:0 2px 10px rgba(58,159,214,0.1);
-}}
-.emp-card.active {{
-    background:#fff;
-    border: 2px solid #3b82f6;
-}}
-.emp-card.active::after {{
-    content:'';
-    position:absolute;
-    bottom:0; left:0; right:0;
-    height:3px;
-    border-radius:0 0 12px 12px;
-}}
+.emp-card:hover {{ border-color:#3a9fd6; background:#fff; box-shadow:0 2px 10px rgba(58,159,214,0.1); }}
+.emp-card.active {{ background:#fff; border: 2px solid #3b82f6; }}
 .emp-icon {{
-    width:44px; height:44px; border-radius:10px;
-    background:#e9eef5;
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
+    width:44px; height:44px; border-radius:10px; background:#e9eef5;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }}
 .emp-card.active .emp-icon {{ background:#dbeafe; }}
 .emp-icon svg {{ width:22px; height:22px; }}
 .emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{
-    font-size:14px; font-weight:700; color:#1a2e4a;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:4px;
-}}
-.emp-handle {{
-    font-size:12px; color:#9ca3af;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:4px;
-}}
-.badge-minha {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#f0fdf4; color:#15803d;
-    border:1px solid #bbf7d0;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700;
-}}
-.badge-conc {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#eff6ff; color:#1d4ed8;
-    border:1px solid #bfdbfe;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700;
-}}
+.emp-nome {{ font-size:14px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
+.emp-handle {{ font-size:12px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
+.badge-minha {{ display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
+.badge-conc {{ display:inline-flex; align-items:center; gap:5px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
 </style>
 <div class="main-wrap">
     <div class="cards-grid" id="cards-grid"></div>
@@ -7241,7 +7150,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 <script>
 var EMPRESAS = {empresas_redes_str};
 var ABA_ATIVA = {aba_ativa};
- 
 function buildUI() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
@@ -7258,21 +7166,16 @@ function buildUI() {{
             + '<rect x="2" y="2" width="20" height="20" rx="5"/>'
             + '<circle cx="12" cy="12" r="4.5" stroke-width="1.5" fill="none"/>'
             + '<circle cx="17.5" cy="6.5" r="1.2" fill="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '"/>'
-            + '</svg>'
-            + '</div>'
+            + '</svg></div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + '<div class="emp-handle">' + (e.handle || '') + '</div>'
-            + badgeHtml
-            + '</div>';
-        card.addEventListener('click', function() {{
-            selectAba(e.i);
-        }});
+            + badgeHtml + '</div>';
+        card.addEventListener('click', function() {{ selectAba(e.i); }});
         grid.appendChild(card);
     }});
     syncHeight();
 }}
- 
 function selectAba(i) {{
     ABA_ATIVA = i;
     document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
@@ -7280,15 +7183,13 @@ function selectAba(i) {{
     if (card) card.classList.add('active');
     triggerBtn('redes_aba_' + i);
 }}
- 
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
- 
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -7300,7 +7201,6 @@ function syncHeight() {{
         }} }} catch(e) {{}}
     }}
 }}
- 
 buildUI();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
@@ -7308,7 +7208,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
- 
+
         # ── Renderiza perfil da aba ativa ───────────────────────────
         r = ok[aba_ativa]
         is_minha  = r.get("tipo") == "minha"
@@ -7320,238 +7220,53 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
         eng_est   = len(r.get("posts", [])) == 0
         posts_list = r.get("posts", [])
- 
-        # ── Header do perfil ────────────────────────────────────────
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.header {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-bottom:none;
-    border-radius:14px 14px 0 0;
-    display:flex; align-items:center; gap:16px;
-    padding:18px 22px 16px;
-}}
-.avatar {{
-    width:52px; height:52px; border-radius:50%;
-    background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
-.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
-.badge {{
-    display:inline-block;
-    background:{badge_bg}; color:{badge_txt};
-    border:1px solid {badge_brd};
-    padding:2px 10px; border-radius:20px;
-    font-size:11px; font-weight:600; margin-top:4px;
-}}
-</style>
-<div class="header">
-    <div class="avatar">{gerar_avatar(r["nome"])}</div>
-    <div>
-        <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
-        <div class="badge">{badge_lbl}</div>
-    </div>
-</div>
-<script>
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '88px'; break; }} }} catch(e) {{}}
-    }}
-}})();
-</script>
-""", height=88, scrolling=False)
- 
-        # ── Métricas + Bio ──────────────────────────────────────────
-        col_metricas, col_bio = st.columns([1, 1], gap="large")
- 
-        with col_metricas:
-            st.markdown(f"""
-<div style='background:#fff;border:1px solid #e5e7eb;border-top:none;padding:18px 20px 20px;'>
-    <div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;
-                letter-spacing:1px;margin-bottom:14px'>Métricas</div>
-    <div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/users-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {fmt_num(r.get("seguidores",0))}
-                </span>
+
+        seg_val      = r.get("seguidores", 0)
+        posts_val    = r.get("total_posts", 0)
+        eng_med_val  = r.get("eng_medio", 0)
+        eng_pct_val  = r.get("eng_pct", 0.0)
+
+        # ── Header do perfil — mesmo estilo Biblioteca de Ads ──────
+        page_pic_redes = ""  # Instagram não retorna pic diretamente
+        avatar_empresa_html = (
+            f'<div style="width:44px;height:44px;border-radius:50%;background:{cor};'
+            f'display:flex;align-items:center;justify-content:center;font-size:16px;'
+            f'font-weight:700;color:#fff;flex-shrink:0">{gerar_avatar(r["nome"])}</div>'
+        )
+
+        st.markdown(f"""
+        <div style='background:#fff;border:1px solid #e5e7eb;border-bottom:none;
+                    border-radius:12px 12px 0 0;overflow:hidden;margin-top:-45px;'>
+            <div style='display:flex;align-items:center;gap:16px;padding:16px 20px'>
+                {avatar_empresa_html}
+                <div style='flex:1;min-width:0'>
+                    <div style='font-size:17px;font-weight:700;color:#111827'>{r["nome"]}</div>
+                    <div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap;'>
+                        <span style='font-size:13px;color:#6b7280;font-weight:500'>{badge_lbl}</span>
+                        <span style='color:#d1d5db;font-size:12px'>·</span>
+                        <span style='font-size:13px;color:#6b7280'>{r.get("handle","")}</span>
+                    </div>
+                </div>
+                <div style='display:flex;align-items:center;gap:0;flex-shrink:0'>
+                    <div style='width:1px;height:40px;background:#e5e7eb;margin-right:20px'></div>
+                    <div style='text-align:center;min-width:80px;margin-right:20px'>
+                        <div style='font-size:28px;font-weight:800;color:#111827;line-height:1'>{fmt_num(seg_val)}</div>
+                        <div style='font-size:11px;color:#394252;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px'>seguidores</div>
+                    </div>
+                    <div style='width:1px;height:40px;background:#e5e7eb;margin-right:20px'></div>
+                    <div style='text-align:center;min-width:60px'>
+                        <div style='font-size:28px;font-weight:800;color:#111827;line-height:1'>{fmt_num(posts_val)}</div>
+                        <div style='font-size:11px;color:#394252;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;margin-top:3px'>postagens</div>
+                    </div>
+                </div>
             </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Seguidores</span>
-        </div>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/camera-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {fmt_num(r.get("total_posts",0))}
-                </span>
-            </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Posts</span>
-        </div>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/heart-solid_blue.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {fmt_num(int(r.get("eng_medio",0)))}
-                </span>
-            </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Eng. Médio</span>
-        </div>
-        <div style='padding:16px 8px;background:#f9fafb;border-radius:10px;
-                    display:flex;flex-direction:column;align-items:center;text-align:center'>
-            <div style='display:flex;align-items:center;gap:8px'>
-                <img src="https://raw.githubusercontent.com/thiagomktsantos/marketylics/74c3f239fe53f7942ad04589f552043ea8d4e9f4/images/icons/chart-line-solid.png" style="width:28px;height:28px;object-fit:contain" />
-                <span style='font-size:24px;font-weight:700;color:#111827;letter-spacing:-1px'>
-                    {r.get("eng_pct",0):.2f}%
-                </span>
-            </div>
-            <span style='font-size:13px;color:#000;font-weight:600;letter-spacing:0.8px'>Engajamento%{"*" if eng_est else ""}</span>
-        </div>
-    </div>
-    {"<div style='font-size:11px;color:#9ca3af;margin-top:10px'>* Engajamento estimado por benchmark</div>" if eng_est else ""}
-</div>
-""", unsafe_allow_html=True)
- 
-        with col_bio:
-            chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
-            if chave_bio_ia not in st.session_state:
-                st.session_state[chave_bio_ia] = ""
- 
-            # Ghost button bio IA
-            st.markdown(f"""
-            <style>
-            .st-key-btn_bio_ia_{aba_ativa} {{
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
- 
-            analisar_bio = st.button(
-                f"__bio_{aba_ativa}__",
-                key=f"btn_bio_ia_{aba_ativa}",
-                use_container_width=True,
-            )
-            if analisar_bio:
-                if gemini_model is None:
-                    st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Analisando bio…"):
-                        try:
-                            prompt_bio = f"""
-Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
- 
-Bio: "{bio_txt}"
-Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
-Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
- 
-Responda com:
-### Posicionamento
-Qual é o posicionamento transmitido pela bio?
- 
-### Pontos Fortes
-(2 pontos positivos da bio)
- 
-### O que melhorar
-(2 sugestões concretas de melhoria)
- 
-### Bio sugerida
-Escreva uma versão melhorada da bio (máx. 150 caracteres).
-"""
-                            resp = gemini_model.generate_content(prompt_bio)
-                            st.session_state[chave_bio_ia] = resp.text
-                        except Exception as e:
-                            st.session_state[chave_bio_ia] = f"Erro: {e}"
- 
-            bio_resultado = st.session_state.get(chave_bio_ia, "")
-            bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
- 
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; -webkit-font-smoothing:antialiased; }}
-body {{ padding-bottom:4px; }}
-.wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-radius:0;
-    overflow:hidden;
-    height:100%;
-}}
-.hdr {{
-    padding:12px 18px;
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1px;
-    border-bottom:1px solid #e5e7eb; background:#fff;
-}}
-.body {{ padding:14px 18px; }}
-.bio-text {{
-    font-size:14px; color:#374151; line-height:1.7;
-    min-height:40px; font-style:italic; margin-bottom:16px;
-}}
-.btn-ia {{
-    width:100%; padding:10px; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; font-size:14px; font-weight:600; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-}}
-.btn-ia:hover {{ background:#dbeafe; }}
-.resultado {{
-    margin-top:12px; background:#f0fdf4; border:1px solid #86efac;
-    border-radius:8px; padding:12px 14px;
-    font-size:13px; color:#374151; line-height:1.7;
-    max-height:220px; overflow-y:auto;
-}}
-</style>
-<div class="wrap">
-    <div class="hdr">Bio</div>
-    <div class="body">
-        <div class="bio-text">
-            {f'&ldquo;{bio_txt}&rdquo;' if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}
-        </div>
-        <div style="border-top:1px solid #f3f4f6;padding-top:14px">
-            <button class="btn-ia" onclick="
-                const btns = window.parent.document.querySelectorAll('button');
-                for (const b of btns) {{
-                    if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
-                }}
-            ">Analisar Bio 🤖</button>
-        </div>
-        {'<div class="resultado">' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
-    </div>
-</div>
-<script>
-function syncH() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; break; }} }} catch(e) {{}}
-    }}
-}}
-if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncH);
-window.addEventListener('load', syncH);
-setTimeout(syncH, 100); setTimeout(syncH, 400);
-</script>
-""", height=200, scrolling=False)
- 
+        </div>""", unsafe_allow_html=True)
+
         # ── Sub-abas: Postagens / Análise de IA ────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
- 
+
         # Ghost buttons sub-abas
         for sub in ["postagens", "ia"]:
             ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
@@ -7571,9 +7286,9 @@ setTimeout(syncH, 100); setTimeout(syncH, 400);
             if st.button(f"redes_sub_{aba_ativa}_{sub}", key=ghost_k):
                 st.session_state[redes_subtab_key] = sub
                 st.rerun()
- 
+
         subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
- 
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -7593,8 +7308,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
 .tab-btn.active {{
     color:#1a2e4a; border-bottom:3px solid #3a9fd6;
-    background:#fff; font-weight:800;
-    border-top:1px solid #d8d9da;
+    background:#fff; font-weight:800; border-top:1px solid #d8d9da;
 }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
 </style>
@@ -7621,7 +7335,7 @@ function triggerSub(sub) {{
     var label = 'redes_sub_{aba_ativa}_' + sub;
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -7633,149 +7347,485 @@ function triggerSub(sub) {{
 }})();
 </script>
 """, height=52, scrolling=False)
- 
+
         # ── SUB-ABA: POSTAGENS ──────────────────────────────────────
         if subtab_atual == "postagens":
- 
-            def _fmt(n):
-                n = int(n or 0)
-                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
-                if n >= 1_000:     return f"{n/1_000:.1f}K"
-                return str(n)
- 
-            def _esc(s):
-                import unicodedata as _ud2
-                return (s or "").replace("\\", "\\\\").replace("'", "\\'").replace('"', "&quot;").replace("\n", " ").replace("\r", "")
- 
-            if not posts_list:
-                tbl_rows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:24px">Sem posts disponíveis.</td></tr>'
-            else:
-                tbl_rows = ""
-                for p in posts_list:
-                    thumb    = p.get("thumb", "")
-                    cap      = p.get("caption", "")
-                    cap_esc  = _esc(cap)
-                    cap_preview = _esc(cap[:95]) if len(cap) > 95 else _esc(cap)
-                    has_more = len(cap) > 110
-                    isVid    = p.get("is_video", False)
-                    likes    = p.get("likes", 0)
-                    coms     = p.get("comments", 0)
- 
-                    img_cell = (
-                        f'<img src="{thumb}" style="width:48px;height:48px;border-radius:8px;'
-                        f'object-fit:cover;border:1px solid #e5e7eb;display:block;cursor:pointer" '
-                        f'onclick="openImg(\'{_esc(thumb)}\')" '
-                        f'onerror="this.outerHTML=\'&lt;div style=&quot;width:48px;height:48px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af&quot;&gt;📷&lt;/div&gt;\'" />'
-                    ) if thumb else (
-                        f'<div style="width:48px;height:48px;border-radius:8px;background:#f3f4f6;'
-                        f'display:flex;align-items:center;justify-content:center;font-size:20px">{"🎬" if isVid else "📷"}</div>'
-                    )
- 
-                    ver_copy = ""
-                    if cap:
-                        ver_copy = "<span style='color:#1e3050;font-weight:700;font-style:normal;flex-shrink:0;white-space:nowrap;margin-left:4px'>[🔍 ver copy]</span>"
- 
-                    copy_cell = (
-                        f'<div onclick="openCopy2(\'{cap_esc}\')" '
-                        f'style="cursor:pointer;display:flex;align-items:center;width:100%;overflow:hidden">'
-                        f'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'
-                        f'color:#374151;font-style:italic">{cap_preview}{"…" if has_more else ""}</span>'
-                        f'{ver_copy}'
-                        f'</div>'
-                    ) if cap else '<span style="color:#d1d5db">—</span>'
- 
-                    tbl_rows += (
-                        f"<tr>"
-                        f"<td>{p.get('date','—')}</td>"
-                        f"<td>{img_cell}</td>"
-                        f"<td>{'Vídeo' if isVid else 'Foto'}</td>"
-                        f"<td>{_fmt(likes)}</td>"
-                        f"<td>{_fmt(coms)}</td>"
-                        f"<td>{_fmt(likes+coms)}</td>"
-                        f"<td>{copy_cell}</td>"
-                        f"</tr>"
-                    )
- 
+
+            # ── Ghost buttons para filtros ──────────────────────────
+            for fk in ["redes_filtro_tipo", "redes_filtro_ordem"]:
+                full_key = f"btn_{fk}_{aba_ativa}"
+                st.markdown(f"""
+                <style>
+                .st-key-{full_key} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:0 !important; height:0 !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; display:none !important;
+                }}
+                .stElementContainer:has(.st-key-{full_key}) {{
+                    display:none !important; height:0 !important; min-height:0 !important;
+                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+
+            # ── State para filtros ──────────────────────────────────
+            filtro_tipo_key  = f"redes_filtro_tipo_{aba_ativa}"
+            filtro_ordem_key = f"redes_filtro_ordem_{aba_ativa}"
+            if filtro_tipo_key not in st.session_state:
+                st.session_state[filtro_tipo_key] = "todos"
+            if filtro_ordem_key not in st.session_state:
+                st.session_state[filtro_ordem_key] = "recentes"
+
+            # ── Calcular stats para os stat cards ──────────────────
+            posts_filtered = posts_list
+            n_fotos    = sum(1 for p in posts_list if not p.get("is_video"))
+            n_videos   = sum(1 for p in posts_list if p.get("is_video"))
+            n_total    = len(posts_list)
+            eng_medio_calc = round(
+                sum(p["likes"] + p["comments"] for p in posts_list) / len(posts_list), 1
+            ) if posts_list else 0
+
+            # Ghost selects para tipo e ordem (Streamlit)
+            tipo_sel_css  = f"st-key-redes_tipo_sel_{aba_ativa}"
+            ordem_sel_css = f"st-key-redes_ordem_sel_{aba_ativa}"
+            st.markdown(f"""
+            <style>
+            .{tipo_sel_css}, .{ordem_sel_css} {{
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:0 !important; height:0 !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; display:none !important;
+            }}
+            .stElementContainer:has(.{tipo_sel_css}),
+            .stElementContainer:has(.{ordem_sel_css}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
+            filtro_tipo_val  = st.selectbox("tipo",  ["todos","fotos","videos"], key=f"redes_tipo_sel_{aba_ativa}", label_visibility="hidden")
+            filtro_ordem_val = st.selectbox("ordem", ["recentes","curtidas","comentarios","engajamento"], key=f"redes_ordem_sel_{aba_ativa}", label_visibility="hidden")
+
+            # Aplicar filtros
+            posts_filtered = posts_list
+            if filtro_tipo_val == "fotos":
+                posts_filtered = [p for p in posts_list if not p.get("is_video")]
+            elif filtro_tipo_val == "videos":
+                posts_filtered = [p for p in posts_list if p.get("is_video")]
+
+            if filtro_ordem_val == "curtidas":
+                posts_filtered = sorted(posts_filtered, key=lambda p: p.get("likes", 0), reverse=True)
+            elif filtro_ordem_val == "comentarios":
+                posts_filtered = sorted(posts_filtered, key=lambda p: p.get("comments", 0), reverse=True)
+            elif filtro_ordem_val == "engajamento":
+                posts_filtered = sorted(posts_filtered, key=lambda p: p.get("likes", 0) + p.get("comments", 0), reverse=True)
+            # recentes = manter ordem original
+
+            # ── Stats + Bio section ─────────────────────────────────
+            # ── Bio IA ghost button ─────────────────────────────────
+            chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
+            if chave_bio_ia not in st.session_state:
+                st.session_state[chave_bio_ia] = ""
+
+            st.markdown(f"""
+            <style>
+            .st-key-btn_bio_ia_{aba_ativa} {{
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
+            analisar_bio = st.button(f"__bio_{aba_ativa}__", key=f"btn_bio_ia_{aba_ativa}", use_container_width=True)
+            if analisar_bio:
+                if gemini_model is None:
+                    st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando bio…"):
+                        try:
+                            prompt_bio = f"""
+Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
+Bio: "{bio_txt}"
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
+Responda com:
+### Posicionamento
+### Pontos Fortes (2 pontos)
+### O que melhorar (2 sugestões)
+### Bio sugerida (máx. 150 caracteres)
+"""
+                            resp_bio = gemini_model.generate_content(prompt_bio)
+                            st.session_state[chave_bio_ia] = resp_bio.text
+                        except Exception as e_bio:
+                            st.session_state[chave_bio_ia] = f"Erro: {e_bio}"
+
+            bio_resultado     = st.session_state.get(chave_bio_ia, "")
+            bio_resultado_html = bio_resultado.replace("\n","<br>") if bio_resultado else ""
+
+            # ── Filtros + Stats + Grid de postagens (HTML unificado) ─
+            posts_cards_data = []
+            for p in posts_filtered:
+                thumb   = p.get("thumb", "")
+                cap     = p.get("caption", "")
+                likes   = p.get("likes", 0)
+                coms    = p.get("comments", 0)
+                isVid   = p.get("is_video", False)
+                date_p  = p.get("date", "")
+                cap_esc = cap.replace("\\","\\\\").replace("'","\\'").replace('"',"&quot;").replace("\n"," ").replace("\r","")
+                cap_prev = cap_esc[:90] + ("…" if len(cap) > 90 else "")
+                posts_cards_data.append({
+                    "thumb": thumb,
+                    "cap": cap_esc,
+                    "cap_prev": cap_prev,
+                    "likes": likes,
+                    "comments": coms,
+                    "eng": likes + coms,
+                    "is_video": isVid,
+                    "date": date_p,
+                })
+
+            posts_json_str  = json.dumps(posts_cards_data, ensure_ascii=False)
+            filtro_tipo_cur = filtro_tipo_val
+            filtro_ord_cur  = filtro_ordem_val
+
             components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!DOCTYPE html><html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{{margin:0;padding:0;box-sizing:border-box;}}
-html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}}
-table{{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;}}
-th{{background:#f9fafb;color:#6b7280;font-weight:700;padding:12px 14px;text-align:left;
-    border-bottom:2px solid #e5e7eb;font-size:11px;text-transform:uppercase;letter-spacing:0.6px;
-    position:sticky;top:0;z-index:1;}}
-td{{padding:8px 14px;border-bottom:1px solid #f3f4f6;color:#374151;background:#fff;
-    vertical-align:middle;line-height:1.4;overflow:hidden;}}
-tr:last-child td{{border-bottom:none;}}
-tr:hover td{{background:#f9fafb;}}
-th:nth-child(1),td:nth-child(1){{width:90px;}}
-th:nth-child(2),td:nth-child(2){{width:68px;text-align:center;}}
-th:nth-child(3),td:nth-child(3){{width:60px;text-align:center;}}
-th:nth-child(4),td:nth-child(4){{width:80px;text-align:center;}}
-th:nth-child(5),td:nth-child(5){{width:100px;text-align:center;}}
-th:nth-child(6),td:nth-child(6){{width:100px;text-align:center;}}
-th:nth-child(7),td:nth-child(7){{width:auto;min-width:0;}}
-td:nth-child(7){{overflow:hidden;}}
-.modal-bg{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;}}
-.modal-bg.open{{display:flex;}}
-.modal{{background:#fff;border-radius:14px;padding:24px;max-width:400px;width:90%;max-height:80vh;
-        overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;}}
-.modal-title{{font-size:13px;font-weight:700;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.5px;
-              margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f3f4f6;}}
-.modal-text{{font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap;}}
-.modal-img{{width:100%;border-radius:10px;object-fit:cover;border:1px solid #e5e7eb;margin-bottom:10px;}}
-.modal-close{{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;
-              color:#9ca3af;cursor:pointer;}}
-.modal-close:hover{{color:#111827;}}
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overflow:visible; }}
+body {{ padding-bottom:8px; }}
+
+/* ── Filtros bar ── */
+.filters-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-bottom:none;
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}}
+.filter-group {{ display:flex; align-items:center; gap:6px; }}
+.filter-label {{ font-size:12px; font-weight:700; color:#9ca3af; white-space:nowrap; }}
+.filter-btn {{
+    padding:6px 14px; border-radius:20px; border:1px solid #e5e7eb;
+    background:#f9fafb; font-size:12px; font-weight:600; color:#6b7280;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.12s;
+    white-space:nowrap;
+}}
+.filter-btn:hover {{ background:#f3f4f6; color:#374151; border-color:#9ca3af; }}
+.filter-btn.active {{ background:#0e2a47; color:#fff; border-color:#0e2a47; }}
+.filter-sep {{ width:1px; height:24px; background:#e5e7eb; flex-shrink:0; }}
+
+/* ── Stats row ── */
+.stats-outer {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-bottom:none;
+    padding:14px 18px 0;
+}}
+.stats-row {{
+    display:flex; gap:10px; flex-wrap:wrap; padding-bottom:14px;
+    border-bottom:1px solid #f3f4f6;
+}}
+.stat-card {{
+    flex:1; min-width:80px; background:#f9fafb; border:1px solid #e5e7eb;
+    border-radius:10px; padding:12px 16px; text-align:center;
+}}
+.stat-num {{ font-size:22px; font-weight:800; color:#111827; }}
+.stat-num-green {{ font-size:22px; font-weight:800; color:#15803d; }}
+.stat-lbl {{ color:#6b7280; font-size:12px; font-weight:600; text-transform:uppercase; margin-top:2px; }}
+
+/* ── Bio card ── */
+.bio-card {{
+    background:#f9fafb; border-radius:10px; padding:14px 16px;
+    margin-top:14px; font-size:13px; color:#374151; line-height:1.7;
+}}
+.bio-card-hdr {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:0.8px;
+    margin-bottom:8px;
+}}
+.bio-text {{ font-style:italic; margin-bottom:10px; }}
+.btn-bio {{
+    width:100%; padding:9px; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:13px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+}}
+.btn-bio:hover {{ background:#dbeafe; }}
+.bio-resultado {{
+    margin-top:10px; background:#f0fdf4; border:1px solid #86efac;
+    border-radius:8px; padding:10px 14px;
+    font-size:12px; color:#374151; line-height:1.7;
+    max-height:160px; overflow-y:auto;
+}}
+
+/* ── Grid de postagens ── */
+.posts-section {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-radius:0 0 12px 12px;
+    overflow:hidden;
+}}
+.posts-hdr {{
+    padding:14px 18px;
+    font-size:12px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.5px;
+    border-bottom:1px solid #e5e7eb;
+}}
+.posts-grid {{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    padding:14px 18px 18px;
+}}
+.post-card {{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    transition:box-shadow 0.15s;
+}}
+.post-card:hover {{ box-shadow:0 4px 16px rgba(0,0,0,0.10); }}
+.post-thumb {{
+    width:100%; aspect-ratio:1/1;
+    background:#e5e7eb;
+    position:relative;
+    cursor:pointer;
+    overflow:hidden;
+    flex-shrink:0;
+}}
+.post-thumb img {{
+    width:100%; height:100%; object-fit:cover; display:block;
+}}
+.post-thumb-fallback {{
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; background:#f3f4f6;
+}}
+.post-video-badge {{
+    position:absolute; top:6px; right:6px;
+    background:rgba(0,0,0,0.55); color:#fff;
+    font-size:10px; font-weight:700;
+    padding:2px 7px; border-radius:4px;
+}}
+.post-stats {{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 10px 6px;
+    border-bottom:1px solid #f3f4f6;
+    font-size:12px; color:#6b7280;
+}}
+.post-stat {{ display:flex; align-items:center; gap:4px; font-weight:600; }}
+.post-copy {{
+    padding:6px 10px 10px;
+    font-size:11px; color:#374151; line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2;
+    -webkit-box-orient:vertical; overflow:hidden;
+    flex:1;
+    cursor:pointer;
+}}
+.post-copy:hover {{ color:#1d4ed8; }}
+.post-date {{ font-size:10px; color:#9ca3af; padding:0 10px 8px; }}
+
+/* ── Modal ── */
+.modal-bg {{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9000; align-items:center; justify-content:center; }}
+.modal-bg.open {{ display:flex; }}
+.modal {{ background:#fff; border-radius:14px; padding:24px; max-width:440px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative; }}
+.modal-close {{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer; }}
+.modal-title {{ font-size:13px; font-weight:700; color:#1a2e4a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; }}
+.modal-img {{ width:100%; border-radius:10px; object-fit:cover; border:1px solid #e5e7eb; margin-bottom:10px; }}
+.modal-text {{ font-size:14px; color:#374151; line-height:1.7; white-space:pre-wrap; }}
 </style>
-<div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;overflow:hidden">
-    <div style="padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;
-                text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;
-                background:#fff;">Postagens</div>
-    <div style="max-height:460px;overflow-y:auto;overflow-x:hidden">
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th><th>Criativo</th><th>Tipo</th>
-                    <th>Curtidas</th><th>Comentários</th><th>Engaj.</th><th>Copy</th>
-                </tr>
-            </thead>
-            <tbody>{tbl_rows}</tbody>
-        </table>
+</head>
+<body>
+
+<!-- Filtros -->
+<div class="filters-wrap">
+    <div class="filter-group">
+        <span class="filter-label">Tipo:</span>
+        <button class="filter-btn {'active' if filtro_tipo_cur == 'todos' else ''}" onclick="setTipo('todos',this)">Todos</button>
+        <button class="filter-btn {'active' if filtro_tipo_cur == 'fotos' else ''}" onclick="setTipo('fotos',this)">📷 Fotos</button>
+        <button class="filter-btn {'active' if filtro_tipo_cur == 'videos' else ''}" onclick="setTipo('videos',this)">🎬 Vídeos</button>
+    </div>
+    <div class="filter-sep"></div>
+    <div class="filter-group">
+        <span class="filter-label">Ordenar:</span>
+        <button class="filter-btn {'active' if filtro_ord_cur == 'recentes' else ''}" onclick="setOrdem('recentes',this)">Mais recentes</button>
+        <button class="filter-btn {'active' if filtro_ord_cur == 'curtidas' else ''}" onclick="setOrdem('curtidas',this)">Mais curtidas</button>
+        <button class="filter-btn {'active' if filtro_ord_cur == 'comentarios' else ''}" onclick="setOrdem('comentarios',this)">Mais comentários</button>
+        <button class="filter-btn {'active' if filtro_ord_cur == 'engajamento' else ''}" onclick="setOrdem('engajamento',this)">Mais engajamento</button>
     </div>
 </div>
-<div class="modal-bg" id="modal2" onclick="if(event.target===this)this.classList.remove('open')">
+
+<!-- Stats + Bio -->
+<div class="stats-outer">
+    <div class="stats-row">
+        <div class="stat-card"><div class="stat-num-green">{n_total}</div><div class="stat-lbl">Postagens</div></div>
+        <div class="stat-card"><div class="stat-num">{n_fotos}</div><div class="stat-lbl">Imagens</div></div>
+        <div class="stat-card"><div class="stat-num">{n_videos}</div><div class="stat-lbl">Vídeos</div></div>
+        <div class="stat-card"><div class="stat-num">{fmt_num(int(eng_med_val))}</div><div class="stat-lbl">Eng. médio</div></div>
+        <div class="stat-card"><div class="stat-num">{eng_pct_val:.2f}%</div><div class="stat-lbl">Engajamento</div></div>
+    </div>
+    <!-- Bio -->
+    <div class="bio-card">
+        <div class="bio-card-hdr">Bio do Perfil</div>
+        <div class="bio-text">{"&ldquo;" + bio_txt + "&rdquo;" if bio_txt else '<span style="color:#d1d5db">Sem bio cadastrada</span>'}</div>
+        <button class="btn-bio" onclick="
+            const btns = window.parent.document.querySelectorAll('button');
+            for (const b of btns) {{
+                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
+            }}
+        ">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+            Analisar Bio com IA 🤖
+        </button>
+        {'<div class="bio-resultado">' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
+    </div>
+</div>
+
+<!-- Grid de postagens -->
+<div class="posts-section">
+    <div class="posts-hdr">Postagens ({len(posts_filtered)})</div>
+    <div class="posts-grid" id="posts-grid"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
-        <button class="modal-close" onclick="document.getElementById('modal2').classList.remove('open')">✕</button>
-        <div class="modal-title" id="modal2-title"></div>
-        <img id="modal2-img" class="modal-img" src="" style="display:none" />
-        <div class="modal-text" id="modal2-text"></div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-title" id="modal-title"></div>
+        <img id="modal-img" class="modal-img" src="" style="display:none" />
+        <div class="modal-text" id="modal-text"></div>
     </div>
 </div>
+
 <script>
-function openImg(url){{
-    document.getElementById('modal2-title').textContent='Imagem do Post';
-    var img=document.getElementById('modal2-img');
-    img.src=url;img.style.display='block';
-    document.getElementById('modal2-text').textContent='';
-    document.getElementById('modal2').classList.add('open');
-}}
-function openCopy2(txt){{
-    document.getElementById('modal2-title').textContent='Copy Completa';
-    document.getElementById('modal2-img').style.display='none';
-    document.getElementById('modal2-text').textContent=txt;
-    document.getElementById('modal2').classList.add('open');
-}}
-(function(){{
-    var iframes=window.parent.document.querySelectorAll('iframe');
-    for(var i=0;i<iframes.length;i++){{
-        try{{if(iframes[i].contentWindow===window){{iframes[i].style.height='540px';break;}}}}catch(e){{}}
+var POSTS = {posts_json_str};
+
+function buildGrid() {{
+    var grid = document.getElementById('posts-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    if (POSTS.length === 0) {{
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:32px;font-size:14px">Sem postagens disponíveis.</div>';
+        syncHeight(); return;
     }}
-}})();
+
+    POSTS.forEach(function(p, idx) {{
+        var card = document.createElement('div');
+        card.className = 'post-card';
+
+        var thumbHtml = '';
+        if (p.thumb) {{
+            thumbHtml = '<div class="post-thumb" onclick="openImg(\'' + p.thumb.replace(/'/g,"") + '\')">'
+                + '<img src="' + p.thumb + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=&quot;post-thumb-fallback&quot;>' + (p.is_video ? '🎬' : '📷') + '</div>\'" />'
+                + (p.is_video ? '<div class="post-video-badge">▶ Vídeo</div>' : '')
+                + '</div>';
+        }} else {{
+            thumbHtml = '<div class="post-thumb"><div class="post-thumb-fallback">' + (p.is_video ? '🎬' : '📷') + '</div></div>';
+        }}
+
+        var statsHtml = '<div class="post-stats">'
+            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes) + '</span>'
+            + '<span class="post-stat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments) + '</span>'
+            + '<span class="post-stat" style="color:#8b5cf6"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' + fmtNum(p.eng) + '</span>'
+            + '</div>';
+
+        var copyHtml = p.cap
+            ? '<div class="post-copy" onclick="openCopy(\'' + p.cap + '\')">' + p.cap_prev + '</div>'
+            : '<div class="post-copy" style="color:#d1d5db;font-style:italic">Sem legenda</div>';
+
+        var dateHtml = p.date ? '<div class="post-date">' + p.date + '</div>' : '';
+
+        card.innerHTML = thumbHtml + statsHtml + copyHtml + dateHtml;
+        grid.appendChild(card);
+    }});
+    syncHeight();
+}}
+
+function fmtNum(n) {{
+    n = Math.round(n || 0);
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+    return String(n);
+}}
+
+function openImg(url) {{
+    document.getElementById('modal-title').textContent = 'Imagem da Postagem';
+    var img = document.getElementById('modal-img');
+    img.src = url; img.style.display = 'block';
+    document.getElementById('modal-text').textContent = '';
+    document.getElementById('modal-bg').classList.add('open');
+}}
+
+function openCopy(txt) {{
+    document.getElementById('modal-title').textContent = 'Legenda Completa';
+    document.getElementById('modal-img').style.display = 'none';
+    document.getElementById('modal-text').textContent = txt;
+    document.getElementById('modal-bg').classList.add('open');
+}}
+
+function closeModal() {{
+    document.getElementById('modal-bg').classList.remove('open');
+}}
+
+function setTipo(val, el) {{
+    syncStreamlitSelect('redes_tipo_sel_{aba_ativa}', val);
+}}
+
+function setOrdem(val, el) {{
+    syncStreamlitSelect('redes_ordem_sel_{aba_ativa}', val);
+}}
+
+function syncStreamlitSelect(ariaLabel, value) {{
+    var inputs = window.parent.document.querySelectorAll('input[aria-label="' + ariaLabel + '"]');
+    if (!inputs.length) return;
+    var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.parent.HTMLInputElement.prototype, 'value').set;
+    nativeInputValueSetter.call(inputs[0], value);
+    inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
+    setTimeout(function() {{
+        var btns = window.parent.document.querySelectorAll('button');
+        for (var b of btns) {{
+            if ((b.textContent||'').trim() === value) {{ b.click(); break; }}
+        }}
+    }}, 100);
+}}
+
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var frames = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < frames.length; i++) {{
+        try {{ if (frames[i].contentWindow === window) {{
+            frames[i].style.height = (h + 8) + 'px';
+            frames[i].style.minHeight = '0';
+            break;
+        }} }} catch(e) {{}}
+    }}
+}}
+
+buildGrid();
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1200);
 </script>
-""", height=540, scrolling=False)
- 
+</body></html>
+""", height=600, scrolling=False)
+
         # ── SUB-ABA: ANÁLISE DE IA ──────────────────────────────────
         else:
             chave_criativo = f"ia_criativo_{r['handle']}"
@@ -7784,13 +7834,13 @@ function openCopy2(txt){{
             for ch in [chave_criativo, chave_copy, chave_geral]:
                 if ch not in st.session_state:
                     st.session_state[ch] = ""
- 
+
             resumo_posts = "\n".join([
                 f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
                 f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
                 for p in posts_list[:12]
             ]) if posts_list else "Sem posts disponíveis."
- 
+
             perfil_ctx = f"""
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
@@ -7798,7 +7848,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
 Últimos posts:
 {resumo_posts}
 """
- 
+
             # Ghost buttons IA
             for btn_sfx in ["criativo", "copy", "geral"]:
                 ghost_k_ia = f"btn_{btn_sfx}_{aba_ativa}_ia"
@@ -7811,7 +7861,7 @@ Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. mé
                 }}
                 </style>
                 """, unsafe_allow_html=True)
- 
+
             if st.button(f"__criativo_{aba_ativa}__", key=f"btn_criativo_{aba_ativa}_ia"):
                 if gemini_model is None:
                     st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
@@ -7834,7 +7884,7 @@ Seja direto e objetivo.
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_criativo] = f"Erro: {e}"
- 
+
             if st.button(f"__copy_{aba_ativa}__", key=f"btn_copy_{aba_ativa}_ia"):
                 if gemini_model is None:
                     st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
@@ -7857,7 +7907,7 @@ Seja direto e objetivo.
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_copy] = f"Erro: {e}"
- 
+
             if st.button(f"__geral_{aba_ativa}__", key=f"btn_geral_{aba_ativa}_ia"):
                 if gemini_model is None:
                     st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
@@ -7880,11 +7930,19 @@ Seja direto e objetivo.
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_geral] = f"Erro: {e}"
- 
+
             criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
             copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
             geral_html_ia = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
- 
+
+            # ── Métricas inline no painel IA ─────────────────────
+            seg_f      = r.get("seguidores", 0)
+            posts_f    = r.get("total_posts", 0)
+            eng_med_f  = r.get("eng_medio", 0)
+            eng_pct_f  = r.get("eng_pct", 0.0)
+            n_fotos_f  = sum(1 for p in posts_list if not p.get("is_video"))
+            n_videos_f = sum(1 for p in posts_list if p.get("is_video"))
+
             def _panel_ia_redes(html_content, btn_label, btn_trigger):
                 btn_html = f"""
                     <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
@@ -7892,8 +7950,7 @@ Seja direto e objetivo.
                             const btns = window.parent.document.querySelectorAll('button');
                             for (const b of btns) {{
                                 if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{
-                                    b.click();
-                                    break;
+                                    b.click(); break;
                                 }}
                             }}
                         " style="
@@ -7918,13 +7975,41 @@ Seja direto e objetivo.
                     f'Clique no botão abaixo para gerar a análise.</div>'
                     f'{btn_html}'
                 )
- 
+
             ia_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
 body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
+
+/* ── Métricas ── */
+.metrics-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-bottom:none;
+    padding:16px 18px;
+}}
+.metrics-hdr {{
+    font-size:11px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:0.8px;
+    margin-bottom:12px;
+}}
+.metrics-grid {{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+}}
+.metric-card {{
+    background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;
+    padding:14px 12px; text-align:center;
+}}
+.metric-num {{ font-size:22px; font-weight:800; color:#111827; }}
+.metric-num-green {{ font-size:22px; font-weight:800; color:#15803d; }}
+.metric-lbl {{ font-size:11px; color:#6b7280; font-weight:600; text-transform:uppercase; margin-top:3px; }}
+
+/* ── Tabs de análise ── */
 .ia-wrap {{
     background:#fff;
     border:1px solid #e5e7eb;
@@ -7939,34 +8024,58 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
     border-bottom:1px solid #e5e7eb;
     background:#fff;
 }}
-.tabs {{
-    display:flex;
-    border-bottom:1px solid #e5e7eb;
-    background:#f9fafb;
-}}
+.tabs {{ display:flex; border-bottom:1px solid #e5e7eb; background:#f9fafb; }}
 .tab {{
     flex:1; padding:11px 0; text-align:center;
-    font-size:14px; font-weight:600; color:#9ca3af;
+    font-size:13px; font-weight:600; color:#9ca3af;
     cursor:pointer; border:none; background:transparent;
     border-bottom:2px solid transparent; margin-bottom:-1px;
     font-family:'DM Sans',sans-serif; transition:color 0.15s;
 }}
 .tab:hover {{ color:#374151; background:#f3f4f6; }}
-.tab.active {{
-    color:#1a2e4a;
-    border-bottom:2px solid #3a9fd6;
-    background:#fff;
-}}
+.tab.active {{ color:#1a2e4a; border-bottom:2px solid #3a9fd6; background:#fff; }}
 .panel {{ display:none; }}
 .panel.active {{ display:block; }}
 </style>
- 
+
+<!-- Métricas -->
+<div class="metrics-wrap">
+    <div class="metrics-hdr">Métricas do perfil</div>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-num-green">{fmt_num(seg_f)}</div>
+            <div class="metric-lbl">Seguidores</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-num">{fmt_num(posts_f)}</div>
+            <div class="metric-lbl">Postagens</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-num">{eng_pct_f:.2f}%</div>
+            <div class="metric-lbl">Engajamento</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-num">{fmt_num(int(eng_med_f))}</div>
+            <div class="metric-lbl">Eng. médio</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-num">{n_fotos_f}</div>
+            <div class="metric-lbl">Fotos</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-num">{n_videos_f}</div>
+            <div class="metric-lbl">Vídeos</div>
+        </div>
+    </div>
+</div>
+
+<!-- Análises IA -->
 <div class="ia-wrap">
     <div class="ia-header">Análise de Conteúdos</div>
     <div class="tabs">
-        <button class="tab active" onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
-        <button class="tab"        onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
-        <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
+        <button class="tab active" onclick="showTab('geral',this)">📊 Geral</button>
+        <button class="tab"        onclick="showTab('criativo',this)">🎨 Criativos</button>
+        <button class="tab"        onclick="showTab('copy',this)">✍️ Copys</button>
     </div>
     <div id="panel-geral" class="panel active">
         {_panel_ia_redes(geral_html_ia, "Gerar Análise de Postagens 🤖", f"__geral_{aba_ativa}__")}
@@ -7978,7 +8087,7 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
         {_panel_ia_redes(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{aba_ativa}__")}
     </div>
 </div>
- 
+
 <script>
 function syncHeight() {{
     var h = document.documentElement.scrollHeight || document.body.scrollHeight;
@@ -8001,14 +8110,14 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight, 1000);
 </script>
 """
-            components.html(ia_html, height=420, scrolling=False)
- 
+            components.html(ia_html, height=600, scrolling=False)
+
     # ══════════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA — Comparativo geral
     # ══════════════════════════════════════════════════════════════════
- 
+
     elif main_tab == "analise":
- 
+
         if not ok:
             st.markdown("""
             <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
@@ -8019,12 +8128,11 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight,
             </div>
             """, unsafe_allow_html=True)
             st.stop()
- 
+
         chave_comp_redes = "ia_redes_comparativo"
         if chave_comp_redes not in st.session_state:
             st.session_state[chave_comp_redes] = ""
- 
-        # Ghost button comparativo
+
         st.markdown("""
         <style>
         .st-key-btn_redes_comp_geral {
@@ -8038,7 +8146,7 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight,
         }
         </style>
         """, unsafe_allow_html=True)
- 
+
         if st.button("redes_comparativo", key="btn_redes_comp_geral"):
             if gemini_model is None:
                 st.session_state[chave_comp_redes] = "Configure GEMINI_API_KEY nos secrets."
@@ -8055,9 +8163,9 @@ Eng. médio: {rr.get('eng_medio',0)} ({rr.get('eng_pct',0):.2f}%)
                     try:
                         resp = gemini_model.generate_content(f"""Você é especialista em inteligência competitiva e redes sociais.
 Compare os perfis do Instagram abaixo e gere uma análise competitiva completa em português.
- 
+
 {'---'.join(resumos_comp)}
- 
+
 ---
 ### 🏆 Ranking de Presença no Instagram
 ### 📊 Comparativo de Métricas
@@ -8070,131 +8178,88 @@ Compare os perfis do Instagram abaixo e gere uma análise competitiva completa e
                     except Exception as ex:
                         st.session_state[chave_comp_redes] = f"Erro: {ex}"
                         st.rerun()
- 
-        # ── Gráficos comparativos ───────────────────────────────────
+
+        # ── Métricas comparativas (no lugar dos gráficos) ──────────
         nomes_ok   = [x["nome"] for x in ok]
-        segs_ok    = [x.get("seguidores", 0) for x in ok]
-        eng_pct_ok = [float(x.get("eng_pct", 0.0)) for x in ok]
-        posts_ok   = [x.get("total_posts", 0) for x in ok]
-        eng_med_ok = [float(x.get("eng_medio", 0.0)) for x in ok]
         cores_ok   = [get_avatar_color(i) for i in range(len(ok))]
- 
-        nomes_json   = json.dumps(nomes_ok, ensure_ascii=False)
-        segs_json    = json.dumps(segs_ok)
-        eng_pct_json = json.dumps([round(v, 2) for v in eng_pct_ok])
-        posts_json   = json.dumps(posts_ok)
-        eng_med_json = json.dumps([round(v, 1) for v in eng_med_ok])
-        cores_json   = json.dumps(cores_ok)
- 
+
+        metricas_rows = ""
+        for i, rr in enumerate(ok):
+            cor_av  = cores_ok[i]
+            av_txt  = gerar_avatar(rr["nome"])
+            seg_v   = rr.get("seguidores", 0)
+            posts_v = rr.get("total_posts", 0)
+            eng_p   = rr.get("eng_pct", 0.0)
+            eng_m   = rr.get("eng_medio", 0)
+            handle  = rr.get("handle", "")
+            is_m    = rr.get("tipo") == "minha"
+            bdg_bg  = "#f0fdf4" if is_m else "#eff6ff"
+            bdg_col = "#15803d" if is_m else "#1d4ed8"
+            bdg_brd = "#bbf7d0" if is_m else "#bfdbfe"
+            bdg_lbl = "Minha empresa" if is_m else "Concorrente"
+
+            metricas_rows += f"""
+            <tr>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div style="width:34px;height:34px;border-radius:50%;background:{cor_av};
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:12px;font-weight:700;color:#fff;flex-shrink:0">{av_txt}</div>
+                        <div>
+                            <div style="font-weight:700;color:#111827;font-size:13px">{rr["nome"]}</div>
+                            <div style="font-size:11px;color:#9ca3af">{handle}</div>
+                            <span style="font-size:11px;background:{bdg_bg};color:{bdg_col};
+                                         border:1px solid {bdg_brd};
+                                         padding:1px 7px;border-radius:20px;font-weight:600">{bdg_lbl}</span>
+                        </div>
+                    </div>
+                </td>
+                <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(seg_v) if seg_v else "—"}</td>
+                <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(posts_v) if posts_v else "—"}</td>
+                <td style="text-align:center;font-weight:700;color:#111827">{f"{eng_p:.2f}%" if seg_v else "—"}</td>
+                <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(int(eng_m)) if seg_v else "—"}</td>
+            </tr>
+            """
+
         components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
 body {{ padding-bottom:8px; margin-top:-55px; }}
-.grid {{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }}
-.card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
-    padding:18px 20px 14px;
-}}
-.card-title {{
-    font-size:12px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.6px;
-    padding-bottom:10px; border-bottom:1px solid #f3f4f6;
-    margin-bottom:12px;
-}}
-.chart-wrap {{ position:relative; width:100%; height:180px; }}
-.legend {{
-    display:flex; flex-wrap:wrap; gap:10px;
-    margin-top:10px; font-size:11px; color:#6b7280;
-}}
-.leg-item {{ display:flex; align-items:center; gap:5px; }}
-.leg-dot {{ width:10px; height:10px; border-radius:2px; flex-shrink:0; }}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; margin-bottom:14px; }}
+.hdr {{ padding:14px 18px; font-size:12px; font-weight:800; color:#1a2e4a;
+        text-transform:uppercase; letter-spacing:0.6px; border-bottom:1px solid #e5e7eb; }}
+table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+th {{ background:#f9fafb; color:#9ca3af; font-size:11px; font-weight:700;
+      text-transform:uppercase; letter-spacing:0.6px; padding:11px 14px;
+      text-align:left; border-bottom:1px solid #e5e7eb; white-space:nowrap; }}
+td {{ padding:12px 14px; border-bottom:1px solid #f3f4f6; vertical-align:middle; color:#374151; }}
+tr:last-child td {{ border-bottom:none; }}
+tr:hover td {{ background:#f9fafb; }}
 </style>
 </head>
 <body>
-<div class="grid">
-    <div class="card">
-        <div class="card-title">Seguidores</div>
-        <div class="chart-wrap"><canvas id="ch_seg"></canvas></div>
-        <div class="legend" id="leg_seg"></div>
-    </div>
-    <div class="card">
-        <div class="card-title">Taxa de Engajamento (%)</div>
-        <div class="chart-wrap"><canvas id="ch_eng"></canvas></div>
-        <div class="legend" id="leg_eng"></div>
-    </div>
-</div>
-<div class="grid">
-    <div class="card">
-        <div class="card-title">Total de Publicações</div>
-        <div class="chart-wrap"><canvas id="ch_posts"></canvas></div>
-        <div class="legend" id="leg_posts"></div>
-    </div>
-    <div class="card">
-        <div class="card-title">Engajamento Médio por Post</div>
-        <div class="chart-wrap"><canvas id="ch_engmed"></canvas></div>
-        <div class="legend" id="leg_engmed"></div>
-    </div>
+<div class="wrap">
+    <div class="hdr">📊 Comparativo de Métricas</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Empresa</th>
+                <th style="text-align:center">Seguidores</th>
+                <th style="text-align:center">Postagens</th>
+                <th style="text-align:center">Engajamento %</th>
+                <th style="text-align:center">Eng. Médio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {metricas_rows}
+        </tbody>
+    </table>
 </div>
 <script>
-var NOMES   = {nomes_json};
-var SEGS    = {segs_json};
-var ENG_PCT = {eng_pct_json};
-var POSTS   = {posts_json};
-var ENG_MED = {eng_med_json};
-var CORES   = {cores_json};
- 
-function fmtNum(n) {{
-    n = Math.round(n);
-    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
-    return String(n);
-}}
- 
-function makeLegend(cid, vals, suffix) {{
-    var el = document.getElementById(cid);
-    if (!el) return;
-    NOMES.forEach(function(name, i) {{
-        var item = document.createElement('span');
-        item.className = 'leg-item';
-        var dot = document.createElement('span');
-        dot.className = 'leg-dot';
-        dot.style.background = CORES[i];
-        item.appendChild(dot);
-        var v = suffix === '%' ? vals[i].toFixed(1) + '%' : fmtNum(vals[i]);
-        item.appendChild(document.createTextNode(name + ' ' + v));
-        el.appendChild(item);
-    }});
-}}
- 
-var DEFS = {{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{{ legend:{{display:false}} }},
-    scales:{{
-        x:{{ grid:{{display:false}}, ticks:{{font:{{family:"'DM Sans',sans-serif",size:11,weight:'600'}},color:'#6b7280',maxRotation:0}}, border:{{display:false}} }},
-        y:{{ grid:{{color:'#f3f4f6'}}, ticks:{{font:{{family:"'DM Sans',sans-serif",size:11}},color:'#9ca3af',callback:function(v){{return fmtNum(v);}}}}, border:{{display:false}} }}
-    }}
-}};
- 
-function DEFS_PCT() {{
-    var d = JSON.parse(JSON.stringify(DEFS));
-    d.scales.y.ticks.callback = function(v){{ return v+'%'; }};
-    return d;
-}}
- 
-new Chart(document.getElementById('ch_seg'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Seguidores',data:SEGS,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
-makeLegend('leg_seg', SEGS, '');
-new Chart(document.getElementById('ch_eng'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Engajamento %',data:ENG_PCT,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS_PCT()}});
-makeLegend('leg_eng', ENG_PCT, '%');
-new Chart(document.getElementById('ch_posts'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Publicações',data:POSTS,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
-makeLegend('leg_posts', POSTS, '');
-new Chart(document.getElementById('ch_engmed'), {{type:'bar',data:{{labels:NOMES,datasets:[{{label:'Eng. médio',data:ENG_MED,backgroundColor:CORES,borderRadius:6,borderSkipped:false}}]}},options:DEFS}});
-makeLegend('leg_engmed', ENG_MED, '');
- 
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -8205,14 +8270,14 @@ function syncHeight() {{
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight,300); setTimeout(syncHeight,800);
+setTimeout(syncHeight,200); setTimeout(syncHeight,600);
 </script>
 </body></html>
-""", height=560, scrolling=False)
- 
+""", height=200, scrolling=False)
+
         # ── Painel de análise comparativa ──────────────────────────
         comp_html_redes = st.session_state.get(chave_comp_redes, "").replace("\n", "<br>")
- 
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -8220,9 +8285,9 @@ setTimeout(syncHeight,300); setTimeout(syncHeight,800);
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
 body {{ padding-bottom:8px; }}
 .wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
-.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
+.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; }}
 .hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
-.hdr-sub {{ font-size:13px; color:#9ca3af; }}
+.hdr-sub {{ font-size:13px; color:#9ca3af; margin-top:2px; }}
 .body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
 .empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:60px 24px; }}
 .footer {{ padding:16px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
@@ -8236,10 +8301,8 @@ body {{ padding-bottom:8px; }}
 </style>
 <div class="wrap">
     <div class="hdr">
-        <div>
-            <div class="hdr-title">✨ Análise Comparativa de Redes Sociais</div>
-            <div class="hdr-sub">Comparativo inteligente de todos os perfis configurados</div>
-        </div>
+        <div class="hdr-title">✨ Análise Comparativa de Redes Sociais</div>
+        <div class="hdr-sub">Comparativo inteligente de todos os perfis configurados</div>
     </div>
     <div class="body">
         {'<div>' + comp_html_redes + '</div>' if comp_html_redes else '<div class="empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar todos os perfis com IA.</div>'}
