@@ -7334,7 +7334,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     border-radius:14px 14px 0 0;
     display:flex; align-items:center; gap:16px;
     padding:18px 22px 16px;
-    margin-top:-42px;
 }}
 .avatar {{
     width:52px; height:52px; border-radius:50%;
