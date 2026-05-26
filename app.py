@@ -3685,7 +3685,7 @@ function triggerTab(label) {{
         import math
         n_rows = math.ceil(n_empresas / 3)
         altura_estimada = 56 + 40 + (n_rows * 180) + 40
-        altura_inicial = max(altura_estimada, 400)
+        altura_inicial = max(altura_estimada, 600)
 
         components.html(f"""
 <!DOCTYPE html><html><head>
@@ -4151,7 +4151,7 @@ setTimeout(syncHeight, 1000);
 setTimeout(syncHeight, 2000);
 </script>
 </body></html>
-""", height=altura_inicial, scrolling=False)
+""", height=altura_inicial, scrolling=True)
 
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
