@@ -7319,7 +7319,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .header {{
     background:#fff;
     border:1px solid #e5e7eb;
-    border-bottom:none;
     border-radius:14px 14px 0 0;
     display:flex; align-items:center; gap:16px;
     padding:18px 22px 16px;
@@ -7367,6 +7366,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <div class="stat-num">{seg_fmt}</div>
             <div class="stat-lbl">Seguidores</div>
         </div>
+        <div class="divider"></div>
         <div class="stat">
             <div class="stat-num">{posts_fmt}</div>
             <div class="stat-lbl">Postagens</div>
