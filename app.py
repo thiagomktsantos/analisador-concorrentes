@@ -3529,45 +3529,24 @@ function triggerTab(label) {{
         onboarding_empresa = st.session_state.ads_onboarding_empresa
         onboarding_paginas = st.session_state.ads_onboarding_paginas
 
-        st.markdown("""
-        <style>
-        .cfg-outer-wrap {
-            background: #d2dde9; border: 1px solid #cbd5e1;
-            border-radius: 16px; padding: 20px; margin-bottom: 8px;
-        }
-        .cfg-info-box {
-            background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px;
-            padding: 12px 16px; font-size: 13px; color: #0369a1;
-            display: flex; align-items: flex-start; gap: 10px;
-            line-height: 1.6; margin-bottom: 16px;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # Ghost buttons para editar — ocultos via CSS, acionados pelo HTML
-        ghost_edit_css = []
-        for ci in range(len(todas_empresas)):
-            ghost_edit_css.append(f"""
-            .st-key-_ghost_edit_{ci}_ {{
-                position:fixed !important; top:-9999px !important; left:-9999px !important;
-                width:0 !important; height:0 !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important; display:none !important;
-            }}
-            .stElementContainer:has(.st-key-_ghost_edit_{ci}_) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important;
-            }}
-            """)
-        st.markdown(f"<style>{''.join(ghost_edit_css)}</style>", unsafe_allow_html=True)
+        # ── Ghost buttons ocultos via CSS
+        ghost_css = "".join([f"""
+        .st-key-cfg_ghost_edit_{ci} {{
+            position:fixed!important;top:-9999px!important;left:-9999px!important;
+            width:0!important;height:0!important;overflow:hidden!important;
+            opacity:0!important;pointer-events:none!important;display:none!important;
+        }}
+        .stElementContainer:has(.st-key-cfg_ghost_edit_{ci}) {{
+            display:none!important;height:0!important;min-height:0!important;
+            max-height:0!important;padding:0!important;margin:0!important;
+        }}
+        """ for ci in range(len(todas_empresas))])
+        st.markdown(f"<style>{ghost_css}</style>", unsafe_allow_html=True)
 
         ghost_triggers = {}
         for ci in range(len(todas_empresas)):
-            if st.button(f"_gedit_{ci}_", key=f"_ghost_edit_{ci}_"):
-                ghost_triggers[ci] = True
-            else:
-                ghost_triggers[ci] = False
+            ghost_triggers[ci] = st.button(str(ci), key=f"cfg_ghost_edit_{ci}")
 
-        # Processar cliques dos ghosts
         for ci, e in enumerate(todas_empresas):
             if ghost_triggers.get(ci):
                 st.session_state.ads_editando_empresa = e["nome"]
@@ -3575,49 +3554,27 @@ function triggerTab(label) {{
                 st.session_state.ads_onboarding_paginas = []
                 st.rerun()
 
-        st.markdown('<div class="cfg-outer-wrap">', unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="cfg-info-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 style="flex-shrink:0;margin-top:1px">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <div>
-                Clique em <strong>✏️ Editar</strong> em cada empresa para configurar.
-                Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong>
-                do Facebook, depois clique em <strong>Buscar páginas</strong> para encontrar
-                ou <strong>Salvar ID</strong> para salvar diretamente.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        cols_cfg = st.columns(3)
-
+        # ── Monta HTML dos cards
+        cards_html = ""
         for ci, e in enumerate(todas_empresas):
             is_minha   = e["tipo"] == "minha"
             ads_id     = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
             page_pic   = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
-            sk         = safe_key(e["nome"])
             has_id     = bool(ads_id.strip())
             is_editing = (editando_empresa == e["nome"])
             cor        = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             avatar_txt = gerar_avatar(e["nome"])
             badge_lbl  = "Minha empresa" if is_minha else "Concorrente"
 
-            # Avatar HTML
             if page_pic and page_pic.startswith("http"):
                 avatar_html = (
                     f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;'
                     f'flex-shrink:0;border:2px solid #e5e7eb">'
                     f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block" '
                     f'onerror="this.parentElement.style.background=\'{cor}\';'
-                    f'this.outerHTML=\'<div style=&quot;width:44px;height:44px;border-radius:50%;'
-                    f'background:{cor};display:flex;align-items:center;justify-content:center;'
-                    f'font-size:15px;font-weight:700;color:#fff&quot;>{avatar_txt}</div>\'" /></div>'
+                    f'this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;'
+                    f'justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;'
+                    f'color:#fff&quot;>{avatar_txt}</div>\'" /></div>'
                 )
             else:
                 avatar_html = (
@@ -3626,7 +3583,7 @@ function triggerTab(label) {{
                     f'font-weight:700;color:#fff;flex-shrink:0">{avatar_txt}</div>'
                 )
 
-            border_css = (
+            border_css_card = (
                 "border:2px solid #3a9fd6;box-shadow:0 0 0 3px rgba(58,159,214,0.12);"
                 if is_editing else "border:1px solid #e5e7eb;"
             )
@@ -3642,29 +3599,82 @@ function triggerTab(label) {{
             id_ff     = "monospace" if has_id else "inherit"
             id_text   = ads_id if has_id else "Não configurado — clique em ✏️"
 
-            # Botão editar dentro do card (só quando não está editando)
-            edit_btn_html = "" if is_editing else f"""
-<button class="edit-btn" onclick="triggerGhost({ci})">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </svg>
-    Editar
-</button>"""
+            edit_btn = "" if is_editing else f"""
+            <button class="edit-btn" onclick="triggerGhost({ci})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Editar
+            </button>"""
 
-            # Altura dinâmica do iframe
-            card_height = 152 if not is_editing else 108
+            editing_indicator = (
+                '<div style="padding:8px 16px;background:#eff6ff;border-top:1px solid #bfdbfe;'
+                'font-size:12px;color:#1d4ed8;font-weight:600;display:flex;align-items:center;gap:6px">'
+                '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+                'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
+                '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>'
+                '<line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                'Editando abaixo...</div>'
+            ) if is_editing else ""
 
-            with cols_cfg[ci % 3]:
-                components.html(f"""
+            cards_html += f"""
+            <div class="card" style="{border_css_card}">
+                <div class="card-top">
+                    {avatar_html}
+                    <div style="flex:1;min-width:0">
+                        <div class="nome">{e["nome"]}</div>
+                        <div style="display:inline-flex;align-items:center;gap:5px;
+                                    background:{badge_bg};color:{badge_col};
+                                    border:1px solid {badge_brd};
+                                    padding:3px 10px;border-radius:20px;
+                                    font-size:11px;font-weight:700;margin-top:4px">
+                            <span style="width:7px;height:7px;border-radius:50%;
+                                         background:{dot_col};display:inline-block;
+                                         flex-shrink:0"></span>
+                            {badge_lbl}
+                        </div>
+                    </div>
+                </div>
+                <div style="margin:0 12px 12px;border-radius:8px;padding:8px 12px;
+                            display:flex;align-items:center;gap:7px;font-size:12px;
+                            background:{id_bg};border:1px solid {id_brd}">
+                    <div style="width:7px;height:7px;border-radius:50%;
+                                flex-shrink:0;background:{id_dot_c}"></div>
+                    <div style="font-weight:{id_fw};color:{id_color};font-family:{id_ff};
+                                overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        {id_text}
+                    </div>
+                </div>
+                {editing_indicator}
+                {edit_btn}
+            </div>"""
+
+        components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.outer {{
+    background:#d2dde9;
+    border:1px solid #cbd5e1;
+    border-radius:16px;
+    padding:20px;
+}}
+.info-box {{
+    background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px;
+    padding:12px 16px; font-size:13px; color:#0369a1;
+    display:flex; align-items:flex-start; gap:10px;
+    line-height:1.6; margin-bottom:16px;
+}}
+.cards-grid {{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+}}
 .card {{
-    background:#ffffff;
-    {border_css}
+    background:#fff;
     border-radius:12px;
     overflow:hidden;
 }}
@@ -3675,160 +3685,225 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     font-size:14px; font-weight:700; color:#1a2e4a;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }}
-.badge {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:{badge_bg}; color:{badge_col};
-    border:1px solid {badge_brd};
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700; margin-top:4px;
-}}
-.badge::before {{
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:{dot_col}; flex-shrink:0;
-}}
-.id-strip {{
-    margin:0 12px 0; border-radius:8px; padding:8px 12px;
-    display:flex; align-items:center; gap:7px; font-size:12px;
-    background:{id_bg}; border:1px solid {id_brd};
-}}
-.id-dot {{ width:7px; height:7px; border-radius:50%; flex-shrink:0; background:{id_dot_c}; }}
-.id-val {{
-    font-weight:{id_fw}; color:{id_color}; font-family:{id_ff};
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}}
 .edit-btn {{
     width:100%; padding:11px 0;
     background:#fff; border:none; border-top:1px solid #f3f4f6;
+    outline:none; -webkit-appearance:none;
     font-size:14px; font-weight:600; color:#6b7280;
     cursor:pointer; font-family:'DM Sans',sans-serif;
     display:flex; align-items:center; justify-content:center; gap:8px;
-    transition:background 0.12s; margin-top:12px;
+    transition:background 0.12s;
 }}
 .edit-btn:hover {{ background:#f9fafb; color:#111827; }}
+.edit-btn:focus,
+.edit-btn:focus-visible,
+.edit-btn:active {{ outline:none; box-shadow:none; }}
 </style>
-<div class="card">
-    <div class="card-top">
-        {avatar_html}
-        <div style="flex:1;min-width:0">
-            <div class="nome">{e["nome"]}</div>
-            <div class="badge">{badge_lbl}</div>
+
+<div class="outer">
+    <div class="info-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             style="flex-shrink:0;margin-top:1px">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>
+            Clique em <strong>✏️ Editar</strong> em cada empresa para configurar.
+            Cole o <strong>nome exato da página</strong> ou o <strong>ID numérico</strong>
+            do Facebook, depois clique em <strong>Buscar páginas</strong> para encontrar
+            ou <strong>Salvar ID</strong> para salvar diretamente.
         </div>
     </div>
-    <div class="id-strip">
-        <div class="id-dot"></div>
-        <div class="id-val">{id_text}</div>
+    <div class="cards-grid">
+        {cards_html}
     </div>
-    {edit_btn_html}
 </div>
+
 <script>
 function triggerGhost(ci) {{
-    var label = '_gedit_' + ci + '_';
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if ((b.textContent || b.innerText || '').trim() === label) {{
+    var allBtns = window.parent.document.querySelectorAll('button');
+    for (var b of allBtns) {{
+        if ((b.innerText || b.textContent || '').trim() === String(ci)) {{
             b.click();
             return;
         }}
     }}
 }}
-(function() {{
+function syncHeight() {{
     var h = document.body.scrollHeight;
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
             if (iframes[i].contentWindow === window) {{
-                iframes[i].style.height = h + 'px';
+                iframes[i].style.height = (h + 8) + 'px';
                 break;
             }}
         }} catch(ex) {{}}
     }}
-}})();
+}}
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 100);
+setTimeout(syncHeight, 400);
 </script>
-""", height=card_height, scrolling=False)
+""", height=240, scrolling=False)
 
-                # ── Formulário inline (apenas quando editando)
-                if is_editing:
-                    novo_val = st.text_input(
-                        "Nome ou ID da página",
-                        value=ads_id,
-                        key=f"cfg_inline_input_{sk}_{ci}",
-                        placeholder="Ex: Marketylics  ou  102803918240129",
+        # ── Formulário de edição (aparece abaixo do grid quando editando)
+        if editando_empresa:
+            e_edit = next((x for x in todas_empresas if x["nome"] == editando_empresa), None)
+            if e_edit:
+                ci_edit      = next(i for i, x in enumerate(todas_empresas) if x["nome"] == editando_empresa)
+                sk_edit      = safe_key(e_edit["nome"])
+                is_minha_edit = e_edit["tipo"] == "minha"
+                ads_id_edit  = emp.get("ads_id","") if is_minha_edit else concs[e_edit["idx"]].get("ads_id","")
+                cor_edit     = get_minha_empresa_color() if is_minha_edit else get_concorrente_color(e_edit["idx"])
+                page_pic_edit = emp.get("ads_page_pic","") if is_minha_edit else concs[e_edit["idx"]].get("ads_page_pic","")
+
+                # Avatar para o header do formulário
+                if page_pic_edit and page_pic_edit.startswith("http"):
+                    form_avatar = (
+                        f'<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;'
+                        f'flex-shrink:0;border:2px solid #e5e7eb">'
+                        f'<img src="{page_pic_edit}" style="width:100%;height:100%;object-fit:cover;display:block" '
+                        f'onerror="this.parentElement.style.background=\'{cor_edit}\';'
+                        f'this.parentElement.innerHTML=\'{gerar_avatar(e_edit["nome"])}\'" /></div>'
+                    )
+                else:
+                    form_avatar = (
+                        f'<div style="width:36px;height:36px;border-radius:50%;background:{cor_edit};'
+                        f'display:flex;align-items:center;justify-content:center;font-size:13px;'
+                        f'font-weight:700;color:#fff;flex-shrink:0">{gerar_avatar(e_edit["nome"])}</div>'
                     )
 
-                    col_b, col_s = st.columns(2)
-                    with col_b:
-                        if st.button("🔍 Buscar", key=f"btn_inline_buscar_{sk}_{ci}", use_container_width=True):
-                            if novo_val.strip():
-                                st.session_state.ads_onboarding_empresa = e["nome"]
-                                with st.spinner("Buscando…"):
-                                    paginas = buscar_paginas_facebook(novo_val.strip())
-                                st.session_state.ads_onboarding_paginas = paginas
-                                st.rerun()
-                            else:
-                                st.warning("Digite um nome ou ID.")
-                    with col_s:
-                        if st.button("💾 Salvar", key=f"btn_inline_salvar_{sk}_{ci}", use_container_width=True):
-                            if novo_val.strip():
-                                salvar_ads_id(e, novo_val.strip())
-                                st.session_state.ads_editando_empresa = None
-                                st.session_state.ads_onboarding_empresa = None
-                                st.session_state.ads_onboarding_paginas = []
-                                st.toast(f"✅ {e['nome']} salvo!", icon="✅")
-                                st.rerun()
-                            else:
-                                st.warning("Digite um nome ou ID.")
+                st.markdown(f"""
+                <div style="background:#fff;border:2px solid #3a9fd6;border-radius:12px;
+                            padding:20px;margin-top:4px;
+                            box-shadow:0 0 0 3px rgba(58,159,214,0.10)">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;
+                                padding-bottom:14px;border-bottom:1px solid #f3f4f6">
+                        {form_avatar}
+                        <div>
+                            <div style="font-size:14px;font-weight:700;color:#1a2e4a">
+                                Configurando: {editando_empresa}
+                            </div>
+                            <div style="font-size:12px;color:#6b7280;margin-top:2px">
+                                Cole o nome ou ID numérico da página do Facebook
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-                    if st.button("✕ Cancelar", key=f"btn_inline_cancelar_{sk}_{ci}", use_container_width=True):
+                novo_val = st.text_input(
+                    "Nome ou ID da página",
+                    value=ads_id_edit,
+                    key=f"cfg_inline_input_{sk_edit}_{ci_edit}",
+                    placeholder="Ex: Marketylics  ou  102803918240129",
+                )
+
+                col_b, col_s, col_c = st.columns(3)
+                with col_b:
+                    if st.button(
+                        "🔍 Buscar páginas",
+                        key=f"btn_inline_buscar_{sk_edit}_{ci_edit}",
+                        use_container_width=True,
+                    ):
+                        if novo_val.strip():
+                            st.session_state.ads_onboarding_empresa = editando_empresa
+                            with st.spinner("Buscando…"):
+                                paginas = buscar_paginas_facebook(novo_val.strip())
+                            st.session_state.ads_onboarding_paginas = paginas
+                            st.rerun()
+                        else:
+                            st.warning("Digite um nome ou ID.")
+
+                with col_s:
+                    if st.button(
+                        "💾 Salvar ID",
+                        key=f"btn_inline_salvar_{sk_edit}_{ci_edit}",
+                        use_container_width=True,
+                    ):
+                        if novo_val.strip():
+                            salvar_ads_id(e_edit, novo_val.strip())
+                            st.session_state.ads_editando_empresa = None
+                            st.session_state.ads_onboarding_empresa = None
+                            st.session_state.ads_onboarding_paginas = []
+                            st.toast(f"✅ {editando_empresa} salvo!", icon="✅")
+                            st.rerun()
+                        else:
+                            st.warning("Digite um nome ou ID.")
+
+                with col_c:
+                    if st.button(
+                        "✕ Cancelar",
+                        key=f"btn_inline_cancelar_{sk_edit}_{ci_edit}",
+                        use_container_width=True,
+                    ):
                         st.session_state.ads_editando_empresa = None
                         st.session_state.ads_onboarding_empresa = None
                         st.session_state.ads_onboarding_paginas = []
                         st.rerun()
 
-                    # ── Páginas encontradas
-                    if onboarding_empresa == e["nome"] and onboarding_paginas:
-                        st.markdown(
-                            f"<div style='font-size:11px;font-weight:700;color:#6b7280;"
-                            f"text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px'>"
-                            f"📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)</div>",
-                            unsafe_allow_html=True,
+                # ── Páginas encontradas
+                if onboarding_empresa == editando_empresa and onboarding_paginas:
+                    st.markdown(
+                        f"<div style='font-size:11px;font-weight:700;color:#6b7280;"
+                        f"text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px'>"
+                        f"📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)</div>",
+                        unsafe_allow_html=True,
+                    )
+                    for pi, pg in enumerate(onboarding_paginas[:8]):
+                        initial = (pg.get("nome","P") or "P")[0].upper()
+                        pic     = pg.get("profile_picture","")
+                        thumb   = (
+                            f'<img src="{pic}" style="width:34px;height:34px;border-radius:50%;'
+                            f'object-fit:cover;display:block" onerror="this.style.display=\'none\'" />'
+                            if pic and pic.startswith("http")
+                            else f'<span style="font-size:14px;font-weight:700;color:#6b7280">{initial}</span>'
                         )
-                        for pi, pg in enumerate(onboarding_paginas[:8]):
-                            initial  = (pg.get("nome", "P") or "P")[0].upper()
-                            pic      = pg.get("profile_picture", "")
-                            thumb_html = (
-                                f'<img src="{pic}" style="width:32px;height:32px;border-radius:50%;'
-                                f'object-fit:cover;display:block" onerror="this.style.display=\'none\'" />'
-                                if pic and pic.startswith("http")
-                                else f'<span style="font-size:13px;font-weight:700;color:#6b7280">{initial}</span>'
-                            )
-                            col_pg, col_usar = st.columns([3, 1])
-                            with col_pg:
-                                st.markdown(f"""
-                                <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;
-                                            background:#f9fafb;border:1px solid #e5e7eb;border-radius:9px;
-                                            margin-bottom:6px">
-                                    <div style="width:32px;height:32px;border-radius:50%;background:#e5e7eb;
-                                                display:flex;align-items:center;justify-content:center;
-                                                flex-shrink:0;overflow:hidden">{thumb_html}</div>
-                                    <div style="flex:1;min-width:0">
-                                        <div style="font-size:12px;font-weight:700;color:#111827">{pg.get("nome","—")}</div>
-                                        <div style="font-size:10px;color:#9ca3af;font-family:monospace">ID: {pg.get("page_id","—")}</div>
-                                    </div>
-                                    <div style="font-size:11px;font-weight:600;color:#3a9fd6;flex-shrink:0">{pg.get("total_ads",0)} ads</div>
+                        col_pg, col_usar = st.columns([4, 1])
+                        with col_pg:
+                            st.markdown(f"""
+                            <div style="display:flex;align-items:center;gap:12px;
+                                        padding:10px 14px;background:#f9fafb;
+                                        border:1px solid #e5e7eb;border-radius:10px;
+                                        margin-bottom:6px">
+                                <div style="width:34px;height:34px;border-radius:50%;
+                                            background:#e5e7eb;display:flex;align-items:center;
+                                            justify-content:center;flex-shrink:0;overflow:hidden">
+                                    {thumb}
                                 </div>
-                                """, unsafe_allow_html=True)
-                            with col_usar:
-                                if st.button("Usar", key=f"btn_pg_usar_{sk}_{ci}_{pi}", use_container_width=True):
-                                    salvar_ads_id(e, pg.get("page_id") or pg.get("nome",""), pg.get("profile_picture",""))
-                                    st.session_state.ads_editando_empresa = None
-                                    st.session_state.ads_onboarding_empresa = None
-                                    st.session_state.ads_onboarding_paginas = []
-                                    st.toast(f"✅ {pg.get('nome', pg.get('page_id',''))} selecionado!", icon="✅")
-                                    st.rerun()
-
-                st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
+                                <div style="flex:1;min-width:0">
+                                    <div style="font-size:13px;font-weight:700;color:#111827">
+                                        {pg.get("nome","—")}
+                                    </div>
+                                    <div style="font-size:11px;color:#9ca3af;font-family:monospace;margin-top:2px">
+                                        ID: {pg.get("page_id","—")}
+                                    </div>
+                                </div>
+                                <div style="font-size:12px;font-weight:600;color:#3a9fd6;flex-shrink:0">
+                                    {pg.get("total_ads",0)} ads
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        with col_usar:
+                            if st.button(
+                                "Usar",
+                                key=f"btn_pg_usar_{sk_edit}_{ci_edit}_{pi}",
+                                use_container_width=True,
+                            ):
+                                salvar_ads_id(
+                                    e_edit,
+                                    pg.get("page_id") or pg.get("nome",""),
+                                    pg.get("profile_picture",""),
+                                )
+                                st.session_state.ads_editando_empresa = None
+                                st.session_state.ads_onboarding_empresa = None
+                                st.session_state.ads_onboarding_paginas = []
+                                st.toast(f"✅ {pg.get('nome','')} selecionado!", icon="✅")
+                                st.rerun()
 
     # ══════════════════════════════════════════════════════════════════
     # ABA: EMPRESAS CONFIGURADAS — Cards estilo imagem 2
