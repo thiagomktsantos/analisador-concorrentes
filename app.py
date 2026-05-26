@@ -7005,38 +7005,166 @@ html, body { background: transparent; overflow: hidden; }
     # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
     # ══════════════════════════════════════════════════════════════════
  
-        # ── Cards + cabeçalho + bio — tudo em UM iframe ─────────────
-        seg_fmt   = fmt_num(r.get("seguidores", 0))
-        posts_fmt = fmt_num(r.get("total_posts", 0))
-        handle_clean = (r.get("handle") or "").lstrip("@")
-        ig_url = f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#"
-        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
-        cor = get_avatar_color(aba_ativa)
-        is_minha  = r.get("tipo") == "minha"
-        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-
-        bio_resultado = st.session_state.get(chave_bio_ia, "")
-        bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
-
+    components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
+.nav-bar {{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+    width:100%;
+}}
+.nav-item {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:16px 20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    transition:all 0.15s;
+    position:relative;
+    overflow:hidden;
+}}
+.nav-item:hover {{
+    border-color:#3a9fd6;
+    box-shadow:0 2px 12px rgba(58,159,214,0.12);
+}}
+.nav-item.active {{
+    background:#0e2a47;
+    border-color:#0e2a47;
+    box-shadow:0 4px 20px rgba(14,42,71,0.22);
+}}
+.nav-item.active::after {{
+    content:'';
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:3px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    border-radius:0 0 14px 14px;
+}}
+.nav-icon {{
+    width:40px;height:40px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    background:#f3f4f6;
+    transition:background 0.15s;
+}}
+.nav-item.active .nav-icon {{
+    background:rgba(255,255,255,0.12);
+}}
+.nav-icon svg {{ width:20px;height:20px; }}
+.nav-content {{ flex:1;min-width:0; }}
+.nav-title {{
+    font-size:15px;font-weight:700;color:#1a2e4a;
+    display:block;margin-bottom:2px;
+}}
+.nav-item.active .nav-title {{ color:#ffffff; }}
+.nav-sub {{
+    font-size:12px;color:#9ca3af;
+}}
+.nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
+</style>
+<div class="nav-bar">
+    <div class="nav-item {'active' if main_tab == 'perfis' else ''}" onclick="triggerTab('perfis_tab')">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Perfis configurados</span>
+            <span class="nav-sub">Visualize e analise cada perfil individualmente</span>
+        </div>
+    </div>
+    <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('analise_tab')">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+        </div>
+        <div class="nav-content">
+            <span class="nav-title">Análise de IA</span>
+            <span class="nav-sub">Relatório comparativo completo</span>
+        </div>
+    </div>
+</div>
+<script>
+function triggerTab(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+          if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = '90px';
+            iframes[i].style.marginTop = '-10px';
+            break;
+          }}
+        }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=90, scrolling=False)
+ 
+    # ══════════════════════════════════════════════════════════════════
+    # ABA: PERFIS CONFIGURADOS
+    # ══════════════════════════════════════════════════════════════════
+ 
+    if main_tab == "perfis":
+ 
+        if not ok:
+            st.markdown("""
+            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                        padding:48px 32px;text-align:center;margin-top:8px'>
+                <div style='font-size:32px;margin-bottom:12px'>📱</div>
+                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
+                <div style='font-size:14px;color:#9ca3af'>Clique em <b>Coletar dados</b> para buscar os dados do Instagram.</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
+ 
+        aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
+ 
+        # ── Cards de empresa no topo ─────────────────────────────────
+        empresas_redes_json = []
+        for i, r in enumerate(ok):
+            is_minha = r.get("tipo") == "minha"
+            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(i)
+            empresas_redes_json.append({
+                "i": i,
+                "nome": r["nome"],
+                "tipo": r.get("tipo", "concorrente"),
+                "handle": r.get("handle", ""),
+                "is_minha": is_minha,
+                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
+                "cor": cor,
+            })
+ 
+        empresas_redes_str = json.dumps(empresas_redes_json, ensure_ascii=False)
+ 
         components.html(f"""
-<!DOCTYPE html><html>
-<head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; -webkit-font-smoothing:antialiased; }}
-body {{ padding-bottom:4px; }}
-
-/* ── CARDS DE EMPRESA ── */
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 .main-wrap {{
     background:#d2dde9;
     border:1px solid #e5e7eb;
     border-radius:16px;
     overflow:hidden;
-    margin-bottom:12px;
+    margin-bottom:0;
 }}
 .cards-grid {{
     display:grid;
@@ -7054,118 +7182,67 @@ body {{ padding-bottom:4px; }}
     gap:12px;
     cursor:pointer;
     transition:all 0.15s;
+    position:relative;
 }}
-.emp-card:hover {{ border-color:#3a9fd6; background:#fff; box-shadow:0 2px 10px rgba(58,159,214,0.1); }}
-.emp-card.active {{ background:#fff; border:2px solid #3b82f6; }}
-.emp-icon {{ width:44px; height:44px; border-radius:10px; background:#e9eef5; display:flex; align-items:center; justify-content:center; flex-shrink:0; }}
+.emp-card:hover {{
+    border-color:#3a9fd6;
+    background:#fff;
+    box-shadow:0 2px 10px rgba(58,159,214,0.1);
+}}
+.emp-card.active {{
+    background:#fff;
+    border: 2px solid #3b82f6;
+}}
+.emp-icon {{
+    width:44px; height:44px; border-radius:10px;
+    background:#e9eef5;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+}}
 .emp-card.active .emp-icon {{ background:#dbeafe; }}
 .emp-icon svg {{ width:22px; height:22px; }}
 .emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{ font-size:14px; font-weight:700; color:#1a2e4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }}
-.emp-sep {{ color:#d1d5db; font-weight:400; }}
-.emp-handle-inline {{ font-size:13px; font-weight:400; color:#9ca3af; }}
-.badge-minha {{ display:inline-flex; align-items:center; gap:5px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-.badge-conc {{ display:inline-flex; align-items:center; gap:5px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }}
-
-/* ── CABEÇALHO DO PERFIL ── */
-.header {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:14px 14px 0 0;
-    display:flex; align-items:center; gap:16px;
-    padding:18px 22px 16px;
+.emp-nome {{
+    font-size:14px; font-weight:700; color:#1a2e4a;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
 }}
-.avatar {{ width:52px; height:52px; border-radius:50%; background:{cor}; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; flex-shrink:0; }}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
-.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
-.badge {{ display:inline-block; background:{badge_bg}; color:{badge_txt}; border:1px solid {badge_brd}; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; margin-top:4px; }}
-.divider {{ width:1px; height:44px; background:#e5e7eb; flex-shrink:0; margin:0 8px; }}
-.stat-wrap {{ display:flex; align-items:center; gap:24px; flex-shrink:0; }}
-.stat {{ text-align:center; }}
-.stat-num {{ font-size:24px; font-weight:800; color:#0f1f35; line-height:1; }}
-.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }}
-.btn-ig {{ display:inline-flex; align-items:center; gap:7px; background:#0e2a47; color:#fff; padding:9px 18px; border-radius:9px; font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; flex-shrink:0; transition:background 0.15s; }}
-.btn-ig:hover {{ background:#1a3a5c; }}
-
-/* ── BIO ── */
-.bio-wrap {{ background:#fff; border:1px solid #e5e7eb; border-top:none; border-radius:0; overflow:hidden; }}
-.bio-body {{ display:grid; grid-template-columns:15% 50% 35%; gap:0; min-height:80px; }}
-.bio-label-col {{ padding:18px 16px; border-right:1px solid #f3f4f6; display:flex; align-items:center; justify-content:center; background:#fafbfc; }}
-.bio-label-txt {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; }}
-.bio-left {{ padding:18px 20px; border-right:1px solid #f3f4f6; }}
-.bio-text {{ font-size:15px; color:#374151; line-height:1.75; font-style:italic; }}
-.bio-empty {{ font-size:14px; color:#d1d5db; font-style:italic; }}
-.bio-right {{ padding:18px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:#fafbfc; }}
-.btn-ia {{ width:100%; padding:11px 0; border:1px solid #3a9fd6; border-radius:8px; background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; text-align:center; }}
-.btn-ia:hover {{ background:#dbeafe; }}
-.ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.5; }}
-.resultado {{ background:#f0fdf4; border-top:1px solid #86efac; padding:14px 20px; font-size:13px; color:#374151; line-height:1.75; }}
-.resultado-hdr {{ font-size:10px; font-weight:800; color:#15803d; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }}
+.emp-sep {{
+    color: #d1d5db;
+    font-weight: 400;
+}}
+.emp-handle-inline {{
+    font-size: 13px;
+    font-weight: 400;
+    color: #9ca3af;
+}}
+.emp-handle {{
+    font-size:12px; color:#9ca3af;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:4px;
+}}
+.badge-minha {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#f0fdf4; color:#15803d;
+    border:1px solid #bbf7d0;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
+.badge-conc {{
+    display:inline-flex; align-items:center; gap:5px;
+    background:#eff6ff; color:#1d4ed8;
+    border:1px solid #bfdbfe;
+    padding:3px 10px; border-radius:20px;
+    font-size:11px; font-weight:700;
+}}
 </style>
-</head>
-<body>
-
-<!-- CARDS DE EMPRESA -->
 <div class="main-wrap">
     <div class="cards-grid" id="cards-grid"></div>
 </div>
-
-<!-- CABEÇALHO DO PERFIL -->
-<div class="header">
-    <div class="avatar">{gerar_avatar(r["nome"])}</div>
-    <div class="info">
-        <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
-        <div class="badge">{badge_lbl}</div>
-    </div>
-    <div class="stat-wrap">
-        <div class="divider"></div>
-        <div class="stat">
-            <div class="stat-num">{seg_fmt}</div>
-            <div class="stat-lbl">Seguidores</div>
-        </div>
-        <div class="divider"></div>
-        <div class="stat">
-            <div class="stat-num">{posts_fmt}</div>
-            <div class="stat-lbl">Postagens</div>
-        </div>
-        <div class="divider"></div>
-        <a class="btn-ig" href="{ig_url}" target="_blank">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <rect x="2" y="2" width="20" height="20" rx="5" fill="white" fill-opacity="0.15"/>
-                <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-                <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-            </svg>
-            Ver no Instagram
-        </a>
-    </div>
-</div>
-
-<!-- BIO -->
-<div class="bio-wrap">
-    <div class="bio-body">
-        <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
-        <div class="bio-left">
-            {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
-        </div>
-        <div class="bio-right">
-            <button class="btn-ia" onclick="
-                const btns = window.parent.document.querySelectorAll('button');
-                for (const b of btns) {{
-                    if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
-                }}
-            ">🤖 Analisar Bio</button>
-            <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
-        </div>
-    </div>
-    {'<div class="resultado"><div class="resultado-hdr">✨ Análise de IA</div>' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
-</div>
-
 <script>
 var EMPRESAS = {empresas_redes_str};
 var ABA_ATIVA = {aba_ativa};
-
-function buildCards() {{
+function buildUI() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
     EMPRESAS.forEach(function(e) {{
@@ -7190,8 +7267,8 @@ function buildCards() {{
         card.addEventListener('click', function() {{ selectAba(e.i); }});
         grid.appendChild(card);
     }});
+    syncHeight();
 }}
-
 function selectAba(i) {{
     ABA_ATIVA = i;
     document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
@@ -7199,7 +7276,6 @@ function selectAba(i) {{
     if (card) card.classList.add('active');
     triggerBtn('redes_aba_' + i);
 }}
-
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -7207,27 +7283,286 @@ function triggerBtn(label) {{
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
-
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 4) + 'px';
+            frames[i].style.height = (h + 2) + 'px';
+            frames[i].style.marginTop = '-23px';
             break;
         }} }} catch(e) {{}}
     }}
 }}
-
-buildCards();
+buildUI();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 100);
-setTimeout(syncHeight, 400);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
-</body></html>
-""", height=500, scrolling=False)
+""", height=100, scrolling=False)
+ 
+        # ── Renderiza perfil da aba ativa ───────────────────────────
+        r = ok[aba_ativa]
+        is_minha  = r.get("tipo") == "minha"
+        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
+        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
+        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
+        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
+        cor = get_avatar_color(aba_ativa)
+        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+        posts_list = r.get("posts", [])
+
+        # ── Cabeçalho do perfil — estilo imagem 2 ──────────────────
+        seg_fmt   = fmt_num(r.get("seguidores", 0))
+        posts_fmt = fmt_num(r.get("total_posts", 0))
+        handle_clean = (r.get("handle") or "").lstrip("@")
+        ig_url = f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#"
+
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.header {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px 14px 0 0;
+    display:flex; align-items:center; gap:16px;
+    padding:18px 22px 16px;
+}}
+.avatar {{
+    width:52px; height:52px; border-radius:50%;
+    background:{cor};
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.info {{ flex:1; min-width:0; }}
+.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
+.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
+.badge {{
+    display:inline-block;
+    background:{badge_bg}; color:{badge_txt};
+    border:1px solid {badge_brd};
+    padding:2px 10px; border-radius:20px;
+    font-size:11px; font-weight:600; margin-top:4px;
+}}
+.divider {{ width:1px; height:44px; background:#e5e7eb; flex-shrink:0; margin:0 8px; }}
+.stat-wrap {{ display:flex; align-items:center; gap:24px; flex-shrink:0; }}
+.stat {{ text-align:center; }}
+.stat-num {{ font-size:24px; font-weight:800; color:#0f1f35; line-height:1; }}
+.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }}
+.btn-ig {{
+    display:inline-flex; align-items:center; gap:7px;
+    background:#0e2a47; color:#fff;
+    padding:9px 18px; border-radius:9px;
+    font-size:13px; font-weight:700; text-decoration:none;
+    white-space:nowrap; flex-shrink:0;
+    transition:background 0.15s;
+}}
+.btn-ig:hover {{ background:#1a3a5c; }}
+</style>
+<div class="header">
+    <div class="avatar">{gerar_avatar(r["nome"])}</div>
+    <div class="info">
+        <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
+        <div class="badge">{badge_lbl}</div>
+    </div>
+    <div class="stat-wrap">
+        <div class="divider"></div>
+        <div class="stat">
+            <div class="stat-num">{seg_fmt}</div>
+            <div class="stat-lbl">Seguidores</div>
+        </div>
+        <div class="divider"></div>
+        <div class="stat">
+            <div class="stat-num">{posts_fmt}</div>
+            <div class="stat-lbl">Postagens</div>
+        </div>
+        <div class="divider"></div>
+        <a class="btn-ig" href="{ig_url}" target="_blank">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="20" height="20" rx="5" fill="white" fill-opacity="0.15"/>
+                <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+            </svg>
+            Ver no Instagram
+        </a>
+    </div>
+</div>
+<script>
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '88px'; break; }} }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=88, scrolling=False)
+
+        # ── Bio — largura 100%, 2 colunas ───────────────────────────
+        chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
+        if chave_bio_ia not in st.session_state:
+            st.session_state[chave_bio_ia] = ""
+
+        st.markdown(f"""
+        <style>
+        .st-key-btn_bio_ia_{aba_ativa} {{
+            position: fixed !important; top: -9999px !important; left: -9999px !important;
+            width: 1px !important; height: 1px !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+
+        analisar_bio = st.button(
+            f"__bio_{aba_ativa}__",
+            key=f"btn_bio_ia_{aba_ativa}",
+            use_container_width=True,
+        )
+        if analisar_bio:
+            if gemini_model is None:
+                st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                with st.spinner("Analisando bio…"):
+                    try:
+                        prompt_bio = f"""
+Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
+
+Bio: "{bio_txt}"
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
+
+Responda com:
+### Posicionamento
+Qual é o posicionamento transmitido pela bio?
+
+### Pontos Fortes
+(2 pontos positivos da bio)
+
+### O que melhorar
+(2 sugestões concretas de melhoria)
+
+### Bio sugerida
+Escreva uma versão melhorada da bio (máx. 150 caracteres).
+"""
+                        resp = gemini_model.generate_content(prompt_bio)
+                        st.session_state[chave_bio_ia] = resp.text
+                    except Exception as e:
+                        st.session_state[chave_bio_ia] = f"Erro: {e}"
+
+        bio_resultado = st.session_state.get(chave_bio_ia, "")
+        bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
+
+        components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; -webkit-font-smoothing:antialiased; }}
+body {{ padding-bottom:4px; }}
+.bio-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-radius:0;
+    overflow:hidden;
+}}
+.bio-hdr {{
+    display:none;  /* remove o header, vira coluna lateral */
+}}
+.bio-body {{
+    display:grid;
+    grid-template-columns:15% 50% 35%;
+    gap:0;
+    min-height:80px;
+}}
+.bio-label-col {{
+    padding:18px 16px;
+    border-right:1px solid #f3f4f6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fafbfc;
+}}
+.bio-label-txt {{
+    font-size:10px;
+    font-weight:700;
+    color:#9ca3af;
+    text-transform:uppercase;
+    letter-spacing:1px;
+}}
+.bio-left {{
+    padding:18px 20px;
+    border-right:1px solid #f3f4f6;
+}}
+.bio-text {{
+    font-size:15px; color:#374151; line-height:1.75;
+    font-style:italic;
+}}
+.bio-empty {{
+    font-size:14px; color:#d1d5db; font-style:italic;
+}}
+.bio-right {{
+    padding:18px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    background:#fafbfc;
+}}
+.btn-ia {{
+    width:100%; padding:11px 0; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+    text-align:center;
+}}
+.btn-ia:hover {{ background:#dbeafe; }}
+.ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.5; }}
+.resultado {{
+    grid-column: 1 / -1;
+    margin:0; background:#f0fdf4; border-top:1px solid #86efac;
+    padding:14px 20px;
+    font-size:13px; color:#374151; line-height:1.75;
+}}
+.resultado-hdr {{
+    font-size:10px; font-weight:800; color:#15803d;
+    text-transform:uppercase; letter-spacing:0.5px;
+    margin-bottom:8px;
+}}
+</style>
+<div class="bio-wrap">
+    <div class="bio-body" id="bio-grid">
+        <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
+        <div class="bio-left">
+            {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
+        </div>
+        <div class="bio-right">
+            <button class="btn-ia" onclick="
+                const btns = window.parent.document.querySelectorAll('button');
+                for (const b of btns) {{
+                    if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
+                }}
+            ">🤖 Analisar Bio</button>
+            <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
+        </div>
+    </div>
+    {'<div class="resultado"><div class="resultado-hdr">✨ Análise de IA</div>' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
+</div>
+<script>
+function syncH() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; iframes[i].style.marginTop = '-32px';break; }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncH);
+window.addEventListener('load', syncH);
+setTimeout(syncH, 100); setTimeout(syncH, 400);
+</script>
+""", height=120, scrolling=False)
  
         # ── Abas: Postagens / Análise de IA ────────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
