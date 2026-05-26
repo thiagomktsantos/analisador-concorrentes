@@ -3530,106 +3530,73 @@ function triggerTab(label) {{
         onboarding_paginas = st.session_state.ads_onboarding_paginas
 
         # ── Ghost buttons ocultos via CSS
-        ghost_css = "".join([f"""
-        .st-key-cfg_ghost_edit_{ci} {{
-            position:fixed!important;top:-9999px!important;left:-9999px!important;
-            width:0!important;height:0!important;overflow:hidden!important;
-            opacity:0!important;pointer-events:none!important;display:none!important;
-        }}
-        .stElementContainer:has(.st-key-cfg_ghost_edit_{ci}) {{
-            display:none!important;height:0!important;min-height:0!important;
-            max-height:0!important;padding:0!important;margin:0!important;
-        }}
-        """ for ci in range(len(todas_empresas))])
-
-        # Ghost buttons para salvar/cancelar inline
-        ghost_save_css = "".join([f"""
+        all_ghost_css = "".join([f"""
+        .st-key-cfg_ghost_edit_{ci},
         .st-key-cfg_ghost_save_{ci},
         .st-key-cfg_ghost_cancel_{ci},
-        .st-key-cfg_ghost_buscar_{ci} {{
-            position:fixed!important;top:-9999px!important;left:-9999px!important;
-            width:0!important;height:0!important;overflow:hidden!important;
-            opacity:0!important;pointer-events:none!important;display:none!important;
-        }}
-        .stElementContainer:has(.st-key-cfg_ghost_save_{ci}),
-        .stElementContainer:has(.st-key-cfg_ghost_cancel_{ci}),
-        .stElementContainer:has(.st-key-cfg_ghost_buscar_{ci}) {{
-            display:none!important;height:0!important;min-height:0!important;
-            max-height:0!important;padding:0!important;margin:0!important;
-        }}
-        """ for ci in range(len(todas_empresas))])
-
-        st.markdown(f"<style>{ghost_css}{ghost_save_css}</style>", unsafe_allow_html=True)
-
-        # ── Ghost buttons para editar
-        ghost_triggers = {}
-        for ci in range(len(todas_empresas)):
-            ghost_triggers[ci] = st.button(str(ci), key=f"cfg_ghost_edit_{ci}")
-
-        for ci, e in enumerate(todas_empresas):
-            if ghost_triggers.get(ci):
-                st.session_state.ads_editando_empresa = e["nome"]
-                st.session_state.ads_onboarding_empresa = None
-                st.session_state.ads_onboarding_paginas = []
-                st.rerun()
-
-        # ── Ghost buttons para salvar / cancelar / buscar
-        ghost_save_triggers   = {}
-        ghost_cancel_triggers = {}
-        ghost_buscar_triggers = {}
-        for ci in range(len(todas_empresas)):
-            ghost_save_triggers[ci]   = st.button(f"save_{ci}",   key=f"cfg_ghost_save_{ci}")
-            ghost_cancel_triggers[ci] = st.button(f"cancel_{ci}", key=f"cfg_ghost_cancel_{ci}")
-            ghost_buscar_triggers[ci] = st.button(f"buscar_{ci}", key=f"cfg_ghost_buscar_{ci}")
-
-        for ci, e in enumerate(todas_empresas):
-            if ghost_cancel_triggers.get(ci):
-                st.session_state.ads_editando_empresa = None
-                st.session_state.ads_onboarding_empresa = None
-                st.session_state.ads_onboarding_paginas = []
-                st.rerun()
-
-        # ── Input oculto para capturar valor digitado no HTML
-        input_css = "".join([f"""
+        .st-key-cfg_ghost_buscar_{ci},
         .st-key-cfg_input_val_{ci} {{
             position:fixed!important;top:-9999px!important;left:-9999px!important;
             width:0!important;height:0!important;overflow:hidden!important;
             opacity:0!important;pointer-events:none!important;display:none!important;
         }}
+        .stElementContainer:has(.st-key-cfg_ghost_edit_{ci}),
+        .stElementContainer:has(.st-key-cfg_ghost_save_{ci}),
+        .stElementContainer:has(.st-key-cfg_ghost_cancel_{ci}),
+        .stElementContainer:has(.st-key-cfg_ghost_buscar_{ci}),
         .stElementContainer:has(.st-key-cfg_input_val_{ci}) {{
             display:none!important;height:0!important;min-height:0!important;
-            max-height:0!important;padding:0!important;margin:0!important;
+            max-height:0!important;padding:0!important;margin:0!important;overflow:hidden!important;
         }}
         """ for ci in range(len(todas_empresas))])
-        st.markdown(f"<style>{input_css}</style>", unsafe_allow_html=True)
 
-        input_vals = {}
+        st.markdown(f"<style>{all_ghost_css}</style>", unsafe_allow_html=True)
+
+        # ── Ghost triggers
+        ghost_edit    = {}
+        ghost_save    = {}
+        ghost_cancel  = {}
+        ghost_buscar  = {}
+        input_vals    = {}
+
         for ci, e in enumerate(todas_empresas):
+            ghost_edit[ci]   = st.button(str(ci),          key=f"cfg_ghost_edit_{ci}")
+            ghost_save[ci]   = st.button(f"save_{ci}",     key=f"cfg_ghost_save_{ci}")
+            ghost_cancel[ci] = st.button(f"cancel_{ci}",   key=f"cfg_ghost_cancel_{ci}")
+            ghost_buscar[ci] = st.button(f"buscar_{ci}",   key=f"cfg_ghost_buscar_{ci}")
             is_minha_e = e["tipo"] == "minha"
             ads_id_e   = emp.get("ads_id","") if is_minha_e else concs[e["idx"]].get("ads_id","")
             input_vals[ci] = st.text_input(
-                f"val_{ci}",
-                value=ads_id_e,
-                key=f"cfg_input_val_{ci}",
-                label_visibility="hidden",
+                f"val_{ci}", value=ads_id_e,
+                key=f"cfg_input_val_{ci}", label_visibility="hidden",
             )
 
+        # ── Processar ações
         for ci, e in enumerate(todas_empresas):
-            if ghost_save_triggers.get(ci):
-                val = input_vals.get(ci, "").strip()
+            if ghost_edit[ci]:
+                st.session_state.ads_editando_empresa   = e["nome"]
+                st.session_state.ads_onboarding_empresa = None
+                st.session_state.ads_onboarding_paginas = []
+                st.rerun()
+            if ghost_cancel[ci]:
+                st.session_state.ads_editando_empresa   = None
+                st.session_state.ads_onboarding_empresa = None
+                st.session_state.ads_onboarding_paginas = []
+                st.rerun()
+            if ghost_save[ci]:
+                val = input_vals.get(ci,"").strip()
                 if val:
                     salvar_ads_id(e, val)
-                    st.session_state.ads_editando_empresa = None
+                    st.session_state.ads_editando_empresa   = None
                     st.session_state.ads_onboarding_empresa = None
                     st.session_state.ads_onboarding_paginas = []
                     st.toast(f"✅ {e['nome']} salvo!", icon="✅")
                     st.rerun()
-
-            if ghost_buscar_triggers.get(ci):
-                val = input_vals.get(ci, "").strip()
+            if ghost_buscar[ci]:
+                val = input_vals.get(ci,"").strip()
                 if val:
                     st.session_state.ads_onboarding_empresa = e["nome"]
-                    st.session_state.ads_editando_empresa = e["nome"]
+                    st.session_state.ads_editando_empresa   = e["nome"]
                     with st.spinner("Buscando…"):
                         paginas = buscar_paginas_facebook(val)
                     st.session_state.ads_onboarding_paginas = paginas
@@ -3638,12 +3605,12 @@ function triggerTab(label) {{
         # ── INFO BOX
         st.markdown("""
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
-                    padding:12px 16px;font-size:13px;color:#0369a1;
+                    padding:11px 16px;font-size:13px;color:#0369a1;
                     display:flex;align-items:flex-start;gap:10px;
-                    line-height:1.6;margin-bottom:12px">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
+                    line-height:1.6;margin-bottom:10px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0369a1"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 style="flex-shrink:0;margin-top:1px">
+                 style="flex-shrink:0;margin-top:2px">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -3657,296 +3624,290 @@ function triggerTab(label) {{
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Monta cards HTML — card editando vira 100% com campos inline
-        cards_normal  = ""
-        card_editing  = ""
-        has_editing   = editando_empresa is not None
-
+        # ── Monta HTML dos cards
+        cards_html = ""
         for ci, e in enumerate(todas_empresas):
-            is_minha   = e["tipo"] == "minha"
-            ads_id     = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            page_pic   = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
-            has_id     = bool(ads_id.strip())
+            is_minha  = e["tipo"] == "minha"
+            ads_id    = emp.get("ads_id","") if is_minha else concs[e["idx"]].get("ads_id","")
+            page_pic  = emp.get("ads_page_pic","") if is_minha else concs[e["idx"]].get("ads_page_pic","")
+            has_id    = bool(ads_id.strip())
             is_editing = (editando_empresa == e["nome"])
-            cor        = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
-            avatar_txt = gerar_avatar(e["nome"])
-            badge_lbl  = "Minha empresa" if is_minha else "Concorrente"
-            badge_bg   = "#f0fdf4" if is_minha else "#eff6ff"
-            badge_col  = "#15803d" if is_minha else "#1d4ed8"
-            badge_brd  = "#bbf7d0" if is_minha else "#bfdbfe"
-            dot_col    = "#22c55e" if is_minha else "#3b82f6"
-            id_bg      = "#f0fdf4" if has_id else "#f3f4f6"
-            id_brd     = "#bbf7d0" if has_id else "#e5e7eb"
-            id_dot_c   = "#22c55e" if has_id else "#d1d5db"
-            id_fw      = "600" if has_id else "400"
-            id_color   = "#15803d" if has_id else "#9ca3af"
-            id_ff      = "monospace" if has_id else "inherit"
-            id_text    = ads_id if has_id else "Não configurado"
+            cor       = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
+            av_txt    = gerar_avatar(e["nome"])
+            badge_lbl = "Minha empresa" if is_minha else "Concorrente"
+            badge_bg  = "#f0fdf4" if is_minha else "#eff6ff"
+            badge_col = "#15803d" if is_minha else "#1d4ed8"
+            badge_brd = "#bbf7d0" if is_minha else "#bfdbfe"
+            dot_col   = "#22c55e" if is_minha else "#3b82f6"
+            id_bg     = "#f0fdf4" if has_id else "#f3f4f6"
+            id_brd    = "#bbf7d0" if has_id else "#e5e7eb"
+            id_dot    = "#22c55e" if has_id else "#d1d5db"
+            id_fw     = "600"     if has_id else "400"
+            id_color  = "#15803d" if has_id else "#9ca3af"
+            id_ff     = "monospace" if has_id else "inherit"
+            id_text   = ads_id if has_id else "Não configurado"
 
             if page_pic and page_pic.startswith("http"):
-                avatar_html = (
+                av_html = (
                     f'<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;'
                     f'flex-shrink:0;border:2px solid #e5e7eb">'
-                    f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block" '
-                    f'onerror="this.parentElement.style.background=\'{cor}\';'
+                    f'<img src="{page_pic}" style="width:100%;height:100%;object-fit:cover;display:block"'
+                    f' onerror="this.parentElement.style.background=\'{cor}\';'
                     f'this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;'
                     f'justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;'
-                    f'color:#fff&quot;>{avatar_txt}</div>\'" /></div>'
+                    f'color:#fff&quot;>{av_txt}</div>\'" /></div>'
                 )
             else:
-                avatar_html = (
+                av_html = (
                     f'<div style="width:44px;height:44px;border-radius:50%;background:{cor};'
                     f'display:flex;align-items:center;justify-content:center;font-size:15px;'
-                    f'font-weight:700;color:#fff;flex-shrink:0">{avatar_txt}</div>'
+                    f'font-weight:700;color:#fff;flex-shrink:0">{av_txt}</div>'
                 )
 
-            badge_html = f"""
-            <div style="display:inline-flex;align-items:center;gap:5px;
-                        background:{badge_bg};color:{badge_col};
-                        border:1px solid {badge_brd};
-                        padding:3px 10px;border-radius:20px;
-                        font-size:11px;font-weight:700;margin-top:4px">
-                <span style="width:7px;height:7px;border-radius:50%;
-                             background:{dot_col};display:inline-block;flex-shrink:0"></span>
-                {badge_lbl}
-            </div>"""
+            border_style = (
+                "border:2px solid #3a9fd6;box-shadow:0 0 0 3px rgba(58,159,214,0.12);"
+                if is_editing else "border:1px solid #e5e7eb;"
+            )
 
-            id_pill = f"""
-            <div style="border-radius:8px;padding:8px 12px;
-                        display:flex;align-items:center;gap:7px;font-size:12px;
-                        background:{id_bg};border:1px solid {id_brd};margin-top:10px">
-                <div style="width:7px;height:7px;border-radius:50%;
-                            flex-shrink:0;background:{id_dot_c}"></div>
-                <div style="font-weight:{id_fw};color:{id_color};font-family:{id_ff};
-                            overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                    {id_text}
-                </div>
-            </div>"""
-
-            if is_editing:
-                # ── Card expandido 100% com input inline
-                card_editing = f"""
-                <div class="card-full" style="border:2px solid #3a9fd6;
-                     box-shadow:0 0 0 3px rgba(58,159,214,0.12);">
-                    <!-- Header -->
-                    <div style="display:flex;align-items:center;gap:14px;
-                                padding:18px 20px 16px;border-bottom:1px solid #f0f4f8;
-                                background:#f8fbff;">
-                        {avatar_html}
-                        <div style="flex:1;min-width:0">
-                            <div style="font-size:16px;font-weight:700;color:#1a2e4a">{e["nome"]}</div>
-                            {badge_html}
-                        </div>
-                        <button class="cancel-btn" onclick="triggerGhost('cancel_{ci}')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2.5"
-                                 stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                            Cancelar
-                        </button>
-                    </div>
-                    <!-- Campo de input -->
-                    <div style="padding:18px 20px 8px">
-                        <div style="font-size:11px;font-weight:700;color:#9ca3af;
-                                    text-transform:uppercase;letter-spacing:0.8px;
-                                    margin-bottom:8px">ID ou nome da página do Facebook</div>
-                        <div style="display:flex;gap:10px;align-items:center">
-                            <input
-                                id="cfg_input_{ci}"
-                                type="text"
-                                value="{ads_id}"
-                                placeholder="Ex: Marketylics  ou  102803918240129"
-                                oninput="syncInput({ci}, this.value)"
-                                style="flex:1;height:42px;border:1.5px solid #e5e7eb;
-                                       border-radius:8px;padding:0 14px;font-size:14px;
-                                       font-family:'DM Sans',sans-serif;color:#111827;
-                                       background:#fafafa;outline:none;transition:border-color 0.15s"
-                                onfocus="this.style.borderColor='#3a9fd6';this.style.background='#fff'"
-                                onblur="this.style.borderColor='#e5e7eb';this.style.background='#fafafa'"
-                            />
-                        </div>
-                    </div>
-                    <!-- Botões -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;
-                                padding:12px 20px 18px">
-                        <button class="btn-buscar" onclick="triggerGhost('buscar_{ci}')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2"
-                                 stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"/>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                            </svg>
-                            Buscar páginas
-                        </button>
-                        <button class="btn-salvar" onclick="triggerGhost('save_{ci}')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2"
-                                 stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                                <polyline points="17 21 17 13 7 13 7 21"/>
-                                <polyline points="7 3 7 8 15 8"/>
-                            </svg>
-                            Salvar ID
-                        </button>
-                    </div>
-                </div>"""
-            else:
-                # ── Card normal no grid
-                cards_normal += f"""
-                <div class="card" style="{'border:1px solid #e5e7eb;' if not has_editing else 'border:1px solid #e5e7eb;opacity:0.6;'}">
-                    <div class="card-top">
-                        {avatar_html}
-                        <div style="flex:1;min-width:0">
-                            <div class="nome">{e["nome"]}</div>
-                            {badge_html}
-                        </div>
-                    </div>
-                    {id_pill}
-                    <button class="edit-btn" onclick="triggerGhost('{ci}')">
+            # Seção de edição inline (aparece quando is_editing)
+            edit_section = f"""
+            <div class="edit-section">
+                <div style="font-size:11px;font-weight:700;color:#9ca3af;
+                            text-transform:uppercase;letter-spacing:0.8px;
+                            margin-bottom:8px">ID ou nome da página do Facebook</div>
+                <input
+                    id="cfg_input_{ci}"
+                    type="text"
+                    value="{ads_id}"
+                    placeholder="Ex: Marketylics  ou  102803918240129"
+                    oninput="syncInput({ci}, this.value)"
+                    style="width:100%;height:42px;border:1.5px solid #e5e7eb;
+                           border-radius:8px;padding:0 14px;font-size:14px;
+                           font-family:'DM Sans',sans-serif;color:#111827;
+                           background:#fafafa;outline:none;transition:border-color 0.15s;
+                           margin-bottom:12px;display:block"
+                    onfocus="this.style.borderColor='#3a9fd6';this.style.background='#fff'"
+                    onblur="this.style.borderColor='#e5e7eb';this.style.background='#fafafa'"
+                />
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <button class="btn-buscar" onclick="triggerGhost('buscar_{ci}')">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2"
                              stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        Editar
+                        Buscar páginas
                     </button>
-                </div>"""
-
-        # ── Monta layout: se editando, grid 2col + card full; senão grid 3col
-        if has_editing and cards_normal:
-            layout_html = f"""
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-                {cards_normal}
+                    <button class="btn-salvar" onclick="triggerGhost('save_{ci}')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        Salvar ID
+                    </button>
+                </div>
             </div>
-            {card_editing}"""
-        elif has_editing:
-            layout_html = card_editing
-        else:
-            layout_html = f'<div class="cards-grid">{cards_normal}</div>'
+            """ if is_editing else ""
 
-        # ── JS para sincronizar input HTML → Streamlit hidden input
-        sync_js = """
-<script>
-function syncInput(ci, val) {
-    // Atualiza o hidden Streamlit input
-    var inputs = window.parent.document.querySelectorAll('input[data-testid="stTextInput"]');
-    // Busca pelo key cfg_input_val_{ci} — via aria-label ou posição
-    inputs.forEach(function(inp) {
-        var label = inp.getAttribute('aria-label') || '';
-        if (label === 'val_' + ci) {
-            var nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                window.parent.HTMLInputElement.prototype, 'value').set;
-            nativeInputValueSetter.call(inp, val);
-            inp.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    });
-}
-function triggerGhost(label) {
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === String(label)) { b.click(); return; }
-    }
-}
-function syncHeight() {
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {
-        try {
-            if (iframes[i].contentWindow === window) {
-                iframes[i].style.height = (h + 8) + 'px'; break;
-            }
-        } catch(ex) {}
-    }
-}
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 100); setTimeout(syncHeight, 400);
-</script>"""
+            cancel_btn = f"""
+            <button class="cancel-btn" onclick="triggerGhost('cancel_{ci}')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Cancelar
+            </button>
+            """ if is_editing else f"""
+            <button class="edit-btn" onclick="triggerGhost('{ci}')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Editar
+            </button>
+            """
+
+            cards_html += f"""
+            <div class="card" style="{border_style}">
+                <div class="card-header">
+                    {av_html}
+                    <div style="flex:1;min-width:0">
+                        <div class="nome">{e["nome"]}</div>
+                        <div style="display:inline-flex;align-items:center;gap:5px;
+                                    background:{badge_bg};color:{badge_col};
+                                    border:1px solid {badge_brd};
+                                    padding:3px 10px;border-radius:20px;
+                                    font-size:11px;font-weight:700;margin-top:4px">
+                            <span style="width:7px;height:7px;border-radius:50%;
+                                         background:{dot_col};display:inline-block;flex-shrink:0"></span>
+                            {badge_lbl}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="border-radius:8px;padding:8px 12px;
+                                display:flex;align-items:center;gap:7px;font-size:12px;
+                                background:{id_bg};border:1px solid {id_brd}">
+                        <div style="width:7px;height:7px;border-radius:50%;
+                                    flex-shrink:0;background:{id_dot}"></div>
+                        <div style="font-weight:{id_fw};color:{id_color};font-family:{id_ff};
+                                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                            {id_text}
+                        </div>
+                    </div>
+                    {edit_section}
+                </div>
+                <div class="card-footer">
+                    {cancel_btn}
+                </div>
+            </div>"""
 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+html, body {{
+    background:transparent;
+    font-family:'DM Sans',sans-serif;
+    overflow:hidden;
+    /* remove qualquer margem do iframe em relação à nav bar */
+    margin-top:0 !important;
+    padding-top:0 !important;
+}}
 .outer {{
     background:#d2dde9;
     border:1px solid #cbd5e1;
     border-radius:16px;
-    padding:20px;
+    padding:16px;
 }}
 .cards-grid {{
     display:grid;
     grid-template-columns:repeat(3,1fr);
     gap:14px;
 }}
-.card, .card-full {{
+.card {{
     background:#fff;
     border-radius:12px;
     overflow:hidden;
+    display:flex;
+    flex-direction:column;
 }}
-.card-full {{ width:100%; }}
-.card-top {{
-    display:flex; align-items:center; gap:12px; padding:16px 16px 12px;
+.card-header {{
+    display:flex;align-items:center;gap:12px;
+    padding:16px 16px 12px;
+}}
+.card-body {{
+    padding:0 16px 14px;
+    display:flex;flex-direction:column;gap:12px;
+}}
+.edit-section {{
+    padding-top:12px;
+    border-top:1px solid #f3f4f6;
 }}
 .nome {{
-    font-size:14px; font-weight:700; color:#1a2e4a;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-size:14px;font-weight:700;color:#1a2e4a;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}}
+.card-footer {{
+    border-top:1px solid #f3f4f6;
+    padding:0;
 }}
 .edit-btn {{
-    width:100%; padding:10px 0; margin-top:10px;
-    background:#f9fafb; border:none; border-top:1px solid #f3f4f6;
-    outline:none; -webkit-appearance:none;
-    font-size:13px; font-weight:600; color:#6b7280;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:flex; align-items:center; justify-content:center; gap:7px;
+    width:100%;padding:10px 0;
+    background:#fff;border:none;
+    outline:none;-webkit-appearance:none;
+    font-size:13px;font-weight:600;color:#6b7280;
+    cursor:pointer;font-family:'DM Sans',sans-serif;
+    display:flex;align-items:center;justify-content:center;gap:7px;
     transition:background 0.12s;
 }}
-.edit-btn:hover {{ background:#f3f4f6; color:#111827; }}
+.edit-btn:hover {{ background:#f9fafb;color:#111827; }}
 .cancel-btn {{
-    display:flex; align-items:center; gap:6px;
-    padding:8px 14px; border:1px solid #e5e7eb;
-    border-radius:8px; background:#fff;
-    font-size:13px; font-weight:600; color:#6b7280;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    flex-shrink:0; transition:all 0.12s;
+    width:100%;padding:10px 0;
+    background:#fff;border:none;
+    outline:none;-webkit-appearance:none;
+    font-size:13px;font-weight:600;color:#9ca3af;
+    cursor:pointer;font-family:'DM Sans',sans-serif;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:all 0.12s;
 }}
-.cancel-btn:hover {{ background:#fef2f2; color:#dc2626; border-color:#fca5a5; }}
+.cancel-btn:hover {{ background:#fef2f2;color:#dc2626; }}
 .btn-buscar {{
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    padding:11px 0; border:1.5px solid #3a9fd6; border-radius:9px;
-    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    padding:10px 0;border:1.5px solid #3a9fd6;border-radius:8px;
+    background:#eff6ff;font-size:13px;font-weight:700;color:#1d4ed8;
+    cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;
 }}
 .btn-buscar:hover {{ background:#dbeafe; }}
 .btn-salvar {{
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    padding:11px 0; border:none; border-radius:9px;
-    background:#0e2a47; font-size:14px; font-weight:700; color:#fff;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    padding:10px 0;border:none;border-radius:8px;
+    background:#0e2a47;font-size:13px;font-weight:700;color:#fff;
+    cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;
 }}
 .btn-salvar:hover {{ background:#1a3a5c; }}
 </style>
 <div class="outer">
-    {layout_html}
+    <div class="cards-grid">{cards_html}</div>
 </div>
-{sync_js}
+<script>
+function syncInput(ci, val) {{
+    var inputs = window.parent.document.querySelectorAll('input');
+    inputs.forEach(function(inp) {{
+        var label = inp.getAttribute('aria-label') || '';
+        if (label === 'val_' + ci) {{
+            var setter = Object.getOwnPropertyDescriptor(
+                window.parent.HTMLInputElement.prototype, 'value').set;
+            setter.call(inp, val);
+            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        }}
+    }});
+}}
+function triggerGhost(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === String(label)) {{ b.click(); return; }}
+    }}
+}}
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = (h + 4) + 'px';
+                iframes[i].style.marginTop = '-8px';
+                break;
+            }}
+        }} catch(ex) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 80);
+setTimeout(syncHeight, 300);
+</script>
 """, height=250, scrolling=False)
 
-        # ── Páginas encontradas (abaixo do container, em Streamlit nativo)
+        # ── Páginas encontradas
         if onboarding_empresa and onboarding_paginas:
-            e_onboard = next((x for x in todas_empresas if x["nome"] == onboarding_empresa), None)
-            if e_onboard:
-                ci_onboard = next(i for i, x in enumerate(todas_empresas) if x["nome"] == onboarding_empresa)
-                sk_onboard = safe_key(e_onboard["nome"])
-
+            e_ob = next((x for x in todas_empresas if x["nome"] == onboarding_empresa), None)
+            if e_ob:
+                ci_ob = next(i for i, x in enumerate(todas_empresas) if x["nome"] == onboarding_empresa)
+                sk_ob = safe_key(e_ob["nome"])
                 st.markdown(
                     f"<div style='font-size:11px;font-weight:700;color:#6b7280;"
-                    f"text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 8px'>"
+                    f"text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px'>"
                     f"📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)</div>",
                     unsafe_allow_html=True,
                 )
@@ -3987,15 +3948,15 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
                     with col_usar:
                         if st.button(
                             "Usar",
-                            key=f"btn_pg_usar_{sk_onboard}_{ci_onboard}_{pi}",
+                            key=f"btn_pg_usar_{sk_ob}_{ci_ob}_{pi}",
                             use_container_width=True,
                         ):
                             salvar_ads_id(
-                                e_onboard,
+                                e_ob,
                                 pg.get("page_id") or pg.get("nome",""),
                                 pg.get("profile_picture",""),
                             )
-                            st.session_state.ads_editando_empresa = None
+                            st.session_state.ads_editando_empresa   = None
                             st.session_state.ads_onboarding_empresa = None
                             st.session_state.ads_onboarding_paginas = []
                             st.toast(f"✅ {pg.get('nome','')} selecionado!", icon="✅")
