@@ -4029,9 +4029,6 @@ setTimeout(syncHeight, 300);
                 "ads_id": ads_id,
                 "is_minha": is_minha,
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
-                "cor": cor,
-                "av": gerar_avatar(e["nome"]),
-                "page_pic": (emp.get("ads_page_pic","") if is_minha else concs[e["idx"]].get("ads_page_pic","")) or "",
             })
 
         empresas_cards_str = _json.dumps(empresas_cards_json, ensure_ascii=False)
@@ -4189,15 +4186,14 @@ function buildUI() {{
             ? '<span class="badge-minha">Minha empresa</span>'
             : '<span class="badge-conc">Concorrente</span>';
         card.innerHTML =
-            + (function() {
-                var pic = e.page_pic;  // adicione page_pic ao empresas_cards_json
-                if (pic) {
-                    return '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid #e5e7eb">'
-                        + '<img src="' + pic + '" style="width:100%;height:100%;object-fit:cover;display:block"'
-                        + ' onerror="this.parentElement.style.background=\'' + e.cor + '\';this.parentElement.innerHTML=\'<div style=&quot;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:15px;font-weight:700;color:#fff&quot;>' + e.av + '</div>\'" /></div>';
-                }
-                return '<div style="width:44px;height:44px;border-radius:50%;background:' + e.cor + ';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0">' + e.av + '</div>';
-            })()
+            '<div class="emp-icon">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+            + '<rect x="2" y="7" width="20" height="14" rx="2"/>'
+            + '<path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'
+            + '<line x1="12" y1="12" x2="12" y2="16"/>'
+            + '<line x1="10" y1="14" x2="14" y2="14"/>'
+            + '</svg>'
+            + '</div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
             + badgeHtml
