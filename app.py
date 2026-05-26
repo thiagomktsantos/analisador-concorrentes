@@ -3756,11 +3756,15 @@ function triggerTab(label) {{
                     <div style="border-radius:8px;padding:8px 12px;
                                 display:flex;align-items:center;gap:7px;font-size:12px;
                                 background:{id_bg};border:1px solid {id_brd}">
-                        <div style="width:7px;height:7px;border-radius:50%;
-                                    flex-shrink:0;background:{id_dot}"></div>
-                        <div style="font-weight:{id_fw};color:{id_color};font-family:{id_ff};
-                                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                            {id_text}
+                        <span style="flex-shrink:0;font-size:13px">{"✅" if has_id else "⬜"}</span>
+                        <div style="display:flex;flex-direction:column;min-width:0;flex:1">
+                            <span style="font-size:10px;font-weight:700;color:#9ca3af;
+                                         text-transform:uppercase;letter-spacing:0.6px;
+                                         margin-bottom:1px">ID / Nome da página</span>
+                            <span style="font-weight:{id_fw};color:{id_color};font-family:{id_ff};
+                                         overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                                {id_text}
+                            </span>
                         </div>
                     </div>
                     {edit_section}
