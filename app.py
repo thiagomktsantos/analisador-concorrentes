@@ -7468,16 +7468,30 @@ body {{ padding-bottom:4px; }}
     overflow:hidden;
 }}
 .bio-hdr {{
-    padding:10px 20px;
-    font-size:11px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1px;
-    border-bottom:1px solid #e5e7eb; background:#fff;
+    display:none;  /* remove o header, vira coluna lateral */
 }}
 .bio-body {{
     display:grid;
-    grid-template-columns:1fr 220px;
+    grid-template-columns:140px 1fr 220px;
     gap:0;
     min-height:80px;
+}}
+.bio-label-col {{
+    padding:18px 16px;
+    border-right:1px solid #f3f4f6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fafbfc;
+}}
+.bio-label-txt {{
+    font-size:10px;
+    font-weight:700;
+    color:#9ca3af;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
 }}
 .bio-left {{
     padding:18px 20px;
@@ -7520,8 +7534,8 @@ body {{ padding-bottom:4px; }}
 }}
 </style>
 <div class="bio-wrap">
-    <div class="bio-hdr">Bio do perfil</div>
     <div class="bio-body" id="bio-grid">
+        <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
         <div class="bio-left">
             {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
         </div>
