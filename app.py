@@ -3523,7 +3523,7 @@ function triggerTab(label) {{
 # ABA: CONFIGURAÇÃO — Cards de empresa
 # ══════════════════════════════════════════════════════════════════
 
-    if main_tab == "configuracao":
+if main_tab == "configuracao":
 
         editando_empresa   = st.session_state.ads_editando_empresa
         onboarding_empresa = st.session_state.ads_onboarding_empresa
@@ -3541,18 +3541,39 @@ function triggerTab(label) {{
             display: flex; align-items: flex-start; gap: 10px;
             line-height: 1.6; margin-bottom: 16px;
         }
-        /* Zera padding/border do container Streamlit dentro do cfg */
-        [data-testid="stVerticalBlockBorderWrapper"] {
-            box-shadow: none !important;
-        }
-        .cfg-card-inner [data-testid="stVerticalBlockBorderWrapper"] {
-            border: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-        }
         </style>
         """, unsafe_allow_html=True)
+
+        # Ghost buttons para editar — ocultos via CSS, acionados pelo HTML
+        ghost_edit_css = []
+        for ci in range(len(todas_empresas)):
+            ghost_edit_css.append(f"""
+            .st-key-_ghost_edit_{ci}_ {{
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:0 !important; height:0 !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; display:none !important;
+            }}
+            .stElementContainer:has(.st-key-_ghost_edit_{ci}_) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important;
+            }}
+            """)
+        st.markdown(f"<style>{''.join(ghost_edit_css)}</style>", unsafe_allow_html=True)
+
+        ghost_triggers = {}
+        for ci in range(len(todas_empresas)):
+            if st.button(f"_gedit_{ci}_", key=f"_ghost_edit_{ci}_"):
+                ghost_triggers[ci] = True
+            else:
+                ghost_triggers[ci] = False
+
+        # Processar cliques dos ghosts
+        for ci, e in enumerate(todas_empresas):
+            if ghost_triggers.get(ci):
+                st.session_state.ads_editando_empresa = e["nome"]
+                st.session_state.ads_onboarding_empresa = None
+                st.session_state.ads_onboarding_paginas = []
+                st.rerun()
 
         st.markdown('<div class="cfg-outer-wrap">', unsafe_allow_html=True)
 
@@ -3577,11 +3598,11 @@ function triggerTab(label) {{
         cols_cfg = st.columns(3)
 
         for ci, e in enumerate(todas_empresas):
-            is_minha = e["tipo"] == "minha"
-            ads_id   = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
-            page_pic = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
-            sk       = safe_key(e["nome"])
-            has_id   = bool(ads_id.strip())
+            is_minha   = e["tipo"] == "minha"
+            ads_id     = emp.get("ads_id", "") if is_minha else concs[e["idx"]].get("ads_id", "")
+            page_pic   = emp.get("ads_page_pic", "") if is_minha else concs[e["idx"]].get("ads_page_pic", "")
+            sk         = safe_key(e["nome"])
+            has_id     = bool(ads_id.strip())
             is_editing = (editando_empresa == e["nome"])
             cor        = get_minha_empresa_color() if is_minha else get_concorrente_color(e["idx"])
             avatar_txt = gerar_avatar(e["nome"])
@@ -3621,8 +3642,21 @@ function triggerTab(label) {{
             id_ff     = "monospace" if has_id else "inherit"
             id_text   = ads_id if has_id else "Não configurado — clique em ✏️"
 
+            # Botão editar dentro do card (só quando não está editando)
+            edit_btn_html = "" if is_editing else f"""
+<button class="edit-btn" onclick="triggerGhost({ci})">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+    Editar
+</button>"""
+
+            # Altura dinâmica do iframe
+            card_height = 152 if not is_editing else 108
+
             with cols_cfg[ci % 3]:
-                # ── Card header sempre visível
                 components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3653,7 +3687,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     background:{dot_col}; flex-shrink:0;
 }}
 .id-strip {{
-    margin:0 12px 12px; border-radius:8px; padding:8px 12px;
+    margin:0 12px 0; border-radius:8px; padding:8px 12px;
     display:flex; align-items:center; gap:7px; font-size:12px;
     background:{id_bg}; border:1px solid {id_brd};
 }}
@@ -3662,6 +3696,15 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     font-weight:{id_fw}; color:{id_color}; font-family:{id_ff};
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }}
+.edit-btn {{
+    width:100%; padding:11px 0;
+    background:#fff; border:none; border-top:1px solid #f3f4f6;
+    font-size:14px; font-weight:600; color:#6b7280;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:background 0.12s; margin-top:12px;
+}}
+.edit-btn:hover {{ background:#f9fafb; color:#111827; }}
 </style>
 <div class="card">
     <div class="card-top">
@@ -3675,51 +3718,46 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
         <div class="id-dot"></div>
         <div class="id-val">{id_text}</div>
     </div>
+    {edit_btn_html}
 </div>
 <script>
+function triggerGhost(ci) {{
+    var label = '_gedit_' + ci + '_';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if ((b.textContent || b.innerText || '').trim() === label) {{
+            b.click();
+            return;
+        }}
+    }}
+}}
 (function() {{
+    var h = document.body.scrollHeight;
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
             if (iframes[i].contentWindow === window) {{
-                iframes[i].style.height = '108px';
+                iframes[i].style.height = h + 'px';
                 break;
             }}
-        }} catch(e) {{}}
+        }} catch(ex) {{}}
     }}
 }})();
 </script>
-""", height=108, scrolling=False)
+""", height=card_height, scrolling=False)
 
-                # ── Botão editar (quando NÃO está editando)
-                if not is_editing:
-                    if st.button(
-                        "✏️ Editar",
-                        key=f"btn_edit_open_{sk}_{ci}",
-                        use_container_width=True,
-                    ):
-                        st.session_state.ads_editando_empresa = e["nome"]
-                        st.session_state.ads_onboarding_empresa = None
-                        st.session_state.ads_onboarding_paginas = []
-                        st.rerun()
-
-                # ── Formulário inline (quando está editando)
+                # ── Formulário inline (apenas quando editando)
                 if is_editing:
                     novo_val = st.text_input(
                         "Nome ou ID da página",
                         value=ads_id,
                         key=f"cfg_inline_input_{sk}_{ci}",
                         placeholder="Ex: Marketylics  ou  102803918240129",
-                        label_visibility="visible",
                     )
 
                     col_b, col_s = st.columns(2)
                     with col_b:
-                        if st.button(
-                            "🔍 Buscar",
-                            key=f"btn_inline_buscar_{sk}_{ci}",
-                            use_container_width=True,
-                        ):
+                        if st.button("🔍 Buscar", key=f"btn_inline_buscar_{sk}_{ci}", use_container_width=True):
                             if novo_val.strip():
                                 st.session_state.ads_onboarding_empresa = e["nome"]
                                 with st.spinner("Buscando…"):
@@ -3729,11 +3767,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
                             else:
                                 st.warning("Digite um nome ou ID.")
                     with col_s:
-                        if st.button(
-                            "💾 Salvar",
-                            key=f"btn_inline_salvar_{sk}_{ci}",
-                            use_container_width=True,
-                        ):
+                        if st.button("💾 Salvar", key=f"btn_inline_salvar_{sk}_{ci}", use_container_width=True):
                             if novo_val.strip():
                                 salvar_ads_id(e, novo_val.strip())
                                 st.session_state.ads_editando_empresa = None
@@ -3744,11 +3778,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
                             else:
                                 st.warning("Digite um nome ou ID.")
 
-                    if st.button(
-                        "✕ Cancelar",
-                        key=f"btn_inline_cancelar_{sk}_{ci}",
-                        use_container_width=True,
-                    ):
+                    if st.button("✕ Cancelar", key=f"btn_inline_cancelar_{sk}_{ci}", use_container_width=True):
                         st.session_state.ads_editando_empresa = None
                         st.session_state.ads_onboarding_empresa = None
                         st.session_state.ads_onboarding_paginas = []
@@ -3762,66 +3792,38 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
                             f"📋 {len(onboarding_paginas[:8])} página(s) encontrada(s)</div>",
                             unsafe_allow_html=True,
                         )
-
                         for pi, pg in enumerate(onboarding_paginas[:8]):
-                            initial = (pg.get("nome", "P") or "P")[0].upper()
-                            pic     = pg.get("profile_picture", "")
-
-                            if pic and pic.startswith("http"):
-                                thumb_html = (
-                                    f'<img src="{pic}" style="width:32px;height:32px;'
-                                    f'border-radius:50%;object-fit:cover;display:block" '
-                                    f'onerror="this.style.display=\'none\'" />'
-                                )
-                            else:
-                                thumb_html = (
-                                    f'<span style="font-size:13px;font-weight:700;'
-                                    f'color:#6b7280">{initial}</span>'
-                                )
-
+                            initial  = (pg.get("nome", "P") or "P")[0].upper()
+                            pic      = pg.get("profile_picture", "")
+                            thumb_html = (
+                                f'<img src="{pic}" style="width:32px;height:32px;border-radius:50%;'
+                                f'object-fit:cover;display:block" onerror="this.style.display=\'none\'" />'
+                                if pic and pic.startswith("http")
+                                else f'<span style="font-size:13px;font-weight:700;color:#6b7280">{initial}</span>'
+                            )
                             col_pg, col_usar = st.columns([3, 1])
                             with col_pg:
                                 st.markdown(f"""
-                                <div style="display:flex;align-items:center;gap:10px;
-                                            padding:9px 11px;background:#f9fafb;
-                                            border:1px solid #e5e7eb;border-radius:9px;
+                                <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;
+                                            background:#f9fafb;border:1px solid #e5e7eb;border-radius:9px;
                                             margin-bottom:6px">
-                                    <div style="width:32px;height:32px;border-radius:50%;
-                                                background:#e5e7eb;display:flex;
-                                                align-items:center;justify-content:center;
-                                                flex-shrink:0;overflow:hidden">
-                                        {thumb_html}
-                                    </div>
+                                    <div style="width:32px;height:32px;border-radius:50%;background:#e5e7eb;
+                                                display:flex;align-items:center;justify-content:center;
+                                                flex-shrink:0;overflow:hidden">{thumb_html}</div>
                                     <div style="flex:1;min-width:0">
-                                        <div style="font-size:12px;font-weight:700;color:#111827">
-                                            {pg.get("nome","—")}
-                                        </div>
-                                        <div style="font-size:10px;color:#9ca3af;font-family:monospace">
-                                            ID: {pg.get("page_id","—")}
-                                        </div>
+                                        <div style="font-size:12px;font-weight:700;color:#111827">{pg.get("nome","—")}</div>
+                                        <div style="font-size:10px;color:#9ca3af;font-family:monospace">ID: {pg.get("page_id","—")}</div>
                                     </div>
-                                    <div style="font-size:11px;font-weight:600;
-                                                color:#3a9fd6;flex-shrink:0">
-                                        {pg.get("total_ads",0)} ads
-                                    </div>
+                                    <div style="font-size:11px;font-weight:600;color:#3a9fd6;flex-shrink:0">{pg.get("total_ads",0)} ads</div>
                                 </div>
                                 """, unsafe_allow_html=True)
                             with col_usar:
-                                if st.button(
-                                    "Usar",
-                                    key=f"btn_pg_usar_{sk}_{ci}_{pi}",
-                                    use_container_width=True,
-                                ):
-                                    page_id_val = pg.get("page_id") or pg.get("nome", "")
-                                    page_pic_val = pg.get("profile_picture", "")
-                                    salvar_ads_id(e, page_id_val, page_pic_val)
+                                if st.button("Usar", key=f"btn_pg_usar_{sk}_{ci}_{pi}", use_container_width=True):
+                                    salvar_ads_id(e, pg.get("page_id") or pg.get("nome",""), pg.get("profile_picture",""))
                                     st.session_state.ads_editando_empresa = None
                                     st.session_state.ads_onboarding_empresa = None
                                     st.session_state.ads_onboarding_paginas = []
-                                    st.toast(
-                                        f"✅ {pg.get('nome', page_id_val)} selecionado!",
-                                        icon="✅",
-                                    )
+                                    st.toast(f"✅ {pg.get('nome', pg.get('page_id',''))} selecionado!", icon="✅")
                                     st.rerun()
 
                 st.markdown("<div style='height:8px'/>", unsafe_allow_html=True)
