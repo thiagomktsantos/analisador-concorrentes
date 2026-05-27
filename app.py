@@ -8621,6 +8621,8 @@ Compare os perfis do Instagram abaixo e gere uma análise competitiva completa e
                         st.session_state[chave_comp_redes] = f"Erro: {ex}"
                         st.rerun()
  
+        comp_html_redes = st.session_state.get(chave_comp_redes, "").replace("\n", "<br>")
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
