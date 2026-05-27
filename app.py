@@ -2176,7 +2176,7 @@ html, body { background: transparent; overflow: hidden; }
 <div class="sub">Panorama competitivo da sua empresa e concorrentes.</div>
 """, height=70)
 
-with h2:
+    with h2:
         coletar = st.button(
             "Coletar dados",
             type="primary",
