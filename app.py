@@ -7394,7 +7394,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '88px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '82px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
