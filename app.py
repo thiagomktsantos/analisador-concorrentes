@@ -1577,7 +1577,7 @@ html, body { background: transparent; overflow: hidden; font-family: 'DM Sans', 
 .btn:hover { background: #065f9e; }
 </style>
 <button class="btn" onclick="triggerEditar()">
-    ✏️ Editar Empresa
+    Editar Empresa
 </button>
 <script>
 function triggerEditar() {
