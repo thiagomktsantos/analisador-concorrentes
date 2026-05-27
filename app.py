@@ -7529,8 +7529,8 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight,
 </body></html>
 """, height=250, scrolling=False)
  
-Aqui está o código completo da sub-aba de postagens para substituir no seu arquivo. Substitua todo o bloco que começa em # ══════════ SUB-ABA: POSTAGENS e termina antes de # ══════════ SUB-ABA: ANÁLISE DE IA:
-python        # ══════════════════════════════════════════════════════════════
+
+        # ══════════════════════════════════════════════════════════════
         # SUB-ABA: POSTAGENS
         # ══════════════════════════════════════════════════════════════
         if subtab_atual == "postagens":
