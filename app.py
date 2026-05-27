@@ -7652,7 +7652,7 @@ function syncHeight() {{
     for (var i = 0; i < iframes.length; i++) {{
         try {{ if (iframes[i].contentWindow === window) {{
             iframes[i].style.height = (h + 4) + 'px';
-            iframes[i].style.marginTop = '-23px';
+            iframes[i].style.marginTop = '-53px';
             break;
         }} }} catch(e) {{}}
     }}
