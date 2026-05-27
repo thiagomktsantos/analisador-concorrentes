@@ -2197,12 +2197,13 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .link-coleta {{
     font-size:13px; color:#3a9fd6; text-align:center;
     display:block; cursor:pointer; text-decoration:underline;
-    text-underline-offset:2px;
+    text-underline-offset:3px; text-decoration-color: #3a9fd6;
     font-family:'DM Sans',sans-serif;
     background:none; border:none; width:100%;
-    padding:0; margin-top:2px;
+    padding:0; margin-top:4px;
+    transition: color 0.15s;
 }}
-.link-coleta:hover {{ color:#065f9e; }}
+.link-coleta:hover {{ color:#065f9e; text-decoration-color: #065f9e; }}
 </style>
 <button class="link-coleta" onclick="abrirDados()">
     🕒 Última coleta: <b>{ultima_coleta}</b>
