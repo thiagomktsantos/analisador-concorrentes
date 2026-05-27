@@ -7775,12 +7775,12 @@ body{{padding-bottom:8px;}}
 .card-footer-btns {{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #f3f4f6; margin-top:auto; }}
 .footer-btn {{
     padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px;
-    font-size:12px; font-weight:700; border:none; background:#fff;
+    font-size:12px; font-weight:700; border:none; background:#3a9fd6;
     cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
-    text-decoration:none; color:#374151;
+    text-decoration:none; color:#ffffff;
 }}
 .footer-btn:hover {{ background:#f9fafb; }}
-.footer-btn.ig {{ border-right:1px solid #f3f4f6; color:#e1306c; }}
+.footer-btn.ig {{ border-right:1px solid #f3f4f6;}}
 .footer-btn.ig:hover {{ background:#fff0f6; }}
 .footer-btn.ia {{ color:#1d4ed8; }}
 .footer-btn.ia:hover {{ background:#eff6ff; }}
@@ -7923,12 +7923,11 @@ function buildGrid(posts) {{
 
             '<div class="card-footer-btns">' +
             '<a class="footer-btn ig" href="' + p.ig_url + '" target="_blank">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_g_' + idx + '" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_g_' + idx + ')"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>' +
             'Ver no Instagram' +
             '</a>' +
             '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">' +
             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>' +
-            (p.tem_ia ? 'Reanalisar 🤖' : 'Analisar postagem 🤖') +
+            (p.tem_ia ? 'Reanalisar' : 'Analisar postagem') +
             '</button>' +
             '</div>';
 
