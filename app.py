@@ -7752,7 +7752,7 @@ body{{padding-bottom:8px;}}
 }}
 .metric-cell {{ padding:8px 6px; text-align:center; border-right:1px solid #f3f4f6; }}
 .metric-cell:last-child {{ border-right:none; }}
-.metric-cell-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }}
+.metric-cell-lbl {{ font-size:13px; margin-bottom:2px; line-height:1; }}
 .metric-cell-val {{ font-size:13px; font-weight:800; color:#111827; }}
 .metric-cell-val.eng {{ color:#3a9fd6; }}
 
@@ -7901,10 +7901,10 @@ function buildGrid(posts) {{
             '</div></div>' +
 
             '<div class="metrics-row">' +
-            '<div class="metric-cell"><div class="metric-cell-lbl">Data</div><div class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</div></div>' +
-            '<div class="metric-cell"><div class="metric-cell-lbl">Curtidas</div><div class="metric-cell-val">' + fmtNum(p.likes||0) + '</div></div>' +
-            '<div class="metric-cell"><div class="metric-cell-lbl">Coments.</div><div class="metric-cell-val">' + fmtNum(p.comments||0) + '</div></div>' +
-            '<div class="metric-cell"><div class="metric-cell-lbl">Engaj.</div><div class="metric-cell-val eng">' + fmtNum(engTotal) + '</div></div>' +
+            '<div class="metric-cell"><div class="metric-cell-lbl"></div><div class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</div></div>' +
+            '<div class="metric-cell"><div class="metric-cell-lbl">❤️</div><div class="metric-cell-val">' + fmtNum(p.likes||0) + '</div></div>' +
+            '<div class="metric-cell"><div class="metric-cell-lbl">💬</div><div class="metric-cell-val">' + fmtNum(p.comments||0) + '</div></div>' +
+            '<div class="metric-cell"><div class="metric-cell-lbl">⚡</div><div class="metric-cell-val eng">' + fmtNum(engTotal) + '</div></div>' +
             '</div>' +
 
             '<div class="card-caption-wrap">' +
