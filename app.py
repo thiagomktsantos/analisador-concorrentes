@@ -7318,8 +7318,8 @@ html, body {{
 .divider-v {{ width:1px; height:44px; background:#e5e7eb; flex-shrink:0; margin:0 8px; }}
 .stat-wrap {{ display:flex; align-items:center; gap:24px; flex-shrink:0; }}
 .stat {{ text-align:center; }}
-.stat-num {{ font-size:24px; font-weight:800; color:#0f1f35; line-height:1; }}
-.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }}
+.stat-num {{ font-size:22px; font-weight:800; color:#111827; }}
+.stat-lbl {{ font-size:12px; font-weight:600; color:#6b7280; text-transform:uppercase; margin-top:2px; }}
 .btn-ig {{
     display:inline-flex; align-items:center; gap:7px;
     background:#0e2a47; color:#fff;
