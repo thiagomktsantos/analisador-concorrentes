@@ -2185,35 +2185,61 @@ html, body { background: transparent; overflow: hidden; }
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         dados_brutos  = st.session_state.metricas_redes.get("dados", [])
         if ultima_coleta:
-            import json as _json_raw
-            dados_brutos_js = _json_raw.dumps(dados_brutos, ensure_ascii=False, indent=2)
-            dados_brutos_js_safe = dados_brutos_js.replace("</", "<\\/").replace("`", "\\`")
-            dl_filename = f'dados_redes_{ultima_coleta.replace("/", "_").replace("/", "_").replace(" ", "_").replace(":", "")}.json'
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.link-coleta {{
-    font-size:13px; color:#3a9fd6; text-align:center;
-    display:block; cursor:pointer; text-decoration:underline;
-    text-underline-offset:3px; text-decoration-color: #3a9fd6;
-    font-family:'DM Sans',sans-serif;
-    background:none; border:none; width:100%;
-    padding:0; margin-top:4px;
-    transition: color 0.15s;
-}}
-.link-coleta:hover {{ color:#065f9e; text-decoration-color: #065f9e; }}
-</style>
-<button class="link-coleta" onclick="abrirDados()">
-    🕒 Última coleta: <b>{ultima_coleta}</b>
-</button>
+            # Ghost button oculto via CSS
+            st.markdown("""
+            <style>
+            .st-key-btn_redes_abrir_raw {
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            abrir_raw_redes = st.button(
+                "__abrir_raw_redes__",
+                key="btn_redes_abrir_raw",
+            )
+            
+            st.markdown(f"""
+            <button onclick="triggerRaw()" style="
+                font-size:13px; color:#3a9fd6; text-align:center;
+                display:block; cursor:pointer; text-decoration:underline;
+                text-underline-offset:3px;
+                font-family:'DM Sans',sans-serif;
+                background:none; border:none; width:100%;
+                padding:0; margin-top:4px;
+                transition: color 0.15s;
+            "
+            onmouseover="this.style.color='#065f9e'"
+            onmouseout="this.style.color='#3a9fd6'">
+                🕒 Última coleta: <b>{ultima_coleta}</b>
+            </button>
+            <script>
+            function triggerRaw() {{
+                var btns = window.parent.document.querySelectorAll('button');
+                for (var b of btns) {{
+                    var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+                    if (txt === '__abrir_raw_redes__') {{ b.click(); return; }}
+                }}
+            }}
+            </script>
+            """, unsafe_allow_html=True)
+            
+            if abrir_raw_redes:
+                import json as _json_raw
+                dados_brutos_redes = st.session_state.metricas_redes.get("dados", [])
+                dados_brutos_str   = _json_raw.dumps(dados_brutos_redes, ensure_ascii=False, indent=2)
+                dados_brutos_js    = dados_brutos_str.replace("</", "<\\/").replace("`", "\\`")
+                dl_filename_redes  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
+                
+                components.html(f"""
 <script>
-var DADOS_BRUTOS = `{dados_brutos_js_safe}`;
-var DL_FILENAME  = '{dl_filename}';
-
-function abrirDados() {{
+(function() {{
     var doc = window.parent.document;
+    var DADOS_BRUTOS = `{dados_brutos_js}`;
+    var DL_FILENAME  = '{dl_filename_redes}';
+
     var old = doc.getElementById('raw_modal_overlay');
     if (old) old.remove();
 
@@ -2259,7 +2285,7 @@ function abrirDados() {{
                 + '<div style="font-size:11px;color:#8b949e;font-family:DM Sans,sans-serif;margin-top:2px">' + s.lbl + '</div>';
             stats.appendChild(cell);
         }});
-    }} catch(e) {{ stats.style.display = 'none'; }}
+    }} catch(e) {{ stats.style.display='none'; }}
 
     var tabsWrap = doc.createElement('div');
     tabsWrap.style.cssText = 'display:flex;border-bottom:1px solid #21262d;background:#0d1117;flex-shrink:0;overflow-x:auto;';
@@ -2286,7 +2312,6 @@ function abrirDados() {{
 
     var parsed;
     try {{ parsed = JSON.parse(DADOS_BRUTOS); }} catch(e) {{ parsed = DADOS_BRUTOS; }}
-
     var perfilAtivo = 0;
     window.__rawPerfilAtivo = 0;
 
@@ -2294,7 +2319,7 @@ function abrirDados() {{
         if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
         return json
             .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-            .replace(/("(\\u[a-zA-Z0-9]{{4}}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(m) {{
+            .replace(/("(\\u[a-zA-Z0-9]{{4}}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\\-]?\d+)?)/g, function(m) {{
                 var cls = 'color:#79c0ff';
                 if (/^"/.test(m)) {{
                     if (/:$/.test(m)) cls = 'color:#ff7b72';
@@ -2321,7 +2346,7 @@ function abrirDados() {{
         parsed.forEach(function(p, i) {{
             var tab = doc.createElement('button');
             tab.className = 'raw-tab';
-            tab.textContent = p.nome || p.handle || ('Perfil ' + (i + 1));
+            tab.textContent = p.nome || p.handle || ('Perfil ' + (i+1));
             tab.style.cssText = 'padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;color:#8b949e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;white-space:nowrap;';
             tab.onclick     = function() {{ renderPerfil(i); }};
             tab.onmouseover = function() {{ if (perfilAtivo !== i) this.style.color = '#e6edf3'; }};
@@ -2335,7 +2360,7 @@ function abrirDados() {{
     }}
 
     window.filtrarCampos = function() {{
-        var q    = (doc.getElementById('raw_search').value || '').toLowerCase().trim();
+        var q = (doc.getElementById('raw_search').value || '').toLowerCase().trim();
         var data = Array.isArray(parsed) ? parsed[window.__rawPerfilAtivo || 0] : parsed;
         if (!q) {{ pre.innerHTML = syntaxHL(data); return; }}
         function filtrarObj(obj, q) {{
@@ -2346,9 +2371,8 @@ function abrirDados() {{
             if (typeof obj === 'object' && obj !== null) {{
                 var result = {{}};
                 Object.keys(obj).forEach(function(k) {{
-                    if (k.toLowerCase().indexOf(q) !== -1) {{
-                        result[k] = obj[k];
-                    }} else {{
+                    if (k.toLowerCase().indexOf(q) !== -1) {{ result[k] = obj[k]; }}
+                    else {{
                         var sub = filtrarObj(obj[k], q);
                         if (sub !== null && !(typeof sub === 'object' && !Array.isArray(sub) && Object.keys(sub).length === 0)) {{
                             result[k] = sub;
@@ -2371,7 +2395,7 @@ function abrirDados() {{
     }};
 
     window.baixarDados = function() {{
-        var blob = new Blob([DADOS_BRUTOS], {{type: 'application/json'}});
+        var blob = new Blob([DADOS_BRUTOS], {{type:'application/json'}});
         var a = doc.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = DL_FILENAME;
@@ -2380,19 +2404,19 @@ function abrirDados() {{
 
     window.__rawModalEscFn = function(e) {{ if (e.key === 'Escape') fechar(); }};
     doc.addEventListener('keydown', window.__rawModalEscFn);
-}}
 
-function fechar() {{
-    var doc = window.parent.document;
-    var overlay = doc.getElementById('raw_modal_overlay');
-    if (overlay) overlay.remove();
-    if (window.__rawModalEscFn) {{
-        doc.removeEventListener('keydown', window.__rawModalEscFn);
-        window.__rawModalEscFn = null;
+    function fechar() {{
+        var overlay = doc.getElementById('raw_modal_overlay');
+        if (overlay) overlay.remove();
+        if (window.__rawModalEscFn) {{
+            doc.removeEventListener('keydown', window.__rawModalEscFn);
+            window.__rawModalEscFn = null;
+        }}
     }}
-}}
+    window.fechar = fechar;
+}})();
 </script>
-""", height=36, scrolling=False)
+""", height=0)
 
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 24px 0'/>",
