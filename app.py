@@ -1911,7 +1911,7 @@ html, body {{
 body {{ padding-bottom: 4px; }}
 .card {{
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #ffffff;
     border-radius: 14px;
     overflow: hidden;
 }}
@@ -7695,7 +7695,7 @@ body{{padding-bottom:8px;}}
 .posts-grid {{ display:grid; gap:12px; margin-top:16px; }}
 .post-card {{
     background:#fff;
-    border:1px solid #f0f2f5;
+    border:1px solid #fff;
     display:flex;
     flex-direction:column;
     overflow:hidden;
