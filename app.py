@@ -5909,35 +5909,45 @@ body{{padding-bottom:4px;min-height:0;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:10px;color:#374151;padding:8px 12px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:180px;overflow-y:auto;border-top:1px solid #fde68a;}}
-#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
-#modal-overlay.open{{display:flex;}}
-#modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
-#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
-#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
-#modal-video{{display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;}}
-#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
-#modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
-#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
 </style>
 </head>
 <body>
-<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
-        <div id="modal-content"></div>
-    </div>
-</div>
 <div class="ads-grid">{cards_joined}</div>
 <script>
 function openModal(mediaSrc, snapUrl, isVideo) {{
-    var overlay = document.getElementById('modal-overlay');
-    var content = document.getElementById('modal-content');
-    content.innerHTML = '';
+    var doc = window.parent.document;
+    var old = doc.getElementById('ads_modal_overlay');
+    if (old) old.remove();
+
+    var overlay = doc.createElement('div');
+    overlay.id = 'ads_modal_overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
+
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
+
+    var closeBtn = doc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.onclick = closeModal;
+
+    var content = doc.createElement('div');
+    content.id = 'ads_modal_content';
+
+    box.appendChild(closeBtn);
+    box.appendChild(content);
+    overlay.appendChild(box);
+    doc.body.appendChild(overlay);
+
+    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
+    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+
     if (isVideo) {{
         var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
         if (isDirectVideo) {{
-            var vid = document.createElement('video');
-            vid.id = 'modal-video';
+            var vid = doc.createElement('video');
+            vid.id = 'ads_modal_video';
             vid.src = mediaSrc;
             vid.controls = true;
             vid.autoplay = true;
@@ -5946,48 +5956,52 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
             vid.onerror = function() {{
                 content.innerHTML = '';
                 if (snapUrl) {{
-                    var wrap = document.createElement('div');
-                    wrap.id = 'modal-video-wrap';
-                    var btn = document.createElement('a');
-                    btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
-                    btn.innerHTML = '↗ Abrir no Ad Library';
+                    var wrap = doc.createElement('div');
+                    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
+                    var btn = doc.createElement('a');
+                    btn.href = snapUrl; btn.target = '_blank';
+                    btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
+                    btn.textContent = '↗ Abrir no Ad Library';
                     wrap.appendChild(btn);
                     content.appendChild(wrap);
                 }}
             }};
             content.appendChild(vid);
         }} else {{
-            var wrap = document.createElement('div');
-            wrap.id = 'modal-video-wrap';
+            var wrap = doc.createElement('div');
+            wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
             if (snapUrl) {{
-                var btn = document.createElement('a');
-                btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
-                btn.innerHTML = '↗ Abrir vídeo no Ad Library';
+                var btn = doc.createElement('a');
+                btn.href = snapUrl; btn.target = '_blank';
+                btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
+                btn.textContent = '↗ Abrir vídeo no Ad Library';
                 wrap.appendChild(btn);
             }}
             content.appendChild(wrap);
         }}
-        overlay.classList.add('open');
     }} else {{
-        if (!mediaSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
-        if (!mediaSrc) return;
-        var loading = document.createElement('div');
-        loading.id = 'modal-loading'; loading.textContent = 'Carregando…';
+        if (!mediaSrc && snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); return; }}
+        if (!mediaSrc) {{ closeModal(); return; }}
+
+        var loading = doc.createElement('div');
+        loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
+        loading.textContent = 'Carregando…';
         content.appendChild(loading);
-        overlay.classList.add('open');
-        var tmp = new Image();
+
+        var tmp = new window.parent.Image();
         tmp.onload = function() {{
             content.innerHTML = '';
-            var img = document.createElement('img');
-            img.id = 'modal-img'; img.src = mediaSrc;
+            var img = doc.createElement('img');
+            img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
+            img.src = mediaSrc;
             content.appendChild(img);
         }};
         tmp.onerror = function() {{
             content.innerHTML = '';
-            if (snapUrl) {{ window.open(snapUrl, '_blank'); closeModal(); }}
+            if (snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); }}
             else {{
-                var msg = document.createElement('div');
-                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center';
+                var msg = doc.createElement('div');
+                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center;font-family:DM Sans,sans-serif;';
                 msg.textContent = 'Imagem não disponível.';
                 content.appendChild(msg);
             }}
@@ -5995,12 +6009,19 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
         tmp.src = mediaSrc;
     }}
 }}
+
 function closeModal() {{
-    var vid = document.getElementById('modal-video');
+    var doc = window.parent.document;
+    var vid = doc.getElementById('ads_modal_video');
     if (vid) {{ vid.pause(); vid.src = ''; }}
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('modal-content').innerHTML = '';
+    var overlay = doc.getElementById('ads_modal_overlay');
+    if (overlay) overlay.remove();
+    if (window.parent.__adsModalEscFn) {{
+        doc.removeEventListener('keydown', window.parent.__adsModalEscFn);
+        window.parent.__adsModalEscFn = null;
+    }}
 }}
+
 document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
