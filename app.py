@@ -7877,6 +7877,35 @@ function updateStats(posts) {{
     document.getElementById('stat-best').textContent   = fmtNum(bE);
 }}
 
+function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
+    var wrap = doc.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
+
+    if (thumbUrl) {{
+        var img = doc.createElement('img');
+        img.src = thumbUrl;
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.6);';
+        wrap.appendChild(img);
+    }}
+
+    var playBtn = doc.createElement('a');
+    playBtn.href = igUrl;
+    playBtn.target = '_blank';
+    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
+    playBtn.innerHTML =
+        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
+        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
+        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
+        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
+        + '</div>'
+        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
+        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
+
+    wrap.appendChild(playBtn);
+    content.appendChild(wrap);
+}}
+
 function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     var doc = window.parent.document;
     var old = doc.getElementById('redes_modal_overlay');
@@ -7907,22 +7936,25 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
 
     // ── VÍDEO ──
-    if (isVideo && videoUrl) {{
-        var vid = doc.createElement('video');
-        vid.src = videoUrl;
-        vid.controls = true;
-        vid.autoplay = true;
-        vid.playsInline = true;
-        vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
-        vid.onerror = function() {{
-            content.innerHTML = '';
-            var fb = doc.createElement('div');
-            fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
-            fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Vídeo não disponível diretamente.</p>'
-                + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
-            content.appendChild(fb);
-        }};
-        content.appendChild(vid);
+    if (isVideo) {{
+        // Tenta reproduzir se tiver URL direta
+        if (videoUrl) {{
+            var vid = doc.createElement('video');
+            vid.src = videoUrl;
+            vid.controls = true;
+            vid.autoplay = true;
+            vid.playsInline = true;
+            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
+            vid.onerror = function() {{
+                // Fallback: mostra thumb + botão Instagram
+                content.innerHTML = '';
+                _showVideoFallback(content, doc, thumbUrl, igUrl);
+            }};
+            content.appendChild(vid);
+        }} else {{
+            // Sem URL de vídeo: mostra thumb com botão para abrir no Instagram
+            _showVideoFallback(content, doc, thumbUrl, igUrl);
+        }}
         return;
     }}
 
