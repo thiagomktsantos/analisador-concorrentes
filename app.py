@@ -7361,7 +7361,6 @@ html, body {{
 }}
 .bio-text {{
     font-size:15px; color:#374151; line-height:1.75;
-    font-style:italic;
 }}
 .bio-empty {{
     font-size:14px; color:#d1d5db; font-style:italic;
@@ -7692,7 +7691,7 @@ body{{padding-bottom:8px;}}
 .stat-num {{ font-size:26px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; letter-spacing:-0.5px; }}
 .stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; }}
  
-.posts-grid {{ display:grid; gap:0; margin-top:16px; }}
+.posts-grid {{ display:grid; gap:10px; margin-top:16px; }}
 .post-card {{
     background:#fff;
     border:1px solid #f0f2f5;
