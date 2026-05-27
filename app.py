@@ -5068,7 +5068,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .tab-btn:hover {{ color:#374151; }}
 .tab-btn.active {{
     color:#1a2e4a;
-    border-bottom:3px solid #3a9fd6;
+    border-bottom:4px solid #3a9fd6;
 }}
 .right-wrap {{
     margin-left:auto;
@@ -7620,6 +7620,7 @@ body{{padding-bottom:8px;}}
     border-bottom:1px solid #e5e7eb;
     background:#fff;
     flex-wrap:wrap;
+    border-radius: 0 0 14px 14px;
 }}
 .filter-input {{
     flex:1;
