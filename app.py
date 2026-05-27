@@ -7616,10 +7616,12 @@ body{{padding-bottom:8px;}}
     align-items:center;
     gap:10px;
     padding:20px 20px;
-    border-bottom:1px solid #e5e7eb;
+    border:1px solid #e5e7eb;
+    border-top:none;
     background:#fff;
     flex-wrap:wrap;
     border-radius: 0 0 14px 14px;
+    margin-top: 1px;
 }}
 .filter-input {{
     flex:1;
