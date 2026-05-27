@@ -6742,13 +6742,29 @@ html, body { background: transparent; overflow: hidden; }
                                         date_str = datetime.datetime.fromtimestamp(taken_at).strftime("%d/%m/%Y")
                                     except Exception:
                                         pass
+                                # URL direta do post
+                                shortcode = p.get("code") or p.get("shortcode") or ""
+                                post_url  = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
+
+                                # URL do vídeo
+                                video_url = ""
+                                if p.get("media_type", 1) == 2:
+                                    video_url = (
+                                        p.get("video_url")
+                                        or p.get("video_versions", [{}])[0].get("url", "") if p.get("video_versions") else ""
+                                        or ""
+                                    )
+
                                 posts_data.append({
-                                    "likes":    likes,
-                                    "comments": comments,
-                                    "thumb":    thumb,
-                                    "caption":  caption,
-                                    "date":     date_str,
-                                    "is_video": p.get("media_type", 1) == 2,
+                                    "likes":     likes,
+                                    "comments":  comments,
+                                    "thumb":     thumb,
+                                    "caption":   caption,
+                                    "date":      date_str,
+                                    "is_video":  p.get("media_type", 1) == 2,
+                                    "video_url": video_url,
+                                    "post_url":  post_url,
+                                    "shortcode": shortcode,
                                 })
                             break
                     except Exception:
@@ -7627,6 +7643,13 @@ Como interpretar as métricas desta postagem?
                     resultado_ia = st.session_state.get(chave_post_ia, "")
                     resultado_ia_html = resultado_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado_ia else ""
                     handle_clean_post = (r.get("handle") or "").lstrip("@")
+                    # Link direto do post (shortcode) ou fallback para o perfil
+                    post_url = p.get("post_url", "")
+                    shortcode = p.get("shortcode", "")
+                    if not post_url and shortcode:
+                        post_url = f"https://www.instagram.com/p/{shortcode}/"
+                    ig_post_url = post_url if post_url else f"https://www.instagram.com/{handle_clean_post}/"
+
                     posts_json_data.append({
                         "jp":           jp,
                         "thumb":        p.get("thumb", ""),
@@ -7636,7 +7659,8 @@ Como interpretar as métricas desta postagem?
                         "comments":     p.get("comments", 0),
                         "eng":          p.get("likes", 0) + p.get("comments", 0),
                         "is_video":     p.get("is_video", False),
-                        "ig_url":       f"https://www.instagram.com/{handle_clean_post}/",
+                        "video_url":    p.get("video_url", ""),
+                        "ig_url":       ig_post_url,
                         "resultado_ia": resultado_ia_html,
                         "tem_ia":       bool(resultado_ia),
                     })
@@ -7731,13 +7755,6 @@ body{{padding-bottom:8px;}}
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     background:linear-gradient(135deg,#e9eef5,#d2dde9); gap:6px;
     cursor:pointer;
-}}
-.type-badge {{
-    position:absolute; top:8px; left:8px;
-    background:rgba(0,0,0,0.55); color:#fff;
-    font-size:10px; font-weight:700; padding:2px 8px;
-    border-radius:20px; pointer-events:none;
-    text-transform:uppercase; letter-spacing:0.5px;
 }}
 .zoom-badge {{
     position:absolute; bottom:8px; right:8px;
@@ -7860,15 +7877,10 @@ function updateStats(posts) {{
     document.getElementById('stat-best').textContent   = fmtNum(bE);
 }}
 
-function openModal(thumbUrl, igUrl) {{
+function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     var doc = window.parent.document;
     var old = doc.getElementById('redes_modal_overlay');
     if (old) old.remove();
-
-    if (!thumbUrl) {{
-        window.parent.open(igUrl, '_blank');
-        return;
-    }}
 
     var overlay = doc.createElement('div');
     overlay.id = 'redes_modal_overlay';
@@ -7886,20 +7898,45 @@ function openModal(thumbUrl, igUrl) {{
     var content = doc.createElement('div');
     content.id = 'redes_modal_content';
 
-    var loading = doc.createElement('div');
-    loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
-    loading.textContent = 'Carregando criativo…';
-    content.appendChild(loading);
-
     box.appendChild(closeBtn);
     box.appendChild(content);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
 
-    window.parent.__redesModalEscFn = function(e) {{
-        if (e.key === 'Escape') closeModal();
-    }};
+    window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
+
+    // ── VÍDEO ──
+    if (isVideo && videoUrl) {{
+        var vid = doc.createElement('video');
+        vid.src = videoUrl;
+        vid.controls = true;
+        vid.autoplay = true;
+        vid.playsInline = true;
+        vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
+        vid.onerror = function() {{
+            content.innerHTML = '';
+            var fb = doc.createElement('div');
+            fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
+            fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Vídeo não disponível diretamente.</p>'
+                + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
+            content.appendChild(fb);
+        }};
+        content.appendChild(vid);
+        return;
+    }}
+
+    // ── IMAGEM ──
+    if (!thumbUrl) {{
+        window.parent.open(igUrl, '_blank');
+        closeModal();
+        return;
+    }}
+
+    var loading = doc.createElement('div');
+    loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
+    loading.textContent = 'Carregando criativo…';
+    content.appendChild(loading);
 
     var tmp = new window.parent.Image();
     tmp.onload = function() {{
@@ -7914,7 +7951,7 @@ function openModal(thumbUrl, igUrl) {{
         var fb = doc.createElement('div');
         fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
         fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
-            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
+            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
         content.appendChild(fb);
     }};
     tmp.src = thumbUrl;
@@ -7962,7 +7999,8 @@ function buildGrid(posts) {{
         card.id = 'pcard_' + idx;
 
         // thumb — clicável para abrir modal
-        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\', \\''+igUrl+'\\')"';
+        var videoUrl   = (p.video_url || '').trim();
+        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ')"';
         var thumbInner = thumbUrl
             ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />'
             : '<div class="thumb-fallback" ' + thumbClickAttr + '><span style="font-size:28px">' + iconFallback + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
@@ -7970,7 +8008,6 @@ function buildGrid(posts) {{
         card.innerHTML =
             '<div class="thumb-wrap" id="tw_' + idx + '" ' + thumbClickAttr + '>'
             + thumbInner
-            + '<div class="type-badge">' + typeLbl + '</div>'
             + '<div class="zoom-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> Ver criativo</div>'
             + '</div>'
 
@@ -8005,14 +8042,15 @@ function buildGrid(posts) {{
         if (thumbUrl) {{
             var imgEl = card.querySelector('#pimg_' + idx);
             if (imgEl) {{
-                imgEl.onerror = (function(i, icon, lbl, tw_url, ig_u) {{
+                imgEl.onerror = (function(i, icon, tw_url, ig_u, vid_u, is_vid) {{
                     return function() {{
                         var tw = document.getElementById('tw_' + i);
                         if (tw) tw.innerHTML =
-                            '<div class="thumb-fallback" onclick="openModal(\\''+tw_url+'\\',\\''+ig_u+'\\')"><span style="font-size:28px">' + icon + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>'
-                            + '<div class="type-badge">' + lbl + '</div>';
+                            '<div class="thumb-fallback" onclick="openModal(\\''+tw_url+'\\',\\''+ig_u+'\\',\\''+vid_u+'\\','+is_vid+')">'
+                            + '<span style="font-size:28px">' + icon + '</span>'
+                            + '<span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
                     }};
-                }})(idx, iconFallback, typeLbl, thumbUrl, igUrl);
+                }})(idx, iconFallback, thumbUrl, igUrl, videoUrl, p.is_video);
             }}
         }}
 
