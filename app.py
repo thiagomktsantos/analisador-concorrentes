@@ -8176,6 +8176,7 @@ function syncHeight() {{
         try {{
             if (frames[i].contentWindow === window) {{
                 frames[i].style.height = (h + 12) + 'px';
+                iframes[i].style.marginTop = '-101px';
                 break;
             }}
         }} catch(e) {{}}
