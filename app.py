@@ -7529,11 +7529,12 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight,
 </body></html>
 """, height=250, scrolling=False)
  
-        # ══════════════════════════════════════════════════════════════
+Aqui está o código completo da sub-aba de postagens para substituir no seu arquivo. Substitua todo o bloco que começa em # ══════════ SUB-ABA: POSTAGENS e termina antes de # ══════════ SUB-ABA: ANÁLISE DE IA:
+python        # ══════════════════════════════════════════════════════════════
         # SUB-ABA: POSTAGENS
         # ══════════════════════════════════════════════════════════════
         if subtab_atual == "postagens":
- 
+
             if not posts_list:
                 st.markdown("""
                 <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
@@ -7548,7 +7549,7 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight,
                 if posts_col_key not in st.session_state:
                     st.session_state[posts_col_key] = 4
                 n_cols_posts = st.session_state.get(posts_col_key, 4)
- 
+
                 ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
                 st.markdown(f"""
                 <style>
@@ -7563,40 +7564,99 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight,
                 }}
                 </style>
                 """, unsafe_allow_html=True)
- 
+
                 if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
                     st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
                     st.rerun()
- 
+
+                # Ghost buttons para análise individual de post
+                for jp in range(len(posts_list)):
+                    ghost_post_ia_key = f"btn_post_ia_{aba_ativa}_{jp}"
+                    st.markdown(f"""
+                    <style>
+                    .st-key-{ghost_post_ia_key} {{
+                        position:fixed !important; top:-9999px !important; left:-9999px !important;
+                        width:0 !important; height:0 !important; overflow:hidden !important;
+                        opacity:0 !important; pointer-events:none !important; display:none !important;
+                    }}
+                    .stElementContainer:has(.st-key-{ghost_post_ia_key}) {{
+                        display:none !important; height:0 !important; min-height:0 !important;
+                        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                    }}
+                    </style>
+                    """, unsafe_allow_html=True)
+                    if st.button(f"post_ia_{aba_ativa}_{jp}", key=ghost_post_ia_key):
+                        chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
+                        p_data = posts_list[jp]
+                        if gemini_model is None:
+                            st.session_state[chave_post_ia] = "Configure GEMINI_API_KEY nos secrets."
+                        else:
+                            with st.spinner(f"Analisando postagem {jp+1}…"):
+                                try:
+                                    resp_post = gemini_model.generate_content(f"""Você é especialista em redes sociais e copywriting.
+Analise esta postagem do Instagram e dê feedback estratégico em português.
+
+Perfil: {r.get('handle','')} — {r.get('nome','')}
+Data: {p_data.get('date','')}
+Tipo: {'Vídeo' if p_data.get('is_video') else 'Foto'}
+Curtidas: {p_data.get('likes',0)} | Comentários: {p_data.get('comments',0)} | Engajamento total: {p_data.get('likes',0)+p_data.get('comments',0)}
+Legenda: {p_data.get('caption','') or 'Sem legenda'}
+
+### 🎯 Objetivo da Postagem
+Qual parece ser o objetivo desta publicação?
+
+### ✍️ Análise da Legenda
+Pontos fortes e fracos do copy utilizado.
+
+### 📊 Desempenho
+Como interpretar as métricas desta postagem?
+
+### 💡 Sugestões de Melhoria
+2 ações concretas para aumentar o engajamento.
+""")
+                                    st.session_state[chave_post_ia] = resp_post.text
+                                    st.rerun()
+                                except Exception as e_post:
+                                    st.session_state[chave_post_ia] = f"Erro: {e_post}"
+                                    st.rerun()
+
                 import json as _json_posts
                 posts_json_data = []
-                for p in posts_list:
+                for jp, p in enumerate(posts_list):
+                    chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
+                    resultado_ia = st.session_state.get(chave_post_ia, "")
+                    resultado_ia_html = resultado_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado_ia else ""
+                    handle_clean_post = (r.get("handle") or "").lstrip("@")
                     posts_json_data.append({
-                        "thumb":    p.get("thumb", ""),
-                        "caption":  p.get("caption", ""),
-                        "date":     p.get("date", ""),
-                        "likes":    p.get("likes", 0),
-                        "comments": p.get("comments", 0),
-                        "eng":      p.get("likes", 0) + p.get("comments", 0),
-                        "is_video": p.get("is_video", False),
+                        "jp":           jp,
+                        "thumb":        p.get("thumb", ""),
+                        "caption":      p.get("caption", ""),
+                        "date":         p.get("date", ""),
+                        "likes":        p.get("likes", 0),
+                        "comments":     p.get("comments", 0),
+                        "eng":          p.get("likes", 0) + p.get("comments", 0),
+                        "is_video":     p.get("is_video", False),
+                        "ig_url":       f"https://www.instagram.com/{handle_clean_post}/",
+                        "resultado_ia": resultado_ia_html,
+                        "tem_ia":       bool(resultado_ia),
                     })
- 
+
                 posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
                 r_seg_val = r.get("seguidores", 0)
- 
+
                 n_total     = len(posts_list)
                 n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
                 n_videos    = sum(1 for p in posts_list if p.get("is_video"))
                 total_likes = sum(p.get("likes", 0) for p in posts_list)
                 total_coms  = sum(p.get("comments", 0) for p in posts_list)
                 best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
- 
+
                 def _fmt(n):
                     n = int(n or 0)
                     if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
                     if n >= 1_000:     return f"{n/1_000:.1f}K"
                     return str(n)
- 
+
                 components.html(f"""
 <!DOCTYPE html><html>
 <head>
@@ -7605,297 +7665,186 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight,
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:8px;}}
- 
-.outer {{
-    border-top:none;
-    overflow:hidden;
-}}
- 
+
 .filters-bar {{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:20px 20px;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    background:#fff;
-    flex-wrap:wrap;
-    border-radius: 0 0 14px 14px;
-    margin-top: 2px;
+    display:flex; align-items:center; gap:10px;
+    padding:16px 20px;
+    border:1px solid #e5e7eb; border-top:none;
+    background:#fff; flex-wrap:wrap;
+    border-radius:0 0 14px 14px;
 }}
 .filter-input {{
-    flex:1;
-    min-width:160px;
-    max-width:260px;
-    height:40px;
-    padding:0 14px;
-    border:1px solid #e5e7eb;
-    border-radius:8px;
-    font-size:13px;
-    font-family:'DM Sans',sans-serif;
-    color:#374151;
-    background:#fafafa;
-    outline:none;
-    transition:border-color 0.15s;
+    flex:1; min-width:160px; max-width:260px; height:40px;
+    padding:0 14px; border:1px solid #e5e7eb; border-radius:8px;
+    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
+    background:#fafafa; outline:none; transition:border-color 0.15s;
 }}
 .filter-input:focus {{ border-color:#3a9fd6; background:#fff; }}
 .filter-input::placeholder {{ color:#9ca3af; }}
 .filter-select {{
-    height:40px;
-    padding:0 32px 0 12px;
-    border:1px solid #e5e7eb;
-    border-radius:8px;
-    font-size:13px;
-    font-family:'DM Sans',sans-serif;
-    color:#374151;
+    height:40px; padding:0 32px 0 12px;
+    border:1px solid #e5e7eb; border-radius:8px;
+    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
     background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
-    -webkit-appearance:none;
-    appearance:none;
-    cursor:pointer;
-    outline:none;
-    transition:border-color 0.15s;
-    white-space:nowrap;
+    -webkit-appearance:none; appearance:none; cursor:pointer; outline:none; transition:border-color 0.15s;
 }}
 .filter-select:focus {{ border-color:#3a9fd6; }}
 .col-toggle {{
-    margin-left:auto;
-    width:40px;
-    height:40px;
-    border:1px solid #e5e7eb;
-    border-radius:8px;
-    background:#fff;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#6b7280;
-    flex-shrink:0;
-    transition:all 0.12s;
+    margin-left:auto; width:40px; height:40px;
+    border:1px solid #e5e7eb; border-radius:8px;
+    background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#6b7280; flex-shrink:0; transition:all 0.12s;
 }}
 .col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
- 
-.stats-row {{
-    display:flex;
-    gap:12px;
-    padding:16px 16px 4px;
-    flex-wrap:wrap;
-}}
+
+.stats-row {{ display:flex; gap:12px; padding:16px 0 4px; flex-wrap:wrap; }}
 .stat-card {{
-    flex:1;
-    min-width:90px;
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    padding:14px 10px;
-    text-align:center;
+    flex:1; min-width:90px; background:#fff;
+    border:1px solid #e5e7eb; border-radius:12px;
+    padding:14px 10px; text-align:center;
 }}
 .stat-num {{ font-size:22px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; }}
 .stat-lbl {{ font-size:12px; font-weight:600; color:#9ca3af; text-transform:uppercase; }}
- 
+
 .posts-grid {{ display:grid; gap:12px; margin-top:16px; }}
+
 .post-card {{
-    background:#fff;
-    border:1px solid #fff;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    position:relative;
-    border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    background:#fff; border:1px solid #e5e7eb;
+    display:flex; flex-direction:column; overflow:hidden;
+    position:relative; border-radius:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    transition:box-shadow 0.15s, border-color 0.15s;
 }}
-.post-card:hover {{ background:#f9fafb; }}
-.post-card:hover .card-overlay {{ opacity:1; }}
- 
+.post-card:hover {{ border-color:#6fd1f3; box-shadow:0 4px 16px rgba(58,159,214,0.12); }}
+
 .thumb-wrap {{
-    position:relative;
-    width:100%;
-    aspect-ratio:1/1;
-    background:#f0f2f5;
-    overflow:hidden;
-    flex-shrink:0;
+    position:relative; width:100%; aspect-ratio:1/1;
+    background:#f0f2f5; overflow:hidden; flex-shrink:0;
 }}
-.thumb-wrap img {{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-    transition:transform 0.2s;
-}}
+.thumb-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.2s; }}
 .post-card:hover .thumb-wrap img {{ transform:scale(1.04); }}
 .thumb-fallback {{
-    width:100%;
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(135deg,#e9eef5,#d2dde9);
-    gap:6px;
-}}
-.card-overlay {{
-    position:absolute;
-    inset:0;
-    background:rgba(14,42,71,0.72);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    opacity:0;
-    transition:opacity 0.18s;
-    pointer-events:none;
-}}
-.overlay-stat {{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-size:16px;
-    font-weight:700;
-    color:#fff;
+    width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#e9eef5,#d2dde9); gap:6px;
 }}
 .type-badge {{
-    position:absolute;
-    top:8px;
-    left:8px;
-    background:rgba(0,0,0,0.55);
-    color:#fff;
-    font-size:10px;
-    font-weight:700;
-    padding:2px 8px;
-    border-radius:20px;
-    pointer-events:none;
-    text-transform:uppercase;
-    letter-spacing:0.5px;
+    position:absolute; top:8px; left:8px;
+    background:rgba(0,0,0,0.55); color:#fff;
+    font-size:10px; font-weight:700; padding:2px 8px;
+    border-radius:20px; pointer-events:none;
+    text-transform:uppercase; letter-spacing:0.5px;
 }}
- 
-.card-info {{ padding:10px 12px 4px; flex:1; display:flex; flex-direction:column; gap:5px; }}
-.card-date {{ font-size:11px; color:#9ca3af; font-weight:600; }}
+.card-overlay {{
+    position:absolute; inset:0;
+    background:rgba(14,42,71,0.65);
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    opacity:0; transition:opacity 0.18s; pointer-events:none;
+}}
+.post-card:hover .card-overlay {{ opacity:1; }}
+.overlay-stat {{ display:flex; align-items:center; gap:5px; font-size:15px; font-weight:700; color:#fff; }}
+
+/* Métricas em 4 colunas */
+.metrics-row {{
+    display:grid; grid-template-columns:1fr 1fr 1fr 1fr;
+    border-bottom:1px solid #f3f4f6; background:#fafbfc;
+}}
+.metric-cell {{ padding:8px 6px; text-align:center; border-right:1px solid #f3f4f6; }}
+.metric-cell:last-child {{ border-right:none; }}
+.metric-cell-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }}
+.metric-cell-val {{ font-size:13px; font-weight:800; color:#111827; }}
+.metric-cell-val.eng {{ color:#3a9fd6; }}
+
+.card-caption-wrap {{ padding:10px 12px 8px; flex:1; }}
 .card-caption {{
-    font-size:13px; color:#374151; line-height:1.5; flex:1;
-    white-space:pre-line; word-break:break-word; min-height:36px;
+    font-size:12px; color:#374151; line-height:1.55; word-break:break-word;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
 }}
-.card-metrics {{
-    display:flex; align-items:center; gap:10px;
-    padding:8px 0 6px; border-top:1px solid #f3f4f6;
-    flex-wrap:wrap; margin-top:4px;
-}}
-.metric {{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:#374151; }}
-.metric-eng {{ margin-left:auto; font-size:11px; font-weight:700; color:#3a9fd6; white-space:nowrap; }}
+.card-caption.expanded {{ display:block; -webkit-line-clamp:unset; }}
 .ver-copy-btn {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:none; border:none; padding:2px 0 6px;
-    font-size:12px; font-weight:700; color:#3a9fd6;
+    background:none; border:none; padding:2px 0 0;
+    font-size:11px; font-weight:700; color:#3a9fd6;
     cursor:pointer; font-family:'DM Sans',sans-serif;
-    text-align:left; transition:color 0.12s; align-self:flex-start;
+    display:block; margin-top:4px; transition:color 0.12s;
 }}
 .ver-copy-btn:hover {{ color:#065f9e; }}
- 
-#modal-bg {{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.6);
-    z-index:9999;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    backdrop-filter:blur(2px);
+.no-caption {{ font-size:12px; color:#d1d5db; font-style:italic; }}
+
+/* Botões footer */
+.card-footer-btns {{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #f3f4f6; margin-top:auto; }}
+.footer-btn {{
+    padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:12px; font-weight:700; border:none; background:#fff;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
+    text-decoration:none; color:#374151;
 }}
-#modal-bg.open {{ display:flex; }}
-#modal-box {{
-    background:#fff;
-    border-radius:16px;
-    overflow:hidden;
-    width:100%;
-    max-width:520px;
-    max-height:90vh;
-    display:flex;
-    flex-direction:column;
-    box-shadow:0 24px 80px rgba(0,0,0,0.3);
-    position:relative;
+.footer-btn:hover {{ background:#f9fafb; }}
+.footer-btn.ig {{ border-right:1px solid #f3f4f6; color:#e1306c; }}
+.footer-btn.ig:hover {{ background:#fff0f6; }}
+.footer-btn.ia {{ color:#1d4ed8; }}
+.footer-btn.ia:hover {{ background:#eff6ff; }}
+
+.post-ia-panel {{
+    border-top:1px solid #bbf7d0; background:#f0fdf4;
+    padding:12px 14px; font-size:12px; color:#374151; line-height:1.7;
+    max-height:200px; overflow-y:auto;
 }}
-#modal-img-wrap {{ width:100%; aspect-ratio:1/1; background:#000; overflow:hidden; flex-shrink:0; }}
-#modal-img-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
-#modal-content {{ padding:20px 22px; overflow-y:auto; flex:1; }}
-#modal-title {{ font-size:13px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }}
-#modal-caption {{ font-size:14px; color:#374151; line-height:1.75; white-space:pre-wrap; }}
-#modal-close {{
-    position:absolute; top:14px; right:16px;
-    background:rgba(0,0,0,0.5); border:none;
-    width:32px; height:32px; border-radius:50%;
-    font-size:16px; color:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; z-index:10;
+.post-ia-hdr {{
+    font-size:10px; font-weight:800; color:#15803d;
+    text-transform:uppercase; letter-spacing:0.5px;
+    margin-bottom:6px; display:flex; align-items:center; gap:5px;
 }}
-#modal-metrics {{
-    display:flex; gap:16px; padding:12px 22px;
-    border-top:1px solid #f3f4f6; background:#f9fafb;
-    flex-shrink:0; flex-wrap:wrap;
-}}
-.modal-metric {{ display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700; color:#374151; }}
 </style>
 </head>
 <body>
- 
+
 <script id="posts-data" type="application/json">{posts_json_str}</script>
- 
-<div id="modal-bg" onclick="if(event.target===this)closeModal()">
-    <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">&#x2715;</button>
-        <div id="modal-img-wrap" style="display:none"><img id="modal-img" src="" alt="" /></div>
-        <div id="modal-content">
-            <div id="modal-title">Copy da publicação</div>
-            <div id="modal-caption"></div>
-        </div>
-        <div id="modal-metrics"></div>
-    </div>
+
+<div class="filters-bar">
+    <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
+    <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
+        <option value="todos">Tipo (todos)</option>
+        <option value="foto">Fotos</option>
+        <option value="video">Vídeos</option>
+    </select>
+    <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
+        <option value="recentes">Mais recentes</option>
+        <option value="likes">Mais curtidas</option>
+        <option value="eng">Maior engajamento</option>
+    </select>
+    <button class="col-toggle" onclick="toggleCols()" title="Alternar colunas">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="5" height="18" rx="1"/>
+            <rect x="10" y="3" width="5" height="18" rx="1"/>
+            <rect x="17" y="3" width="5" height="18" rx="1"/>
+        </svg>
+    </button>
 </div>
- 
-<div class="outer">
-    <div class="filters-bar">
-        <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
-        <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
-            <option value="todos">Tipo (todos)</option>
-            <option value="foto">Fotos</option>
-            <option value="video">Vídeos</option>
-        </select>
-        <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
-            <option value="recentes">Mais recentes</option>
-            <option value="likes">Mais curtidas</option>
-            <option value="eng">Maior engajamento</option>
-        </select>
-        <button class="col-toggle" onclick="toggleCols()" title="Alternar colunas">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="5" height="18" rx="1"/>
-                <rect x="10" y="3" width="5" height="18" rx="1"/>
-                <rect x="17" y="3" width="5" height="18" rx="1"/>
-            </svg>
-        </button>
-    </div>
- 
-    <div class="stats-row">
-        <div class="stat-card"><div class="stat-num" id="stat-total">{n_total}</div><div class="stat-lbl">Postagens</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-fotos">{n_fotos}</div><div class="stat-lbl">Fotos</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-videos">{n_videos}</div><div class="stat-lbl">Vídeos</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl">Curtidas</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl">Comentários</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl">Melhor Engaj.</div></div>
-    </div>
- 
-    <div class="posts-grid" id="posts-grid"></div>
+
+<div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="stat-total">{n_total}</div><div class="stat-lbl">Postagens</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-fotos">{n_fotos}</div><div class="stat-lbl">Fotos</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-videos">{n_videos}</div><div class="stat-lbl">Vídeos</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl">Curtidas</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl">Comentários</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl">Melhor Engaj.</div></div>
 </div>
- 
+
+<div class="posts-grid" id="posts-grid"></div>
+
 <script>
 var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
 var N_COLS   = {n_cols_posts};
 var R_SEG    = {r_seg_val};
- 
+
 function fmtNum(n) {{
     n = Math.round(n || 0);
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
     if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
     return String(n);
 }}
- 
+
 function updateStats(posts) {{
     var nF = posts.filter(function(p){{ return !p.is_video; }}).length;
     var nV = posts.filter(function(p){{ return  p.is_video; }}).length;
@@ -7909,7 +7858,7 @@ function updateStats(posts) {{
     document.getElementById('stat-coms').textContent   = fmtNum(tC);
     document.getElementById('stat-best').textContent   = fmtNum(bE);
 }}
- 
+
 function getFiltered() {{
     var texto = (document.getElementById('filter-text').value || '').toLowerCase().trim();
     var tipo  = document.getElementById('filter-tipo').value;
@@ -7922,116 +7871,123 @@ function getFiltered() {{
     else if (ordem === 'eng') posts.sort(function(a,b){{ return ((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0)); }});
     return posts;
 }}
- 
+
 function buildGrid(posts) {{
     var grid = document.getElementById('posts-grid');
     grid.style.gridTemplateColumns = 'repeat(' + N_COLS + ', 1fr)';
     grid.innerHTML = '';
- 
-    posts.forEach(function(p, idx) {{
-        var card = document.createElement('div');
-        card.className = 'post-card';
- 
+
+    posts.forEach(function(p) {{
+        var idx          = p.jp;
         var hasCaption   = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? '🎬' : '📷';
         var typeLbl      = p.is_video ? 'Vídeo' : 'Foto';
         var thumbUrl     = (p.thumb || '').trim();
- 
-        var overlayHtml =
-            '<div class="card-overlay">'
-            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
-            + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
-            + '</div>';
- 
-        var thumbHtml;
-        if (thumbUrl) {{
-            thumbHtml = '<img id="thumb_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />';
-        }} else {{
-            thumbHtml = '<div class="thumb-fallback"><span style="font-size:28px">' + iconFallback + '</span></div>';
-        }}
- 
-        var capDisplay = hasCaption ? p.caption : '';
- 
+        var engTotal     = (p.likes||0) + (p.comments||0);
+
+        var card = document.createElement('div');
+        card.className = 'post-card';
+        card.id = 'pcard_' + idx;
+
+        var thumbInner = thumbUrl
+            ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />'
+            : '<div class="thumb-fallback"><span style="font-size:28px">' + iconFallback + '</span></div>';
+
         card.innerHTML =
-            '<div class="thumb-wrap" id="tw_' + idx + '">'
-            + thumbHtml
-            + '<div class="type-badge">' + typeLbl + '</div>'
-            + overlayHtml
-            + '</div>'
-            + '<div class="card-info">'
-            + (p.date ? '<div class="card-date">' + p.date + '</div>' : '')
-            + '<div class="card-caption" id="cap_' + idx + '">'
-            + (hasCaption
-                ? (capDisplay.length > 100
-                    ? capDisplay.substring(0,100)
-                      + '<span id="cap_rest_' + idx + '" style="display:none">' + capDisplay.substring(100) + '</span>'
-                      + ' <button class="ver-copy-btn" id="vcb_' + idx + '" onclick="toggleCopy(' + idx + ')">'
-                      + '… ver mais'
-                      + '</button>'
-                    : capDisplay)
-                : '<span style="color:#d1d5db;font-style:italic">Sem legenda</span>')
-            + '</div>'
-            + '<div class="card-metrics">'
-            + '<span class="metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="13" height="13"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</span>'
-            + '<span class="metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="13" height="13"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</span>'
-            + '<span class="metric-eng">' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
-            + '</div>'
-            + '</div>';
- 
+            '<div class="thumb-wrap" id="tw_' + idx + '">' + thumbInner +
+            '<div class="type-badge">' + typeLbl + '</div>' +
+            '<div class="card-overlay">' +
+            '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>' +
+            '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>' +
+            '</div></div>' +
+
+            '<div class="metrics-row">' +
+            '<div class="metric-cell"><div class="metric-cell-lbl">Data</div><div class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</div></div>' +
+            '<div class="metric-cell"><div class="metric-cell-lbl">Curtidas</div><div class="metric-cell-val">' + fmtNum(p.likes||0) + '</div></div>' +
+            '<div class="metric-cell"><div class="metric-cell-lbl">Coments.</div><div class="metric-cell-val">' + fmtNum(p.comments||0) + '</div></div>' +
+            '<div class="metric-cell"><div class="metric-cell-lbl">Engaj.</div><div class="metric-cell-val eng">' + fmtNum(engTotal) + '</div></div>' +
+            '</div>' +
+
+            '<div class="card-caption-wrap">' +
+            (hasCaption
+                ? '<div class="card-caption" id="cap_' + idx + '">' + p.caption + '</div>' +
+                  '<button class="ver-copy-btn" id="vcb_' + idx + '" onclick="toggleCopy(' + idx + ')">ver mais</button>'
+                : '<span class="no-caption">Sem legenda</span>'
+            ) +
+            '</div>' +
+
+            (p.resultado_ia
+                ? '<div class="post-ia-panel"><div class="post-ia-hdr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Análise de IA</div>' + p.resultado_ia + '</div>'
+                : ''
+            ) +
+
+            '<div class="card-footer-btns">' +
+            '<a class="footer-btn ig" href="' + p.ig_url + '" target="_blank">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_g_' + idx + '" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_g_' + idx + ')"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>' +
+            'Ver no Instagram' +
+            '</a>' +
+            '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>' +
+            (p.tem_ia ? 'Reanalisar 🤖' : 'Analisar postagem 🤖') +
+            '</button>' +
+            '</div>';
+
         if (thumbUrl) {{
-            var imgEl = card.querySelector('#thumb_' + idx);
+            var imgEl = card.querySelector('#pimg_' + idx);
             if (imgEl) {{
-                imgEl.onerror = (function(i, icon, lbl, ov) {{
+                imgEl.onerror = (function(i, icon, lbl) {{
                     return function() {{
                         var tw = document.getElementById('tw_' + i);
-                        if (tw) {{
-                            tw.innerHTML =
-                                '<div class="thumb-fallback"><span style="font-size:28px">' + icon + '</span></div>'
-                                + '<div class="type-badge">' + lbl + '</div>'
-                                + ov;
-                        }}
+                        if (tw) tw.innerHTML =
+                            '<div class="thumb-fallback"><span style="font-size:28px">' + icon + '</span></div>' +
+                            '<div class="type-badge">' + lbl + '</div>' +
+                            '<div class="card-overlay"><div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>0</div></div>';
                     }};
-                }})(idx, iconFallback, typeLbl, overlayHtml);
+                }})(idx, iconFallback, typeLbl);
             }}
         }}
- 
+
         grid.appendChild(card);
     }});
- 
+
     syncHeight();
 }}
- 
+
 function toggleCopy(idx) {{
-    var rest = document.getElementById('cap_rest_' + idx);
-    var btn  = document.getElementById('vcb_' + idx);
-    if (!rest || !btn) return;
-    var aberto = rest.style.display !== 'none';
-    rest.style.display = aberto ? 'none' : 'inline';
-    btn.innerHTML = aberto ? '… ver mais' : ' ver menos';
+    var capEl = document.getElementById('cap_' + idx);
+    var btn   = document.getElementById('vcb_' + idx);
+    if (!capEl || !btn) return;
+    var expanded = capEl.classList.contains('expanded');
+    capEl.classList.toggle('expanded', !expanded);
+    btn.textContent = expanded ? 'ver mais' : 'ver menos';
     setTimeout(syncHeight, 60);
 }}
- 
+
+function analisarPost(idx) {{
+    var btn = document.getElementById('ia_btn_' + idx);
+    if (btn) {{ btn.textContent = 'Analisando…'; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }}
+    var label = 'post_ia_{aba_ativa}_' + idx;
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+
 function applyFilters() {{
     var posts = getFiltered();
     updateStats(posts);
     buildGrid(posts);
 }}
- 
+
 function toggleCols() {{
     var btns = window.parent.document.querySelectorAll('button');
     var label = 'posts_toggle_{aba_ativa}';
     for (var b of btns) {{
-        if ((b.textContent||b.innerText||'').split(/\\s+/).join(' ').trim() === label) {{ b.click(); return; }}
+        if ((b.textContent||b.innerText||'').split(/\s+/).join(' ').trim() === label) {{ b.click(); return; }}
     }}
 }}
- 
-function closeModal() {{
-    document.getElementById('modal-bg').classList.remove('open');
-    document.getElementById('modal-img').src = '';
-}}
- 
-document.addEventListener('keydown', function(e){{ if(e.key==='Escape') closeModal(); }});
- 
+
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -8045,7 +8001,7 @@ function syncHeight() {{
         }} catch(e) {{}}
     }}
 }}
- 
+
 applyFilters();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
