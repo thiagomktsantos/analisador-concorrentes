@@ -2234,6 +2234,124 @@ html, body { background: transparent; overflow: hidden; }
         return str(n)
 
     # ══════════════════════════════════════════════════════════════
+    # BLOCO 1: TABELA RESUMO GERAL
+    # ══════════════════════════════════════════════════════════════
+
+    st.markdown(
+        "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
+        "letter-spacing:0.2px;margin:8px 0 14px'>📋 Resumo Comparativo</div>",
+        unsafe_allow_html=True,
+    )
+
+    rows_html = ""
+    for i, e in enumerate(todas_empresas_geral):
+        is_minha = e["tipo"] == "minha"
+        cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(i - 1 if not is_minha else 0)
+        av       = gerar_avatar(e["nome"])
+        badge    = "Minha Empresa" if is_minha else "Concorrente"
+        bg_badge = "#eff6ff" if is_minha else "#f3f4f6"
+        col_badge= "#1d4ed8" if is_minha else "#6b7280"
+
+        redes = dados_redes_map.get(e["nome"], {})
+        seg   = redes.get("seguidores", 0)
+        eng   = redes.get("eng_pct", 0.0)
+        posts = redes.get("total_posts", 0)
+
+        n_ads_total  = len(ads_cache.get(e["nome"], {}).get("data", []))
+        n_ads_ativos = sum(1 for a in ads_cache.get(e["nome"], {}).get("data", []) if a.get("ativo", True))
+
+        has_ig   = bool(e.get("instagram") and e["instagram"] not in ("@",""))
+        has_site = bool(e.get("site"))
+
+        rows_html += f"""
+        <tr>
+            <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:32px;height:32px;border-radius:50%;background:{cor};
+                                display:flex;align-items:center;justify-content:center;
+                                font-size:12px;font-weight:700;color:#fff;flex-shrink:0">{av}</div>
+                    <div>
+                        <div style="font-weight:700;color:#111827;font-size:13px">{e['nome']}</div>
+                        <span style="font-size:11px;background:{bg_badge};color:{col_badge};
+                                     border:1px solid {'#bfdbfe' if is_minha else '#e5e7eb'};
+                                     padding:1px 7px;border-radius:20px;font-weight:600">{badge}</span>
+                    </div>
+                </div>
+            </td>
+            <td style="text-align:center">
+                <span style="color:{'#22c55e' if has_ig else '#d1d5db'};font-size:14px">{'✓' if has_ig else '—'}</span>
+            </td>
+            <td style="text-align:center">
+                <span style="color:{'#22c55e' if has_site else '#d1d5db'};font-size:14px">{'✓' if has_site else '—'}</span>
+            </td>
+            <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(seg) if seg else '—'}</td>
+            <td style="text-align:center;font-weight:700;color:#111827">{f'{eng:.1f}%' if seg else '—'}</td>
+            <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(posts) if posts else '—'}</td>
+            <td style="text-align:center;font-weight:700;color:#111827">{n_ads_ativos if n_ads_ativos else '—'}</td>
+            <td style="text-align:center;font-weight:600;color:#6b7280">{n_ads_total if n_ads_total else '—'}</td>
+        </tr>
+        """
+
+    components.html(f"""
+<!DOCTYPE html><html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+body {{ padding-bottom:8px; }}
+.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
+table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+th {{
+    background:#f9fafb; color:#9ca3af; font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.6px;
+    padding:11px 14px; text-align:left; border-bottom:1px solid #e5e7eb;
+    white-space:nowrap;
+}}
+td {{ padding:12px 14px; border-bottom:1px solid #f3f4f6; vertical-align:middle; color:#374151; }}
+tr:last-child td {{ border-bottom:none; }}
+tr:hover td {{ background:#f9fafb; }}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Empresa</th>
+                <th style="text-align:center">Instagram</th>
+                <th style="text-align:center">Site</th>
+                <th style="text-align:center">Seguidores</th>
+                <th style="text-align:center">Engaj. %</th>
+                <th style="text-align:center">Posts</th>
+                <th style="text-align:center">Ads Ativos</th>
+                <th style="text-align:center">Ads Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {rows_html}
+        </tbody>
+    </table>
+</div>
+<script>
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = (h + 8) + 'px'; break;
+        }} }} catch(e) {{}}
+    }}
+}}
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+</script>
+</body></html>
+""", height=200, scrolling=False) 
+    
+    # ══════════════════════════════════════════════════════════════
     # BLOCO 2: GRÁFICOS COMPARATIVOS DE REDES SOCIAIS
     # ══════════════════════════════════════════════════════════════
 
@@ -2622,124 +2740,6 @@ setTimeout(syncHeight, 300); setTimeout(syncHeight, 800);
 </script>
 </body></html>
 """, height=280, scrolling=False)
-
-    # ══════════════════════════════════════════════════════════════
-    # BLOCO 4: TABELA RESUMO GERAL
-    # ══════════════════════════════════════════════════════════════
-
-    st.markdown(
-        "<div style='font-size:16px;font-weight:700;color:#1a2e4a;"
-        "letter-spacing:0.2px;margin:8px 0 14px'>📋 Resumo Comparativo</div>",
-        unsafe_allow_html=True,
-    )
-
-    rows_html = ""
-    for i, e in enumerate(todas_empresas_geral):
-        is_minha = e["tipo"] == "minha"
-        cor      = get_minha_empresa_color() if is_minha else get_concorrente_color(i - 1 if not is_minha else 0)
-        av       = gerar_avatar(e["nome"])
-        badge    = "Minha Empresa" if is_minha else "Concorrente"
-        bg_badge = "#eff6ff" if is_minha else "#f3f4f6"
-        col_badge= "#1d4ed8" if is_minha else "#6b7280"
-
-        redes = dados_redes_map.get(e["nome"], {})
-        seg   = redes.get("seguidores", 0)
-        eng   = redes.get("eng_pct", 0.0)
-        posts = redes.get("total_posts", 0)
-
-        n_ads_total  = len(ads_cache.get(e["nome"], {}).get("data", []))
-        n_ads_ativos = sum(1 for a in ads_cache.get(e["nome"], {}).get("data", []) if a.get("ativo", True))
-
-        has_ig   = bool(e.get("instagram") and e["instagram"] not in ("@",""))
-        has_site = bool(e.get("site"))
-
-        rows_html += f"""
-        <tr>
-            <td>
-                <div style="display:flex;align-items:center;gap:10px">
-                    <div style="width:32px;height:32px;border-radius:50%;background:{cor};
-                                display:flex;align-items:center;justify-content:center;
-                                font-size:12px;font-weight:700;color:#fff;flex-shrink:0">{av}</div>
-                    <div>
-                        <div style="font-weight:700;color:#111827;font-size:13px">{e['nome']}</div>
-                        <span style="font-size:11px;background:{bg_badge};color:{col_badge};
-                                     border:1px solid {'#bfdbfe' if is_minha else '#e5e7eb'};
-                                     padding:1px 7px;border-radius:20px;font-weight:600">{badge}</span>
-                    </div>
-                </div>
-            </td>
-            <td style="text-align:center">
-                <span style="color:{'#22c55e' if has_ig else '#d1d5db'};font-size:14px">{'✓' if has_ig else '—'}</span>
-            </td>
-            <td style="text-align:center">
-                <span style="color:{'#22c55e' if has_site else '#d1d5db'};font-size:14px">{'✓' if has_site else '—'}</span>
-            </td>
-            <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(seg) if seg else '—'}</td>
-            <td style="text-align:center;font-weight:700;color:#111827">{f'{eng:.1f}%' if seg else '—'}</td>
-            <td style="text-align:center;font-weight:700;color:#111827">{fmt_num(posts) if posts else '—'}</td>
-            <td style="text-align:center;font-weight:700;color:#111827">{n_ads_ativos if n_ads_ativos else '—'}</td>
-            <td style="text-align:center;font-weight:600;color:#6b7280">{n_ads_total if n_ads_total else '—'}</td>
-        </tr>
-        """
-
-    components.html(f"""
-<!DOCTYPE html><html>
-<head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-body {{ padding-bottom:8px; }}
-.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
-table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-th {{
-    background:#f9fafb; color:#9ca3af; font-size:11px; font-weight:700;
-    text-transform:uppercase; letter-spacing:0.6px;
-    padding:11px 14px; text-align:left; border-bottom:1px solid #e5e7eb;
-    white-space:nowrap;
-}}
-td {{ padding:12px 14px; border-bottom:1px solid #f3f4f6; vertical-align:middle; color:#374151; }}
-tr:last-child td {{ border-bottom:none; }}
-tr:hover td {{ background:#f9fafb; }}
-</style>
-</head>
-<body>
-<div class="wrap">
-    <table>
-        <thead>
-            <tr>
-                <th>Empresa</th>
-                <th style="text-align:center">Instagram</th>
-                <th style="text-align:center">Site</th>
-                <th style="text-align:center">Seguidores</th>
-                <th style="text-align:center">Engaj. %</th>
-                <th style="text-align:center">Posts</th>
-                <th style="text-align:center">Ads Ativos</th>
-                <th style="text-align:center">Ads Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {rows_html}
-        </tbody>
-    </table>
-</div>
-<script>
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = (h + 8) + 'px'; break;
-        }} }} catch(e) {{}}
-    }}
-}}
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
-</script>
-</body></html>
-""", height=200, scrolling=False)
 
     # ── Aviso se sem dados ──────────────────────────────────────────
     if not ok_redes and not empresas_com_ads:
