@@ -5752,9 +5752,10 @@ setTimeout(ajustarAltura,100);
 </script>"""
 
                     elif img_primary:
+                        all_imgs_js = _json.dumps(images[:4])
                         media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
+     onclick="openModalImages({all_imgs_js}, '{snap_url.replace("'","")}')">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
@@ -6008,6 +6009,78 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
         }};
         tmp.src = mediaSrc;
     }}
+}}
+
+function openModalImages(imgs, snapUrl) {{
+    var doc = window.parent.document;
+    var old = doc.getElementById('ads_modal_overlay');
+    if (old) old.remove();
+
+    var overlay = doc.createElement('div');
+    overlay.id = 'ads_modal_overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
+
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
+
+    var closeBtn = doc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.onclick = closeModal;
+
+    var title = doc.createElement('div');
+    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
+    title.textContent = '4 imagens retornadas pela API — identifique cada uma:';
+
+    var labels = ['Imagem 1', 'Imagem 2', 'Imagem 3', 'Imagem 4'];
+    var colors = ['#3a9fd6', '#2ecc71', '#e67e22', '#e74c3c'];
+
+    var grid = doc.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
+
+    imgs.forEach(function(src, i) {{
+        var cell = doc.createElement('div');
+        cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
+
+        var lbl = doc.createElement('div');
+        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
+        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
+
+        var imgWrap = doc.createElement('div');
+        imgWrap.style.cssText = 'position:relative;aspect-ratio:1/1;background:#0a0a0a;display:flex;align-items:center;justify-content:center;';
+
+        var img = doc.createElement('img');
+        img.src = src || '';
+        img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;display:block;';
+        img.onerror = function() {{
+            imgWrap.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:20px;">Sem imagem</div>';
+        }};
+
+        var srcLabel = doc.createElement('div');
+        srcLabel.style.cssText = 'padding:5px 10px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;max-height:36px;overflow:hidden;';
+        srcLabel.textContent = src ? src.substring(0, 80) + '…' : 'vazio';
+
+        imgWrap.appendChild(img);
+        cell.appendChild(lbl);
+        cell.appendChild(imgWrap);
+        cell.appendChild(srcLabel);
+        grid.appendChild(cell);
+    }});
+
+    var hint = doc.createElement('div');
+    hint.style.cssText = 'margin-top:14px;padding:10px 14px;background:rgba(58,159,214,0.1);border:1px solid rgba(58,159,214,0.3);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;font-family:DM Sans,sans-serif;line-height:1.6;';
+    hint.innerHTML = '💡 Diga qual número corresponde a: <b style="color:#3a9fd6">perfil</b>, <b style="color:#2ecc71">feed</b>, <b style="color:#e67e22">thumb</b> e <b style="color:#e74c3c">stories</b> — assim podemos filtrar e exibir apenas a correta.';
+
+    box.appendChild(closeBtn);
+    box.appendChild(title);
+    box.appendChild(grid);
+    box.appendChild(hint);
+    overlay.appendChild(box);
+    doc.body.appendChild(overlay);
+
+    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
+    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
 }}
 
 function closeModal() {{
