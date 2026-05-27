@@ -5390,7 +5390,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .tabs-bar {{ display:flex; background:#f9fafb; border:1px solid #e5e7eb; border-top:none; border-bottom:none; }}
 .tab-btn {{ flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af; background:transparent; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }}
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
-.tab-btn.active {{ color:#1a2e4a; border-bottom:3px solid #3a9fd6; background:#fff; font-weight:800; border-top:1px solid #d8d9da; }}
+.tab-btn.active {{ color:#1a2e4a; border-bottom:4px solid #3a9fd6; background:#fff; font-weight:800; border-top:1px solid #d8d9da; }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
 </style>
 <div class="tabs-bar">
@@ -7415,7 +7415,7 @@ html, body {{
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
 .tab-btn.active {{
     color:#1a2e4a;
-    border-bottom:3px solid #3a9fd6;
+    border-bottom:4px solid #3a9fd6;
     background:#fff;
     font-weight:800;
     border-top:1px solid #e5e7eb;
