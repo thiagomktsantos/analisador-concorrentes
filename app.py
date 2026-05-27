@@ -7398,7 +7398,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     }}
 }})();
 </script>
-""", height=88, scrolling=False)
+""", height=82, scrolling=False)
 
         # ── Bio — largura 100%, 2 colunas ───────────────────────────
         chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
