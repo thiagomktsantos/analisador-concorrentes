@@ -3136,7 +3136,7 @@ body {{ padding-bottom:8px; }}
 .outer-wrap {{
     background:#d2dde9;
     border-radius:16px;
-    padding:16px;
+    padding:20px;
 }}
 
 /* ── Grid de cards ── */
@@ -3158,7 +3158,7 @@ body {{ padding-bottom:8px; }}
     box-shadow:0 4px 20px rgba(0,0,0,0.10);
 }}
 .site-card:hover {{
-    border:1px solid #f3f4f6;
+    border:1px solid #6fd1f3!important;
 }}
 
 /* ── Header do card ── */
