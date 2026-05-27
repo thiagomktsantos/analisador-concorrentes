@@ -7902,9 +7902,9 @@ function buildGrid(posts) {{
 
             '<div class="metrics-row">' +
             '<div class="metric-cell"><span class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</span></div>' +
-            '<div class="metric-cell"><span class="metric-cell-val">' + fmtNum(p.likes||0) + '</span><span class="metric-cell-lbl">❤️</span></div>' +
-            '<div class="metric-cell"><span class="metric-cell-val">' + fmtNum(p.comments||0) + '</div><span class="metric-cell-lbl">💬</span></div>' +
-            '<div class="metric-cell"><div class="metric-cell-val eng">' + fmtNum(engTotal) + '</div><span class="metric-cell-lbl">⚡</span></div>' +
+            '<div class="metric-cell"><span class="metric-cell-lbl">❤️</span><span class="metric-cell-val">' + fmtNum(p.likes||0) + '</span></div>' +
+            '<div class="metric-cell"><span class="metric-cell-lbl">💬</span><span class="metric-cell-val">' + fmtNum(p.comments||0) + '</span></div>' +
+            '<div class="metric-cell"><span class="metric-cell-lbl">⚡</span><span class="metric-cell-val eng">' + fmtNum(engTotal) + '</span></div>' +
             '</div>' +
 
             '<div class="card-caption-wrap">' +
