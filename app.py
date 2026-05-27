@@ -7721,13 +7721,16 @@ body{{padding-bottom:8px;}}
 .thumb-wrap {{
     position:relative; width:100%; aspect-ratio:1/1;
     background:#f0f2f5; overflow:hidden; flex-shrink:0;
+    cursor:pointer;
 }}
-.thumb-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.2s; }}
-.post-card:hover .thumb-wrap img {{ transform:scale(1.04); }}
+.thumb-wrap img {{
+    width:100%; height:100%; object-fit:cover; display:block;
+}}
 .thumb-fallback {{
     width:100%; height:100%;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     background:linear-gradient(135deg,#e9eef5,#d2dde9); gap:6px;
+    cursor:pointer;
 }}
 .type-badge {{
     position:absolute; top:8px; left:8px;
@@ -7736,14 +7739,13 @@ body{{padding-bottom:8px;}}
     border-radius:20px; pointer-events:none;
     text-transform:uppercase; letter-spacing:0.5px;
 }}
-.card-overlay {{
-    position:absolute; inset:0;
-    background:rgba(14,42,71,0.65);
-    display:flex; align-items:center; justify-content:center; gap:14px;
-    opacity:0; transition:opacity 0.18s; pointer-events:none;
+.zoom-badge {{
+    position:absolute; bottom:8px; right:8px;
+    background:rgba(0,0,0,0.45); color:#fff;
+    font-size:10px; font-weight:600; padding:3px 8px;
+    border-radius:6px; pointer-events:none;
+    display:flex; align-items:center; gap:4px;
 }}
-.post-card:hover .card-overlay {{ opacity:1; }}
-.overlay-stat {{ display:flex; align-items:center; gap:5px; font-size:15px; font-weight:700; color:#fff; }}
 
 /* Métricas em 4 colunas */
 .metrics-row {{
@@ -7794,9 +7796,27 @@ body{{padding-bottom:8px;}}
     text-transform:uppercase; letter-spacing:0.5px;
     margin-bottom:6px; display:flex; align-items:center; gap:5px;
 }}
+
+/* ── MODAL ── */
+#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
+#modal-overlay.open{{display:flex;}}
+#modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
+#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
+#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
+#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
+#modal-fallback{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;}}
+#modal-fallback a{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
 </style>
 </head>
 <body>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div id="modal-box">
+        <button id="modal-close" onclick="closeModal()">✕</button>
+        <div id="modal-content"></div>
+    </div>
+</div>
 
 <script id="posts-data" type="application/json">{posts_json_str}</script>
 
@@ -7858,6 +7878,48 @@ function updateStats(posts) {{
     document.getElementById('stat-best').textContent   = fmtNum(bE);
 }}
 
+function openModal(thumbUrl, igUrl) {{
+    var overlay = document.getElementById('modal-overlay');
+    var content = document.getElementById('modal-content');
+    content.innerHTML = '';
+
+    if (!thumbUrl) {{
+        window.open(igUrl, '_blank');
+        return;
+    }}
+
+    var loading = document.createElement('div');
+    loading.id = 'modal-loading';
+    loading.textContent = 'Carregando criativo…';
+    content.appendChild(loading);
+    overlay.classList.add('open');
+
+    var tmp = new Image();
+    tmp.onload = function() {{
+        content.innerHTML = '';
+        var img = document.createElement('img');
+        img.id = 'modal-img';
+        img.src = thumbUrl;
+        content.appendChild(img);
+    }};
+    tmp.onerror = function() {{
+        content.innerHTML = '';
+        var fb = document.createElement('div');
+        fb.id = 'modal-fallback';
+        fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
+            + '<a href="' + igUrl + '" target="_blank">↗ Ver no Instagram</a>';
+        content.appendChild(fb);
+    }};
+    tmp.src = thumbUrl;
+}}
+
+function closeModal() {{
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.getElementById('modal-content').innerHTML = '';
+}}
+
+document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
+
 function getFiltered() {{
     var texto = (document.getElementById('filter-text').value || '').toLowerCase().trim();
     var tipo  = document.getElementById('filter-tipo').value;
@@ -7877,71 +7939,70 @@ function buildGrid(posts) {{
     grid.innerHTML = '';
 
     posts.forEach(function(p) {{
-        var idx          = p.jp;
-        var hasCaption   = !!(p.caption && p.caption.trim());
+        var idx        = p.jp;
+        var hasCaption = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? '🎬' : '📷';
-        var typeLbl      = p.is_video ? 'Vídeo' : 'Foto';
-        var thumbUrl     = (p.thumb || '').trim();
-        var engTotal     = (p.likes||0) + (p.comments||0);
+        var typeLbl    = p.is_video ? 'Vídeo' : 'Foto';
+        var thumbUrl   = (p.thumb || '').trim();
+        var engTotal   = (p.likes||0) + (p.comments||0);
+        var igUrl      = p.ig_url || '#';
 
         var card = document.createElement('div');
         card.className = 'post-card';
         card.id = 'pcard_' + idx;
 
+        // thumb — clicável para abrir modal
+        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\', \\''+igUrl+'\\')"';
         var thumbInner = thumbUrl
             ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />'
-            : '<div class="thumb-fallback"><span style="font-size:28px">' + iconFallback + '</span></div>';
+            : '<div class="thumb-fallback" ' + thumbClickAttr + '><span style="font-size:28px">' + iconFallback + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
 
         card.innerHTML =
-            '<div class="thumb-wrap" id="tw_' + idx + '">' + thumbInner +
-            '<div class="type-badge">' + typeLbl + '</div>' +
-            '<div class="card-overlay">' +
-            '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>' +
-            '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>' +
-            '</div></div>' +
+            '<div class="thumb-wrap" id="tw_' + idx + '" ' + thumbClickAttr + '>'
+            + thumbInner
+            + '<div class="type-badge">' + typeLbl + '</div>'
+            + '<div class="zoom-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> Ver criativo</div>'
+            + '</div>'
 
-            '<div class="metrics-row">' +
-            '<div class="metric-cell"><span class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</span></div>' +
-            '<div class="metric-cell"><span class="metric-cell-lbl">❤️</span><span class="metric-cell-val">' + fmtNum(p.likes||0) + '</span></div>' +
-            '<div class="metric-cell"><span class="metric-cell-lbl">💬</span><span class="metric-cell-val">' + fmtNum(p.comments||0) + '</span></div>' +
-            '<div class="metric-cell"><span class="metric-cell-lbl">⚡</span><span class="metric-cell-val eng">' + fmtNum(engTotal) + '</span></div>' +
-            '</div>' +
+            + '<div class="metrics-row">'
+            + '<div class="metric-cell"><span class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</span></div>'
+            + '<div class="metric-cell"><span class="metric-cell-lbl">❤️</span><span class="metric-cell-val">' + fmtNum(p.likes||0) + '</span></div>'
+            + '<div class="metric-cell"><span class="metric-cell-lbl">💬</span><span class="metric-cell-val">' + fmtNum(p.comments||0) + '</span></div>'
+            + '<div class="metric-cell"><span class="metric-cell-lbl">⚡</span><span class="metric-cell-val eng">' + fmtNum(engTotal) + '</span></div>'
+            + '</div>'
 
-            '<div class="card-caption-wrap">' +
-            (hasCaption
-                ? '<div class="card-caption" id="cap_' + idx + '">' + p.caption + '</div>' +
-                  '<button class="ver-copy-btn" id="vcb_' + idx + '" onclick="toggleCopy(' + idx + ')">ver mais</button>'
+            + '<div class="card-caption-wrap">'
+            + (hasCaption
+                ? '<div class="card-caption" id="cap_' + idx + '">' + p.caption + '</div>'
+                  + '<button class="ver-copy-btn" id="vcb_' + idx + '" onclick="toggleCopy(' + idx + ')">ver mais</button>'
                 : '<span class="no-caption">Sem legenda</span>'
-            ) +
-            '</div>' +
+              )
+            + '</div>'
 
-            (p.resultado_ia
+            + (p.resultado_ia
                 ? '<div class="post-ia-panel"><div class="post-ia-hdr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Análise de IA</div>' + p.resultado_ia + '</div>'
                 : ''
-            ) +
+              )
 
-            '<div class="card-footer-btns">' +
-            '<a class="footer-btn ig" href="' + p.ig_url + '" target="_blank">' +
-            'Ver no Instagram' +
-            '</a>' +
-            '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">' +
-            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>' +
-            (p.tem_ia ? 'Reanalisar' : 'Analisar postagem') +
-            '</button>' +
-            '</div>';
+            + '<div class="card-footer-btns">'
+            + '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram</a>'
+            + '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">'
+            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>'
+            + (p.tem_ia ? 'Reanalisar' : 'Analisar postagem')
+            + '</button>'
+            + '</div>';
 
         if (thumbUrl) {{
             var imgEl = card.querySelector('#pimg_' + idx);
             if (imgEl) {{
-                imgEl.onerror = (function(i, icon, lbl) {{
+                imgEl.onerror = (function(i, icon, lbl, tw_url, ig_u) {{
                     return function() {{
                         var tw = document.getElementById('tw_' + i);
                         if (tw) tw.innerHTML =
-                            '<div class="thumb-fallback"><span style="font-size:28px">' + icon + '</span></div>' +
-                            '<div class="type-badge">' + lbl + '</div>' +
-                            '<div class="card-overlay"><div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>0</div></div>';
+                            '<div class="thumb-fallback" onclick="openModal(\\''+tw_url+'\\',\\''+ig_u+'\\')"><span style="font-size:28px">' + icon + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>'
+                            + '<div class="type-badge">' + lbl + '</div>';
                     }};
-                }})(idx, iconFallback, typeLbl);
+                }})(idx, iconFallback, typeLbl, thumbUrl, igUrl);
             }}
         }}
 
