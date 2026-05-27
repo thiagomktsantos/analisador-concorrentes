@@ -1748,17 +1748,17 @@ setTimeout(ajustarAltura, 800);
         <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
                     padding:14px 20px;display:flex;align-items:center;gap:16px;
                     margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
-            <div style='width:42px;height:42px;border-radius:10px;background:#eff6ff;
+            <div style='width:42px;height:42px;border-radius:10px;background:#007dbb;
                         display:flex;align-items:center;justify-content:center;flex-shrink:0'>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 12l2 2 4-4" stroke="#3a9fd6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 12l2 2 4-4" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
-                          stroke="#3a9fd6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <div>
-                <div style='font-size:14px;font-weight:600;color:#0f172a'>Mantenha suas informações atualizadas</div>
-                <div style='font-size:13px;color:#64748b;margin-top:2px'>Dados atualizados garantem análises mais precisas e relatórios mais completos.</div>
+                <div style='font-size:16px;font-weight:600;color:#0f172a'>Mantenha suas informações atualizadas</div>
+                <div style='font-size:13px;color:#64748b;margin-top:-3px'>Dados atualizados garantem análises mais precisas e relatórios mais completos.</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
