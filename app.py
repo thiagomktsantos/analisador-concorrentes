@@ -1745,7 +1745,7 @@ setTimeout(ajustarAltura, 800);
         """, height=320, scrolling=False)
 
         st.markdown("""
-        <div style='background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;
+        <div style='background:#e7fbff;border:1px solid #6fd1f3;border-radius:12px;
                     padding:14px 20px;display:flex;align-items:center;gap:16px;
                     margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)'>
             <div style='width:42px;height:42px;border-radius:10px;background:#007dbb;
@@ -1954,10 +1954,10 @@ body {{ padding-bottom: 4px; }}
     min-width: 0; flex: 1;
 }}
 .row-label {{
-    font-size: 11px; color: #9ca3af;
+    font-size: 13px; color: #717885;
 }}
 .row-value {{
-    font-size: 13px; color: #111827; font-weight: 600;
+    font-size: 14px; color: #111827; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }}
 .card-footer {{
