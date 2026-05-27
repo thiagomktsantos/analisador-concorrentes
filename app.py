@@ -1634,15 +1634,15 @@ body {{ background: transparent; overflow: hidden; padding-bottom: 2px; }}
 .empresa-top {{ display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 18px; border-bottom: 1px solid #f3f4f6; }}
 .empresa-avatar {{ width: 52px; height: 52px; min-width: 52px; border-radius: 50%; background: {cor_empresa}; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; }}
 .empresa-nome {{ font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 2px; letter-spacing: -0.3px; }}
-.empresa-sub {{ font-size: 13px; color: #9ca3af; }}
+.empresa-sub {{ font-size: 14px; color: #6b7280; font-weight: 500; }}
 .empresa-grid {{ display: grid; grid-template-columns: 1fr 1px 1fr 1px 1fr; gap: 0; }}
 .empresa-divider {{ background: #f0f0f0; margin: 0 24px; align-self: stretch; }}
 .empresa-col {{ padding: 0 4px; }}
-.empresa-sec-title {{ font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #9ca3af; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6; }}
+.empresa-sec-title {{ font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #6b7280; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6; }}
 .empresa-row {{ display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }}
 .empresa-ico {{ width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 9px; }}
 .empresa-ico svg {{ width: 20px; height: 20px; }}
-.empresa-lbl {{ font-size: 11px; color: #9ca3af; display: block; margin-bottom: 1px; }}
+.empresa-lbl {{ font-size: 13px; color: #717885; display: block; margin-bottom: -2px; }}
 .empresa-val {{ font-size: 14px; color: #111827; font-weight: 600; }}
 .empresa-tags-wrap {{ display: flex; flex-wrap: wrap; gap: 8px; }}
 .empresa-tag {{ background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; }}
