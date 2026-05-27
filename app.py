@@ -7616,7 +7616,7 @@ body{{padding-bottom:8px;}}
     display:flex;
     align-items:center;
     gap:10px;
-    padding:14px 16px;
+    padding:20px 20px;
     border-bottom:1px solid #e5e7eb;
     background:#fff;
     flex-wrap:wrap;
