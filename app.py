@@ -7770,8 +7770,8 @@ body{{padding-bottom:8px;}}
 .card-info {{ padding:10px 12px 4px; flex:1; display:flex; flex-direction:column; gap:5px; }}
 .card-date {{ font-size:11px; color:#9ca3af; font-weight:600; }}
 .card-caption {{
-    font-size:12px; color:#374151; line-height:1.5; flex:1;
-    font-style:italic; white-space:pre-line; word-break:break-word; min-height:36px;
+    font-size:13px; color:#374151; line-height:1.5; flex:1;
+    white-space:pre-line; word-break:break-word; min-height:36px;
 }}
 .card-metrics {{
     display:flex; align-items:center; gap:10px;
