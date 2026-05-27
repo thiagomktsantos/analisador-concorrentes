@@ -7448,11 +7448,6 @@ html, body {{
             </div>
             <div class="divider-v"></div>
             <a class="btn-ig" href="{ig_url}" target="_blank">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="2" width="20" height="20" rx="5" fill="white" fill-opacity="0.15"/>
-                    <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-                    <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-                </svg>
                 Ver no Instagram
             </a>
         </div>
