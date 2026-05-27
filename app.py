@@ -5673,10 +5673,16 @@ setTimeout(ajustarAltura,100);
                     debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
-                    img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
+                    # Thumb do card: feed baixa qualidade (índice 1), fallback para índice 0
+                    img_thumb_url = images[1] if len(images) > 1 else (images[0] if images else "")
+                    img_primary = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
+
+                    # Fallbacks para o thumb (não usados no modal de 4 imagens)
                     img_fallbacks = []
-                    if images_b64 and len(images_b64) > 1:
-                        img_fallbacks.extend(images_b64[1:])
+                    if img_thumb_url and img_thumb_url not in img_fallbacks:
+                        img_fallbacks.append(img_thumb_url)
+                    if images_b64 and images_b64[0] not in img_fallbacks:
+                        img_fallbacks.append(images_b64[0])
                     img_fallbacks.extend([u for u in images if u not in img_fallbacks])
                     srcs_js = _json.dumps(img_fallbacks)
 
@@ -5753,6 +5759,13 @@ setTimeout(ajustarAltura,100);
 
                     elif img_primary:
                         all_imgs_js = _json.dumps(images[:4], ensure_ascii=True)
+                        main_modal_imgs_js = _json.dumps(
+                            [img for img in [
+                                images[0] if len(images) > 0 else "",
+                                images[2] if len(images) > 2 else "",
+                            ] if img],
+                            ensure_ascii=True
+                        )
                         media_block = f"""
 <div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
@@ -5766,11 +5779,12 @@ setTimeout(ajustarAltura,100);
 <script>
 (function(){{
     var IMGS_{uid} = {all_imgs_js};
+    var MAIN_IMGS_{uid} = {main_modal_imgs_js};
     var SNAP_{uid} = '{snap_url.replace("'","").replace('"',"")}';
     var wrap = document.getElementById('mwrap_{uid}');
     if (wrap) {{
         wrap.addEventListener('click', function() {{
-            openModalImages(IMGS_{uid}, SNAP_{uid});
+            openModalHQ(MAIN_IMGS_{uid}, IMGS_{uid}, SNAP_{uid});
         }});
     }}
     var _srcs_{uid} = {srcs_js};
@@ -5782,6 +5796,7 @@ function imgFallback_{uid}(img){{
     else{{ img.style.display='none'; var e=document.getElementById('merr_{uid}'); if(e) e.style.display='flex'; }}
 }}
 </script>"""
+
                     else:
                         _sv = snap_url.replace("'", "")
                         _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
@@ -6020,7 +6035,8 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     }}
 }}
 
-function openModalImages(imgs, snapUrl) {{
+function openModalHQ(hqImgs, allImgs, snapUrl) {
+    // Modal principal: mostra feed alta (idx 0) e stories alta (idx 2)
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
@@ -6028,7 +6044,76 @@ function openModalImages(imgs, snapUrl) {{
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
-    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
+    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;padding:40px 24px 24px;min-width:320px;max-width:min(92vw,900px);';
+
+    var closeBtn = doc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.onclick = closeModal;
+
+    var title = doc.createElement('div');
+    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
+    title.textContent = hqImgs.length > 1 ? 'Feed · Stories (alta qualidade)' : 'Feed (alta qualidade)';
+
+    var labels = ['Feed', 'Stories'];
+    var colors = ['#3a9fd6', '#2ecc71'];
+
+    var grid = doc.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;';
+
+    hqImgs.forEach(function(src, i) {
+        var cell = doc.createElement('div');
+        cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
+
+        var lbl = doc.createElement('div');
+        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
+        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
+
+        var imgEl = doc.createElement('img');
+        imgEl.src = src || '';
+        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:70vh;';
+        imgEl.onerror = function() {
+            cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
+        };
+
+        cell.appendChild(lbl);
+        cell.appendChild(imgEl);
+        grid.appendChild(cell);
+    });
+
+    // Link para debug das 4 imagens
+    var debugBtn = doc.createElement('button');
+    debugBtn.textContent = '🔍 Ver todas as 4 imagens (debug)';
+    debugBtn.style.cssText = 'margin-top:14px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;';
+    debugBtn.onclick = function() {
+        closeModal();
+        setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
+    };
+
+    box.appendChild(closeBtn);
+    box.appendChild(title);
+    box.appendChild(grid);
+    box.appendChild(debugBtn);
+    overlay.appendChild(box);
+    doc.body.appendChild(overlay);
+
+    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+}
+
+function openModalImages(imgs, snapUrl) {
+    // Modal de debug: mostra as 4 imagens com labels explicativos
+    var doc = window.parent.document;
+    var old = doc.getElementById('ads_modal_overlay');
+    if (old) old.remove();
+
+    var overlay = doc.createElement('div');
+    overlay.id = 'ads_modal_overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
 
     var box = doc.createElement('div');
     box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
@@ -6040,57 +6125,53 @@ function openModalImages(imgs, snapUrl) {{
 
     var title = doc.createElement('div');
     title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = '4 imagens retornadas pela API — identifique cada uma:';
+    title.textContent = '4 imagens da API — índices e qualidades:';
 
-    var labels = ['Imagem 1', 'Imagem 2', 'Imagem 3', 'Imagem 4'];
-    var colors = ['#3a9fd6', '#2ecc71', '#e67e22', '#e74c3c'];
+    var labels = [
+        'Idx 0 — Feed Alta',
+        'Idx 1 — Feed Baixa (thumb)',
+        'Idx 2 — Stories Alta',
+        'Idx 3 — Stories Baixa',
+    ];
+    var colors = ['#3a9fd6', '#e67e22', '#2ecc71', '#e74c3c'];
 
     var grid = doc.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
 
-    imgs.forEach(function(src, i) {{
+    imgs.forEach(function(src, i) {
         var cell = doc.createElement('div');
         cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
 
         var lbl = doc.createElement('div');
         lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
+        lbl.textContent = labels[i] || ('Idx ' + i);
 
-        var imgWrap = doc.createElement('div');
-        imgWrap.style.cssText = 'position:relative;aspect-ratio:1/1;background:#0a0a0a;display:flex;align-items:center;justify-content:center;';
+        var imgEl = doc.createElement('img');
+        imgEl.src = src || '';
+        imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:220px;';
+        imgEl.onerror = function() {
+            cell.innerHTML = '<div style="color:#555;font-size:11px;font-family:DM Sans,sans-serif;text-align:center;padding:20px;">Sem imagem</div>';
+        };
 
-        var img = doc.createElement('img');
-        img.src = src || '';
-        img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;display:block;';
-        img.onerror = function() {{
-            imgWrap.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:20px;">Sem imagem</div>';
-        }};
+        var srcLbl = doc.createElement('div');
+        srcLbl.style.cssText = 'padding:4px 8px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;';
+        srcLbl.textContent = src ? src.substring(0,70) + '…' : 'vazio';
 
-        var srcLabel = doc.createElement('div');
-        srcLabel.style.cssText = 'padding:5px 10px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;max-height:36px;overflow:hidden;';
-        srcLabel.textContent = src ? src.substring(0, 80) + '…' : 'vazio';
-
-        imgWrap.appendChild(img);
         cell.appendChild(lbl);
-        cell.appendChild(imgWrap);
-        cell.appendChild(srcLabel);
+        cell.appendChild(imgEl);
+        cell.appendChild(srcLbl);
         grid.appendChild(cell);
-    }});
-
-    var hint = doc.createElement('div');
-    hint.style.cssText = 'margin-top:14px;padding:10px 14px;background:rgba(58,159,214,0.1);border:1px solid rgba(58,159,214,0.3);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;font-family:DM Sans,sans-serif;line-height:1.6;';
-    hint.innerHTML = '💡 Diga qual número corresponde a: <b style="color:#3a9fd6">perfil</b>, <b style="color:#2ecc71">feed</b>, <b style="color:#e67e22">thumb</b> e <b style="color:#e74c3c">stories</b> — assim podemos filtrar e exibir apenas a correta.';
+    });
 
     box.appendChild(closeBtn);
     box.appendChild(title);
     box.appendChild(grid);
-    box.appendChild(hint);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
 
-    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
+    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
-}}
+}
 
 function closeModal() {{
     var doc = window.parent.document;
