@@ -5752,10 +5752,9 @@ setTimeout(ajustarAltura,100);
 </script>"""
 
                     elif img_primary:
-                        all_imgs_js = _json.dumps(images[:4])
+                        all_imgs_js = _json.dumps(images[:4], ensure_ascii=True)
                         media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModalImages({all_imgs_js}, '{snap_url.replace("'","")}')">
+<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
@@ -5765,12 +5764,22 @@ setTimeout(ajustarAltura,100);
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ver criativos</div>
 </div>
 <script>
-var _srcs_{uid}={srcs_js};
-var _idx_{uid}=0;
+(function(){{
+    var IMGS_{uid} = {all_imgs_js};
+    var SNAP_{uid} = '{snap_url.replace("'","").replace('"',"")}';
+    var wrap = document.getElementById('mwrap_{uid}');
+    if (wrap) {{
+        wrap.addEventListener('click', function() {{
+            openModalImages(IMGS_{uid}, SNAP_{uid});
+        }});
+    }}
+    var _srcs_{uid} = {srcs_js};
+    var _idx_{uid} = 0;
+}})();
 function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
-    else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
+    if(_idx_{uid} < _srcs_{uid}.length){{ img.src = _srcs_{uid}[_idx_{uid}]; }}
+    else{{ img.style.display='none'; var e=document.getElementById('merr_{uid}'); if(e) e.style.display='flex'; }}
 }}
 </script>"""
                     else:
