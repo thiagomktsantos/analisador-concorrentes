@@ -7775,7 +7775,7 @@ body{{padding-bottom:8px;}}
 .card-footer-btns {{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #f3f4f6; margin-top:auto; }}
 .footer-btn {{
     padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px;
-    font-size:12px; font-weight:700; border:none; background:#1877F2;
+    font-size:12px; font-weight:700; border:none; background:#697c95;
     cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
     text-decoration:none; color:#ffffff;
 }}
