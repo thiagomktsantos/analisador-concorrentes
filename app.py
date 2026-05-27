@@ -3135,7 +3135,6 @@ body {{ padding-bottom:8px; }}
 /* ── Wrapper geral (mesmo estilo da imagem 2) ── */
 .outer-wrap {{
     background:#d2dde9;
-    border:1px solid #c4cdd8;
     border-radius:16px;
     padding:16px;
 }}
@@ -3144,21 +3143,22 @@ body {{ padding-bottom:8px; }}
 .cards-grid {{
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
-    gap:16px;
+    gap:20px;
 }}
 
 /* ── Card individual ── */
 .site-card {{
     background:#fff;
-    border:1px solid #e5e7eb;
+    border:1px solid #fff;
     border-radius:14px;
     overflow:hidden;
     display:flex;
     flex-direction:column;
     transition:box-shadow 0.15s;
+    box-shadow:0 4px 20px rgba(0,0,0,0.10);
 }}
 .site-card:hover {{
-    box-shadow:0 4px 20px rgba(0,0,0,0.10);
+    border:1px solid #f3f4f6;
 }}
 
 /* ── Header do card ── */
@@ -4969,7 +4969,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 /* ── Container principal ── */
 .main-wrap {{
     background:#d2dde9;
-    border:1px solid #e5e7eb;
     border-radius:16px;
     overflow:hidden;
     margin-bottom:0;
@@ -5005,6 +5004,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .emp-card.active {{
     background:#fff;
     border: 2px solid #3b82f6;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }}
 .emp-card.active::after {{
     content:'';
