@@ -7952,7 +7952,7 @@ body{{padding-bottom:8px;}}
     position:relative;
 }}
 #modal-img-wrap {{ width:100%; aspect-ratio:1/1; background:#000; overflow:hidden; flex-shrink:0; }}
-#modal-img-wrap img {{ width:100%; height:100%; object-fit:contain; display:block; }}
+#modal-img-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
 #modal-content {{ padding:20px 22px; overflow-y:auto; flex:1; }}
 #modal-title {{ font-size:13px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }}
 #modal-caption {{ font-size:14px; color:#374151; line-height:1.75; white-space:pre-wrap; }}
@@ -7978,7 +7978,7 @@ body{{padding-bottom:8px;}}
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">&#x2715;</button>
-        <div id="modal-img-wrap"><img id="modal-img" src="" alt="" /></div>
+        <div id="modal-img-wrap" style="display:none"><img id="modal-img" src="" alt="" /></div>
         <div id="modal-content">
             <div id="modal-title">Copy da publicação</div>
             <div id="modal-caption"></div>
@@ -8090,7 +8090,7 @@ function buildGrid(posts) {{
         var capDisplay = hasCaption ? p.caption : '';
  
         card.innerHTML =
-            '<div class="thumb-wrap" id="tw_' + idx + '" onclick="openImgModal(\'' + idx + '\')">'
+            '<div class="thumb-wrap" id="tw_' + idx + '">'
             + thumbHtml
             + '<div class="type-badge">' + typeLbl + '</div>'
             + overlayHtml
@@ -8188,46 +8188,6 @@ if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body)
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
-
-function openImgModal(idx) {{
-    var p = ALL_POSTS[idx];
-    if (!p) return;
-    var thumbEl = document.getElementById('thumb_' + idx);
-    var src = (thumbEl && thumbEl.src) ? thumbEl.src : (p.thumb || '');
-    
-    var imgWrap = document.getElementById('modal-img-wrap');
-    var modalImg = document.getElementById('modal-img');
-    var modalCaption = document.getElementById('modal-caption');
-    var modalMetrics = document.getElementById('modal-metrics');
-
-    if (src && src.indexOf('data:') !== 0 && src !== window.location.href) {{
-        imgWrap.style.display = 'block';
-        modalImg.src = src;
-        modalImg.onerror = function() {{
-            imgWrap.style.display = 'none';
-        }};
-    }} else {{
-        imgWrap.style.display = 'none';
-    }}
-
-    modalCaption.textContent = p.caption || 'Sem legenda.';
-    
-    modalMetrics.innerHTML =
-        '<span class="modal-metric">'
-        + '<svg viewBox="0 0 24 24" fill="#e11d48" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
-        + fmtNum(p.likes || 0) + ' curtidas</span>'
-        + '<span class="modal-metric">'
-        + '<svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
-        + fmtNum(p.comments || 0) + ' comentários</span>'
-        + (p.date ? '<span class="modal-metric" style="margin-left:auto;color:#9ca3af;font-size:12px">📅 ' + p.date + '</span>' : '');
-
-    document.getElementById('modal-bg').classList.add('open');
-}}
-
-function closeModal() {{
-    document.getElementById('modal-bg').classList.remove('open');
-    document.getElementById('modal-img').src = '';
-}}
 </script>
 </body></html>
 """, height=600, scrolling=False)
