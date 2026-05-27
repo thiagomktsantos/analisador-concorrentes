@@ -7693,7 +7693,7 @@ body{{padding-bottom:8px;}}
 .stat-num {{ font-size:26px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; letter-spacing:-0.5px; }}
 .stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; }}
  
-.posts-grid {{ display:grid; gap:10px; margin-top:16px; }}
+.posts-grid {{ display:grid; gap:12px; margin-top:16px; }}
 .post-card {{
     background:#fff;
     border:1px solid #f0f2f5;
@@ -7702,6 +7702,7 @@ body{{padding-bottom:8px;}}
     overflow:hidden;
     position:relative;
     border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }}
 .post-card:hover {{ background:#f9fafb; }}
 .post-card:hover .card-overlay {{ opacity:1; }}
