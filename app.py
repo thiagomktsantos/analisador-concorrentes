@@ -7216,11 +7216,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     font-weight: 400;
     color: #9ca3af;
 }}
-.emp-handle {{
-    font-size:12px; color:#9ca3af;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:4px;
-}}
 .badge-minha {{
     display:inline-flex; align-items:center; gap:5px;
     background:#f0fdf4; color:#15803d;
@@ -7302,7 +7297,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
  
-        # ── Renderiza perfil da aba ativa ───────────────────────────
+        # ── Dados do perfil ativo ────────────────────────────────────
         r = ok[aba_ativa]
         is_minha  = r.get("tipo") == "minha"
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
@@ -7310,265 +7305,23 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
         cor = get_avatar_color(aba_ativa)
-        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ").replace('"', "&quot;").replace("'", "&#39;")
         posts_list = r.get("posts", [])
-
-        # ── Cabeçalho do perfil — estilo imagem 2 ──────────────────
+ 
         seg_fmt   = fmt_num(r.get("seguidores", 0))
         posts_fmt = fmt_num(r.get("total_posts", 0))
         handle_clean = (r.get("handle") or "").lstrip("@")
         ig_url = f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#"
-
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.header {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:14px 14px 0 0;
-    display:flex; align-items:center; gap:16px;
-    padding:18px 22px 16px;
-}}
-.avatar {{
-    width:52px; height:52px; border-radius:50%;
-    background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
-.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
-.badge {{
-    display:inline-block;
-    background:{badge_bg}; color:{badge_txt};
-    border:1px solid {badge_brd};
-    padding:2px 10px; border-radius:20px;
-    font-size:11px; font-weight:600; margin-top:4px;
-}}
-.divider {{ width:1px; height:44px; background:#e5e7eb; flex-shrink:0; margin:0 8px; }}
-.stat-wrap {{ display:flex; align-items:center; gap:24px; flex-shrink:0; }}
-.stat {{ text-align:center; }}
-.stat-num {{ font-size:24px; font-weight:800; color:#0f1f35; line-height:1; }}
-.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }}
-.btn-ig {{
-    display:inline-flex; align-items:center; gap:7px;
-    background:#0e2a47; color:#fff;
-    padding:9px 18px; border-radius:9px;
-    font-size:13px; font-weight:700; text-decoration:none;
-    white-space:nowrap; flex-shrink:0;
-    transition:background 0.15s;
-}}
-.btn-ig:hover {{ background:#1a3a5c; }}
-</style>
-<div class="header">
-    <div class="avatar">{gerar_avatar(r["nome"])}</div>
-    <div class="info">
-        <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
-        <div class="badge">{badge_lbl}</div>
-    </div>
-    <div class="stat-wrap">
-        <div class="divider"></div>
-        <div class="stat">
-            <div class="stat-num">{seg_fmt}</div>
-            <div class="stat-lbl">Seguidores</div>
-        </div>
-        <div class="divider"></div>
-        <div class="stat">
-            <div class="stat-num">{posts_fmt}</div>
-            <div class="stat-lbl">Postagens</div>
-        </div>
-        <div class="divider"></div>
-        <a class="btn-ig" href="{ig_url}" target="_blank">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="20" height="20" rx="5" fill="white" fill-opacity="0.15"/>
-                <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-                <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-            </svg>
-            Ver no Instagram
-        </a>
-    </div>
-</div>
-<script>
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '82px'; break; }} }} catch(e) {{}}
-    }}
-}})();
-</script>
-""", height=82, scrolling=False)
-
-        # ── Bio — largura 100%, 2 colunas ───────────────────────────
-        chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
-        if chave_bio_ia not in st.session_state:
-            st.session_state[chave_bio_ia] = ""
-
-        st.markdown(f"""
-        <style>
-        .st-key-btn_bio_ia_{aba_ativa} {{
-            position: fixed !important; top: -9999px !important; left: -9999px !important;
-            width: 1px !important; height: 1px !important; overflow: hidden !important;
-            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        analisar_bio = st.button(
-            f"__bio_{aba_ativa}__",
-            key=f"btn_bio_ia_{aba_ativa}",
-            use_container_width=True,
-        )
-        if analisar_bio:
-            if gemini_model is None:
-                st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
-            else:
-                with st.spinner("Analisando bio…"):
-                    try:
-                        prompt_bio = f"""
-Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
-
-Bio: "{bio_txt}"
-Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
-Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
-
-Responda com:
-### Posicionamento
-Qual é o posicionamento transmitido pela bio?
-
-### Pontos Fortes
-(2 pontos positivos da bio)
-
-### O que melhorar
-(2 sugestões concretas de melhoria)
-
-### Bio sugerida
-Escreva uma versão melhorada da bio (máx. 150 caracteres).
-"""
-                        resp = gemini_model.generate_content(prompt_bio)
-                        st.session_state[chave_bio_ia] = resp.text
-                    except Exception as e:
-                        st.session_state[chave_bio_ia] = f"Erro: {e}"
-
-        bio_resultado = st.session_state.get(chave_bio_ia, "")
-        bio_resultado_html = bio_resultado.replace("\n", "<br>") if bio_resultado else ""
-
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; -webkit-font-smoothing:antialiased; }}
-body {{ padding-bottom:4px; }}
-.bio-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-radius:0;
-    overflow:hidden;
-}}
-.bio-hdr {{
-    display:none;  /* remove o header, vira coluna lateral */
-}}
-.bio-body {{
-    display:grid;
-    grid-template-columns:15% 50% 35%;
-    gap:0;
-    min-height:80px;
-}}
-.bio-label-col {{
-    padding:18px 16px;
-    border-right:1px solid #f3f4f6;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#fafbfc;
-}}
-.bio-label-txt {{
-    font-size:10px;
-    font-weight:700;
-    color:#9ca3af;
-    text-transform:uppercase;
-    letter-spacing:1px;
-}}
-.bio-left {{
-    padding:18px 20px;
-    border-right:1px solid #f3f4f6;
-}}
-.bio-text {{
-    font-size:15px; color:#374151; line-height:1.75;
-    font-style:italic;
-}}
-.bio-empty {{
-    font-size:14px; color:#d1d5db; font-style:italic;
-}}
-.bio-right {{
-    padding:18px 20px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    background:#fafbfc;
-}}
-.btn-ia {{
-    width:100%; padding:11px 0; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; font-size:14px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-    text-align:center;
-}}
-.btn-ia:hover {{ background:#dbeafe; }}
-.ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.5; }}
-.resultado {{
-    grid-column: 1 / -1;
-    margin:0; background:#f0fdf4; border-top:1px solid #86efac;
-    padding:14px 20px;
-    font-size:13px; color:#374151; line-height:1.75;
-}}
-.resultado-hdr {{
-    font-size:10px; font-weight:800; color:#15803d;
-    text-transform:uppercase; letter-spacing:0.5px;
-    margin-bottom:8px;
-}}
-</style>
-<div class="bio-wrap">
-    <div class="bio-body" id="bio-grid">
-        <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
-        <div class="bio-left">
-            {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
-        </div>
-        <div class="bio-right">
-            <button class="btn-ia" onclick="
-                const btns = window.parent.document.querySelectorAll('button');
-                for (const b of btns) {{
-                    if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '__bio_{aba_ativa}__') {{ b.click(); break; }}
-                }}
-            ">🤖 Analisar Bio</button>
-            <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
-        </div>
-    </div>
-    {'<div class="resultado"><div class="resultado-hdr">✨ Análise de IA</div>' + bio_resultado_html + '</div>' if bio_resultado_html else ''}
-</div>
-<script>
-function syncH() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+4)+'px'; iframes[i].style.marginTop = '-32px';break; }} }} catch(e) {{}}
-    }}
-}}
-if (window.ResizeObserver) new ResizeObserver(syncH).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncH);
-window.addEventListener('load', syncH);
-setTimeout(syncH, 100); setTimeout(syncH, 400);
-</script>
-""", height=120, scrolling=False)
+        avatar_letras = gerar_avatar(r["nome"])
  
-        # ── Abas: Postagens / Análise de IA ────────────────────────
+        # ── Estado de subtab ────────────────────────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
  
+        subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
+ 
+        # ── Ghost buttons subtabs ───────────────────────────────────
         for sub in ["postagens", "ia"]:
             ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
             st.markdown(f"""
@@ -7588,51 +7341,303 @@ setTimeout(syncH, 100); setTimeout(syncH, 400);
                 st.session_state[redes_subtab_key] = sub
                 st.rerun()
  
-        subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
+        # ── Ghost button bio IA ─────────────────────────────────────
+        chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
+        if chave_bio_ia not in st.session_state:
+            st.session_state[chave_bio_ia] = ""
+ 
+        st.markdown(f"""
+        <style>
+        .st-key-btn_bio_ia_{aba_ativa} {{
+            position: fixed !important; top: -9999px !important; left: -9999px !important;
+            width: 1px !important; height: 1px !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+ 
+        analisar_bio = st.button(
+            f"__bio_{aba_ativa}__",
+            key=f"btn_bio_ia_{aba_ativa}",
+        )
+        if analisar_bio:
+            if gemini_model is None:
+                st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                with st.spinner("Analisando bio…"):
+                    try:
+                        prompt_bio = f"""
+Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
+ 
+Bio: "{bio_txt}"
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
+ 
+Responda com:
+### Posicionamento
+Qual é o posicionamento transmitido pela bio?
+ 
+### Pontos Fortes
+(2 pontos positivos da bio)
+ 
+### O que melhorar
+(2 sugestões concretas de melhoria)
+ 
+### Bio sugerida
+Escreva uma versão melhorada da bio (máx. 150 caracteres).
+"""
+                        resp = gemini_model.generate_content(prompt_bio)
+                        st.session_state[chave_bio_ia] = resp.text
+                        st.rerun()
+                    except Exception as e:
+                        st.session_state[chave_bio_ia] = f"Erro: {e}"
+                        st.rerun()
+ 
+        bio_resultado = st.session_state.get(chave_bio_ia, "")
+        bio_resultado_html = bio_resultado.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>") if bio_resultado else ""
+ 
+        # ══════════════════════════════════════════════════════════════
+        # IFRAME UNIFICADO: header + bio + tabs
+        # ══════════════════════════════════════════════════════════════
  
         components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!DOCTYPE html><html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+html, body {{
+    background:transparent;
+    font-family:'DM Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+}}
+ 
+/* ── CARD CONTAINER ── */
+.perfil-card {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    overflow:hidden;
+}}
+ 
+/* ── HEADER ── */
+.perfil-header {{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:18px 22px 16px;
+    border-bottom:1px solid #f3f4f6;
+}}
+.avatar {{
+    width:52px; height:52px; border-radius:50%;
+    background:{cor};
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
+}}
+.info {{ flex:1; min-width:0; }}
+.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
+.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
+.badge {{
+    display:inline-block;
+    background:{badge_bg}; color:{badge_txt};
+    border:1px solid {badge_brd};
+    padding:2px 10px; border-radius:20px;
+    font-size:11px; font-weight:600; margin-top:4px;
+}}
+.divider-v {{ width:1px; height:44px; background:#e5e7eb; flex-shrink:0; margin:0 8px; }}
+.stat-wrap {{ display:flex; align-items:center; gap:24px; flex-shrink:0; }}
+.stat {{ text-align:center; }}
+.stat-num {{ font-size:24px; font-weight:800; color:#0f1f35; line-height:1; }}
+.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.8px; margin-top:3px; }}
+.btn-ig {{
+    display:inline-flex; align-items:center; gap:7px;
+    background:#0e2a47; color:#fff;
+    padding:9px 18px; border-radius:9px;
+    font-size:13px; font-weight:700; text-decoration:none;
+    white-space:nowrap; flex-shrink:0;
+    transition:background 0.15s;
+}}
+.btn-ig:hover {{ background:#1a3a5c; }}
+ 
+/* ── BIO ── */
+.bio-section {{
+    display:grid;
+    grid-template-columns:15% 50% 35%;
+    border-bottom:1px solid #f3f4f6;
+    min-height:80px;
+}}
+.bio-label-col {{
+    padding:18px 16px;
+    border-right:1px solid #f3f4f6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fafbfc;
+}}
+.bio-label-txt {{
+    font-size:10px;
+    font-weight:700;
+    color:#9ca3af;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    text-align:center;
+}}
+.bio-left {{
+    padding:18px 20px;
+    border-right:1px solid #f3f4f6;
+    display:flex;
+    align-items:center;
+}}
+.bio-text {{
+    font-size:15px; color:#374151; line-height:1.75;
+    font-style:italic;
+}}
+.bio-empty {{
+    font-size:14px; color:#d1d5db; font-style:italic;
+}}
+.bio-right {{
+    padding:16px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    background:#fafbfc;
+}}
+.btn-ia {{
+    width:100%; padding:10px 0; border:1px solid #3a9fd6; border-radius:8px;
+    background:#eff6ff; font-size:13px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+    text-align:center; line-height:1;
+}}
+.btn-ia:hover {{ background:#dbeafe; }}
+.ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.4; }}
+ 
+/* ── BIO RESULTADO ── */
+.bio-resultado {{
+    background:#f0fdf4;
+    border-top:1px solid #bbf7d0;
+    padding:14px 20px;
+    font-size:13px; color:#374151; line-height:1.75;
+    border-bottom:1px solid #f3f4f6;
+    display:none;
+}}
+.bio-resultado.show {{ display:block; }}
+.bio-resultado-hdr {{
+    font-size:10px; font-weight:800; color:#15803d;
+    text-transform:uppercase; letter-spacing:0.5px;
+    margin-bottom:8px;
+}}
+ 
+/* ── TABS ── */
 .tabs-bar {{
-    display:flex; background:#f9fafb;
-    border:1px solid #e5e7eb; border-top:none; border-bottom:none;
+    display:flex;
+    background:#f9fafb;
 }}
 .tab-btn {{
     flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af;
     background:transparent; border:none; cursor:pointer;
     font-family:'DM Sans',sans-serif;
-    border-bottom:3px solid transparent; transition:all 0.15s;
+    border-bottom:3px solid transparent;
+    transition:all 0.15s;
     display:flex; align-items:center; justify-content:center; gap:8px;
 }}
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
 .tab-btn.active {{
-    color:#1a2e4a; border-bottom:3px solid #3a9fd6;
-    background:#fff; font-weight:800;
-    border-top:1px solid #d8d9da;
+    color:#1a2e4a;
+    border-bottom:3px solid #3a9fd6;
+    background:#fff;
+    font-weight:800;
+    border-top:1px solid #e5e7eb;
 }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
 </style>
-<div class="tabs-bar">
-    <button class="tab-btn {'active' if subtab_atual == 'postagens' else ''}" onclick="triggerSub('postagens')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-        </svg>
-        Postagens
-    </button>
-    <div class="tab-sep"></div>
-    <button class="tab-btn {'active' if subtab_atual == 'ia' else ''}" onclick="triggerSub('ia')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-        </svg>
-        Análise de IA
-    </button>
+</head>
+<body>
+ 
+<div class="perfil-card">
+ 
+    <!-- HEADER -->
+    <div class="perfil-header">
+        <div class="avatar">{avatar_letras}</div>
+        <div class="info">
+            <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
+            <div class="badge">{badge_lbl}</div>
+        </div>
+        <div class="stat-wrap">
+            <div class="divider-v"></div>
+            <div class="stat">
+                <div class="stat-num">{seg_fmt}</div>
+                <div class="stat-lbl">Seguidores</div>
+            </div>
+            <div class="divider-v"></div>
+            <div class="stat">
+                <div class="stat-num">{posts_fmt}</div>
+                <div class="stat-lbl">Postagens</div>
+            </div>
+            <div class="divider-v"></div>
+            <a class="btn-ig" href="{ig_url}" target="_blank">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="20" height="20" rx="5" fill="white" fill-opacity="0.15"/>
+                    <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
+                    <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+                </svg>
+                Ver no Instagram
+            </a>
+        </div>
+    </div>
+ 
+    <!-- BIO -->
+    <div class="bio-section">
+        <div class="bio-label-col">
+            <span class="bio-label-txt">Bio do Perfil</span>
+        </div>
+        <div class="bio-left">
+            {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
+        </div>
+        <div class="bio-right">
+            <button class="btn-ia" onclick="triggerBio()">🤖 Analisar Bio</button>
+            <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
+        </div>
+    </div>
+ 
+    <!-- BIO RESULTADO (hidden se vazio) -->
+    <div class="bio-resultado {'show' if bio_resultado_html else ''}" id="bio-res">
+        <div class="bio-resultado-hdr">✨ Análise de IA</div>
+        {bio_resultado_html}
+    </div>
+ 
+    <!-- TABS -->
+    <div class="tabs-bar">
+        <button class="tab-btn {'active' if subtab_atual == 'postagens' else ''}" onclick="triggerSub('postagens')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            Postagens
+        </button>
+        <div class="tab-sep"></div>
+        <button class="tab-btn {'active' if subtab_atual == 'ia' else ''}" onclick="triggerSub('ia')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+            Análise de IA
+        </button>
+    </div>
+ 
 </div>
+ 
 <script>
+function triggerBio() {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
+        if (txt === '__bio_{aba_ativa}__') {{ b.click(); return; }}
+    }}
+}}
 function triggerSub(sub) {{
     var label = 'redes_sub_{aba_ativa}_' + sub;
     var btns = window.parent.document.querySelectorAll('button');
@@ -7641,16 +7646,28 @@ function triggerSub(sub) {{
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
-(function() {{
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '52px'; iframes[i].style.marginTop = '-12px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = (h + 4) + 'px';
+            iframes[i].style.marginTop = '-23px';
+            break;
+        }} }} catch(e) {{}}
     }}
-}})();
+}}
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight, 900);
 </script>
-""", height=52, scrolling=False)
+</body></html>
+""", height=250, scrolling=False)
  
-        # ── SUB-ABA: POSTAGENS ──────────────────────────────────────
+        # ══════════════════════════════════════════════════════════════
+        # SUB-ABA: POSTAGENS
+        # ══════════════════════════════════════════════════════════════
         if subtab_atual == "postagens":
  
             if not posts_list:
@@ -7667,7 +7684,7 @@ function triggerSub(sub) {{
                 if posts_col_key not in st.session_state:
                     st.session_state[posts_col_key] = 4
                 n_cols_posts = st.session_state.get(posts_col_key, 4)
-
+ 
                 ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
                 st.markdown(f"""
                 <style>
@@ -7682,11 +7699,11 @@ function triggerSub(sub) {{
                 }}
                 </style>
                 """, unsafe_allow_html=True)
-
+ 
                 if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
                     st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
                     st.rerun()
-
+ 
                 import json as _json_posts
                 posts_json_data = []
                 for p in posts_list:
@@ -7699,23 +7716,23 @@ function triggerSub(sub) {{
                         "eng":      p.get("likes", 0) + p.get("comments", 0),
                         "is_video": p.get("is_video", False),
                     })
-
+ 
                 posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
                 r_seg_val = r.get("seguidores", 0)
-
+ 
                 n_total     = len(posts_list)
                 n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
                 n_videos    = sum(1 for p in posts_list if p.get("is_video"))
                 total_likes = sum(p.get("likes", 0) for p in posts_list)
                 total_coms  = sum(p.get("comments", 0) for p in posts_list)
                 best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
-
+ 
                 def _fmt(n):
                     n = int(n or 0)
                     if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
                     if n >= 1_000:     return f"{n/1_000:.1f}K"
                     return str(n)
-
+ 
                 components.html(f"""
 <!DOCTYPE html><html>
 <head>
@@ -7724,16 +7741,16 @@ function triggerSub(sub) {{
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:8px;}}
-
+ 
 .outer {{
     background:#fff;
     border:1px solid #e5e7eb;
     border-top:none;
     border-radius:0 0 14px 14px;
     overflow:hidden;
+    margin-top:-4px;
 }}
-
-/* ── FILTROS ── */
+ 
 .filters-bar {{
     display:flex;
     align-items:center;
@@ -7793,8 +7810,7 @@ body{{padding-bottom:8px;}}
     transition:all 0.12s;
 }}
 .col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
-
-/* ── STATS ── */
+ 
 .stats-row {{
     display:flex;
     gap:12px;
@@ -7811,23 +7827,9 @@ body{{padding-bottom:8px;}}
     text-align:center;
     box-shadow:0 1px 3px rgba(0,0,0,0.04);
 }}
-.stat-num {{
-    font-size:26px;
-    font-weight:800;
-    color:#0f1f35;
-    line-height:1;
-    margin-bottom:5px;
-    letter-spacing:-0.5px;
-}}
-.stat-lbl {{
-    font-size:10px;
-    font-weight:700;
-    color:#9ca3af;
-    text-transform:uppercase;
-    letter-spacing:1px;
-}}
-
-/* ── GRID ── */
+.stat-num {{ font-size:26px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; letter-spacing:-0.5px; }}
+.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; }}
+ 
 .posts-grid {{ display:grid; gap:0; margin-top:16px; }}
 .post-card {{
     background:#fff;
@@ -7840,8 +7842,7 @@ body{{padding-bottom:8px;}}
 }}
 .post-card:hover {{ background:#f9fafb; }}
 .post-card:hover .card-overlay {{ opacity:1; }}
-
-/* ── THUMB ── */
+ 
 .thumb-wrap {{
     position:relative;
     width:100%;
@@ -7868,7 +7869,6 @@ body{{padding-bottom:8px;}}
     background:linear-gradient(135deg,#e9eef5,#d2dde9);
     gap:6px;
 }}
-.thumb-fallback-icon {{ font-size:28px; }}
 .card-overlay {{
     position:absolute;
     inset:0;
@@ -7904,69 +7904,29 @@ body{{padding-bottom:8px;}}
     text-transform:uppercase;
     letter-spacing:0.5px;
 }}
-
-/* ── CARD INFO ── */
-.card-info {{
-    padding:10px 12px 4px;
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:5px;
-}}
+ 
+.card-info {{ padding:10px 12px 4px; flex:1; display:flex; flex-direction:column; gap:5px; }}
 .card-date {{ font-size:11px; color:#9ca3af; font-weight:600; }}
 .card-caption {{
-    font-size:12px;
-    color:#374151;
-    line-height:1.5;
-    flex:1;
-    font-style:italic;
-    white-space:pre-line;
-    word-break:break-word;
-    min-height:36px;
+    font-size:12px; color:#374151; line-height:1.5; flex:1;
+    font-style:italic; white-space:pre-line; word-break:break-word; min-height:36px;
 }}
 .card-metrics {{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:8px 0 6px;
-    border-top:1px solid #f3f4f6;
-    flex-wrap:wrap;
-    margin-top:4px;
+    display:flex; align-items:center; gap:10px;
+    padding:8px 0 6px; border-top:1px solid #f3f4f6;
+    flex-wrap:wrap; margin-top:4px;
 }}
-.metric {{
-    display:flex;
-    align-items:center;
-    gap:4px;
-    font-size:12px;
-    font-weight:600;
-    color:#374151;
-}}
-.metric-eng {{
-    margin-left:auto;
-    font-size:11px;
-    font-weight:700;
-    color:#3a9fd6;
-    white-space:nowrap;
-}}
+.metric {{ display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:#374151; }}
+.metric-eng {{ margin-left:auto; font-size:11px; font-weight:700; color:#3a9fd6; white-space:nowrap; }}
 .ver-copy-btn {{
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    background:none;
-    border:none;
-    padding:2px 0 6px;
-    font-size:12px;
-    font-weight:700;
-    color:#3a9fd6;
-    cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    text-align:left;
-    transition:color 0.12s;
-    align-self:flex-start;
+    display:inline-flex; align-items:center; gap:5px;
+    background:none; border:none; padding:2px 0 6px;
+    font-size:12px; font-weight:700; color:#3a9fd6;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    text-align:left; transition:color 0.12s; align-self:flex-start;
 }}
 .ver-copy-btn:hover {{ color:#065f9e; }}
-
-/* ── MODAL ── */
+ 
 #modal-bg {{
     display:none;
     position:fixed;
@@ -7991,92 +7951,49 @@ body{{padding-bottom:8px;}}
     box-shadow:0 24px 80px rgba(0,0,0,0.3);
     position:relative;
 }}
-#modal-img-wrap {{
-    width:100%;
-    aspect-ratio:1/1;
-    background:#000;
-    overflow:hidden;
-    flex-shrink:0;
-}}
+#modal-img-wrap {{ width:100%; aspect-ratio:1/1; background:#000; overflow:hidden; flex-shrink:0; }}
 #modal-img-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
 #modal-content {{ padding:20px 22px; overflow-y:auto; flex:1; }}
-#modal-title {{
-    font-size:13px;
-    font-weight:700;
-    color:#9ca3af;
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-    margin-bottom:8px;
-}}
+#modal-title {{ font-size:13px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }}
 #modal-caption {{ font-size:14px; color:#374151; line-height:1.75; white-space:pre-wrap; }}
 #modal-close {{
-    position:absolute;
-    top:14px;
-    right:16px;
-    background:rgba(0,0,0,0.5);
-    border:none;
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    font-size:16px;
-    color:#fff;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:10;
+    position:absolute; top:14px; right:16px;
+    background:rgba(0,0,0,0.5); border:none;
+    width:32px; height:32px; border-radius:50%;
+    font-size:16px; color:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; z-index:10;
 }}
 #modal-metrics {{
-    display:flex;
-    gap:16px;
-    padding:12px 22px;
-    border-top:1px solid #f3f4f6;
-    background:#f9fafb;
-    flex-shrink:0;
-    flex-wrap:wrap;
+    display:flex; gap:16px; padding:12px 22px;
+    border-top:1px solid #f3f4f6; background:#f9fafb;
+    flex-shrink:0; flex-wrap:wrap;
 }}
-.modal-metric {{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    font-size:14px;
-    font-weight:700;
-    color:#374151;
-}}
+.modal-metric {{ display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700; color:#374151; }}
 </style>
 </head>
 <body>
-
+ 
 <script id="posts-data" type="application/json">{posts_json_str}</script>
-
-<!-- MODAL -->
+ 
 <div id="modal-bg" onclick="if(event.target===this)closeModal()">
     <div id="modal-box">
         <button id="modal-close" onclick="closeModal()">&#x2715;</button>
         <div id="modal-img-wrap" style="display:none"><img id="modal-img" src="" alt="" /></div>
         <div id="modal-content">
-            <div id="modal-title">Copy da publica&#xe7;&#xe3;o</div>
+            <div id="modal-title">Copy da publicação</div>
             <div id="modal-caption"></div>
         </div>
         <div id="modal-metrics"></div>
     </div>
 </div>
-
+ 
 <div class="outer">
-
-    <!-- FILTROS -->
     <div class="filters-bar">
-        <input
-            class="filter-input"
-            id="filter-text"
-            type="text"
-            placeholder="Pesquisar no copy..."
-            oninput="applyFilters()"
-        />
+        <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
         <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
             <option value="todos">Tipo (todos)</option>
             <option value="foto">Fotos</option>
-            <option value="video">V&#237;deos</option>
+            <option value="video">Vídeos</option>
         </select>
         <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
             <option value="recentes">Mais recentes</option>
@@ -8091,55 +8008,31 @@ body{{padding-bottom:8px;}}
             </svg>
         </button>
     </div>
-
-    <!-- STATS -->
+ 
     <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-num" id="stat-total">{n_total}</div>
-            <div class="stat-lbl">Postagens</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num" id="stat-fotos">{n_fotos}</div>
-            <div class="stat-lbl">Fotos</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num" id="stat-videos">{n_videos}</div>
-            <div class="stat-lbl">V&#237;deos</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num" id="stat-likes">{_fmt(total_likes)}</div>
-            <div class="stat-lbl">Curtidas</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num" id="stat-coms">{_fmt(total_coms)}</div>
-            <div class="stat-lbl">Coment&#225;rios</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num" id="stat-best">{_fmt(best_eng)}</div>
-            <div class="stat-lbl">Melhor Engaj.</div>
-        </div>
+        <div class="stat-card"><div class="stat-num" id="stat-total">{n_total}</div><div class="stat-lbl">Postagens</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-fotos">{n_fotos}</div><div class="stat-lbl">Fotos</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-videos">{n_videos}</div><div class="stat-lbl">Vídeos</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl">Curtidas</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl">Comentários</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl">Melhor Engaj.</div></div>
     </div>
-
-    <!-- GRID -->
+ 
     <div class="posts-grid" id="posts-grid"></div>
-
 </div>
-
+ 
 <script>
 var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
 var N_COLS   = {n_cols_posts};
 var R_SEG    = {r_seg_val};
-
-var ICON_VIDEO = '&#127916;';
-var ICON_FOTO  = '&#128247;';
-
+ 
 function fmtNum(n) {{
     n = Math.round(n || 0);
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
     if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
     return String(n);
 }}
-
+ 
 function updateStats(posts) {{
     var nF = posts.filter(function(p){{ return !p.is_video; }}).length;
     var nV = posts.filter(function(p){{ return  p.is_video; }}).length;
@@ -8153,7 +8046,7 @@ function updateStats(posts) {{
     document.getElementById('stat-coms').textContent   = fmtNum(tC);
     document.getElementById('stat-best').textContent   = fmtNum(bE);
 }}
-
+ 
 function getFiltered() {{
     var texto = (document.getElementById('filter-text').value || '').toLowerCase().trim();
     var tipo  = document.getElementById('filter-tipo').value;
@@ -8166,39 +8059,36 @@ function getFiltered() {{
     else if (ordem === 'eng') posts.sort(function(a,b){{ return ((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0)); }});
     return posts;
 }}
-
+ 
 function buildGrid(posts) {{
     var grid = document.getElementById('posts-grid');
     grid.style.gridTemplateColumns = 'repeat(' + N_COLS + ', 1fr)';
     grid.innerHTML = '';
-
+ 
     posts.forEach(function(p, idx) {{
         var card = document.createElement('div');
         card.className = 'post-card';
-
+ 
         var hasCaption   = !!(p.caption && p.caption.trim());
-        var iconFallback = p.is_video ? ICON_VIDEO : ICON_FOTO;
-        var typeLbl      = p.is_video ? 'V&iacute;deo' : 'Foto';
+        var iconFallback = p.is_video ? '🎬' : '📷';
+        var typeLbl      = p.is_video ? 'Vídeo' : 'Foto';
         var thumbUrl     = (p.thumb || '').trim();
-
+ 
         var overlayHtml =
             '<div class="card-overlay">'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + '</div>'
             + '<div class="overlay-stat"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + '</div>'
             + '</div>';
-
+ 
         var thumbHtml;
         if (thumbUrl) {{
             thumbHtml = '<img id="thumb_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />';
         }} else {{
-            thumbHtml =
-                '<div class="thumb-fallback">'
-                + '<span class="thumb-fallback-icon">' + iconFallback + '</span>'
-                + '</div>';
+            thumbHtml = '<div class="thumb-fallback"><span style="font-size:28px">' + iconFallback + '</span></div>';
         }}
-
+ 
         var capDisplay = hasCaption ? p.caption : '';
-
+ 
         card.innerHTML =
             '<div class="thumb-wrap" id="tw_' + idx + '">'
             + thumbHtml
@@ -8213,7 +8103,7 @@ function buildGrid(posts) {{
                     ? capDisplay.substring(0,100)
                       + '<span id="cap_rest_' + idx + '" style="display:none">' + capDisplay.substring(100) + '</span>'
                       + ' <button class="ver-copy-btn" id="vcb_' + idx + '" onclick="toggleCopy(' + idx + ')">'
-                      + '&#8230; ver mais'
+                      + '… ver mais'
                       + '</button>'
                     : capDisplay)
                 : '<span style="color:#d1d5db;font-style:italic">Sem legenda</span>')
@@ -8224,7 +8114,7 @@ function buildGrid(posts) {{
             + '<span class="metric-eng">' + fmtNum((p.likes||0)+(p.comments||0)) + ' eng.</span>'
             + '</div>'
             + '</div>';
-
+ 
         if (thumbUrl) {{
             var imgEl = card.querySelector('#thumb_' + idx);
             if (imgEl) {{
@@ -8233,9 +8123,7 @@ function buildGrid(posts) {{
                         var tw = document.getElementById('tw_' + i);
                         if (tw) {{
                             tw.innerHTML =
-                                '<div class="thumb-fallback">'
-                                + '<span class="thumb-fallback-icon">' + icon + '</span>'
-                                + '</div>'
+                                '<div class="thumb-fallback"><span style="font-size:28px">' + icon + '</span></div>'
                                 + '<div class="type-badge">' + lbl + '</div>'
                                 + ov;
                         }}
@@ -8243,67 +8131,44 @@ function buildGrid(posts) {{
                 }})(idx, iconFallback, typeLbl, overlayHtml);
             }}
         }}
-
+ 
         grid.appendChild(card);
     }});
-
+ 
     syncHeight();
 }}
-
+ 
 function toggleCopy(idx) {{
     var rest = document.getElementById('cap_rest_' + idx);
     var btn  = document.getElementById('vcb_' + idx);
     if (!rest || !btn) return;
     var aberto = rest.style.display !== 'none';
     rest.style.display = aberto ? 'none' : 'inline';
-    btn.innerHTML = aberto ? '&#8230; ver mais' : ' ver menos';
+    btn.innerHTML = aberto ? '… ver mais' : ' ver menos';
     setTimeout(syncHeight, 60);
 }}
-
+ 
 function applyFilters() {{
     var posts = getFiltered();
     updateStats(posts);
     buildGrid(posts);
 }}
-
+ 
 function toggleCols() {{
     var btns = window.parent.document.querySelectorAll('button');
     var label = 'posts_toggle_{aba_ativa}';
     for (var b of btns) {{
-        if ((b.textContent||b.innerText||'').split(/\\s+/).join(' ').trim() === label) {{
-            b.click(); return;
-        }}
+        if ((b.textContent||b.innerText||'').split(/\\s+/).join(' ').trim() === label) {{ b.click(); return; }}
     }}
 }}
-
-function openModal(idx) {{
-    var filtered = getFiltered();
-    var p = filtered[idx];
-    if (!p) return;
-    var imgWrap = document.getElementById('modal-img-wrap');
-    var img     = document.getElementById('modal-img');
-    if (p.thumb) {{
-        imgWrap.style.display = 'block';
-        img.src = p.thumb;
-        img.onerror = function(){{ imgWrap.style.display = 'none'; }};
-    }} else {{
-        imgWrap.style.display = 'none';
-    }}
-    document.getElementById('modal-caption').textContent = p.caption || 'Sem legenda.';
-    document.getElementById('modal-metrics').innerHTML =
-        '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="#e11d48" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + fmtNum(p.likes||0) + ' curtidas</div>'
-        + '<div class="modal-metric"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + fmtNum(p.comments||0) + ' coment&#225;rios</div>'
-        + (p.date ? '<div class="modal-metric" style="margin-left:auto;color:#9ca3af;font-size:12px">' + p.date + '</div>' : '');
-    document.getElementById('modal-bg').classList.add('open');
-}}
-
+ 
 function closeModal() {{
     document.getElementById('modal-bg').classList.remove('open');
     document.getElementById('modal-img').src = '';
 }}
-
+ 
 document.addEventListener('keydown', function(e){{ if(e.key==='Escape') closeModal(); }});
-
+ 
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -8316,19 +8181,19 @@ function syncHeight() {{
         }} catch(e) {{}}
     }}
 }}
-
+ 
 applyFilters();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 300);
-setTimeout(syncHeight, 800);
-setTimeout(syncHeight, 1500);
+setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
 """, height=600, scrolling=False)
  
-        # ── SUB-ABA: ANÁLISE DE IA ──────────────────────────────────
+        # ══════════════════════════════════════════════════════════════
+        # SUB-ABA: ANÁLISE DE IA
+        # ══════════════════════════════════════════════════════════════
         else:
             chave_criativo = f"ia_criativo_{r['handle']}"
             chave_copy     = f"ia_copy_{r['handle']}"
@@ -8443,8 +8308,7 @@ Seja direto e objetivo.
                             const btns = window.parent.document.querySelectorAll('button');
                             for (const b of btns) {{
                                 if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{
-                                    b.click();
-                                    break;
+                                    b.click(); break;
                                 }}
                             }}
                         " style="
@@ -8482,6 +8346,7 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
     border-top:none;
     border-radius:0 0 12px 12px;
     overflow:hidden;
+    margin-top:-4px;
 }}
 .ia-header {{
     padding:14px 18px;
