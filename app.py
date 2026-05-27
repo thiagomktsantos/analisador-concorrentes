@@ -7796,27 +7796,9 @@ body{{padding-bottom:8px;}}
     text-transform:uppercase; letter-spacing:0.5px;
     margin-bottom:6px; display:flex; align-items:center; gap:5px;
 }}
-
-/* ── MODAL ── */
-#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
-#modal-overlay.open{{display:flex;}}
-#modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
-#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
-#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
-#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
-#modal-fallback{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;}}
-#modal-fallback a{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
 </style>
 </head>
 <body>
-
-<!-- MODAL -->
-<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
-        <div id="modal-content"></div>
-    </div>
-</div>
 
 <script id="posts-data" type="application/json">{posts_json_str}</script>
 
@@ -7879,46 +7861,74 @@ function updateStats(posts) {{
 }}
 
 function openModal(thumbUrl, igUrl) {{
-    var overlay = document.getElementById('modal-overlay');
-    var content = document.getElementById('modal-content');
-    content.innerHTML = '';
+    var doc = window.parent.document;
+    var old = doc.getElementById('redes_modal_overlay');
+    if (old) old.remove();
 
     if (!thumbUrl) {{
-        window.open(igUrl, '_blank');
+        window.parent.open(igUrl, '_blank');
         return;
     }}
 
-    var loading = document.createElement('div');
-    loading.id = 'modal-loading';
+    var overlay = doc.createElement('div');
+    overlay.id = 'redes_modal_overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
+
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
+
+    var closeBtn = doc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.onclick = closeModal;
+
+    var content = doc.createElement('div');
+    content.id = 'redes_modal_content';
+
+    var loading = doc.createElement('div');
+    loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
     loading.textContent = 'Carregando criativo…';
     content.appendChild(loading);
-    overlay.classList.add('open');
 
-    var tmp = new Image();
+    box.appendChild(closeBtn);
+    box.appendChild(content);
+    overlay.appendChild(box);
+    doc.body.appendChild(overlay);
+
+    window.parent.__redesModalEscFn = function(e) {{
+        if (e.key === 'Escape') closeModal();
+    }};
+    doc.addEventListener('keydown', window.parent.__redesModalEscFn);
+
+    var tmp = new window.parent.Image();
     tmp.onload = function() {{
         content.innerHTML = '';
-        var img = document.createElement('img');
-        img.id = 'modal-img';
+        var img = doc.createElement('img');
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
         img.src = thumbUrl;
         content.appendChild(img);
     }};
     tmp.onerror = function() {{
         content.innerHTML = '';
-        var fb = document.createElement('div');
-        fb.id = 'modal-fallback';
+        var fb = doc.createElement('div');
+        fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
         fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
-            + '<a href="' + igUrl + '" target="_blank">↗ Ver no Instagram</a>';
+            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
         content.appendChild(fb);
     }};
     tmp.src = thumbUrl;
 }}
 
 function closeModal() {{
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('modal-content').innerHTML = '';
+    var doc = window.parent.document;
+    var overlay = doc.getElementById('redes_modal_overlay');
+    if (overlay) overlay.remove();
+    if (window.parent.__redesModalEscFn) {{
+        doc.removeEventListener('keydown', window.parent.__redesModalEscFn);
+        window.parent.__redesModalEscFn = null;
+    }}
 }}
-
-document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
 
 function getFiltered() {{
     var texto = (document.getElementById('filter-text').value || '').toLowerCase().trim();
