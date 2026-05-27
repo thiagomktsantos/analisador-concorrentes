@@ -1943,7 +1943,7 @@ body {{ padding-bottom: 4px; }}
     display: flex; align-items: center; gap: 12px;
 }}
 .icon-wrap {{
-    width: 34px; height: 34px;
+    width: 36px; height: 36px;
     border-radius: 8px;
     background: #f3f4f6;
     display: flex; align-items: center; justify-content: center;
@@ -1999,7 +1999,7 @@ body {{ padding-bottom: 4px; }}
     <div class="card-body">
         <div class="row">
             <div class="icon-wrap">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280"
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280"
                      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="2" y1="12" x2="22" y2="12"/>
@@ -2014,7 +2014,7 @@ body {{ padding-bottom: 4px; }}
         </div>
         <div class="row">
             <div class="icon-wrap" style="background:#fff0f6;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <linearGradient id="ig_{uid}" x1="0%" y1="100%" x2="100%" y2="0%">
                             <stop offset="0%"   stop-color="#f09433"/>
@@ -2036,7 +2036,7 @@ body {{ padding-bottom: 4px; }}
         </div>
         <div class="row">
             <div class="icon-wrap" style="background:#e8f0fe;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
                     <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073
                              C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047
                              V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236
