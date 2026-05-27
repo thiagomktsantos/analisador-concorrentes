@@ -7417,7 +7417,7 @@ html, body {{
 .perfil-card {{
     background:#fff;
     border:1px solid #e5e7eb;
-    border-radius:14px;
+    border-radius:14px 14px 0 0;
     overflow:hidden;
 }}
  
