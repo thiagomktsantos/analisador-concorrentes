@@ -7621,7 +7621,7 @@ body{{padding-bottom:8px;}}
     background:#fff;
     flex-wrap:wrap;
     border-radius: 0 0 14px 14px;
-    margin-top: 1px;
+    margin-top: 2px;
 }}
 .filter-input {{
     flex:1;
