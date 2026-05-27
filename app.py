@@ -8189,7 +8189,7 @@ document.addEventListener('DOMContentLoaded', syncHeight);
 window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
 
-function openImgModal(idx) {
+function openImgModal(idx) {{
     var p = ALL_POSTS[idx];
     if (!p) return;
     var thumbEl = document.getElementById('thumb_' + idx);
@@ -8200,15 +8200,15 @@ function openImgModal(idx) {
     var modalCaption = document.getElementById('modal-caption');
     var modalMetrics = document.getElementById('modal-metrics');
 
-    if (src && src.indexOf('data:') !== 0 && src !== window.location.href) {
+    if (src && src.indexOf('data:') !== 0 && src !== window.location.href) {{
         imgWrap.style.display = 'block';
         modalImg.src = src;
-        modalImg.onerror = function() {
+        modalImg.onerror = function() {{
             imgWrap.style.display = 'none';
-        };
-    } else {
+        }};
+    }} else {{
         imgWrap.style.display = 'none';
-    }
+    }}
 
     modalCaption.textContent = p.caption || 'Sem legenda.';
     
@@ -8222,12 +8222,12 @@ function openImgModal(idx) {
         + (p.date ? '<span class="modal-metric" style="margin-left:auto;color:#9ca3af;font-size:12px">📅 ' + p.date + '</span>' : '');
 
     document.getElementById('modal-bg').classList.add('open');
-}
+}}
 
-function closeModal() {
+function closeModal() {{
     document.getElementById('modal-bg').classList.remove('open');
     document.getElementById('modal-img').src = '';
-}
+}}
 </script>
 </body></html>
 """, height=600, scrolling=False)
