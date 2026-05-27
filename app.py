@@ -7609,7 +7609,6 @@ body{{padding-bottom:8px;}}
 .outer {{
     border-top:none;
     overflow:hidden;
-    margin-top:-4px;
 }}
  
 .filters-bar {{
