@@ -5595,7 +5595,7 @@ function triggerTab(sk, tab) {{
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
 .stats-row{{display:flex;gap:12px;flex-wrap:wrap;padding:16px 16px 4px;}}
-.stat-card{{flex:1;min-width:80px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;text-align:center;}}
+.stat-card{{flex:1;min-width:90px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 10px;text-align:center;}}
 .stat-lbl-green{{color:#15803d;}}
 .stat-num{{font-size:22px;font-weight:800;}}
 .stat-lbl{{color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;margin-top:2px;}}
@@ -7688,10 +7688,9 @@ body{{padding-bottom:8px;}}
     border-radius:12px;
     padding:14px 10px;
     text-align:center;
-    box-shadow:0 1px 3px rgba(0,0,0,0.04);
 }}
-.stat-num {{ font-size:26px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; letter-spacing:-0.5px; }}
-.stat-lbl {{ font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; }}
+.stat-num {{ font-size:22px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; }}
+.stat-lbl {{ font-size:12px; font-weight:600; color:#9ca3af; text-transform:uppercase; }}
  
 .posts-grid {{ display:grid; gap:12px; margin-top:16px; }}
 .post-card {{
