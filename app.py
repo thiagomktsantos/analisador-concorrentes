@@ -7608,10 +7608,7 @@ html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-
 body{{padding-bottom:8px;}}
  
 .outer {{
-    background:#fff;
-    border:1px solid #e5e7eb;
     border-top:none;
-    border-radius:0 0 14px 14px;
     overflow:hidden;
     margin-top:-4px;
 }}
@@ -7698,12 +7695,12 @@ body{{padding-bottom:8px;}}
 .posts-grid {{ display:grid; gap:0; margin-top:16px; }}
 .post-card {{
     background:#fff;
-    border-right:1px solid #f0f2f5;
-    border-bottom:1px solid #f0f2f5;
+    border:1px solid #f0f2f5;
     display:flex;
     flex-direction:column;
     overflow:hidden;
     position:relative;
+    border-radius: 14px;
 }}
 .post-card:hover {{ background:#f9fafb; }}
 .post-card:hover .card-overlay {{ opacity:1; }}
