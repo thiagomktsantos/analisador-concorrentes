@@ -7747,7 +7747,7 @@ body{{padding-bottom:8px;}}
 
 /* Métricas em 4 colunas */
 .metrics-row {{
-    display:grid; grid-template-columns:1fr 1fr 1fr 1fr;
+    display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
     border-bottom:1px solid #f3f4f6; background:#fafbfc;
 }}
 .metric-cell {{ padding:8px 6px; text-align:center; border-right:1px solid #f3f4f6; }}
