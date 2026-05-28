@@ -6831,7 +6831,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     font-size:13px; color:#3a9fd6; text-align:center;
     display:block; cursor:pointer; text-decoration:underline;
     text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0; margin-top:4px; font-family:'DM Sans',sans-serif;
+    width:100%; padding:0;font-family:'DM Sans',sans-serif;
 }}
 .link-btn:hover {{ color:#065f9e; }}
 </style>
@@ -6910,11 +6910,11 @@ function abrirModal() {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '30px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '20px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=30, scrolling=False)
+""", height=20, scrolling=False)
 
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
