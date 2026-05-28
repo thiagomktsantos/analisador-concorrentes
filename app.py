@@ -6174,7 +6174,7 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
 }}
 
 /* ── Modal principal ── */
-function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
+function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
