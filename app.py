@@ -6178,6 +6178,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
+
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -6192,7 +6193,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     closeBtn.onclick = closeModal;
 
     var content = doc.createElement('div');
-    content.id = 'redes_modal_content';
+    content.id = 'ads_modal_content';                
     content.style.cssText = 'display:flex;align-items:center;justify-content:center;';
 
     box.appendChild(closeBtn);
@@ -6250,7 +6251,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
         var fb = doc.createElement('div');
         fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
         fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
-            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
+            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Ad Library</a>';
         content.appendChild(fb);
     }};
     tmp.src = tUrl;
@@ -6258,9 +6259,9 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
 
 function closeModal() {{
     var doc = window.parent.document;
-    var overlay = doc.getElementById('ads_modal_overlay');
+    var overlay = doc.getElementById('ads_modal_overlay');   // ← era redes_modal_overlay
     if (overlay) overlay.remove();
-    if (window.parent.__adsModalEscFn) {{
+    if (window.parent.__adsModalEscFn) {                     // ← era __redesModalEscFn
         doc.removeEventListener('keydown', window.parent.__adsModalEscFn);
         window.parent.__adsModalEscFn = null;
     }}
