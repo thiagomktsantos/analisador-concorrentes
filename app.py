@@ -7091,12 +7091,16 @@ function abrirModal() {{
                                 shortcode = p.get("code") or p.get("shortcode") or ""
                                 post_url  = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
 
-                                # URL do vídeo
+                                # Tipo de mídia: 1=foto, 2=vídeo/reel, 8=carrossel
+                                media_type = p.get("media_type", 1)
+                                is_reel = media_type == 2
+
+                                # URL do vídeo (Reel ou Vídeo normal)
                                 video_url = ""
-                                if p.get("media_type", 1) == 2:
+                                if is_reel:
                                     video_url = (
                                         p.get("video_url")
-                                        or p.get("video_versions", [{}])[0].get("url", "") if p.get("video_versions") else ""
+                                        or (p.get("video_versions") or [{}])[0].get("url", "")
                                         or ""
                                     )
 
@@ -7106,7 +7110,8 @@ function abrirModal() {{
                                     "thumb":     thumb,
                                     "caption":   caption,
                                     "date":      date_str,
-                                    "is_video":  p.get("media_type", 1) == 2,
+                                    "is_video":   is_reel,
+                                    "media_type": media_type,
                                     "video_url": video_url,
                                     "post_url":  post_url,
                                     "shortcode": shortcode,
@@ -8251,7 +8256,61 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
     content.appendChild(wrap);
 }}
 
-function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
+/* ── Modal: vídeo abre video_url direto; foto abre modal com imagem ── */
+function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
+
+    /* ── VÍDEO ── */
+    if (isVideo) {
+        var doc = window.parent.document;
+        var old = doc.getElementById('redes_modal_overlay');
+        if (old) old.remove();
+
+        var overlay = doc.createElement('div');
+        overlay.id = 'redes_modal_overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+
+        var box = doc.createElement('div');
+        box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
+
+        var closeBtn = doc.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+        closeBtn.onclick = closeModal;
+
+        var content = doc.createElement('div');
+        content.id = 'redes_modal_content';
+
+        box.appendChild(closeBtn);
+        box.appendChild(content);
+        overlay.appendChild(box);
+        doc.body.appendChild(overlay);
+
+        window.parent.__redesModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+        doc.addEventListener('keydown', window.parent.__redesModalEscFn);
+
+        if (videoUrl) {
+            /* Tem URL de vídeo da API: reproduz direto */
+            var vid = doc.createElement('video');
+            vid.src = videoUrl;
+            vid.controls = true;
+            vid.autoplay = true;
+            vid.playsInline = true;
+            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
+            vid.onerror = function() {
+                /* video_url falhou: fallback para thumb + botão Instagram */
+                content.innerHTML = '';
+                _showVideoFallback(content, doc, thumbUrl, igUrl);
+            };
+            content.appendChild(vid);
+        } else {
+            /* Sem video_url: mostra thumb com botão para abrir no Instagram */
+            _showVideoFallback(content, doc, thumbUrl, igUrl);
+        }
+        return;
+    }
+
+    /* ── FOTO ── */
     var doc = window.parent.document;
     var old = doc.getElementById('redes_modal_overlay');
     if (old) old.remove();
@@ -8259,7 +8318,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     var overlay = doc.createElement('div');
     overlay.id = 'redes_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
+    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
 
     var box = doc.createElement('div');
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
@@ -8277,38 +8336,14 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
 
-    window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
+    window.parent.__redesModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
 
-    // ── VÍDEO ──
-    if (isVideo) {{
-        // Tenta reproduzir se tiver URL direta
-        if (videoUrl) {{
-            var vid = doc.createElement('video');
-            vid.src = videoUrl;
-            vid.controls = true;
-            vid.autoplay = true;
-            vid.playsInline = true;
-            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
-            vid.onerror = function() {{
-                // Fallback: mostra thumb + botão Instagram
-                content.innerHTML = '';
-                _showVideoFallback(content, doc, thumbUrl, igUrl);
-            }};
-            content.appendChild(vid);
-        }} else {{
-            // Sem URL de vídeo: mostra thumb com botão para abrir no Instagram
-            _showVideoFallback(content, doc, thumbUrl, igUrl);
-        }}
-        return;
-    }}
-
-    // ── IMAGEM ──
-    if (!thumbUrl) {{
+    if (!thumbUrl) {
         window.parent.open(igUrl, '_blank');
         closeModal();
         return;
-    }}
+    }
 
     var loading = doc.createElement('div');
     loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
@@ -8316,23 +8351,53 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     content.appendChild(loading);
 
     var tmp = new window.parent.Image();
-    tmp.onload = function() {{
+    tmp.onload = function() {
         content.innerHTML = '';
         var img = doc.createElement('img');
         img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
         img.src = thumbUrl;
         content.appendChild(img);
-    }};
-    tmp.onerror = function() {{
+    };
+    tmp.onerror = function() {
         content.innerHTML = '';
         var fb = doc.createElement('div');
         fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
         fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
             + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
         content.appendChild(fb);
-    }};
+    };
     tmp.src = thumbUrl;
-}}
+}
+
+/* ── Fallback visual para vídeo sem URL reproduzível ── */
+function _showVideoFallback(content, doc, thumbUrl, igUrl) {
+    var wrap = doc.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
+
+    if (thumbUrl) {
+        var img = doc.createElement('img');
+        img.src = thumbUrl;
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.55);';
+        wrap.appendChild(img);
+    }
+
+    var playBtn = doc.createElement('a');
+    playBtn.href = igUrl;
+    playBtn.target = '_blank';
+    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
+    playBtn.innerHTML =
+        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
+        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
+        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
+        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
+        + '</div>'
+        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
+        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
+
+    wrap.appendChild(playBtn);
+    content.appendChild(wrap);
+}
 
 function closeModal() {{
     var doc = window.parent.document;
