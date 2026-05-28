@@ -7858,65 +7858,64 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight,
         # ══════════════════════════════════════════════════════════════
         if subtab_atual == "postagens":
 
-            if not posts_list:
-                st.markdown("""
-                <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
-                            border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
-                    <div style='font-size:28px;margin-bottom:10px'>&#128248;</div>
-                    <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
-                    <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                posts_col_key = f"posts_cols_{aba_ativa}"
-                if posts_col_key not in st.session_state:
-                    st.session_state[posts_col_key] = 4
-                n_cols_posts = st.session_state.get(posts_col_key, 4)
+                if not posts_list:
+                        st.markdown("""
+                        <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
+                                    border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
+                            <div style='font-size:28px;margin-bottom:10px'>&#128248;</div>
+                            <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
+                            <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                        posts_col_key = f"posts_cols_{aba_ativa}"
+                        if posts_col_key not in st.session_state:
+                                st.session_state[posts_col_key] = 4
+                        n_cols_posts = st.session_state.get(posts_col_key, 4)
 
-                ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
-                st.markdown(f"""
-                <style>
-                .st-key-{ghost_toggle_key} {{
-                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                    width:0 !important; height:0 !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important; display:none !important;
-                }}
-                .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
-                    display:none !important; height:0 !important; min-height:0 !important;
-                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
+                        ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
+                        st.markdown(f"""
+                        <style>
+                        .st-key-{ghost_toggle_key} {{
+                            position:fixed !important; top:-9999px !important; left:-9999px !important;
+                            width:0 !important; height:0 !important; overflow:hidden !important;
+                            opacity:0 !important; pointer-events:none !important; display:none !important;
+                        }}
+                        .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
+                            display:none !important; height:0 !important; min-height:0 !important;
+                            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                        }}
+                        </style>
+                        """, unsafe_allow_html=True)
 
-                if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
-                    st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
-                    st.rerun()
+                        if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
+                                st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
+                                st.rerun()
 
-                # Ghost buttons para análise individual de post
-                for jp in range(len(posts_list)):
-                    ghost_post_ia_key = f"btn_post_ia_{aba_ativa}_{jp}"
-                    st.markdown(f"""
-                    <style>
-                    .st-key-{ghost_post_ia_key} {{
-                        position:fixed !important; top:-9999px !important; left:-9999px !important;
-                        width:0 !important; height:0 !important; overflow:hidden !important;
-                        opacity:0 !important; pointer-events:none !important; display:none !important;
-                    }}
-                    .stElementContainer:has(.st-key-{ghost_post_ia_key}) {{
-                        display:none !important; height:0 !important; min-height:0 !important;
-                        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                    }}
-                    </style>
-                    """, unsafe_allow_html=True)
-                    if st.button(f"post_ia_{aba_ativa}_{jp}", key=ghost_post_ia_key):
-                        chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
-                        p_data = posts_list[jp]
-                        if gemini_model is None:
-                            st.session_state[chave_post_ia] = "Configure GEMINI_API_KEY nos secrets."
-                        else:
-                            with st.spinner(f"Analisando postagem {jp+1}…"):
-                                try:
-                                    resp_post = gemini_model.generate_content(f"""Você é especialista em redes sociais e copywriting.
+                        for jp in range(len(posts_list)):
+                                ghost_post_ia_key = f"btn_post_ia_{aba_ativa}_{jp}"
+                                st.markdown(f"""
+                                <style>
+                                .st-key-{ghost_post_ia_key} {{
+                                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                                    width:0 !important; height:0 !important; overflow:hidden !important;
+                                    opacity:0 !important; pointer-events:none !important; display:none !important;
+                                }}
+                                .stElementContainer:has(.st-key-{ghost_post_ia_key}) {{
+                                    display:none !important; height:0 !important; min-height:0 !important;
+                                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                                }}
+                                </style>
+                                """, unsafe_allow_html=True)
+                                if st.button(f"post_ia_{aba_ativa}_{jp}", key=ghost_post_ia_key):
+                                        chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
+                                        p_data = posts_list[jp]
+                                        if gemini_model is None:
+                                                st.session_state[chave_post_ia] = "Configure GEMINI_API_KEY nos secrets."
+                                        else:
+                                                with st.spinner(f"Analisando postagem {jp+1}…"):
+                                                        try:
+                                                                resp_post = gemini_model.generate_content(f"""Você é especialista em redes sociais e copywriting.
 Analise esta postagem do Instagram e dê feedback estratégico em português.
 
 Perfil: {r.get('handle','')} — {r.get('nome','')}
@@ -7937,60 +7936,59 @@ Como interpretar as métricas desta postagem?
 ### 💡 Sugestões de Melhoria
 2 ações concretas para aumentar o engajamento.
 """)
-                                    st.session_state[chave_post_ia] = resp_post.text
-                                    st.rerun()
-                                except Exception as e_post:
-                                    st.session_state[chave_post_ia] = f"Erro: {e_post}"
-                                    st.rerun()
+                                                                st.session_state[chave_post_ia] = resp_post.text
+                                                                st.rerun()
+                                                        except Exception as e_post:
+                                                                st.session_state[chave_post_ia] = f"Erro: {e_post}"
+                                                                st.rerun()
 
-                import json as _json_posts
-                posts_json_data = []
-                for jp, p in enumerate(posts_list):
-                    chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
-                    resultado_ia = st.session_state.get(chave_post_ia, "")
-                    resultado_ia_html = resultado_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado_ia else ""
-                    handle_clean_post = (r.get("handle") or "").lstrip("@")
-                    # Link direto do post (shortcode) ou fallback para o perfil
-                    post_url = p.get("post_url", "")
-                    shortcode = p.get("shortcode", "")
-                    if not post_url and shortcode:
-                        post_url = f"https://www.instagram.com/p/{shortcode}/"
-                    ig_post_url = post_url if post_url else ""
+                        import json as _json_posts
+                        posts_json_data = []
+                        for jp, p in enumerate(posts_list):
+                                chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
+                                resultado_ia = st.session_state.get(chave_post_ia, "")
+                                resultado_ia_html = resultado_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado_ia else ""
+                                handle_clean_post = (r.get("handle") or "").lstrip("@")
+                                post_url = p.get("post_url", "")
+                                shortcode = p.get("shortcode", "")
+                                if not post_url and shortcode:
+                                        post_url = f"https://www.instagram.com/p/{shortcode}/"
+                                ig_post_url = post_url if post_url else ""
 
-                    posts_json_data.append({
-                        "jp":             jp,
-                        "thumb":          p.get("thumb", ""),
-                        "caption":        p.get("caption", ""),
-                        "date":           p.get("date", ""),
-                        "likes":          p.get("likes", 0),
-                        "comments":       p.get("comments", 0),
-                        "eng":            p.get("likes", 0) + p.get("comments", 0),
-                        "is_video":       p.get("is_video", False),
-                        "video_url":      p.get("video_url", ""),
-                        "ig_url":         ig_post_url,
-                        "resultado_ia":   resultado_ia_html,
-                        "tem_ia":         bool(resultado_ia),
-                        "media_type":     p.get("media_type", 1),
-                        "carousel_imgs":  p.get("carousel_imgs", []),
-                    })
+                                posts_json_data.append({
+                                        "jp":             jp,
+                                        "thumb":          p.get("thumb", ""),
+                                        "caption":        p.get("caption", ""),
+                                        "date":           p.get("date", ""),
+                                        "likes":          p.get("likes", 0),
+                                        "comments":       p.get("comments", 0),
+                                        "eng":            p.get("likes", 0) + p.get("comments", 0),
+                                        "is_video":       p.get("is_video", False),
+                                        "video_url":      p.get("video_url", ""),
+                                        "ig_url":         ig_post_url,
+                                        "resultado_ia":   resultado_ia_html,
+                                        "tem_ia":         bool(resultado_ia),
+                                        "media_type":     p.get("media_type", 1),
+                                        "carousel_imgs":  p.get("carousel_imgs", []),
+                                })
 
-                posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
-                r_seg_val = r.get("seguidores", 0)
+                        posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
+                        r_seg_val = r.get("seguidores", 0)
 
-                n_total     = len(posts_list)
-                n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
-                n_videos    = sum(1 for p in posts_list if p.get("is_video"))
-                total_likes = sum(p.get("likes", 0) for p in posts_list)
-                total_coms  = sum(p.get("comments", 0) for p in posts_list)
-                best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
+                        n_total     = len(posts_list)
+                        n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
+                        n_videos    = sum(1 for p in posts_list if p.get("is_video"))
+                        total_likes = sum(p.get("likes", 0) for p in posts_list)
+                        total_coms  = sum(p.get("comments", 0) for p in posts_list)
+                        best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
 
-                def _fmt(n):
-                    n = int(n or 0)
-                    if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
-                    if n >= 1_000:     return f"{n/1_000:.1f}K"
-                    return str(n)
+                        def _fmt(n):
+                                n = int(n or 0)
+                                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+                                if n >= 1_000:     return f"{n/1_000:.1f}K"
+                                return str(n)
 
-                components.html(f"""
+                        components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -8073,7 +8071,6 @@ body{{padding-bottom:8px;}}
     display:flex; align-items:center; gap:4px;
 }}
 
-/* Métricas em 4 colunas */
 .metrics-row {{
     display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
     border-bottom:1px solid #f3f4f6; background:#fafbfc;
@@ -8099,7 +8096,6 @@ body{{padding-bottom:8px;}}
 .ver-copy-btn:hover {{ color:#065f9e; }}
 .no-caption {{ font-size:12px; color:#d1d5db; font-style:italic; }}
 
-/* Botões footer */
 .card-footer-btns {{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #f3f4f6; margin-top:auto; }}
 .footer-btn {{
     padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px;
@@ -8189,64 +8185,48 @@ function updateStats(posts) {{
 function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
     var wrap = doc.createElement('div');
     wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
-
     if (thumbUrl) {{
         var img = doc.createElement('img');
         img.src = thumbUrl;
         img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.6);';
         wrap.appendChild(img);
     }}
-
     var playBtn = doc.createElement('a');
     playBtn.href = igUrl;
     playBtn.target = '_blank';
-    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
-        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
+    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
     playBtn.innerHTML =
-        '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);'
-        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);border: 1px solid #0b3e55 !important;">'
-        + '<svg width="22" height="22" viewBox="0 0 54 54" fill="none">'
-        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
+        '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);border:1px solid #0b3e55 !important;">'
+        + '<svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
         + '</div>'
-        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
-        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
-
+        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
     wrap.appendChild(playBtn);
     content.appendChild(wrap);
 }}
 
-/* ── Modal: vídeo abre video_url direto; foto abre modal com imagem ── */
 function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
     var doc = window.parent.document;
     var old = doc.getElementById('redes_modal_overlay');
     if (old) old.remove();
-
     var overlay = doc.createElement('div');
     overlay.id = 'redes_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
-
     var box = doc.createElement('div');
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
-
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
     closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
-
     var content = doc.createElement('div');
     content.id = 'redes_modal_content';
     content.style.cssText = 'display:flex;align-items:center;justify-content:center;position:relative;';
-
     box.appendChild(closeBtn);
     box.appendChild(content);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
-
     window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
-
-    /* ── VÍDEO ── */
     if (isVideo) {{
         if (videoUrl) {{
             var vid = doc.createElement('video');
@@ -8255,26 +8235,18 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
             vid.autoplay = true;
             vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
-            vid.onerror = function() {{
-                content.innerHTML = '';
-                _showVideoFallback(content, doc, thumbUrl, igUrl);
-            }};
+            vid.onerror = function() {{ content.innerHTML = ''; _showVideoFallback(content, doc, thumbUrl, igUrl); }};
             content.appendChild(vid);
         }} else {{
             _showVideoFallback(content, doc, thumbUrl, igUrl);
         }}
         return;
     }}
-
-    /* ── CARROSSEL ── */
     var imgs = (carouselImgs && carouselImgs.length > 1) ? carouselImgs : (thumbUrl ? [thumbUrl] : []);
     if (!imgs.length) {{ window.parent.open(igUrl, '_blank'); closeModal(); return; }}
-
     var curIdx = 0;
-
     function renderSlide(i) {{
         content.innerHTML = '';
-
         var img = doc.createElement('img');
         img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
         img.src = imgs[i];
@@ -8288,14 +8260,11 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
             syncHeight();
         }};
         content.appendChild(img);
-
-        /* Contador e navegação só se tiver mais de 1 slide */
         if (imgs.length > 1) {{
             var counter = doc.createElement('div');
             counter.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;';
             counter.textContent = (i + 1) + ' / ' + imgs.length;
             content.appendChild(counter);
-
             if (i > 0) {{
                 var prev = doc.createElement('button');
                 prev.innerHTML = '&#8249;';
@@ -8305,7 +8274,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
                 prev.onclick = function(e) {{ e.stopPropagation(); curIdx--; renderSlide(curIdx); }};
                 content.appendChild(prev);
             }}
-
             if (i < imgs.length - 1) {{
                 var next = doc.createElement('button');
                 next.innerHTML = '&#8250;';
@@ -8315,8 +8283,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
                 next.onclick = function(e) {{ e.stopPropagation(); curIdx++; renderSlide(curIdx); }};
                 content.appendChild(next);
             }}
-
-            /* Navegação por teclado (setas) */
             window.parent.__redesModalArrowFn = function(e) {{
                 if (e.key === 'ArrowLeft'  && curIdx > 0)              {{ curIdx--; renderSlide(curIdx); }}
                 if (e.key === 'ArrowRight' && curIdx < imgs.length - 1) {{ curIdx++; renderSlide(curIdx); }}
@@ -8324,38 +8290,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
             doc.addEventListener('keydown', window.parent.__redesModalArrowFn);
         }}
     }}
-
     renderSlide(0);
-}}
-
-/* ── Fallback visual para vídeo sem URL reproduzível ── */
-function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
-    var wrap = doc.createElement('div');
-    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
-
-    if (thumbUrl) {{
-        var img = doc.createElement('img');
-        img.src = thumbUrl;
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.55);';
-        wrap.appendChild(img);
-    }}
-
-    var playBtn = doc.createElement('a');
-    playBtn.href = igUrl;
-    playBtn.target = '_blank';
-    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
-        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
-    playBtn.innerHTML =
-        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
-        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
-        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
-        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
-        + '</div>'
-        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
-        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
-
-    wrap.appendChild(playBtn);
-    content.appendChild(wrap);
 }}
 
 function closeModal() {{
@@ -8389,7 +8324,6 @@ function buildGrid(posts) {{
     var grid = document.getElementById('posts-grid');
     grid.style.gridTemplateColumns = 'repeat(' + N_COLS + ', 1fr)';
     grid.innerHTML = '';
-
     posts.forEach(function(p) {{
         var idx        = p.jp;
         var hasCaption = !!(p.caption && p.caption.trim());
@@ -8400,15 +8334,11 @@ function buildGrid(posts) {{
         var thumbUrl   = (p.thumb || '').trim();
         var engTotal   = (p.likes||0) + (p.comments||0);
         var igUrl      = p.ig_url || '#';
-
         var card = document.createElement('div');
         card.className = 'post-card';
         card.id = 'pcard_' + idx;
-
-        // thumb — clicável para abrir modal
         var videoUrl      = (p.video_url || '').trim();
         var carouselImgs  = p.carousel_imgs || [];
-        var carouselJson  = JSON.stringify(carouselImgs).replace(/'/g, "\\'");
         var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgs))+'\\')))"';
         var playOverlay = p.is_video
             ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
@@ -8419,7 +8349,6 @@ function buildGrid(posts) {{
         var thumbInner = thumbUrl
             ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />' + playOverlay
             : '<div class="thumb-fallback" ' + thumbClickAttr + '><span style="font-size:28px">' + iconFallback + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
-
         card.innerHTML =
             '<div class="thumb-wrap" id="tw_' + idx + '" ' + thumbClickAttr + '>'
             + thumbInner
@@ -8429,14 +8358,12 @@ function buildGrid(posts) {{
                 : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> ' + typeLbl)
             + '</div>'
             + '</div>'
-
             + '<div class="metrics-row">'
             + '<div class="metric-cell"><span class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</span></div>'
             + '<div class="metric-cell"><span class="metric-cell-lbl">❤️</span><span class="metric-cell-val">' + fmtNum(p.likes||0) + '</span></div>'
             + '<div class="metric-cell"><span class="metric-cell-lbl">💬</span><span class="metric-cell-val">' + fmtNum(p.comments||0) + '</span></div>'
             + '<div class="metric-cell"><span class="metric-cell-lbl">⚡</span><span class="metric-cell-val eng">' + fmtNum(engTotal) + '</span></div>'
             + '</div>'
-
             + '<div class="card-caption-wrap">'
             + (hasCaption
                 ? '<div class="card-caption" id="cap_' + idx + '">' + p.caption + '</div>'
@@ -8444,12 +8371,10 @@ function buildGrid(posts) {{
                 : '<span class="no-caption">Sem legenda</span>'
               )
             + '</div>'
-
             + (p.resultado_ia
                 ? '<div class="post-ia-panel"><div class="post-ia-hdr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Análise de IA</div>' + p.resultado_ia + '</div>'
                 : ''
               )
-
             + '<div class="card-footer-btns">'
             + (igUrl
                 ? '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram ↗</a>'
@@ -8459,7 +8384,6 @@ function buildGrid(posts) {{
             + (p.tem_ia ? 'Reanalisar' : 'Analisar postagem')
             + '</button>'
             + '</div>';
-
         if (thumbUrl) {{
             var imgEl = card.querySelector('#pimg_' + idx);
             if (imgEl) {{
@@ -8474,10 +8398,8 @@ function buildGrid(posts) {{
                 }})(idx, iconFallback, thumbUrl, igUrl, videoUrl, p.is_video);
             }}
         }}
-
         grid.appendChild(card);
     }});
-
     syncHeight();
 }}
 
