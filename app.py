@@ -8365,7 +8365,7 @@ function buildGrid(posts) {{
         var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgs))+'\\')))"';
         var playOverlay = p.is_video
             ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
-              + '<div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
+              + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.4);border:1px solid #0b3e55 !important;">'
               + '<svg width="20" height="20" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="white"/></svg>'
               + '</div></div>'
             : '';
