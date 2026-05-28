@@ -7400,15 +7400,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     margin-bottom:4px;
 }}
-.emp-sep {{
-    color: #d1d5db;
-    font-weight: 400;
-}}
-.emp-handle-inline {{
-    font-size: 13px;
-    font-weight: 400;
-    color: #9ca3af;
-}}
+.emp-sep {{ color: #d1d5db; font-weight: 400; }}
+.emp-handle-inline {{ font-size: 13px; font-weight: 400; color: #9ca3af; }}
 .badge-minha {{
     display:inline-flex; align-items:center; gap:5px;
     background:#f0fdf4; color:#15803d;
