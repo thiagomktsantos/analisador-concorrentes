@@ -6143,13 +6143,45 @@ body{{padding-bottom:4px;min-height:0;}}
 <body>
 <div class="ads-grid">{cards_joined}</div>
 <script>
-function openModal(mediaSrc, snapUrl, isVideo) {{
+/* ── Fallback visual para vídeo sem URL reproduzível ── */
+function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
+    var wrap = doc.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;min-width:280px;min-height:200px;';
+
+    if (thumbUrl) {{
+        var img = doc.createElement('img');
+        img.src = thumbUrl;
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.55);';
+        wrap.appendChild(img);
+    }}
+
+    var playBtn = doc.createElement('a');
+    playBtn.href = igUrl;
+    playBtn.target = '_blank';
+    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
+    playBtn.innerHTML =
+        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
+        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
+        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
+        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
+        + '</div>'
+        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
+        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
+
+    wrap.appendChild(playBtn);
+    content.appendChild(wrap);
+}}
+
+/* ── Modal principal ── */
+function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
+
     var doc = window.parent.document;
-    var old = doc.getElementById('ads_modal_overlay');
+    var old = doc.getElementById('redes_modal_overlay');
     if (old) old.remove();
 
     var overlay = doc.createElement('div');
-    overlay.id = 'ads_modal_overlay';
+    overlay.id = 'redes_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
 
@@ -6162,94 +6194,77 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     closeBtn.onclick = closeModal;
 
     var content = doc.createElement('div');
-    content.id = 'ads_modal_content';
+    content.id = 'redes_modal_content';
+    content.style.cssText = 'display:flex;align-items:center;justify-content:center;';
 
     box.appendChild(closeBtn);
     box.appendChild(content);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
 
-    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
-    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+    window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
+    doc.addEventListener('keydown', window.parent.__redesModalEscFn);
 
+    /* ── VÍDEO ── */
     if (isVideo) {{
-        var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
-        if (isDirectVideo) {{
+        var vUrl = (videoUrl || '').trim();
+        if (vUrl) {{
             var vid = doc.createElement('video');
-            vid.id = 'ads_modal_video';
-            vid.src = mediaSrc;
+            vid.src = vUrl;
             vid.controls = true;
-            vid.autoplay = true;
+            vid.autoplay  = true;
             vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
             vid.onerror = function() {{
                 content.innerHTML = '';
-                if (snapUrl) {{
-                    var wrap = doc.createElement('div');
-                    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
-                    var btn = doc.createElement('a');
-                    btn.href = snapUrl; btn.target = '_blank';
-                    btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
-                    btn.textContent = '↗ Abrir no Ad Library';
-                    wrap.appendChild(btn);
-                    content.appendChild(wrap);
-                }}
+                _showVideoFallback(content, doc, thumbUrl, igUrl);
             }};
             content.appendChild(vid);
         }} else {{
-            var wrap = doc.createElement('div');
-            wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
-            if (snapUrl) {{
-                var btn = doc.createElement('a');
-                btn.href = snapUrl; btn.target = '_blank';
-                btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
-                btn.textContent = '↗ Abrir vídeo no Ad Library';
-                wrap.appendChild(btn);
-            }}
-            content.appendChild(wrap);
+            _showVideoFallback(content, doc, thumbUrl, igUrl);
         }}
-    }} else {{
-        if (!mediaSrc && snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); return; }}
-        if (!mediaSrc) {{ closeModal(); return; }}
-
-        var loading = doc.createElement('div');
-        loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
-        loading.textContent = 'Carregando…';
-        content.appendChild(loading);
-
-        var tmp = new window.parent.Image();
-        tmp.onload = function() {{
-            content.innerHTML = '';
-            var img = doc.createElement('img');
-            img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
-            img.src = mediaSrc;
-            content.appendChild(img);
-        }};
-        tmp.onerror = function() {{
-            content.innerHTML = '';
-            if (snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); }}
-            else {{
-                var msg = doc.createElement('div');
-                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center;font-family:DM Sans,sans-serif;';
-                msg.textContent = 'Imagem não disponível.';
-                content.appendChild(msg);
-            }}
-        }};
-        tmp.src = mediaSrc;
+        return;
     }}
-}}
 
-{_js_modal_hq}
+    /* ── FOTO ── */
+    var tUrl = (thumbUrl || '').trim();
+    if (!tUrl) {{
+        window.parent.open(igUrl, '_blank');
+        closeModal();
+        return;
+    }}
+
+    var loading = doc.createElement('div');
+    loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
+    loading.textContent = 'Carregando criativo…';
+    content.appendChild(loading);
+
+    var tmp = new window.parent.Image();
+    tmp.onload = function() {{
+        content.innerHTML = '';
+        var img = doc.createElement('img');
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
+        img.src = tUrl;
+        content.appendChild(img);
+    }};
+    tmp.onerror = function() {{
+        content.innerHTML = '';
+        var fb = doc.createElement('div');
+        fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
+        fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
+            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
+        content.appendChild(fb);
+    }};
+    tmp.src = tUrl;
+}}
 
 function closeModal() {{
     var doc = window.parent.document;
-    var vid = doc.getElementById('ads_modal_video');
-    if (vid) {{ vid.pause(); vid.src = ''; }}
-    var overlay = doc.getElementById('ads_modal_overlay');
+    var overlay = doc.getElementById('redes_modal_overlay');
     if (overlay) overlay.remove();
-    if (window.parent.__adsModalEscFn) {{
-        doc.removeEventListener('keydown', window.parent.__adsModalEscFn);
-        window.parent.__adsModalEscFn = null;
+    if (window.parent.__redesModalEscFn) {{
+        doc.removeEventListener('keydown', window.parent.__redesModalEscFn);
+        window.parent.__redesModalEscFn = null;
     }}
 }}
 
