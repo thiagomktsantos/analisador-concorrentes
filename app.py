@@ -6174,14 +6174,14 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
 }}
 
 /* ── Modal principal ── */
-function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
+function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
 
     var doc = window.parent.document;
-    var old = doc.getElementById('redes_modal_overlay');
+    var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
-
+    
     var overlay = doc.createElement('div');
-    overlay.id = 'redes_modal_overlay';
+    overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
 
@@ -6202,8 +6202,8 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
 
-    window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
-    doc.addEventListener('keydown', window.parent.__redesModalEscFn);
+    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
 
     /* ── VÍDEO ── */
     if (isVideo) {{
@@ -6260,11 +6260,11 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
 
 function closeModal() {{
     var doc = window.parent.document;
-    var overlay = doc.getElementById('redes_modal_overlay');
+    var overlay = doc.getElementById('ads_modal_overlay');
     if (overlay) overlay.remove();
-    if (window.parent.__redesModalEscFn) {{
-        doc.removeEventListener('keydown', window.parent.__redesModalEscFn);
-        window.parent.__redesModalEscFn = null;
+    if (window.parent.__adsModalEscFn) {{
+        doc.removeEventListener('keydown', window.parent.__adsModalEscFn);
+        window.parent.__adsModalEscFn = null;
     }}
 }}
 
