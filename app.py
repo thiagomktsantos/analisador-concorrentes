@@ -6809,13 +6809,6 @@ html, body { background: transparent; overflow: hidden; }
         </style>
         """, unsafe_allow_html=True)
 
-        if st.button("perfis_tab", key="_redes_ghost_tab_perfis_"):
-            st.session_state.redes_main_tab = "perfis"
-            st.rerun()
-        if st.button("analise_tab", key="_redes_ghost_tab_analise_"):
-            st.session_state.redes_main_tab = "analise"
-            st.rerun()
-
     with col3:
         coletar = st.button(
             "Coletar dados",
