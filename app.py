@@ -1345,6 +1345,19 @@ if st.session_state.pagina == "home":
         box-shadow: none !important;
         padding: 0 !important;
     }
+    .st-key-btn_home_editar_ghost,
+    .stElementContainer:has(.st-key-btn_home_editar_ghost) {
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        display: block !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1374,10 +1387,6 @@ html, body { background: transparent; overflow: hidden; }
 
         with h2:
             st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
-            if st.button("Editar Empresa", key="btn_home_editar",
-                         use_container_width=True, type="primary"):
-                st.session_state.editar_empresa = True
-                st.rerun()
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
@@ -1511,6 +1520,11 @@ html, body { background: transparent; overflow: hidden; }
 
     else:
         # ── MODO VISUALIZAÇÃO ─────────────────────────────────────
+
+        # Botão ghost — oculto via CSS, acionado pelo HTML abaixo
+        if st.button("Editar Empresa", key="btn_home_editar_ghost"):
+            st.session_state.editar_empresa = True
+            st.rerun()
 
         h1, h2 = st.columns([7, 3])
         with h1:
@@ -1869,261 +1883,291 @@ html, body { background: transparent; overflow: hidden; }
     concorrentes = st.session_state.dados["concorrentes"]
 
     if concorrentes:
-        hide_btns_css = "\n".join([
-            f".st-key-editar_{i} button, .st-key-remove_{i} button {{ display: none !important; }}"
+        import json as _json_conc
+ 
+        hide_btns_css = "\\n".join([
+            f".st-key-editar_{{i}} button, .st-key-remove_{{i}} button {{ display: none !important; }}"
             for i in range(len(concorrentes))
         ])
-        st.markdown(f"<style>{hide_btns_css}</style>", unsafe_allow_html=True)
-
-        cols = st.columns(2)
+        st.markdown(f"<style>{{hide_btns_css}}</style>", unsafe_allow_html=True)
+ 
+        # ── Monta JSON dos cards para o HTML único ──────────────
+        cards_conc = []
         for i, c in enumerate(concorrentes):
-            with cols[i % 2]:
-                avatar     = gerar_avatar(c["nome"])
-                cor_avatar = get_concorrente_color(i)
-                uid        = f"conc_{i}"
-
-                card_html = f"""<!DOCTYPE html>
+            cards_conc.append({
+                "idx": i,
+                "nome": c["nome"],
+                "url": c.get("url", ""),
+                "instagram": c.get("instagram", ""),
+                "fb_page": c.get("fb_page", ""),
+                "cor": get_concorrente_color(i),
+                "avatar": gerar_avatar(c["nome"]),
+            })
+        cards_json = _json_conc.dumps(cards_conc, ensure_ascii=False)
+ 
+        components.html(f"""<!DOCTYPE html>
 <html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{
-    background: transparent;
-    font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
+    background:transparent;
+    font-family:\'DM Sans\',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:visible;
 }}
-body {{ padding-bottom: 4px; }}
+body {{ padding-bottom:8px; }}
+ 
+/* ── Outer wrapper (igual Confronto de Sites) ── */
+.outer-wrap {{
+    background:#d2dde9;
+    border-radius:16px;
+    padding:20px;
+}}
+ 
+/* ── Grid de cards ── */
+.cards-grid {{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+    gap:20px;
+}}
+ 
+/* ── Card ── */
 .card {{
-    background: #ffffff;
-    border: 1px solid #dde1e7;
-    border-radius: 14px;
-    overflow: hidden;
+    background:#ffffff;
+    border:1px solid #dde1e7;
+    border-radius:14px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    transition:border-color 0.15s,box-shadow 0.15s;
+    box-shadow:0 4px 20px rgba(0,0,0,0.10);
+}}
+.card:hover {{
+    border-color:#6fd1f3 !important;
 }}
 .card-header {{
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 18px 20px 16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:18px 20px 16px;
 }}
 .avatar {{
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: {cor_avatar};
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700; color: #fff;
-    flex-shrink: 0;
+    width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:700;color:#fff;flex-shrink:0;
 }}
 .name {{
-    font-size: 16px; font-weight: 700; color: #111827;
+    font-size:16px;font-weight:700;color:#111827;
 }}
 .divider {{
-    height: 1px; background: #f3f4f6; margin: 0 20px;
+    height:1px;background:#f3f4f6;margin:0 20px;
 }}
 .card-body {{
-    padding: 14px 20px 18px;
-    display: flex; flex-direction: column; gap: 10px;
+    padding:14px 20px 18px;
+    display:flex;flex-direction:column;gap:10px;
 }}
+ 
+/* ── Subtítulo "PRESENÇA DIGITAL" ── */
+.sec-title {{
+    font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:1.2px;
+    color:#6b7280;
+    padding-bottom:8px;
+    border-bottom:1px solid #f3f4f6;
+    margin-bottom:4px;
+}}
+ 
 .row {{
-    display: flex; align-items: center; gap: 12px;
+    display:flex;align-items:center;gap:12px;
 }}
 .icon-wrap {{
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    background: #f3f4f6;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    width:36px;height:36px;border-radius:8px;
+    background:#f3f4f6;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
 }}
 .row-info {{
-    display: flex; flex-direction: column; gap: 1px;
-    min-width: 0; flex: 1;
+    display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;
 }}
 .row-label {{
-    font-size: 13px; color: #717885;
+    font-size:13px;color:#717885;
 }}
 .row-value {{
-    font-size: 14px; color: #111827; font-weight: 600;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size:14px;color:#111827;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }}
 .card-footer {{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-top: 1px solid #f3f4f6;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    border-top:1px solid #f3f4f6;
 }}
 .footer-btn {{
-    padding: 11px 0;
-    text-align: center;
-    font-size: 15px; font-weight: 600;
-    color: #6b7280;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    font-family: 'DM Sans', sans-serif;
-    transition: background 0.12s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding:11px 0;text-align:center;
+    font-size:15px;font-weight:600;color:#6b7280;
+    cursor:pointer;background:transparent;border:none;
+    font-family:\'DM Sans\',sans-serif;
+    transition:background 0.12s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
 }}
-.footer-btn:hover {{
-    background: #f9fafb;
-    color: #111827;
-}}
-.footer-btn.danger {{
-    border-left: 1px solid #f3f4f6;
-}}
-.footer-btn.danger:hover {{
-    background: #fef2f2;
-}}
+.footer-btn:hover {{ background:#f9fafb;color:#111827; }}
+.footer-btn.danger {{ border-left:1px solid #f3f4f6; }}
+.footer-btn.danger:hover {{ background:#fef2f2; }}
 </style>
 </head>
 <body>
-<div class="card" id="card_{uid}">
-    <div class="card-header">
-        <div class="avatar">{avatar}</div>
-        <div class="name">{c['nome']}</div>
-    </div>
-    <div class="divider"></div>
-    <div class="card-body">
-        <div class="row">
-            <div class="icon-wrap">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280"
-                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="2" y1="12" x2="22" y2="12"/>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10
-                             15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-            </div>
-            <div class="row-info">
-                <span class="row-label">Site</span>
-                <span class="row-value">{c['url'] or '—'}</span>
-            </div>
-        </div>
-        <div class="row">
-            <div class="icon-wrap" style="background:#fff0f6;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="ig_{uid}" x1="0%" y1="100%" x2="100%" y2="0%">
-                            <stop offset="0%"   stop-color="#f09433"/>
-                            <stop offset="25%"  stop-color="#e6683c"/>
-                            <stop offset="50%"  stop-color="#dc2743"/>
-                            <stop offset="75%"  stop-color="#cc2366"/>
-                            <stop offset="100%" stop-color="#bc1888"/>
-                        </linearGradient>
-                    </defs>
-                    <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_{uid})"/>
-                    <circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>
-                    <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-                </svg>
-            </div>
-            <div class="row-info">
-                <span class="row-label">Instagram</span>
-                <span class="row-value">{c['instagram'] or '—'}</span>
-            </div>
-        </div>
-        <div class="row">
-            <div class="icon-wrap" style="background:#e8f0fe;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
-                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073
-                             C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047
-                             V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236
-                             2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268
-                             h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-                </svg>
-            </div>
-            <div class="row-info">
-                <span class="row-label">Facebook</span>
-                <span class="row-value">{c['fb_page'] or '—'}</span>
-            </div>
-        </div>
-    </div>
-    <div class="card-footer">
-        <button class="footer-btn" onclick="acionar('editar_{i}')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Editar
-        </button>
-        <button class="footer-btn danger" onclick="acionar('remove_{i}')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                <path d="M10 11v6M14 11v6"/>
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-            </svg>
-            Remover
-        </button>
-    </div>
+<div class="outer-wrap">
+    <div class="cards-grid" id="grid"></div>
 </div>
+ 
 <script>
-function acionar(key) {{
-    var selector = '[data-testid="stButton"] button, button';
-    var btns = window.parent.document.querySelectorAll(selector);
-    var keyMap = {{
-        'editar_{i}':  'Editar Concorrente',
-        'remove_{i}':  'Remover Concorrente',
-    }};
-    var label = keyMap[key];
-    var found = [];
-    btns.forEach(function(b) {{
-        if ((b.innerText || b.textContent || '').split(/\s+/).join(' ').trim() === label) found.push(b);
+var CARDS = {cards_json};
+ 
+function buildCards() {{
+    var grid = document.getElementById(\'grid\');
+    grid.innerHTML = \'\';
+ 
+    CARDS.forEach(function(c) {{
+        var card = document.createElement(\'div\');
+        card.className = \'card\';
+        card.id = \'card_\' + c.idx;
+ 
+        /* header */
+        card.innerHTML +=
+            \'<div class="card-header">\' +
+            \'<div class="avatar" style="background:\' + c.cor + \'">\' + c.avatar + \'</div>\' +
+            \'<div class="name">\' + c.nome + \'</div>\' +
+            \'</div>\' +
+            \'<div class="divider"></div>\';
+ 
+        /* body */
+        var body = document.createElement(\'div\');
+        body.className = \'card-body\';
+        body.innerHTML =
+            \'<div class="sec-title">Presença Digital</div>\' +
+ 
+            /* Site */
+            \'<div class="row">\' +
+            \'<div class="icon-wrap">\' +
+            \'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>\' +
+            \'</div>\' +
+            \'<div class="row-info">\' +
+            \'<span class="row-label">Site</span>\' +
+            \'<span class="row-value">\' + (c.url || \'—\') + \'</span>\' +
+            \'</div></div>\' +
+ 
+            /* Instagram */
+            \'<div class="row">\' +
+            \'<div class="icon-wrap" style="background:#fff0f6;">\' +
+            \'<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_\' + c.idx + \'" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_\' + c.idx + \')"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>\' +
+            \'</div>\' +
+            \'<div class="row-info">\' +
+            \'<span class="row-label">Instagram</span>\' +
+            \'<span class="row-value">\' + (c.instagram || \'—\') + \'</span>\' +
+            \'</div></div>\' +
+ 
+            /* Facebook */
+            \'<div class="row">\' +
+            \'<div class="icon-wrap" style="background:#e8f0fe;">\' +
+            \'<svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>\' +
+            \'</div>\' +
+            \'<div class="row-info">\' +
+            \'<span class="row-label">Facebook</span>\' +
+            \'<span class="row-value">\' + (c.fb_page || \'—\') + \'</span>\' +
+            \'</div></div>\';
+ 
+        card.appendChild(body);
+ 
+        /* footer */
+        card.innerHTML +=
+            \'<div class="card-footer">\' +
+            \'<button class="footer-btn" onclick="acionar(\\\'editar_\' + c.idx + \'\\\')">\' +
+            \'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>\' +
+            \'Editar</button>\' +
+            \'<button class="footer-btn danger" onclick="acionar(\\\'remove_\' + c.idx + \'\\\')">\' +
+            \'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>\' +
+            \'Remover</button>\' +
+            \'</div>\';
+ 
+        grid.appendChild(card);
     }});
-    if (found[{i}]) {{ found[{i}].click(); return; }}
+ 
+    syncHeight();
+}}
+ 
+function acionar(key) {{
+    var btns = window.parent.document.querySelectorAll(\'button\');
+    var keyMap = {{}};
+    CARDS.forEach(function(c) {{
+        keyMap[\'editar_\' + c.idx] = c.idx;
+        keyMap[\'remove_\' + c.idx] = c.idx;
+    }});
+    var labels = {{
+        \'editar\': \'Editar Concorrente\',
+        \'remove\': \'Remover Concorrente\',
+    }};
+    var parts  = key.split(\'_\');
+    var action = parts[0];
+    var idx    = parseInt(parts[1]);
+    var label  = labels[action];
+    var found  = [];
+    btns.forEach(function(b) {{
+        if ((b.innerText || b.textContent || \'\').split(/\\s+/).join(\' \').trim() === label) found.push(b);
+    }});
+    if (found[idx]) {{ found[idx].click(); return; }}
     if (found[0])   {{ found[0].click(); }}
 }}
-
-function ajustarAltura() {{
-    var card = document.getElementById('card_{uid}');
-    if (!card) return;
-    var h = card.getBoundingClientRect().height;
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var j = 0; j < iframes.length; j++) {{
+ 
+function syncHeight() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var iframes = window.parent.document.querySelectorAll(\'iframe\');
+    for (var i = 0; i < iframes.length; i++) {{
         try {{
-            if (iframes[j].contentWindow === window) {{
-                iframes[j].style.height = (h + 8) + 'px';
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = (h + 12) + \'px\';
                 break;
             }}
         }} catch(e) {{}}
     }}
 }}
-document.addEventListener('DOMContentLoaded', ajustarAltura);
-window.addEventListener('load', ajustarAltura);
-setTimeout(ajustarAltura, 100);
-setTimeout(ajustarAltura, 400);
+ 
+buildCards();
+if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener(\'DOMContentLoaded\', syncHeight);
+window.addEventListener(\'load\', syncHeight);
+setTimeout(syncHeight, 200);
+setTimeout(syncHeight, 600);
+setTimeout(syncHeight, 1200);
 </script>
-</body>
-</html>"""
-
-                components.html(card_html, height=260, scrolling=False)
-
-                b1, b2 = st.columns(2)
-                with b1:
-                    if st.button("Editar Concorrente", key=f"editar_{i}", use_container_width=True):
-                        st.session_state.editando_concorrente = i
-                        st.session_state.mostrar_form_concorrente = False
-                        st.rerun()
-                with b2:
-                    if st.button("Remover Concorrente", key=f"remove_{i}", use_container_width=True):
-                        nome_removido = st.session_state.dados["concorrentes"][i].get("nome", "")
-                        st.session_state.dados["concorrentes"].pop(i)
-                        # Limpar dados de ads do histórico para este concorrente
-                        if nome_removido and nome_removido in st.session_state.get("ads_cache", {}):
-                            del st.session_state.ads_cache[nome_removido]
-                            salvar_cache_ads(st.session_state.ads_cache)
-                        salvar_dados_usuario(st.session_state.user.id)
-                        st.rerun()
-
-                st.markdown("<div style='height:16px'/>", unsafe_allow_html=True)
-
+</body></html>
+""", height=500, scrolling=False)
+ 
+        # ── Botões Streamlit reais (ocultos via CSS) ─────────────
+        for i, c in enumerate(concorrentes):
+            b1, b2 = st.columns(2)
+            with b1:
+                if st.button("Editar Concorrente", key=f"editar_{i}", use_container_width=True):
+                    st.session_state.editando_concorrente = i
+                    st.session_state.mostrar_form_concorrente = False
+                    st.rerun()
+            with b2:
+                if st.button("Remover Concorrente", key=f"remove_{i}", use_container_width=True):
+                    nome_removido = st.session_state.dados["concorrentes"][i].get("nome", "")
+                    st.session_state.dados["concorrentes"].pop(i)
+                    if nome_removido and nome_removido in st.session_state.get("ads_cache", {}):
+                        del st.session_state.ads_cache[nome_removido]
+                        salvar_cache_ads(st.session_state.ads_cache)
+                    salvar_dados_usuario(st.session_state.user.id)
+                    st.rerun()
+ 
     else:
         st.markdown("""
-        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
-                    padding:48px 32px;text-align:center;margin-top:10px;'>
-            <div style='font-size:32px;margin-bottom:12px'>🎯</div>
-            <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum concorrente cadastrado</div>
-            <div style='font-size:14px;color:#9ca3af'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
+        <div style=\'background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                    padding:48px 32px;text-align:center;margin-top:10px;\'>
+            <div style=\'font-size:32px;margin-bottom:12px\'>🎯</div>
+            <div style=\'font-size:16px;font-weight:600;color:#374151;margin-bottom:6px\'>Nenhum concorrente cadastrado</div>
+            <div style=\'font-size:14px;color:#9ca3af\'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
         </div>
         """, unsafe_allow_html=True)
 
