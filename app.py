@@ -6816,22 +6816,23 @@ html, body { background: transparent; overflow: hidden; }
             use_container_width=True,
         )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
-        if ultima_coleta:
-            import json as _jr
-            d = st.session_state.metricas_redes.get("dados", [])
-            djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
-            fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
 
-            components.html(f"""
+        import json as _jr
+        d = st.session_state.metricas_redes.get("dados", [])
+        djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\") if ultima_coleta else "[]"
+        fn = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json' if ultima_coleta else ""
+
+        components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
 .link-btn {{
     font-size:13px; color:#3a9fd6; text-align:center;
-    display:block; cursor:pointer; text-decoration:underline;
+    display:{'block' if ultima_coleta else 'none'};
+    cursor:pointer; text-decoration:underline;
     text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0; margin-top:4px; font-family:'DM Sans',sans-serif;
+    width:100%; padding:0; margin-top:2px; font-family:'DM Sans',sans-serif;
 }}
 .link-btn:hover {{ color:#065f9e; }}
 </style>
@@ -6910,11 +6911,15 @@ function abrirModal() {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '20px'; iframes[i].style.marginTop = '-10px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = '{"22px" if ultima_coleta else "0px"}';
+            iframes[i].style.marginTop = '-8px';
+            break;
+        }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=20, scrolling=False)
+""", height=22, scrolling=False)
 
     # ── HR separador — fora das colunas, com correção de espaço ────
     st.markdown("""
