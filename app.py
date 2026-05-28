@@ -6774,15 +6774,6 @@ elif st.session_state.pagina == "redes":
     # ── Cabeçalho ──────────────────────────────────────────────────
     col1, col2, col3 = st.columns([6, 2, 3])
 
-    st.markdown("""
-<style>
-[data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3) {
-    padding-left: 0rem !important;
-    margin-left: 0rem !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
     with col1:
         components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -6919,16 +6910,23 @@ function abrirModal() {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '20px';iframes[i].style.marginTop = '-10px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '20px'; iframes[i].style.marginTop = '-10px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
 """, height=20, scrolling=False)
 
-    st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
-        unsafe_allow_html=True,
-    )
+    # ── HR separador — fora das colunas, com correção de espaço ────
+    st.markdown("""
+        <style>
+        #redes-hr-wrapper {
+            margin-top: -1rem !important;
+        }
+        </style>
+        <div id="redes-hr-wrapper">
+            <hr style='border:none;border-top:1px solid #e5e7eb;margin:0'/>
+        </div>
+    """, unsafe_allow_html=True)
  
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
