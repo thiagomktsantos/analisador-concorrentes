@@ -6175,11 +6175,9 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
 
 /* ── Modal principal ── */
 function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
-
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
-    
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
