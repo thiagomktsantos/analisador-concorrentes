@@ -8257,9 +8257,10 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
 }}
 
 /* ── Modal: vídeo abre video_url direto; foto abre modal com imagem ── */
-function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
+function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
 
-    if (isVideo) {
+    /* ── VÍDEO ── */
+    if (isVideo) {{
         var doc = window.parent.document;
         var old = doc.getElementById('redes_modal_overlay');
         if (old) old.remove();
@@ -8267,7 +8268,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
         var overlay = doc.createElement('div');
         overlay.id = 'redes_modal_overlay';
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-        overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+        overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
 
         var box = doc.createElement('div');
         box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
@@ -8285,10 +8286,10 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
         overlay.appendChild(box);
         doc.body.appendChild(overlay);
 
-        window.parent.__redesModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+        window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
         doc.addEventListener('keydown', window.parent.__redesModalEscFn);
 
-        if (videoUrl) {
+        if (videoUrl) {{
             /* Tem URL de vídeo da API: reproduz direto */
             var vid = doc.createElement('video');
             vid.src = videoUrl;
@@ -8296,18 +8297,17 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
             vid.autoplay = true;
             vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
-            vid.onerror = function() {
-                /* video_url falhou: fallback para thumb + botão Instagram */
+            vid.onerror = function() {{
                 content.innerHTML = '';
                 _showVideoFallback(content, doc, thumbUrl, igUrl);
-            };
+            }};
             content.appendChild(vid);
-        } else {
+        }} else {{
             /* Sem video_url: mostra thumb com botão para abrir no Instagram */
             _showVideoFallback(content, doc, thumbUrl, igUrl);
-        }
+        }}
         return;
-    }
+    }}
 
     /* ── FOTO ── */
     var doc = window.parent.document;
@@ -8317,7 +8317,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
     var overlay = doc.createElement('div');
     overlay.id = 'redes_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
 
     var box = doc.createElement('div');
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
@@ -8335,14 +8335,14 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
 
-    window.parent.__redesModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
 
-    if (!thumbUrl) {
+    if (!thumbUrl) {{
         window.parent.open(igUrl, '_blank');
         closeModal();
         return;
-    }
+    }}
 
     var loading = doc.createElement('div');
     loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
@@ -8350,35 +8350,35 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
     content.appendChild(loading);
 
     var tmp = new window.parent.Image();
-    tmp.onload = function() {
+    tmp.onload = function() {{
         content.innerHTML = '';
         var img = doc.createElement('img');
         img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
         img.src = thumbUrl;
         content.appendChild(img);
-    };
-    tmp.onerror = function() {
+    }};
+    tmp.onerror = function() {{
         content.innerHTML = '';
         var fb = doc.createElement('div');
         fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
         fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
             + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
         content.appendChild(fb);
-    };
+    }};
     tmp.src = thumbUrl;
-}
+}}
 
 /* ── Fallback visual para vídeo sem URL reproduzível ── */
-function _showVideoFallback(content, doc, thumbUrl, igUrl) {
+function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
     var wrap = doc.createElement('div');
     wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
 
-    if (thumbUrl) {
+    if (thumbUrl) {{
         var img = doc.createElement('img');
         img.src = thumbUrl;
         img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.55);';
         wrap.appendChild(img);
-    }
+    }}
 
     var playBtn = doc.createElement('a');
     playBtn.href = igUrl;
@@ -8396,7 +8396,7 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {
 
     wrap.appendChild(playBtn);
     content.appendChild(wrap);
-}
+}}
 
 function closeModal() {{
     var doc = window.parent.document;
