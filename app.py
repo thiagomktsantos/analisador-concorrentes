@@ -6809,7 +6809,7 @@ elif st.session_state.pagina == "redes":
 html, body {{ background:transparent; overflow:hidden; font-family:'DM Sans',sans-serif; }}
 .header-wrap {{
     display:flex; align-items:center; justify-content:space-between;
-    gap:16px; padding:2px 0 8px;
+    gap:16px; padding:0;
 }}
 .header-left {{ flex:1; min-width:0; }}
 .titulo {{
@@ -6820,11 +6820,11 @@ html, body {{ background:transparent; overflow:hidden; font-family:'DM Sans',san
 .sub {{ font-size:14px; color:#6b7280; }}
 .header-right {{ flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }}
 .btn-coletar {{
-    padding:10px 24px; border:none; border-radius:8px;
+    padding:13px 32px; border:none; border-radius:8px;
     background:#1d6fa8; color:#fff;
-    font-size:15px; font-weight:700; cursor:pointer;
+    font-size:16px; font-weight:700; cursor:pointer;
     font-family:'DM Sans',sans-serif; transition:background 0.15s;
-    white-space:nowrap;
+    white-space:nowrap; min-width:220px;
 }}
 .btn-coletar:hover {{ background:#155e8a; }}
 .ultima {{
@@ -6909,11 +6909,11 @@ function abrirModal() {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '72px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '90px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=72, scrolling=False)
+""", height=90, scrolling=False)
 
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
