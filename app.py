@@ -2185,238 +2185,146 @@ html, body { background: transparent; overflow: hidden; }
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         dados_brutos  = st.session_state.metricas_redes.get("dados", [])
         if ultima_coleta:
-            # Ghost button oculto via CSS
             st.markdown("""
             <style>
-            .st-key-btn_redes_abrir_raw {
+            .st-key-btn_redes_raw_link {
                 position: fixed !important; top: -9999px !important; left: -9999px !important;
                 width: 1px !important; height: 1px !important; overflow: hidden !important;
                 opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
             }
             </style>
             """, unsafe_allow_html=True)
-            
-            abrir_raw_redes = st.button(
-                "__abrir_raw_redes__",
-                key="btn_redes_abrir_raw",
-            )
-            
+
+            abrir_raw_redes = st.button("__abrir_raw__", key="btn_redes_raw_link")
+
             st.markdown(f"""
-            <button onclick="triggerRaw()" style="
-                font-size:13px; color:#3a9fd6; text-align:center;
-                display:block; cursor:pointer; text-decoration:underline;
-                text-underline-offset:3px;
-                font-family:'DM Sans',sans-serif;
-                background:none; border:none; width:100%;
-                padding:0; margin-top:4px;
-                transition: color 0.15s;
-            "
-            onmouseover="this.style.color='#065f9e'"
-            onmouseout="this.style.color='#3a9fd6'">
+            <button onclick="triggerRaw()" style="font-size:13px;color:#3a9fd6;text-align:center;
+                display:block;cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+                font-family:'DM Sans',sans-serif;background:none;border:none;width:100%;
+                padding:0;margin-top:4px;" onmouseover="this.style.color='#065f9e'"
+                onmouseout="this.style.color='#3a9fd6'">
                 🕒 Última coleta: <b>{ultima_coleta}</b>
             </button>
             <script>
             function triggerRaw() {{
                 var btns = window.parent.document.querySelectorAll('button');
                 for (var b of btns) {{
-                    var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-                    if (txt === '__abrir_raw_redes__') {{ b.click(); return; }}
+                    var t = (b.textContent||b.innerText||'').split(/\s+/).join(' ').trim();
+                    if (t === '__abrir_raw__') {{ b.click(); return; }}
                 }}
             }}
             </script>
             """, unsafe_allow_html=True)
-            
+
             if abrir_raw_redes:
-                import json as _json_raw
-                dados_brutos_redes = st.session_state.metricas_redes.get("dados", [])
-                dados_brutos_str   = _json_raw.dumps(dados_brutos_redes, ensure_ascii=False, indent=2)
-                dados_brutos_js    = dados_brutos_str.replace("</", "<\\/").replace("`", "\\`")
-                dl_filename_redes  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
-                
-                components.html(f"""
-<script>
-(function() {{
-    var doc = window.parent.document;
-    var DADOS_BRUTOS = `{dados_brutos_js}`;
-    var DL_FILENAME  = '{dl_filename_redes}';
-
-    var old = doc.getElementById('raw_modal_overlay');
-    if (old) old.remove();
-
-    var overlay = doc.createElement('div');
-    overlay.id = 'raw_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
-    overlay.onclick = function(e) {{ if (e.target === overlay) fechar(); }};
-
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
-
-    var hdr = doc.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
-    hdr.innerHTML =
-        '<div>'
-        + '<div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
-        + '<div style="font-size:12px;color:#8b949e;font-family:DM Sans,sans-serif;margin-top:2px;">Última coleta: {ultima_coleta}</div>'
-        + '</div>'
-        + '<div style="display:flex;gap:10px;align-items:center;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background=\'#30363d\'" onmouseout="this.style.background=\'#21262d\'">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background=\'#30363d\'" onmouseout="this.style.background=\'#21262d\'">⬇️ Baixar JSON</button>'
-        + '<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background=\'#30363d\'" onmouseout="this.style.background=\'#21262d\'">✕</button>'
-        + '</div>';
-
-    var stats = doc.createElement('div');
-    stats.style.cssText = 'display:flex;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;overflow-x:auto;';
-    try {{
-        var ps = JSON.parse(DADOS_BRUTOS);
-        var perfis     = ps.length;
-        var totalPosts = ps.reduce(function(s,p) {{ return s+(p.posts?p.posts.length:0); }}, 0);
-        var totalSeg   = ps.reduce(function(s,p) {{ return s+(p.seguidores||0); }}, 0);
-        var comErro    = ps.filter(function(p) {{ return p.erro; }}).length;
-        [
-            {{lbl:'Perfis coletados', val: perfis}},
-            {{lbl:'Total de posts',   val: totalPosts}},
-            {{lbl:'Total seguidores', val: totalSeg.toLocaleString('pt-BR')}},
-            {{lbl:'Com erro',         val: comErro}},
-        ].forEach(function(s) {{
-            var cell = doc.createElement('div');
-            cell.style.cssText = 'padding:10px 20px;border-right:1px solid #21262d;text-align:center;white-space:nowrap;';
-            cell.innerHTML =
-                '<div style="font-size:18px;font-weight:800;color:#58a6ff;font-family:DM Sans,sans-serif">' + s.val + '</div>'
-                + '<div style="font-size:11px;color:#8b949e;font-family:DM Sans,sans-serif;margin-top:2px">' + s.lbl + '</div>';
-            stats.appendChild(cell);
+                import json as _jr
+                d = st.session_state.metricas_redes.get("dados", [])
+                djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`")
+                fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
+                components.html(f"""<script>
+(function(){{
+    var doc=window.parent.document, D=`{djs}`, F='{fn}';
+    var old=doc.getElementById('raw_modal_overlay'); if(old) old.remove();
+    var ov=doc.createElement('div');
+    ov.id='raw_modal_overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
+    ov.onclick=function(e){{if(e.target===ov)fechar();}};
+    var box=doc.createElement('div');
+    box.style.cssText='background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
+    var hdr=doc.createElement('div');
+    hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
+    hdr.innerHTML='<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div><div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: {ultima_coleta}</div></div>'
+        +'<div style="display:flex;gap:10px;">'
+        +'<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        +'<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        +'<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button>'
+        +'</div>';
+    var stats=doc.createElement('div');
+    stats.style.cssText='display:flex;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;overflow-x:auto;';
+    try{{
+        var ps=JSON.parse(D);
+        [{{'lbl':'Perfis coletados','val':ps.length}},{{'lbl':'Total de posts','val':ps.reduce(function(s,p){{return s+(p.posts?p.posts.length:0);}},0)}},{{'lbl':'Total seguidores','val':ps.reduce(function(s,p){{return s+(p.seguidores||0);}},0).toLocaleString('pt-BR')}},{{'lbl':'Com erro','val':ps.filter(function(p){{return p.erro;}}).length}}].forEach(function(s){{
+            var c=doc.createElement('div');
+            c.style.cssText='padding:10px 20px;border-right:1px solid #21262d;text-align:center;white-space:nowrap;';
+            c.innerHTML='<div style="font-size:18px;font-weight:800;color:#58a6ff;">'+s.val+'</div><div style="font-size:11px;color:#8b949e;margin-top:2px;">'+s.lbl+'</div>';
+            stats.appendChild(c);
         }});
-    }} catch(e) {{ stats.style.display='none'; }}
-
-    var tabsWrap = doc.createElement('div');
-    tabsWrap.style.cssText = 'display:flex;border-bottom:1px solid #21262d;background:#0d1117;flex-shrink:0;overflow-x:auto;';
-
-    var contentWrap = doc.createElement('div');
-    contentWrap.style.cssText = 'flex:1;overflow:hidden;display:flex;flex-direction:column;';
-
-    var searchBar = doc.createElement('div');
-    searchBar.style.cssText = 'padding:10px 16px;background:#0d1117;border-bottom:1px solid #21262d;flex-shrink:0;';
-    searchBar.innerHTML = '<input id="raw_search" type="text" placeholder="🔍 Filtrar campos (ex: seguidores, bio, posts...)" oninput="filtrarCampos()" style="width:100%;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:13px;font-family:monospace;outline:none;" />';
-
-    var pre = doc.createElement('pre');
-    pre.id = 'raw_pre';
-    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:"SFMono-Regular",Consolas,monospace;background:#0d1117;margin:0;white-space:pre;';
-
-    contentWrap.appendChild(searchBar);
-    contentWrap.appendChild(pre);
-    box.appendChild(hdr);
-    box.appendChild(stats);
-    box.appendChild(tabsWrap);
-    box.appendChild(contentWrap);
-    overlay.appendChild(box);
-    doc.body.appendChild(overlay);
-
-    var parsed;
-    try {{ parsed = JSON.parse(DADOS_BRUTOS); }} catch(e) {{ parsed = DADOS_BRUTOS; }}
-    var perfilAtivo = 0;
-    window.__rawPerfilAtivo = 0;
-
-    function syntaxHL(json) {{
-        if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
-        return json
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-            .replace(/("(\\u[a-zA-Z0-9]{{4}}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\\-]?\d+)?)/g, function(m) {{
-                var cls = 'color:#79c0ff';
-                if (/^"/.test(m)) {{
-                    if (/:$/.test(m)) cls = 'color:#ff7b72';
-                    else cls = 'color:#a5d6ff';
-                }} else if (/true|false/.test(m)) {{ cls = 'color:#56d364'; }}
-                else if (/null/.test(m)) {{ cls = 'color:#8b949e'; }}
-                return '<span style="' + cls + '">' + m + '</span>';
+    }}catch(e){{stats.style.display='none';}}
+    var tabs=doc.createElement('div');
+    tabs.style.cssText='display:flex;border-bottom:1px solid #21262d;background:#0d1117;flex-shrink:0;overflow-x:auto;';
+    var cw=doc.createElement('div');
+    cw.style.cssText='flex:1;overflow:hidden;display:flex;flex-direction:column;';
+    var sb=doc.createElement('div');
+    sb.style.cssText='padding:10px 16px;background:#0d1117;border-bottom:1px solid #21262d;flex-shrink:0;';
+    sb.innerHTML='<input id="raw_search" type="text" placeholder="🔍 Filtrar campos..." oninput="filtrar()" style="width:100%;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:13px;font-family:monospace;outline:none;"/>';
+    var pre=doc.createElement('pre');
+    pre.id='raw_pre';
+    pre.style.cssText='flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
+    cw.appendChild(sb); cw.appendChild(pre);
+    box.appendChild(hdr); box.appendChild(stats); box.appendChild(tabs); box.appendChild(cw);
+    ov.appendChild(box); doc.body.appendChild(ov);
+    var parsed; try{{parsed=JSON.parse(D);}}catch(e){{parsed=D;}}
+    var pa=0; window.__rawPA=0;
+    function hl(j){{
+        if(typeof j!=='string') j=JSON.stringify(j,null,2);
+        return j.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/("(\\u[a-zA-Z0-9]{{4}}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\\-]?\d+)?)/g,function(m){{
+                var c='color:#79c0ff';
+                if(/^"/.test(m)){{if(/:$/.test(m))c='color:#ff7b72';else c='color:#a5d6ff';}}
+                else if(/true|false/.test(m))c='color:#56d364';
+                else if(/null/.test(m))c='color:#8b949e';
+                return'<span style="'+c+'">'+m+'</span>';
             }});
     }}
-
-    function renderPerfil(idx) {{
-        perfilAtivo = idx;
-        window.__rawPerfilAtivo = idx;
-        tabsWrap.querySelectorAll('.raw-tab').forEach(function(t, i) {{
-            t.style.borderBottom = i === idx ? '2px solid #58a6ff' : '2px solid transparent';
-            t.style.color        = i === idx ? '#58a6ff' : '#8b949e';
+    function rend(i){{
+        pa=i; window.__rawPA=i;
+        tabs.querySelectorAll('.rt').forEach(function(t,j){{
+            t.style.borderBottom=j===i?'2px solid #58a6ff':'2px solid transparent';
+            t.style.color=j===i?'#58a6ff':'#8b949e';
         }});
-        var data = Array.isArray(parsed) ? parsed[idx] : parsed;
-        pre.innerHTML = syntaxHL(data);
-        doc.getElementById('raw_search').value = '';
+        pre.innerHTML=hl(Array.isArray(parsed)?parsed[i]:parsed);
+        doc.getElementById('raw_search').value='';
     }}
-
-    if (Array.isArray(parsed) && parsed.length > 0) {{
-        parsed.forEach(function(p, i) {{
-            var tab = doc.createElement('button');
-            tab.className = 'raw-tab';
-            tab.textContent = p.nome || p.handle || ('Perfil ' + (i+1));
-            tab.style.cssText = 'padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;color:#8b949e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;white-space:nowrap;';
-            tab.onclick     = function() {{ renderPerfil(i); }};
-            tab.onmouseover = function() {{ if (perfilAtivo !== i) this.style.color = '#e6edf3'; }};
-            tab.onmouseout  = function() {{ if (perfilAtivo !== i) this.style.color = '#8b949e'; }};
-            tabsWrap.appendChild(tab);
+    if(Array.isArray(parsed)&&parsed.length>0){{
+        parsed.forEach(function(p,i){{
+            var t=doc.createElement('button');
+            t.className='rt';
+            t.textContent=p.nome||p.handle||('Perfil '+(i+1));
+            t.style.cssText='padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;color:#8b949e;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;';
+            t.onclick=function(){{rend(i);}};
+            tabs.appendChild(t);
         }});
-        renderPerfil(0);
-    }} else {{
-        tabsWrap.style.display = 'none';
-        pre.innerHTML = syntaxHL(parsed);
-    }}
-
-    window.filtrarCampos = function() {{
-        var q = (doc.getElementById('raw_search').value || '').toLowerCase().trim();
-        var data = Array.isArray(parsed) ? parsed[window.__rawPerfilAtivo || 0] : parsed;
-        if (!q) {{ pre.innerHTML = syntaxHL(data); return; }}
-        function filtrarObj(obj, q) {{
-            if (Array.isArray(obj)) {{
-                var r = obj.map(function(i) {{ return filtrarObj(i, q); }}).filter(function(x) {{ return x !== null; }});
-                return r.length ? r : null;
-            }}
-            if (typeof obj === 'object' && obj !== null) {{
-                var result = {{}};
-                Object.keys(obj).forEach(function(k) {{
-                    if (k.toLowerCase().indexOf(q) !== -1) {{ result[k] = obj[k]; }}
-                    else {{
-                        var sub = filtrarObj(obj[k], q);
-                        if (sub !== null && !(typeof sub === 'object' && !Array.isArray(sub) && Object.keys(sub).length === 0)) {{
-                            result[k] = sub;
-                        }}
-                    }}
-                }});
-                return Object.keys(result).length > 0 ? result : null;
-            }}
+        rend(0);
+    }}else{{tabs.style.display='none';pre.innerHTML=hl(parsed);}}
+    window.filtrar=function(){{
+        var q=(doc.getElementById('raw_search').value||'').toLowerCase().trim();
+        var data=Array.isArray(parsed)?parsed[window.__rawPA||0]:parsed;
+        if(!q){{pre.innerHTML=hl(data);return;}}
+        function fo(obj,q){{
+            if(Array.isArray(obj)){{var r=obj.map(function(i){{return fo(i,q);}}).filter(function(x){{return x!==null;}});return r.length?r:null;}}
+            if(typeof obj==='object'&&obj!==null){{var res={{}};Object.keys(obj).forEach(function(k){{if(k.toLowerCase().indexOf(q)!==-1){{res[k]=obj[k];}}else{{var s=fo(obj[k],q);if(s!==null)res[k]=s;}}}});return Object.keys(res).length>0?res:null;}}
             return null;
         }}
-        var filtrado = filtrarObj(data, q);
-        pre.innerHTML = syntaxHL(filtrado !== null ? filtrado : {{}});
+        var f=fo(data,q);pre.innerHTML=hl(f!==null?f:{{}});
     }};
-
-    window.copiarDados = function() {{
-        var btn = doc.getElementById('raw_copy_btn');
-        navigator.clipboard.writeText(DADOS_BRUTOS).then(function() {{
-            if (btn) {{ btn.textContent = '✅ Copiado!'; setTimeout(function() {{ btn.textContent = '📋 Copiar'; }}, 2000); }}
-        }});
+    window.copiarDados=function(){{
+        var b=doc.getElementById('raw_copy_btn');
+        navigator.clipboard.writeText(D).then(function(){{if(b){{b.textContent='✅ Copiado!';setTimeout(function(){{b.textContent='📋 Copiar';}},2000);}}}}); 
     }};
-
-    window.baixarDados = function() {{
-        var blob = new Blob([DADOS_BRUTOS], {{type:'application/json'}});
-        var a = doc.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = DL_FILENAME;
-        a.click();
+    window.baixarDados=function(){{
+        var a=doc.createElement('a');
+        a.href=URL.createObjectURL(new Blob([D],{{type:'application/json'}}));
+        a.download=F;a.click();
     }};
-
-    window.__rawModalEscFn = function(e) {{ if (e.key === 'Escape') fechar(); }};
-    doc.addEventListener('keydown', window.__rawModalEscFn);
-
-    function fechar() {{
-        var overlay = doc.getElementById('raw_modal_overlay');
-        if (overlay) overlay.remove();
-        if (window.__rawModalEscFn) {{
-            doc.removeEventListener('keydown', window.__rawModalEscFn);
-            window.__rawModalEscFn = null;
-        }}
+    window.__rawEsc=function(e){{if(e.key==='Escape')fechar();}};
+    doc.addEventListener('keydown',window.__rawEsc);
+    function fechar(){{
+        var o=doc.getElementById('raw_modal_overlay');if(o)o.remove();
+        if(window.__rawEsc){{doc.removeEventListener('keydown',window.__rawEsc);window.__rawEsc=null;}}
     }}
-    window.fechar = fechar;
+    window.fechar=fechar;
 }})();
-</script>
-""", height=0)
+</script>""", height=0)
 
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 24px 0'/>",
@@ -7014,11 +6922,146 @@ html, body { background: transparent; overflow: hidden; }
         )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         if ultima_coleta:
-            st.markdown(
-                f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
-                f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
-                unsafe_allow_html=True,
-            )
+            st.markdown("""
+            <style>
+            .st-key-btn_redes_raw_link {
+                position: fixed !important; top: -9999px !important; left: -9999px !important;
+                width: 1px !important; height: 1px !important; overflow: hidden !important;
+                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            abrir_raw_redes = st.button("__abrir_raw__", key="btn_redes_raw_link")
+
+            st.markdown(f"""
+            <button onclick="triggerRaw()" style="font-size:13px;color:#3a9fd6;text-align:center;
+                display:block;cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+                font-family:'DM Sans',sans-serif;background:none;border:none;width:100%;
+                padding:0;margin-top:4px;" onmouseover="this.style.color='#065f9e'"
+                onmouseout="this.style.color='#3a9fd6'">
+                🕒 Última coleta: <b>{ultima_coleta}</b>
+            </button>
+            <script>
+            function triggerRaw() {{
+                var btns = window.parent.document.querySelectorAll('button');
+                for (var b of btns) {{
+                    var t = (b.textContent||b.innerText||'').split(/\s+/).join(' ').trim();
+                    if (t === '__abrir_raw__') {{ b.click(); return; }}
+                }}
+            }}
+            </script>
+            """, unsafe_allow_html=True)
+
+            if abrir_raw_redes:
+                import json as _jr
+                d = st.session_state.metricas_redes.get("dados", [])
+                djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`")
+                fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
+                components.html(f"""<script>
+(function(){{
+    var doc=window.parent.document, D=`{djs}`, F='{fn}';
+    var old=doc.getElementById('raw_modal_overlay'); if(old) old.remove();
+    var ov=doc.createElement('div');
+    ov.id='raw_modal_overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
+    ov.onclick=function(e){{if(e.target===ov)fechar();}};
+    var box=doc.createElement('div');
+    box.style.cssText='background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
+    var hdr=doc.createElement('div');
+    hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
+    hdr.innerHTML='<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div><div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: {ultima_coleta}</div></div>'
+        +'<div style="display:flex;gap:10px;">'
+        +'<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        +'<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        +'<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button>'
+        +'</div>';
+    var stats=doc.createElement('div');
+    stats.style.cssText='display:flex;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;overflow-x:auto;';
+    try{{
+        var ps=JSON.parse(D);
+        [{{'lbl':'Perfis coletados','val':ps.length}},{{'lbl':'Total de posts','val':ps.reduce(function(s,p){{return s+(p.posts?p.posts.length:0);}},0)}},{{'lbl':'Total seguidores','val':ps.reduce(function(s,p){{return s+(p.seguidores||0);}},0).toLocaleString('pt-BR')}},{{'lbl':'Com erro','val':ps.filter(function(p){{return p.erro;}}).length}}].forEach(function(s){{
+            var c=doc.createElement('div');
+            c.style.cssText='padding:10px 20px;border-right:1px solid #21262d;text-align:center;white-space:nowrap;';
+            c.innerHTML='<div style="font-size:18px;font-weight:800;color:#58a6ff;">'+s.val+'</div><div style="font-size:11px;color:#8b949e;margin-top:2px;">'+s.lbl+'</div>';
+            stats.appendChild(c);
+        }});
+    }}catch(e){{stats.style.display='none';}}
+    var tabs=doc.createElement('div');
+    tabs.style.cssText='display:flex;border-bottom:1px solid #21262d;background:#0d1117;flex-shrink:0;overflow-x:auto;';
+    var cw=doc.createElement('div');
+    cw.style.cssText='flex:1;overflow:hidden;display:flex;flex-direction:column;';
+    var sb=doc.createElement('div');
+    sb.style.cssText='padding:10px 16px;background:#0d1117;border-bottom:1px solid #21262d;flex-shrink:0;';
+    sb.innerHTML='<input id="raw_search" type="text" placeholder="🔍 Filtrar campos..." oninput="filtrar()" style="width:100%;padding:8px 14px;background:#161b22;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:13px;font-family:monospace;outline:none;"/>';
+    var pre=doc.createElement('pre');
+    pre.id='raw_pre';
+    pre.style.cssText='flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
+    cw.appendChild(sb); cw.appendChild(pre);
+    box.appendChild(hdr); box.appendChild(stats); box.appendChild(tabs); box.appendChild(cw);
+    ov.appendChild(box); doc.body.appendChild(ov);
+    var parsed; try{{parsed=JSON.parse(D);}}catch(e){{parsed=D;}}
+    var pa=0; window.__rawPA=0;
+    function hl(j){{
+        if(typeof j!=='string') j=JSON.stringify(j,null,2);
+        return j.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/("(\\u[a-zA-Z0-9]{{4}}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\\-]?\d+)?)/g,function(m){{
+                var c='color:#79c0ff';
+                if(/^"/.test(m)){{if(/:$/.test(m))c='color:#ff7b72';else c='color:#a5d6ff';}}
+                else if(/true|false/.test(m))c='color:#56d364';
+                else if(/null/.test(m))c='color:#8b949e';
+                return'<span style="'+c+'">'+m+'</span>';
+            }});
+    }}
+    function rend(i){{
+        pa=i; window.__rawPA=i;
+        tabs.querySelectorAll('.rt').forEach(function(t,j){{
+            t.style.borderBottom=j===i?'2px solid #58a6ff':'2px solid transparent';
+            t.style.color=j===i?'#58a6ff':'#8b949e';
+        }});
+        pre.innerHTML=hl(Array.isArray(parsed)?parsed[i]:parsed);
+        doc.getElementById('raw_search').value='';
+    }}
+    if(Array.isArray(parsed)&&parsed.length>0){{
+        parsed.forEach(function(p,i){{
+            var t=doc.createElement('button');
+            t.className='rt';
+            t.textContent=p.nome||p.handle||('Perfil '+(i+1));
+            t.style.cssText='padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;color:#8b949e;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;';
+            t.onclick=function(){{rend(i);}};
+            tabs.appendChild(t);
+        }});
+        rend(0);
+    }}else{{tabs.style.display='none';pre.innerHTML=hl(parsed);}}
+    window.filtrar=function(){{
+        var q=(doc.getElementById('raw_search').value||'').toLowerCase().trim();
+        var data=Array.isArray(parsed)?parsed[window.__rawPA||0]:parsed;
+        if(!q){{pre.innerHTML=hl(data);return;}}
+        function fo(obj,q){{
+            if(Array.isArray(obj)){{var r=obj.map(function(i){{return fo(i,q);}}).filter(function(x){{return x!==null;}});return r.length?r:null;}}
+            if(typeof obj==='object'&&obj!==null){{var res={{}};Object.keys(obj).forEach(function(k){{if(k.toLowerCase().indexOf(q)!==-1){{res[k]=obj[k];}}else{{var s=fo(obj[k],q);if(s!==null)res[k]=s;}}}});return Object.keys(res).length>0?res:null;}}
+            return null;
+        }}
+        var f=fo(data,q);pre.innerHTML=hl(f!==null?f:{{}});
+    }};
+    window.copiarDados=function(){{
+        var b=doc.getElementById('raw_copy_btn');
+        navigator.clipboard.writeText(D).then(function(){{if(b){{b.textContent='✅ Copiado!';setTimeout(function(){{b.textContent='📋 Copiar';}},2000);}}}}); 
+    }};
+    window.baixarDados=function(){{
+        var a=doc.createElement('a');
+        a.href=URL.createObjectURL(new Blob([D],{{type:'application/json'}}));
+        a.download=F;a.click();
+    }};
+    window.__rawEsc=function(e){{if(e.key==='Escape')fechar();}};
+    doc.addEventListener('keydown',window.__rawEsc);
+    function fechar(){{
+        var o=doc.getElementById('raw_modal_overlay');if(o)o.remove();
+        if(window.__rawEsc){{doc.removeEventListener('keydown',window.__rawEsc);window.__rawEsc=null;}}
+    }}
+    window.fechar=fechar;
+}})();
+</script>""", height=0)
  
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
