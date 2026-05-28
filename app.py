@@ -1813,7 +1813,7 @@ html, body { background: transparent; overflow: hidden; }
 
     with top2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
-        if st.button("＋ Adicionar", use_container_width=True, type="primary"):
+        if st.button("＋ Adicionar Concorrente", use_container_width=True, type="primary"):
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
             st.rerun()
@@ -8060,7 +8060,7 @@ body{{padding-bottom:8px;}}
     cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
     text-decoration:none; color:#275f8d;
 }}
-.footer-btn:hover {{ background:#13649a; }}
+.footer-btn:hover {{ background:#13649a; color: #ffffff!important; }}
 .footer-btn.ig {{ border-right:1px solid #ffffff;}}
 .footer-btn.ig:hover {{ background:#13649a; }}
 .footer-btn.ia:hover {{ background:#13649a; }}
