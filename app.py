@@ -6764,13 +6764,13 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
- 
+
     import datetime
     import json
- 
+
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
- 
+
     # ── Cabeçalho ──────────────────────────────────────────────────
     col1, col2, col3 = st.columns([6, 2, 3])
 
@@ -6783,8 +6783,8 @@ elif st.session_state.pagina == "redes":
 </style>
 """, unsafe_allow_html=True)
 
-with col1:
-    components.html("""
+    with col1:
+        components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @font-face {
@@ -6804,8 +6804,8 @@ html, body { background: transparent; overflow: hidden; }
 <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
 """, height=65)
 
-with col2:
-    st.markdown("""
+    with col2:
+        st.markdown("""
     <style>
     .st-key-_redes_ghost_tab_perfis_,
     .st-key-_redes_ghost_tab_analise_ {
@@ -6818,20 +6818,20 @@ with col2:
     </style>
     """, unsafe_allow_html=True)
 
-with col3:
-    coletar = st.button(
-        "Coletar dados",
-        type="primary",
-        use_container_width=True,
-    )
-    ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
-    if ultima_coleta:
-        import json as _jr
-        d = st.session_state.metricas_redes.get("dados", [])
-        djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
-        fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
+    with col3:
+        coletar = st.button(
+            "Coletar dados",
+            type="primary",
+            use_container_width=True,
+        )
+        ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
+        if ultima_coleta:
+            import json as _jr
+            d = st.session_state.metricas_redes.get("dados", [])
+            djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
+            fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
 
-        components.html(f"""
+            components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -6925,10 +6925,10 @@ function abrirModal() {{
 </script>
 """, height=20, scrolling=False)
 
-    st.markdown(
-        "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+            "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
+            unsafe_allow_html=True,
+        )
  
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
