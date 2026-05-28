@@ -8475,13 +8475,13 @@ function buildGrid(posts) {{
         var videoUrl     = (p.video_url || '').trim();
         var carouselImgs = p.carousel_imgs || [];
         // Armazena dados no objeto global para evitar problemas de escaping no onclick
-        window['__post_data_' + idx] = {
+        window['__post_data_' + idx] = {{
             thumbUrl:     thumbUrl,
             igUrl:        igUrl,
             videoUrl:     videoUrl,
             isVideo:      p.is_video,
             carouselImgs: carouselImgs,
-        };
+        }};
         var thumbClickAttr = 'onclick="var d=window[\'__post_data_' + idx + '\']; openModal(d.thumbUrl,d.igUrl,d.videoUrl,d.isVideo,d.carouselImgs);"';
         var playOverlay = p.is_video
             ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
