@@ -6200,7 +6200,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
 
-    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
 
     /* ── VÍDEO ── */
