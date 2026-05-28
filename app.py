@@ -2187,10 +2187,18 @@ html, body { background: transparent; overflow: hidden; }
         if ultima_coleta:
             st.markdown("""
             <style>
-            .st-key-btn_redes_raw_link {
-                position: fixed !important; top: -9999px !important; left: -9999px !important;
-                width: 1px !important; height: 1px !important; overflow: hidden !important;
-                opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
+            /* NÃO esconder este botão específico */
+            .st-key-btn_redes_raw_link button {
+                position: static !important;
+                top: auto !important;
+                left: auto !important;
+                width: auto !important;
+                height: auto !important;
+                overflow: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                visibility: visible !important;
+                display: none !important;  /* esconde visualmente mas mantém clicável via JS */
             }
             </style>
             """, unsafe_allow_html=True)
