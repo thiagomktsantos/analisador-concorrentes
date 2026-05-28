@@ -2184,7 +2184,7 @@ html, body { background: transparent; overflow: hidden; }
         )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         dados_brutos  = st.session_state.metricas_redes.get("dados", [])
-if ultima_coleta:
+        if ultima_coleta:
             import json as _jr
             d = st.session_state.metricas_redes.get("dados", [])
             djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
