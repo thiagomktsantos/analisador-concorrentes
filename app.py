@@ -8338,7 +8338,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=900, scrolling=False)
+""", height=500, scrolling=False)
  
         # ══════════════════════════════════════════════════════════════
         # SUB-ABA: ANÁLISE DE IA
