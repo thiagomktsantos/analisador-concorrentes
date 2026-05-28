@@ -6828,13 +6828,13 @@ html, body { background: transparent; overflow: hidden; }
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
 .link-btn {{
-    font-size:13px; color:#3a9fd6; text-align:center;
+    font-size:13px; color:#6b7280; text-align:center;
     display:{'block' if ultima_coleta else 'none'};
-    cursor:pointer; text-decoration:underline;
+    cursor:pointer;
     text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0; margin-top:2px; font-family:'DM Sans',sans-serif;
+    width:100%; padding:0;font-family:'DM Sans',sans-serif;
 }}
-.link-btn:hover {{ color:#065f9e; }}
+.link-btn:hover {{text-decoration:underline; }}
 </style>
 <button class="link-btn" onclick="abrirModal()">
     🕒 Última coleta: <b>{ultima_coleta}</b>
