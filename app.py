@@ -6778,197 +6778,67 @@ elif st.session_state.pagina == "redes":
         components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@font-face {
-    font-family: 'Animo';
-    src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { background: transparent; overflow: hidden; }
-.titulo {
-    font-family: 'Animo', 'DM Sans', sans-serif;
-    font-size: 32px; font-weight: 700; color: #1a2e4a;
-    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
-}
-.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
+@font-face { font-family:'Animo'; src:url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype'); }
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { background:transparent; overflow:hidden; }
+.titulo { font-family:'Animo','DM Sans',sans-serif; font-size:32px; font-weight:700; color:#1a2e4a; text-transform:uppercase; margin:0 0 6px 0; letter-spacing:0.5px; }
+.sub { font-family:'DM Sans',sans-serif; font-size:14px; color:#6b7280; }
 </style>
 <div class="titulo">Redes Sociais</div>
 <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
 """, height=65)
 
-    with col2:
-        st.markdown("""
-    <style>
-    .st-key-_redes_ghost_tab_perfis_,
-    .st-key-_redes_ghost_tab_analise_ {
-        display: none !important;
-    }
-    .stElementContainer:has(.st-key-_redes_ghost_tab_perfis_),
-    .stElementContainer:has(.st-key-_redes_ghost_tab_analise_) {
-        display: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
     with col3:
-        coletar = st.button(
-            "Coletar dados",
-            type="primary",
-            use_container_width=True,
-        )
+        coletar = st.button("Coletar dados", type="primary", use_container_width=True)
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
-
         import json as _jr
         d = st.session_state.metricas_redes.get("dados", [])
         djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\") if ultima_coleta else "[]"
         fn = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json' if ultima_coleta else ""
-
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.link-btn {{
-    font-size:13px; color:#6b7280; text-align:center;
-    display:{'block' if ultima_coleta else 'none'};
-    cursor:pointer;
-    text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0;font-family:'DM Sans',sans-serif;
-}}
-.link-btn:hover {{text-decoration:underline; }}
+<style>* {{margin:0;padding:0;box-sizing:border-box;}} html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
+.link-btn{{font-size:13px;color:#6b7280;text-align:center;display:{'block' if ultima_coleta else 'none'};cursor:pointer;background:none;border:none;width:100%;padding:0;font-family:'DM Sans',sans-serif;}}
+.link-btn:hover{{text-decoration:underline;}}
 </style>
-<button class="link-btn" onclick="abrirModal()">
-    🕒 Última coleta: <b>{ultima_coleta}</b>
-</button>
+<button class="link-btn" onclick="abrirModal()">🕒 Última coleta: <b>{ultima_coleta}</b></button>
 <script>
-var DADOS_JSON = `{djs}`;
-var FILENAME   = '{fn}';
-var ULTIMA     = '{ultima_coleta}';
-
-function abrirModal() {{
-    var doc = window.parent.document;
-    var old = doc.getElementById('raw_modal_overlay');
-    if (old) old.remove();
-
-    var D;
-    try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = []; }}
-    var Dstr = JSON.stringify(D, null, 2);
-
-    var ov = doc.createElement('div');
-    ov.id = 'raw_modal_overlay';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
-    ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
-
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
-
-    var hdr = doc.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
-    hdr.innerHTML =
-        '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
-        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
-        + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button>'
-        + '</div>';
-
-    var pre = doc.createElement('pre');
-    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
-    pre.textContent = Dstr;
-
-    box.appendChild(hdr);
-    box.appendChild(pre);
-    ov.appendChild(box);
-    doc.body.appendChild(ov);
-
-    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') fechar(); }};
-    doc.addEventListener('keydown', window.parent.__rawEsc);
-
-    window.fechar = function() {{
-        var o = doc.getElementById('raw_modal_overlay');
-        if (o) o.remove();
-        if (window.parent.__rawEsc) {{
-            doc.removeEventListener('keydown', window.parent.__rawEsc);
-            window.parent.__rawEsc = null;
-        }}
-    }};
-
-    window.copiarDados = function() {{
-        var b = doc.getElementById('raw_copy_btn');
-        navigator.clipboard.writeText(Dstr).then(function() {{
-            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
-        }});
-    }};
-
-    window.baixarDados = function() {{
-        var a = doc.createElement('a');
-        a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
-        a.download = FILENAME;
-        a.click();
-    }};
-}}
-
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = '{"22px" if ultima_coleta else "0px"}';
-            iframes[i].style.marginTop = '-8px';
-            break;
-        }} }} catch(e) {{}}
-    }}
-}})();
+var DADOS_JSON=`{djs}`;var FILENAME='{fn}';var ULTIMA='{ultima_coleta}';
+function abrirModal(){{var doc=window.parent.document;var old=doc.getElementById('raw_modal_overlay');if(old)old.remove();var D;try{{D=JSON.parse(DADOS_JSON);}}catch(e){{D=[];}}var Dstr=JSON.stringify(D,null,2);var ov=doc.createElement('div');ov.id='raw_modal_overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';ov.onclick=function(e){{if(e.target===ov)fechar();}};var box=doc.createElement('div');box.style.cssText='background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';var hdr=doc.createElement('div');hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';hdr.innerHTML='<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div><div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: '+ULTIMA+'</div></div><div style="display:flex;gap:10px;"><button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button><button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button><button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button></div>';var pre=doc.createElement('pre');pre.style.cssText='flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';pre.textContent=Dstr;box.appendChild(hdr);box.appendChild(pre);ov.appendChild(box);doc.body.appendChild(ov);window.parent.__rawEsc=function(e){{if(e.key==='Escape')fechar();}};doc.addEventListener('keydown',window.parent.__rawEsc);window.fechar=function(){{var o=doc.getElementById('raw_modal_overlay');if(o)o.remove();if(window.parent.__rawEsc){{doc.removeEventListener('keydown',window.parent.__rawEsc);window.parent.__rawEsc=null;}}}};window.copiarDados=function(){{var b=doc.getElementById('raw_copy_btn');navigator.clipboard.writeText(Dstr).then(function(){{if(b){{b.textContent='✅ Copiado!';setTimeout(function(){{b.textContent='📋 Copiar';}},2000);}}}});}};window.baixarDados=function(){{var a=doc.createElement('a');a.href=URL.createObjectURL(new Blob([Dstr],{{type:'application/json'}}));a.download=FILENAME;a.click();}}}}
+(function(){{var iframes=window.parent.document.querySelectorAll('iframe');for(var i=0;i<iframes.length;i++){{try{{if(iframes[i].contentWindow===window){{iframes[i].style.height='{"22px" if ultima_coleta else "0px"}';iframes[i].style.marginTop='-8px';break;}}}}catch(e){{}}}}}}})();
 </script>
 """, height=22, scrolling=False)
 
-    # ── HR separador — fora das colunas, com correção de espaço ────
-    st.markdown("""
-        <style>
-        #redes-hr-wrapper {
-            margin-top: -1rem !important;
-        }
-        </style>
-        <div id="redes-hr-wrapper">
-            <hr style='border:none;border-top:1px solid #e5e7eb;margin:0'/>
-        </div>
-    """, unsafe_allow_html=True)
- 
+    st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
+
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
         n = int(n or 0)
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(n)
- 
-    def salvar_cache_redes(dados: list):
+
+    def salvar_cache_redes(dados):
         try:
             payload = {
                 "user_id": st.session_state.user.id,
                 "minha_empresa": st.session_state.dados["minha_empresa"],
                 "concorrentes": st.session_state.dados["concorrentes"],
-                "metricas_redes": {
-                    "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                    "dados": dados,
-                },
+                "metricas_redes": {"ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"), "dados": dados},
             }
             supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache: {e}", icon="⚠️")
- 
-    def carregar_cache_redes() -> dict:
+
+    def carregar_cache_redes():
         try:
-            res = (
-                supabase.table("ci_dados")
-                .select("metricas_redes")
-                .eq("user_id", st.session_state.user.id)
-                .execute()
-            )
+            res = supabase.table("ci_dados").select("metricas_redes").eq("user_id", st.session_state.user.id).execute()
             if res.data and res.data[0].get("metricas_redes"):
                 return res.data[0]["metricas_redes"]
         except Exception:
             pass
         return {}
- 
+
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_rapidapi(handle: str) -> dict:
         handle_limpo = handle.lstrip("@").strip()
@@ -6978,30 +6848,18 @@ function abrirModal() {{
             rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
             if not rapidapi_key:
                 return {"erro": "RAPIDAPI_KEY não configurada"}
- 
-            headers = {
-                "x-rapidapi-key": rapidapi_key,
-                "x-rapidapi-host": "instagram-looter2.p.rapidapi.com",
-            }
- 
-            r = requests.get(
-                f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}",
-                headers=headers,
-                timeout=15,
-            )
+            headers = {"x-rapidapi-key": rapidapi_key, "x-rapidapi-host": "instagram-looter2.p.rapidapi.com"}
+            r = requests.get(f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}", headers=headers, timeout=15)
             data = r.json()
             user_data = data
             if isinstance(data, dict):
-                if "data" in data:   user_data = data["data"]
+                if "data" in data: user_data = data["data"]
                 elif "user" in data: user_data = data["user"]
- 
             if not user_data or "message" in user_data:
                 return {"erro": user_data.get("message", "Perfil não encontrado")}
- 
-            seg         = int(user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count") or 0)
+            seg = int(user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count") or 0)
             total_posts = int(user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count") or 0)
-            pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
- 
+            pk = str(user_data.get("pk") or user_data.get("id") or "").strip()
             posts_data = []
             if pk:
                 for endpoint in [
@@ -7009,98 +6867,52 @@ function abrirModal() {{
                     f"https://instagram-looter2.p.rapidapi.com/user-medias?id={pk}&count=12",
                 ]:
                     try:
-                        rp    = requests.get(endpoint, headers=headers, timeout=15)
-                        pr    = rp.json()
+                        rp = requests.get(endpoint, headers=headers, timeout=15)
+                        pr = rp.json()
                         items = pr if isinstance(pr, list) else pr.get("items", [])
                         if items:
                             for p in items[:12]:
-                                likes    = int(p.get("like_count") or 0)
+                                likes = int(p.get("like_count") or 0)
                                 comments = int(p.get("comment_count") or 0)
-                                thumb    = ""
+                                thumb = ""
                                 if p.get("image_versions2"):
                                     cands = p["image_versions2"].get("candidates", [])
                                     if cands: thumb = cands[-1].get("url", "")
                                 elif p.get("thumbnail_url"):
                                     thumb = p["thumbnail_url"]
-                                caption  = ""
+                                caption = ""
                                 if p.get("caption"):
-                                    caption = (
-                                        p["caption"].get("text", "")
-                                        if isinstance(p["caption"], dict)
-                                        else str(p["caption"])
-                                    )[:500]
+                                    caption = (p["caption"].get("text", "") if isinstance(p["caption"], dict) else str(p["caption"]))[:500]
                                 taken_at = p.get("taken_at", 0)
                                 date_str = ""
                                 if taken_at:
-                                    try:
-                                        date_str = datetime.datetime.fromtimestamp(taken_at).strftime("%d/%m/%Y")
-                                    except Exception:
-                                        pass
-                                # URL direta do post
+                                    try: date_str = datetime.datetime.fromtimestamp(taken_at).strftime("%d/%m/%Y")
+                                    except: pass
                                 shortcode = p.get("code") or p.get("shortcode") or ""
-                                post_url  = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
-
-                                # Tipo de mídia: 1=foto, 2=vídeo/reel, 8=carrossel
+                                post_url = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
                                 media_type = p.get("media_type", 1)
                                 is_reel = media_type == 2
-
-                                # URL do vídeo (Reel ou Vídeo normal)
                                 video_url = ""
                                 if is_reel:
-                                    video_url = (
-                                        p.get("video_url")
-                                        or (p.get("video_versions") or [{}])[0].get("url", "")
-                                        or ""
-                                    )
-
+                                    video_url = p.get("video_url") or (p.get("video_versions") or [{}])[0].get("url", "") or ""
                                 carousel_imgs = []
                                 if media_type == 8 and p.get("carousel_media"):
                                     for slide in p["carousel_media"]:
                                         cands = slide.get("image_versions2", {}).get("candidates", [])
-                                        if cands:
-                                            carousel_imgs.append(cands[-1].get("url", ""))
-
-                                posts_data.append({
-                                    "likes":          likes,
-                                    "comments":       comments,
-                                    "thumb":          thumb,
-                                    "caption":        caption,
-                                    "date":           date_str,
-                                    "is_video":       is_reel,
-                                    "media_type":     media_type,
-                                    "video_url":      video_url,
-                                    "post_url":       post_url,
-                                    "shortcode":      shortcode,
-                                    "carousel_imgs":  carousel_imgs,
-                                })
+                                        if cands: carousel_imgs.append(cands[-1].get("url", ""))
+                                posts_data.append({"likes": likes, "comments": comments, "thumb": thumb, "caption": caption, "date": date_str, "is_video": is_reel, "media_type": media_type, "video_url": video_url, "post_url": post_url, "shortcode": shortcode, "carousel_imgs": carousel_imgs})
                             break
-                    except Exception:
-                        continue
- 
+                    except: continue
             if posts_data:
                 eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
-                eng_pct   = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
+                eng_pct = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
             else:
-                eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
+                eng_pct = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
- 
-            return {
-                "handle":       "@" + handle_limpo,
-                "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
-                "seguidores":   seg,
-                "seguindo":     int(user_data.get("following_count") or 0),
-                "total_posts":  total_posts,
-                "bio":          (user_data.get("biography") or "")[:120],
-                "is_verified":  user_data.get("is_verified", False),
-                "eng_medio":    round(eng_medio, 1),
-                "eng_pct":      eng_pct,
-                "posts":        posts_data,
-                "fonte":        "rapidapi",
-                "erro":         None,
-            }
+            return {"handle": "@" + handle_limpo, "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo), "seguidores": seg, "seguindo": int(user_data.get("following_count") or 0), "total_posts": total_posts, "bio": (user_data.get("biography") or "")[:120], "is_verified": user_data.get("is_verified", False), "eng_medio": round(eng_medio, 1), "eng_pct": eng_pct, "posts": posts_data, "fonte": "rapidapi", "erro": None}
         except Exception as e:
             return {"erro": str(e)}
- 
+
     # ── Lista de perfis ─────────────────────────────────────────────
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
@@ -7108,16 +6920,16 @@ function abrirModal() {{
     for i, c in enumerate(concorrentes):
         if c.get("instagram") and c["instagram"] not in ("@", ""):
             todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c["instagram"], "tipo": "concorrente"})
- 
+
     if not todas:
         st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
         st.stop()
- 
+
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
- 
+
     cache = carregar_cache_redes()
- 
+
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
@@ -7126,1219 +6938,751 @@ function abrirModal() {{
                 r = coletar_rapidapi(e["instagram"])
                 resultados_lista.append({**e, **(r or {"erro": "Sem resposta"})})
         salvar_cache_redes(resultados_lista)
-        cache = {
-            "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "dados": resultados_lista,
-        }
+        cache = {"ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"), "dados": resultados_lista}
         st.toast("✅ Dados coletados e salvos!", icon="✅")
- 
+
     ok = []
     if cache.get("dados"):
-        ok    = [r for r in cache["dados"] if not r.get("erro")]
-        erros = [r for r in cache["dados"] if r.get("erro")]
-        for r in erros:
+        ok = [r for r in cache["dados"] if not r.get("erro")]
+        for r in [x for x in cache["dados"] if x.get("erro")]:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
- 
-    # ── Estado de navegação ─────────────────────────────────────────
-    if "redes_main_tab" not in st.session_state:
-        st.session_state.redes_main_tab = "perfis"
-    if "redes_aba_ativa" not in st.session_state:
-        st.session_state.redes_aba_ativa = 0
- 
-    # ── Ghost buttons — abas principais ────────────────────────────
-    st.markdown("""
-    <style>
-    .st-key-_redes_ghost_tab_perfis_,
-    .st-key-_redes_ghost_tab_analise_ {
-        position: fixed !important; top: -9999px !important; left: -9999px !important;
-        width: 0 !important; height: 0 !important; overflow: hidden !important;
-        opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; display: none !important;
-    }
-    .stElementContainer:has(.st-key-_redes_ghost_tab_perfis_),
-    .stElementContainer:has(.st-key-_redes_ghost_tab_analise_) {
-        display: none !important; height: 0 !important; min-height: 0 !important;
-        max-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
- 
-    if st.button("perfis_tab", key="_redes_ghost_tab_perfis_"):
-        st.session_state.redes_main_tab = "perfis"
-        st.rerun()
-    if st.button("analise_tab", key="_redes_ghost_tab_analise_"):
-        st.session_state.redes_main_tab = "analise"
-        st.rerun()
- 
-    # ── Ghost buttons — abas de empresa ────────────────────────────
-    aba_empresa_ghost_css = []
-    for i in range(len(ok)):
-        k = f"btn_redes_aba_{i}"
-        aba_empresa_ghost_css.append(f"""
-        .st-key-{k} {{
-            position:fixed !important; top:-9999px !important; left:-9999px !important;
-            width:0 !important; height:0 !important; overflow:hidden !important;
-            opacity:0 !important; pointer-events:none !important; display:none !important;
-        }}
-        .stElementContainer:has(.st-key-{k}) {{
-            display:none !important; height:0 !important; min-height:0 !important;
-            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-        }}
-        """)
-    if aba_empresa_ghost_css:
-        st.markdown(f"<style>{''.join(aba_empresa_ghost_css)}</style>", unsafe_allow_html=True)
- 
-    for i in range(len(ok)):
-        if st.button(f"redes_aba_{i}", key=f"btn_redes_aba_{i}"):
-            st.session_state.redes_aba_ativa = i
-            st.rerun()
- 
-    main_tab = st.session_state.redes_main_tab
- 
-    # ══════════════════════════════════════════════════════════════════
-    # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
-    # ══════════════════════════════════════════════════════════════════
- 
-    components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.nav-bar {{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:12px;
-    width:100%;
-}}
-.nav-item {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:14px;
-    padding:16px 20px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    gap:14px;
-    transition:all 0.15s;
-    position:relative;
-    overflow:hidden;
-}}
-.nav-item:hover {{
-    border-color:#3a9fd6;
-    box-shadow:0 2px 12px rgba(58,159,214,0.12);
-}}
-.nav-item.active {{
-    background:#0e2a47;
-    border-color:#0e2a47;
-    box-shadow:0 4px 20px rgba(14,42,71,0.22);
-}}
-.nav-item.active::after {{
-    content:'';
-    position:absolute;
-    bottom:0;left:0;right:0;
-    height:3px;
-    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
-    border-radius:0 0 14px 14px;
-}}
-.nav-icon {{
-    width:40px;height:40px;border-radius:10px;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-    background:#f3f4f6;
-    transition:background 0.15s;
-}}
-.nav-item.active .nav-icon {{
-    background:rgba(255,255,255,0.12);
-}}
-.nav-icon svg {{ width:20px;height:20px; }}
-.nav-content {{ flex:1;min-width:0; }}
-.nav-title {{
-    font-size:15px;font-weight:700;color:#1a2e4a;
-    display:block;margin-bottom:2px;
-}}
-.nav-item.active .nav-title {{ color:#ffffff; }}
-.nav-sub {{
-    font-size:12px;color:#9ca3af;
-}}
-.nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
-</style>
-<div class="nav-bar">
-    <div class="nav-item {'active' if main_tab == 'perfis' else ''}" onclick="triggerTab('perfis_tab')">
-        <div class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-        </div>
-        <div class="nav-content">
-            <span class="nav-title">Perfis configurados</span>
-            <span class="nav-sub">Visualize e analise cada perfil individualmente</span>
-        </div>
-    </div>
-    <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('analise_tab')">
-        <div class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </svg>
-        </div>
-        <div class="nav-content">
-            <span class="nav-title">Análise de IA</span>
-            <span class="nav-sub">Relatório comparativo completo</span>
-        </div>
-    </div>
-</div>
-<script>
-function triggerTab(label) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
-}}
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{
-          if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = '90px';
-            iframes[i].style.marginTop = '-10px';
-            break;
-          }}
-        }} catch(e) {{}}
-    }}
-}})();
-</script>
-""", height=90, scrolling=False)
- 
-    # ══════════════════════════════════════════════════════════════════
-    # ABA: PERFIS CONFIGURADOS
-    # ══════════════════════════════════════════════════════════════════
- 
-    if main_tab == "perfis":
- 
-        if not ok:
-            st.markdown("""
-            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
-                        padding:48px 32px;text-align:center;margin-top:8px'>
-                <div style='font-size:32px;margin-bottom:12px'>📱</div>
-                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
-                <div style='font-size:14px;color:#9ca3af'>Clique em <b>Coletar dados</b> para buscar os dados do Instagram.</div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.stop()
- 
-        aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
- 
-        # ── Cards de empresa no topo ─────────────────────────────────
-        empresas_redes_json = []
-        for i, r in enumerate(ok):
-            is_minha = r.get("tipo") == "minha"
-            cor = get_minha_empresa_color() if is_minha else get_concorrente_color(i)
-            empresas_redes_json.append({
-                "i": i,
-                "nome": r["nome"],
-                "tipo": r.get("tipo", "concorrente"),
-                "handle": r.get("handle", ""),
-                "is_minha": is_minha,
-                "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
-                "cor": cor,
-            })
- 
-        empresas_redes_str = json.dumps(empresas_redes_json, ensure_ascii=False)
- 
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.main-wrap {{
-    background:#d2dde9;
-    border:1px solid #e5e7eb;
-    border-radius:16px;
-    overflow:hidden;
-    margin-bottom:0;
-}}
-.cards-grid {{
-    display:grid;
-    grid-template-columns: repeat(3,1fr);
-    gap:15px;
-    padding:15px;
-}}
-.emp-card {{
-    background:#f9fafb;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    padding:16px;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    cursor:pointer;
-    transition:all 0.15s;
-    position:relative;
-}}
-.emp-card:hover {{
-    border-color:#3a9fd6;
-    background:#fff;
-    box-shadow:0 2px 10px rgba(58,159,214,0.1);
-}}
-.emp-card.active {{
-    background:#fff;
-    border: 2px solid #3b82f6;
-}}
-.emp-icon {{
-    width:44px; height:44px; border-radius:10px;
-    background:#e9eef5;
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-}}
-.emp-card.active .emp-icon {{ background:#dbeafe; }}
-.emp-icon svg {{ width:22px; height:22px; }}
-.emp-info {{ flex:1; min-width:0; }}
-.emp-nome {{
-    font-size:14px; font-weight:700; color:#1a2e4a;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:4px;
-}}
-.emp-sep {{ color: #d1d5db; font-weight: 400; }}
-.emp-handle-inline {{ font-size: 13px; font-weight: 400; color: #9ca3af; }}
-.badge-minha {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#f0fdf4; color:#15803d;
-    border:1px solid #bbf7d0;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700;
-}}
-.badge-conc {{
-    display:inline-flex; align-items:center; gap:5px;
-    background:#eff6ff; color:#1d4ed8;
-    border:1px solid #bfdbfe;
-    padding:3px 10px; border-radius:20px;
-    font-size:11px; font-weight:700;
-}}
-</style>
-<div class="main-wrap">
-    <div class="cards-grid" id="cards-grid"></div>
-</div>
-<script>
-var EMPRESAS = {empresas_redes_str};
-var ABA_ATIVA = {aba_ativa};
-function buildUI() {{
-    var grid = document.getElementById('cards-grid');
-    grid.innerHTML = '';
-    EMPRESAS.forEach(function(e) {{
-        var card = document.createElement('div');
-        card.className = 'emp-card' + (e.i === ABA_ATIVA ? ' active' : '');
-        card.id = 'emp_card_' + e.i;
-        var badgeHtml = e.is_minha
-            ? '<span class="badge-minha">Minha empresa</span>'
-            : '<span class="badge-conc">Concorrente</span>';
-        card.innerHTML =
-            '<div class="emp-icon">'
-            + '<svg viewBox="0 0 24 24" fill="none" stroke="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
-            + '<rect x="2" y="2" width="20" height="20" rx="5"/>'
-            + '<circle cx="12" cy="12" r="4.5" stroke-width="1.5" fill="none"/>'
-            + '<circle cx="17.5" cy="6.5" r="1.2" fill="' + (e.i === ABA_ATIVA ? '#3b82f6' : '#64748b') + '"/>'
-            + '</svg>'
-            + '</div>'
-            + '<div class="emp-info">'
-            + '<div class="emp-nome">' + e.nome + (e.handle ? ' <span class="emp-sep">|</span> <span class="emp-handle-inline">' + e.handle + '</span>' : '') + '</div>'
-            + badgeHtml
-            + '</div>';
-        card.addEventListener('click', function() {{ selectAba(e.i); }});
-        grid.appendChild(card);
-    }});
-    syncHeight();
-}}
-function selectAba(i) {{
-    ABA_ATIVA = i;
-    document.querySelectorAll('.emp-card').forEach(function(c) {{ c.classList.remove('active'); }});
-    var card = document.getElementById('emp_card_' + i);
-    if (card) card.classList.add('active');
-    triggerBtn('redes_aba_' + i);
-}}
-function triggerBtn(label) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
-}}
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 2) + 'px';
-            frames[i].style.marginTop = '-23px';
-            break;
-        }} }} catch(e) {{}}
-    }}
-}}
-buildUI();
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
-</script>
-""", height=100, scrolling=False)
- 
-        # ── Dados do perfil ativo ────────────────────────────────────
-        r = ok[aba_ativa]
-        is_minha  = r.get("tipo") == "minha"
-        badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
-        badge_txt = "#1d4ed8" if is_minha else "#6b7280"
-        badge_brd = "#bfdbfe" if is_minha else "#e5e7eb"
-        badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
-        cor = get_avatar_color(aba_ativa)
-        bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ").replace('"', "&quot;").replace("'", "&#39;")
-        posts_list = r.get("posts", [])
- 
-        seg_fmt   = fmt_num(r.get("seguidores", 0))
-        posts_fmt = fmt_num(r.get("total_posts", 0))
-        handle_clean = (r.get("handle") or "").lstrip("@")
-        ig_url = f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#"
-        avatar_letras = gerar_avatar(r["nome"])
- 
-        # ── Estado de subtab ────────────────────────────────────────
-        redes_subtab_key = f"redes_subtab_{aba_ativa}"
-        if redes_subtab_key not in st.session_state:
-            st.session_state[redes_subtab_key] = "postagens"
- 
-        subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
- 
-        # ── Ghost buttons subtabs ───────────────────────────────────
-        for sub in ["postagens", "ia"]:
-            ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
-            st.markdown(f"""
-            <style>
-            .st-key-{ghost_k} {{
-                position:fixed !important; top:-9999px !important; left:-9999px !important;
-                width:0 !important; height:0 !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important; display:none !important;
-            }}
-            .stElementContainer:has(.st-key-{ghost_k}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-            if st.button(f"redes_sub_{aba_ativa}_{sub}", key=ghost_k):
-                st.session_state[redes_subtab_key] = sub
-                st.rerun()
- 
-        # ── Ghost button bio IA ─────────────────────────────────────
-        chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
-        if chave_bio_ia not in st.session_state:
-            st.session_state[chave_bio_ia] = ""
- 
-        st.markdown(f"""
-        <style>
-        .st-key-btn_bio_ia_{aba_ativa} {{
-            position: fixed !important; top: -9999px !important; left: -9999px !important;
-            width: 1px !important; height: 1px !important; overflow: hidden !important;
-            opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
- 
-        analisar_bio = st.button(
-            f"__bio_{aba_ativa}__",
-            key=f"btn_bio_ia_{aba_ativa}",
-        )
-        if analisar_bio:
-            if gemini_model is None:
-                st.session_state[chave_bio_ia] = "Configure GEMINI_API_KEY nos secrets."
-            else:
-                with st.spinner("Analisando bio…"):
-                    try:
-                        prompt_bio = f"""
-Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
- 
-Bio: "{bio_txt}"
-Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
-Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
- 
+
+    # ── Estado via query_params (sem ghost buttons) ─────────────────
+    # main_tab: "perfis" | "analise"
+    # aba_ativa: índice int
+    # subtab: "postagens" | "ia"
+    # acao_ia: "" | "bio" | "post_N" | "criativo" | "copy" | "geral" | "comparativo"
+
+    params = st.query_params
+    main_tab   = params.get("rt", "perfis")
+    aba_ativa  = int(params.get("ra", 0))
+    subtab     = params.get("rs", "postagens")
+    acao_ia    = params.get("ria", "")
+
+    if ok:
+        aba_ativa = min(aba_ativa, len(ok) - 1)
+
+    # ── Processar ações de IA vindas do iframe via query_params ─────
+    if acao_ia and ok:
+        r_ia = ok[aba_ativa] if aba_ativa < len(ok) else None
+        if r_ia:
+            posts_list_ia = r_ia.get("posts", [])
+
+            # Bio
+            if acao_ia == "bio":
+                chave = f"ia_bio_{r_ia.get('handle','').replace('@','')}"
+                bio_txt_ia = (r_ia.get("bio") or "")
+                if gemini_model is None:
+                    st.session_state[chave] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando bio…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
+Bio: "{bio_txt_ia}"
+Perfil: {r_ia.get('handle','')} — {r_ia.get('nome_exibido','')}
+Seguidores: {r_ia.get('seguidores',0)} | Engajamento: {r_ia.get('eng_pct',0):.2f}%
 Responda com:
 ### Posicionamento
 Qual é o posicionamento transmitido pela bio?
- 
 ### Pontos Fortes
 (2 pontos positivos da bio)
- 
 ### O que melhorar
 (2 sugestões concretas de melhoria)
- 
 ### Bio sugerida
-Escreva uma versão melhorada da bio (máx. 150 caracteres).
-"""
-                        resp = gemini_model.generate_content(prompt_bio)
-                        st.session_state[chave_bio_ia] = resp.text
-                        st.rerun()
-                    except Exception as e:
-                        st.session_state[chave_bio_ia] = f"Erro: {e}"
-                        st.rerun()
- 
-        bio_resultado = st.session_state.get(chave_bio_ia, "")
-        bio_resultado_html = bio_resultado.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>") if bio_resultado else ""
- 
-# ══════════════════════════════════════════════════════════════
-        # IFRAME UNIFICADO: header + bio + tabs + conteúdo
-        # ══════════════════════════════════════════════════════════════
+Escreva uma versão melhorada da bio (máx. 150 caracteres).""")
+                            st.session_state[chave] = resp.text
+                        except Exception as e:
+                            st.session_state[chave] = f"Erro: {e}"
 
-        if subtab_atual == "postagens":
-            posts_col_key = f"posts_cols_{aba_ativa}"
-            if posts_col_key not in st.session_state:
-                st.session_state[posts_col_key] = 4
-            n_cols_posts = st.session_state.get(posts_col_key, 4)
-
-            ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
-            st.markdown(f"""
-            <style>
-            .st-key-{ghost_toggle_key} {{
-                position:fixed !important; top:-9999px !important; left:-9999px !important;
-                width:0 !important; height:0 !important; overflow:hidden !important;
-                opacity:0 !important; pointer-events:none !important; display:none !important;
-            }}
-            .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
-                display:none !important; height:0 !important; min-height:0 !important;
-                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
-
-            if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
-                st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
-                st.rerun()
-
-            for jp in range(len(posts_list)):
-                ghost_post_ia_key = f"btn_post_ia_{aba_ativa}_{jp}"
-                st.markdown(f"""
-                <style>
-                .st-key-{ghost_post_ia_key} {{
-                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                    width:0 !important; height:0 !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important; display:none !important;
-                }}
-                .stElementContainer:has(.st-key-{ghost_post_ia_key}) {{
-                    display:none !important; height:0 !important; min-height:0 !important;
-                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
-                if st.button(f"post_ia_{aba_ativa}_{jp}", key=ghost_post_ia_key):
-                    chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
-                    p_data = posts_list[jp]
+            # Post individual
+            elif acao_ia.startswith("post_"):
+                jp = int(acao_ia.split("_")[1])
+                chave = f"ia_post_{aba_ativa}_{jp}"
+                if jp < len(posts_list_ia):
+                    p_data = posts_list_ia[jp]
                     if gemini_model is None:
-                        st.session_state[chave_post_ia] = "Configure GEMINI_API_KEY nos secrets."
+                        st.session_state[chave] = "Configure GEMINI_API_KEY nos secrets."
                     else:
                         with st.spinner(f"Analisando postagem {jp+1}…"):
                             try:
-                                resp_post = gemini_model.generate_content(f"""Você é especialista em redes sociais e copywriting.
+                                resp = gemini_model.generate_content(f"""Você é especialista em redes sociais e copywriting.
 Analise esta postagem do Instagram e dê feedback estratégico em português.
-
-Perfil: {r.get('handle','')} — {r.get('nome','')}
-Data: {p_data.get('date','')}
-Tipo: {'Vídeo' if p_data.get('is_video') else 'Foto'}
-Curtidas: {p_data.get('likes',0)} | Comentários: {p_data.get('comments',0)} | Engajamento total: {p_data.get('likes',0)+p_data.get('comments',0)}
+Perfil: {r_ia.get('handle','')} — {r_ia.get('nome','')}
+Data: {p_data.get('date','')} | Tipo: {'Vídeo' if p_data.get('is_video') else 'Foto'}
+Curtidas: {p_data.get('likes',0)} | Comentários: {p_data.get('comments',0)}
 Legenda: {p_data.get('caption','') or 'Sem legenda'}
-
 ### 🎯 Objetivo da Postagem
-Qual parece ser o objetivo desta publicação?
-
 ### ✍️ Análise da Legenda
-Pontos fortes e fracos do copy utilizado.
-
 ### 📊 Desempenho
-Como interpretar as métricas desta postagem?
+### 💡 Sugestões de Melhoria""")
+                                st.session_state[chave] = resp.text
+                            except Exception as e:
+                                st.session_state[chave] = f"Erro: {e}"
 
-### 💡 Sugestões de Melhoria
-2 ações concretas para aumentar o engajamento.
-""")
-                                st.session_state[chave_post_ia] = resp_post.text
-                                st.rerun()
-                            except Exception as e_post:
-                                st.session_state[chave_post_ia] = f"Erro: {e_post}"
-                                st.rerun()
+            # Criativo
+            elif acao_ia == "criativo":
+                chave = f"ia_criativo_{r_ia['handle']}"
+                resumo = "\n".join([f"- {p.get('date','')} | {p.get('likes',0)}❤️ {p.get('comments',0)}💬 | {p.get('caption','')[:80]}" for p in posts_list_ia[:12]]) or "Sem posts."
+                if gemini_model is None:
+                    st.session_state[chave] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando criativos…"):
+                        try:
+                            resp = gemini_model.generate_content(f"Perfil: {r_ia.get('handle','')} | Seg: {r_ia.get('seguidores',0)} | Eng: {r_ia.get('eng_pct',0):.2f}%\nPosts:\n{resumo}\n\nAnalise os CRIATIVOS deste perfil em português:\n### Análise de Criativo\n**Estilo visual:** ...\n**Formatos mais usados:** ...\n**Posts com melhor desempenho:** ...\n**Pontos fortes:** (3)\n**O que melhorar:** (2)")
+                            st.session_state[chave] = resp.text
+                        except Exception as e:
+                            st.session_state[chave] = f"Erro: {e}"
 
-            import json as _json_posts
-            posts_json_data = []
-            for jp, p in enumerate(posts_list):
-                chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
-                resultado_ia = st.session_state.get(chave_post_ia, "")
-                resultado_ia_html = resultado_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado_ia else ""
-                handle_clean_post = (r.get("handle") or "").lstrip("@")
-                post_url = p.get("post_url", "")
-                shortcode = p.get("shortcode", "")
-                if not post_url and shortcode:
-                    post_url = f"https://www.instagram.com/p/{shortcode}/"
-                ig_post_url = post_url if post_url else ""
+            # Copy
+            elif acao_ia == "copy":
+                chave = f"ia_copy_{r_ia['handle']}"
+                resumo = "\n".join([f"- {p.get('caption','')[:100]}" for p in posts_list_ia[:12]]) or "Sem posts."
+                if gemini_model is None:
+                    st.session_state[chave] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando copies…"):
+                        try:
+                            resp = gemini_model.generate_content(f"Perfil: {r_ia.get('handle','')} | Seg: {r_ia.get('seguidores',0)}\nLegendas:\n{resumo}\n\nAnalise as LEGENDAS em português:\n### Análise de Copy\n**Tom de voz:** ...\n**Uso de CTAs:** ...\n**Hashtags:** ...\n**Pontos fortes:** (3)\n**O que melhorar:** (2)")
+                            st.session_state[chave] = resp.text
+                        except Exception as e:
+                            st.session_state[chave] = f"Erro: {e}"
 
-                posts_json_data.append({
-                    "jp":             jp,
-                    "thumb":          p.get("thumb", ""),
-                    "caption":        p.get("caption", ""),
-                    "date":           p.get("date", ""),
-                    "likes":          p.get("likes", 0),
-                    "comments":       p.get("comments", 0),
-                    "eng":            p.get("likes", 0) + p.get("comments", 0),
-                    "is_video":       p.get("is_video", False),
-                    "video_url":      p.get("video_url", ""),
-                    "ig_url":         ig_post_url,
-                    "resultado_ia":   resultado_ia_html,
-                    "tem_ia":         bool(resultado_ia),
-                    "media_type":     p.get("media_type", 1),
-                    "carousel_imgs":  p.get("carousel_imgs", []),
-                })
+            # Geral
+            elif acao_ia == "geral":
+                chave = f"ia_geral_{r_ia['handle']}"
+                resumo = "\n".join([f"- {p.get('date','')} | {p.get('likes',0)}❤️ | {p.get('caption','')[:80]}" for p in posts_list_ia[:12]]) or "Sem posts."
+                if gemini_model is None:
+                    st.session_state[chave] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Gerando análise geral…"):
+                        try:
+                            resp = gemini_model.generate_content(f"Perfil: {r_ia.get('handle','')} | Bio: {r_ia.get('bio','')} | Seg: {r_ia.get('seguidores',0)} | Eng: {r_ia.get('eng_pct',0):.2f}%\nPosts:\n{resumo}\n\nAnálise geral estratégica em português:\n### Análise Geral\n**Posicionamento:** ...\n**Frequência:** ...\n### Pontos Fortes (3)\n### Pontos de Atenção (2)\n### Recomendações Estratégicas (3 ações)")
+                            st.session_state[chave] = resp.text
+                        except Exception as e:
+                            st.session_state[chave] = f"Erro: {e}"
 
-            posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
-            r_seg_val = r.get("seguidores", 0)
+            # Comparativo
+            elif acao_ia == "comparativo":
+                chave = "ia_redes_comparativo"
+                resumos = []
+                for rr in ok:
+                    resumos.append(f"Empresa: {rr['nome']} ({rr.get('handle','')})\nBio: {rr.get('bio','')}\nSeg: {rr.get('seguidores',0)} | Posts: {rr.get('total_posts',0)} | Eng: {rr.get('eng_pct',0):.2f}%")
+                if gemini_model is None:
+                    st.session_state[chave] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Gerando análise comparativa…"):
+                        try:
+                            resp = gemini_model.generate_content(f"Compare os perfis do Instagram abaixo e gere análise competitiva em português.\n\n{'---'.join(resumos)}\n\n### 🏆 Ranking\n### 📊 Comparativo de Métricas\n### 🎯 Estratégias\n### ✍️ Tom de Voz\n### ⚔️ Análise Competitiva\n### 💡 Recomendações (3)")
+                            st.session_state[chave] = resp.text
+                        except Exception as e:
+                            st.session_state[chave] = f"Erro: {e}"
 
-            n_total     = len(posts_list)
-            n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
-            n_videos    = sum(1 for p in posts_list if p.get("is_video"))
-            total_likes = sum(p.get("likes", 0) for p in posts_list)
-            total_coms  = sum(p.get("comments", 0) for p in posts_list)
-            best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
+        # Limpar ação e rerun
+        st.query_params["ria"] = ""
+        st.rerun()
 
-            def _fmt(n):
-                n = int(n or 0)
-                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
-                if n >= 1_000:     return f"{n/1_000:.1f}K"
-                return str(n)
+    # ── Montar payload completo para o iframe ───────────────────────
+    if not ok:
+        st.markdown("""
+        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
+            <div style='font-size:32px;margin-bottom:12px'>📱</div>
+            <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum dado carregado ainda</div>
+            <div style='font-size:14px;color:#9ca3af'>Clique em <b>Coletar dados</b> para buscar os dados do Instagram.</div>
+        </div>""", unsafe_allow_html=True)
+        st.stop()
 
-            # ── ÚNICO components.html: perfil + postagens ──────────────
-            components.html(f"""
-<!DOCTYPE html><html>
+    # Montar dados completos com resultados de IA já incluídos
+    perfis_payload = []
+    for i, r in enumerate(ok):
+        is_minha = r.get("tipo") == "minha"
+        cor = get_minha_empresa_color() if is_minha else get_concorrente_color(i)
+        avatar = gerar_avatar(r["nome"])
+        handle_clean = (r.get("handle") or "").lstrip("@")
+
+        # IA resultados deste perfil
+        chave_bio    = f"ia_bio_{r.get('handle','').replace('@','')}"
+        chave_cria   = f"ia_criativo_{r['handle']}"
+        chave_copy   = f"ia_copy_{r['handle']}"
+        chave_geral  = f"ia_geral_{r['handle']}"
+
+        posts_payload = []
+        for jp, p in enumerate(r.get("posts", [])):
+            chave_post = f"ia_post_{i}_{jp}"
+            res_ia = st.session_state.get(chave_post, "")
+            res_ia_html = res_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if res_ia else ""
+            post_url = p.get("post_url","") or (f"https://www.instagram.com/p/{p.get('shortcode','')}/" if p.get("shortcode") else "")
+            posts_payload.append({
+                "jp": jp, "thumb": p.get("thumb",""), "caption": p.get("caption",""),
+                "date": p.get("date",""), "likes": p.get("likes",0), "comments": p.get("comments",0),
+                "eng": p.get("likes",0)+p.get("comments",0), "is_video": p.get("is_video",False),
+                "video_url": p.get("video_url",""), "ig_url": post_url,
+                "resultado_ia": res_ia_html, "tem_ia": bool(res_ia),
+                "media_type": p.get("media_type",1), "carousel_imgs": p.get("carousel_imgs",[]),
+            })
+
+        def _fmt(n):
+            n = int(n or 0)
+            if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+            if n >= 1_000: return f"{n/1_000:.1f}K"
+            return str(n)
+
+        bio_res = st.session_state.get(chave_bio,"")
+        bio_res_html = bio_res.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if bio_res else ""
+
+        perfis_payload.append({
+            "i": i,
+            "nome": r["nome"],
+            "handle": r.get("handle",""),
+            "tipo": r.get("tipo","concorrente"),
+            "is_minha": is_minha,
+            "cor": cor,
+            "avatar": avatar,
+            "ig_url": f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#",
+            "seg_fmt": _fmt(r.get("seguidores",0)),
+            "posts_fmt": _fmt(r.get("total_posts",0)),
+            "bio": (r.get("bio") or "").replace("<","&lt;").replace(">","&gt;").replace('"',"&quot;").replace("'","&#39;").replace("\n"," "),
+            "bio_resultado_html": bio_res_html,
+            "badge_lbl": "Minha Empresa" if is_minha else "Concorrente",
+            "badge_bg": "#eff6ff" if is_minha else "#f3f4f6",
+            "badge_txt": "#1d4ed8" if is_minha else "#6b7280",
+            "badge_brd": "#bfdbfe" if is_minha else "#e5e7eb",
+            "posts": posts_payload,
+            "ia_criativo": st.session_state.get(chave_cria,"").replace("\n","<br>"),
+            "ia_copy":     st.session_state.get(chave_copy,"").replace("\n","<br>"),
+            "ia_geral":    st.session_state.get(chave_geral,"").replace("\n","<br>"),
+            "seguidores":  r.get("seguidores",0),
+        })
+
+    comp_html_redes = st.session_state.get("ia_redes_comparativo","").replace("\n","<br>")
+
+    payload_json = json.dumps({
+        "perfis": perfis_payload,
+        "main_tab": main_tab,
+        "aba_ativa": aba_ativa,
+        "subtab": subtab,
+        "comp_html": comp_html_redes,
+    }, ensure_ascii=False)
+
+    # ── ÚNICO iframe — toda a UI ────────────────────────────────────
+    components.html(f"""<!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:8px;}}
+body{{padding-bottom:12px;}}
 
-/* ── PERFIL CARD ── */
-.perfil-card {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:14px 14px 0 0;
-    overflow:hidden;
-}}
-.perfil-header {{
-    display:flex; align-items:center; gap:16px;
-    padding:18px 22px 16px; border-bottom:1px solid #f3f4f6;
-}}
-.avatar {{
-    width:52px; height:52px; border-radius:50%;
-    background:{cor};
-    display:flex; align-items:center; justify-content:center;
-    font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
-}}
-.info {{ flex:1; min-width:0; }}
-.nome {{ font-size:20px; font-weight:700; color:#111827; letter-spacing:-0.3px; }}
-.handle {{ font-size:14px; font-weight:400; color:#9ca3af; margin-left:6px; }}
-.badge {{
-    display:inline-block;
-    background:{badge_bg}; color:{badge_txt};
-    border:1px solid {badge_brd};
-    padding:2px 10px; border-radius:20px;
-    font-size:11px; font-weight:600; margin-top:4px;
-}}
-.divider-v {{ width:1px; height:44px; background:#e5e7eb; flex-shrink:0; margin:0 8px; }}
-.stat-wrap {{ display:flex; align-items:center; gap:24px; flex-shrink:0; }}
-.stat {{ text-align:center; }}
-.stat-num {{ font-size:22px; font-weight:800; color:#111827; }}
-.stat-lbl {{ font-size:12px; font-weight:600; color:#6b7280; text-transform:uppercase; margin-top:2px; }}
-.btn-ig {{
-    display:inline-flex; align-items:center; gap:7px;
-    background:#0e2a47; color:#fff;
-    padding:9px 18px; border-radius:9px;
-    font-size:13px; font-weight:700; text-decoration:none;
-    white-space:nowrap; flex-shrink:0; transition:background 0.15s;
-}}
-.btn-ig:hover {{ background:#1a3a5c; }}
+/* NAV */
+.nav-bar{{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-bottom:16px;}}
+.nav-item{{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all 0.15s;position:relative;overflow:hidden;}}
+.nav-item:hover{{border-color:#3a9fd6;box-shadow:0 2px 12px rgba(58,159,214,0.12);}}
+.nav-item.active{{background:#0e2a47;border-color:#0e2a47;box-shadow:0 4px 20px rgba(14,42,71,0.22);}}
+.nav-item.active::after{{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3a9fd6,#2ecc71);border-radius:0 0 14px 14px;}}
+.nav-icon{{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f3f4f6;}}
+.nav-item.active .nav-icon{{background:rgba(255,255,255,0.12);}}
+.nav-icon svg{{width:20px;height:20px;}}
+.nav-content{{flex:1;min-width:0;}}
+.nav-title{{font-size:15px;font-weight:700;color:#1a2e4a;display:block;margin-bottom:2px;}}
+.nav-item.active .nav-title{{color:#fff;}}
+.nav-sub{{font-size:12px;color:#9ca3af;}}
+.nav-item.active .nav-sub{{color:rgba(255,255,255,0.55);}}
 
-/* ── BIO ── */
-.bio-section {{
-    display:grid; grid-template-columns:15% 50% 35%;
-    border-bottom:1px solid #f3f4f6; min-height:80px;
-}}
-.bio-label-col {{
-    padding:18px 16px; border-right:1px solid #f3f4f6;
-    display:flex; align-items:center; justify-content:center; background:#fafbfc;
-}}
-.bio-label-txt {{
-    font-size:10px; font-weight:700; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:1px; text-align:center;
-}}
-.bio-left {{
-    padding:18px 20px; border-right:1px solid #f3f4f6;
-    display:flex; align-items:center;
-}}
-.bio-text {{ font-size:15px; color:#374151; line-height:1.75; }}
-.bio-empty {{ font-size:14px; color:#d1d5db; font-style:italic; }}
-.bio-right {{
-    padding:16px 20px; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:8px; background:#fafbfc;
-}}
-.btn-ia {{
-    width:100%; padding:10px 0; border:1px solid #3a9fd6; border-radius:8px;
-    background:#eff6ff; font-size:13px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-    text-align:center; line-height:1;
-}}
-.btn-ia:hover {{ background:#dbeafe; }}
-.ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.4; }}
-.bio-resultado {{
-    background:#f0fdf4; border-top:1px solid #bbf7d0;
-    padding:14px 20px; font-size:13px; color:#374151; line-height:1.75;
-    border-bottom:1px solid #f3f4f6; display:none;
-}}
-.bio-resultado.show {{ display:block; }}
-.bio-resultado-hdr {{
-    font-size:10px; font-weight:800; color:#15803d;
-    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
-}}
+/* CARDS EMPRESAS */
+.empresas-wrap{{background:#d2dde9;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;margin-bottom:16px;}}
+.cards-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:15px;}}
+.emp-card{{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;}}
+.emp-card:hover{{border-color:#3a9fd6;background:#fff;box-shadow:0 2px 10px rgba(58,159,214,0.1);}}
+.emp-card.active{{background:#fff;border:2px solid #3b82f6;}}
+.emp-icon{{width:44px;height:44px;border-radius:10px;background:#e9eef5;display:flex;align-items:center;justify-content:center;flex-shrink:0;}}
+.emp-card.active .emp-icon{{background:#dbeafe;}}
+.emp-icon svg{{width:22px;height:22px;}}
+.emp-info{{flex:1;min-width:0;}}
+.emp-nome{{font-size:14px;font-weight:700;color:#1a2e4a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}}
+.badge-minha{{display:inline-flex;align-items:center;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
+.badge-conc{{display:inline-flex;align-items:center;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
 
-/* ── TABS ── */
-.tabs-bar {{ display:flex; background:#f9fafb; }}
-.tab-btn {{
-    flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af;
-    background:transparent; border:none; cursor:pointer;
-    font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent;
-    transition:all 0.15s;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-}}
-.tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
-.tab-btn.active {{
-    color:#1a2e4a; border-bottom:4px solid #3a9fd6;
-    background:#fff; font-weight:800; border-top:1px solid #e5e7eb;
-}}
-.tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
+/* PERFIL CARD */
+.perfil-card{{background:#fff;border:1px solid #e5e7eb;border-radius:14px 14px 0 0;overflow:hidden;}}
+.perfil-header{{display:flex;align-items:center;gap:16px;padding:18px 22px 16px;border-bottom:1px solid #f3f4f6;}}
+.avatar{{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;}}
+.info{{flex:1;min-width:0;}}
+.nome{{font-size:20px;font-weight:700;color:#111827;letter-spacing:-0.3px;}}
+.handle{{font-size:14px;font-weight:400;color:#9ca3af;margin-left:6px;}}
+.badge-perfil{{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-top:4px;}}
+.divider-v{{width:1px;height:44px;background:#e5e7eb;flex-shrink:0;margin:0 8px;}}
+.stat-wrap{{display:flex;align-items:center;gap:24px;flex-shrink:0;}}
+.stat{{text-align:center;}}
+.stat-num{{font-size:22px;font-weight:800;color:#111827;}}
+.stat-lbl{{font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;margin-top:2px;}}
+.btn-ig{{display:inline-flex;align-items:center;gap:7px;background:#0e2a47;color:#fff;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;transition:background 0.15s;}}
+.btn-ig:hover{{background:#1a3a5c;}}
 
-/* ── POSTAGENS ── */
-.filters-bar {{
-    display:flex; align-items:center; gap:10px;
-    padding:16px 20px;
-    border:1px solid #e5e7eb; border-top:none;
-    background:#fff; flex-wrap:wrap;
-}}
-.filter-input {{
-    flex:1; min-width:160px; max-width:260px; height:40px;
-    padding:0 14px; border:1px solid #e5e7eb; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
-    background:#fafafa; outline:none; transition:border-color 0.15s;
-}}
-.filter-input:focus {{ border-color:#3a9fd6; background:#fff; }}
-.filter-input::placeholder {{ color:#9ca3af; }}
-.filter-select {{
-    height:40px; padding:0 32px 0 12px;
-    border:1px solid #e5e7eb; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
-    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
-    -webkit-appearance:none; appearance:none; cursor:pointer; outline:none;
-}}
-.filter-select:focus {{ border-color:#3a9fd6; }}
-.col-toggle {{
-    margin-left:auto; width:40px; height:40px;
-    border:1px solid #e5e7eb; border-radius:8px;
-    background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:#6b7280; flex-shrink:0; transition:all 0.12s;
-}}
-.col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
+/* BIO */
+.bio-section{{display:grid;grid-template-columns:15% 50% 35%;border-bottom:1px solid #f3f4f6;min-height:80px;}}
+.bio-label-col{{padding:18px 16px;border-right:1px solid #f3f4f6;display:flex;align-items:center;justify-content:center;background:#fafbfc;}}
+.bio-label-txt{{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;text-align:center;}}
+.bio-left{{padding:18px 20px;border-right:1px solid #f3f4f6;display:flex;align-items:center;}}
+.bio-text{{font-size:15px;color:#374151;line-height:1.75;}}
+.bio-empty{{font-size:14px;color:#d1d5db;font-style:italic;}}
+.bio-right{{padding:16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#fafbfc;}}
+.btn-ia{{width:100%;padding:10px 0;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:13px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;text-align:center;}}
+.btn-ia:hover{{background:#dbeafe;}}
+.ia-hint{{font-size:11px;color:#9ca3af;text-align:center;line-height:1.4;}}
+.bio-resultado{{background:#f0fdf4;border-top:1px solid #bbf7d0;padding:14px 20px;font-size:13px;color:#374151;line-height:1.75;border-bottom:1px solid #f3f4f6;display:none;}}
+.bio-resultado.show{{display:block;}}
+.bio-resultado-hdr{{font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}}
 
-.stats-row {{ display:flex; gap:12px; padding:16px 0 4px; flex-wrap:wrap; }}
-.stat-card {{
-    flex:1; min-width:90px; background:#fff;
-    border:1px solid #e5e7eb; border-radius:12px;
-    padding:14px 10px; text-align:center;
-}}
-.stat-num2 {{ font-size:22px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; }}
-.stat-lbl2 {{ font-size:12px; font-weight:600; color:#9ca3af; text-transform:uppercase; }}
+/* TABS */
+.tabs-bar{{display:flex;background:#f9fafb;}}
+.tab-btn{{flex:1;padding:14px 0;font-size:14px;font-weight:700;color:#9ca3af;background:transparent;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:3px solid transparent;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;}}
+.tab-btn:hover{{color:#374151;background:#f3f4f6;}}
+.tab-btn.active{{color:#1a2e4a;border-bottom:4px solid #3a9fd6;background:#fff;font-weight:800;border-top:1px solid #e5e7eb;}}
+.tab-sep{{width:1px;background:#e5e7eb;align-self:stretch;margin:8px 0;}}
 
-.posts-grid {{ display:grid; gap:12px; margin-top:16px; }}
+/* POSTAGENS */
+.filters-bar{{display:flex;align-items:center;gap:10px;padding:16px 20px;border:1px solid #e5e7eb;border-top:none;background:#fff;flex-wrap:wrap;}}
+.filter-input{{flex:1;min-width:160px;max-width:260px;height:40px;padding:0 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#374151;background:#fafafa;outline:none;}}
+.filter-input:focus{{border-color:#3a9fd6;background:#fff;}}
+.filter-input::placeholder{{color:#9ca3af;}}
+.filter-select{{height:40px;padding:0 32px 0 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#374151;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;-webkit-appearance:none;appearance:none;cursor:pointer;outline:none;}}
+.col-toggle{{margin-left:auto;width:40px;height:40px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;flex-shrink:0;transition:all 0.12s;}}
+.col-toggle:hover{{border-color:#3a9fd6;color:#1d4ed8;background:#eff6ff;}}
+.stats-row{{display:flex;gap:12px;padding:16px 0 4px;flex-wrap:wrap;}}
+.stat-card{{flex:1;min-width:90px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 10px;text-align:center;}}
+.stat-num2{{font-size:22px;font-weight:800;color:#0f1f35;line-height:1;margin-bottom:5px;}}
+.stat-lbl2{{font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;}}
+.posts-grid{{display:grid;gap:12px;margin-top:16px;}}
+.post-card{{background:#fff;border:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;position:relative;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);transition:box-shadow 0.15s,border-color 0.15s;}}
+.post-card:hover{{border-color:#6fd1f3;box-shadow:0 4px 16px rgba(58,159,214,0.12);}}
+.thumb-wrap{{position:relative;width:100%;aspect-ratio:1/1;background:#f0f2f5;overflow:hidden;flex-shrink:0;cursor:pointer;}}
+.thumb-wrap img{{width:100%;height:100%;object-fit:cover;display:block;}}
+.thumb-fallback{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#e9eef5,#d2dde9);gap:6px;cursor:pointer;}}
+.zoom-badge{{position:absolute;bottom:8px;right:8px;color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;pointer-events:none;display:flex;align-items:center;gap:4px;}}
+.metrics-row{{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;border-bottom:1px solid #f3f4f6;background:#fafbfc;}}
+.metric-cell{{padding:8px 6px;text-align:center;border-right:1px solid #f3f4f6;}}
+.metric-cell:last-child{{border-right:none;}}
+.metric-cell-lbl{{font-size:13px;margin-bottom:2px;line-height:1;}}
+.metric-cell-val{{font-size:13px;font-weight:800;color:#111827;}}
+.metric-cell-val.eng{{color:#3a9fd6;}}
+.card-caption-wrap{{padding:10px 12px 8px;flex:1;}}
+.card-caption{{font-size:12px;color:#374151;line-height:1.55;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}}
+.card-caption.expanded{{display:block;-webkit-line-clamp:unset;}}
+.ver-copy-btn{{background:none;border:none;padding:2px 0 0;font-size:11px;font-weight:700;color:#3a9fd6;cursor:pointer;font-family:'DM Sans',sans-serif;display:block;margin-top:4px;}}
+.no-caption{{font-size:12px;color:#d1d5db;font-style:italic;}}
+.card-footer-btns{{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #f3f4f6;margin-top:auto;}}
+.footer-btn{{padding:10px 6px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:700;border:none;background:#eff6ff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.12s;text-decoration:none;color:#275f8d;}}
+.footer-btn:hover{{background:#13649a;color:#fff !important;}}
+.footer-btn.ig{{border-right:1px solid #fff;}}
+.post-ia-panel{{border-top:1px solid #bbf7d0;background:#f0fdf4;padding:12px 14px;font-size:12px;color:#374151;line-height:1.7;max-height:200px;overflow-y:auto;}}
+.post-ia-hdr{{font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}}
 
-.post-card {{
-    background:#fff; border:1px solid #e5e7eb;
-    display:flex; flex-direction:column; overflow:hidden;
-    position:relative; border-radius:14px;
-    box-shadow:0 1px 4px rgba(0,0,0,0.06);
-    transition:box-shadow 0.15s, border-color 0.15s;
-}}
-.post-card:hover {{ border-color:#6fd1f3; box-shadow:0 4px 16px rgba(58,159,214,0.12); }}
-.thumb-wrap {{
-    position:relative; width:100%; aspect-ratio:1/1;
-    background:#f0f2f5; overflow:hidden; flex-shrink:0; cursor:pointer;
-}}
-.thumb-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
-.thumb-fallback {{
-    width:100%; height:100%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:linear-gradient(135deg,#e9eef5,#d2dde9); gap:6px; cursor:pointer;
-}}
-.zoom-badge {{
-    position:absolute; bottom:8px; right:8px;
-    background:rgba(0,0,0,0.45); color:#fff;
-    font-size:10px; font-weight:600; padding:3px 8px;
-    border-radius:6px; pointer-events:none;
-    display:flex; align-items:center; gap:4px;
-}}
-.metrics-row {{
-    display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
-    border-bottom:1px solid #f3f4f6; background:#fafbfc;
-}}
-.metric-cell {{ padding:8px 6px; text-align:center; border-right:1px solid #f3f4f6; }}
-.metric-cell:last-child {{ border-right:none; }}
-.metric-cell-lbl {{ font-size:13px; margin-bottom:2px; line-height:1; }}
-.metric-cell-val {{ font-size:13px; font-weight:800; color:#111827; }}
-.metric-cell-val.eng {{ color:#3a9fd6; }}
-.card-caption-wrap {{ padding:10px 12px 8px; flex:1; }}
-.card-caption {{
-    font-size:12px; color:#374151; line-height:1.55; word-break:break-word;
-    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
-}}
-.card-caption.expanded {{ display:block; -webkit-line-clamp:unset; }}
-.ver-copy-btn {{
-    background:none; border:none; padding:2px 0 0;
-    font-size:11px; font-weight:700; color:#3a9fd6;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:block; margin-top:4px; transition:color 0.12s;
-}}
-.ver-copy-btn:hover {{ color:#065f9e; }}
-.no-caption {{ font-size:12px; color:#d1d5db; font-style:italic; }}
-.card-footer-btns {{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #f3f4f6; margin-top:auto; }}
-.footer-btn {{
-    padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px;
-    font-size:12px; font-weight:700; border:none; background:#eff6ff;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
-    text-decoration:none; color:#275f8d;
-}}
-.footer-btn:hover {{ background:#13649a; color:#ffffff !important; }}
-.footer-btn.ig {{ border-right:1px solid #ffffff; }}
-.post-ia-panel {{
-    border-top:1px solid #bbf7d0; background:#f0fdf4;
-    padding:12px 14px; font-size:12px; color:#374151; line-height:1.7;
-    max-height:200px; overflow-y:auto;
-}}
-.post-ia-hdr {{
-    font-size:10px; font-weight:800; color:#15803d;
-    text-transform:uppercase; letter-spacing:0.5px;
-    margin-bottom:6px; display:flex; align-items:center; gap:5px;
-}}
+/* IA PANELS */
+.ia-wrap{{background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;}}
+.ia-tabs{{display:flex;border-bottom:1px solid #e5e7eb;background:#f9fafb;}}
+.ia-tab{{flex:1;padding:11px 0;text-align:center;font-size:14px;font-weight:600;color:#9ca3af;cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif;transition:color 0.15s;}}
+.ia-tab:hover{{color:#374151;background:#f3f4f6;}}
+.ia-tab.active{{color:#1a2e4a;border-bottom:2px solid #3a9fd6;background:#fff;}}
+.ia-panel{{display:none;}}
+.ia-panel.active{{display:block;}}
+.ia-content{{padding:16px 18px;font-size:14px;color:#374151;line-height:1.75;}}
+.ia-empty{{padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af;}}
+.ia-gen-btn{{width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
+.ia-gen-btn:hover{{background:#dbeafe;}}
+.ia-btn-wrap{{padding:16px 18px;border-top:1px solid #f3f4f6;}}
 
-.no-posts {{
-    background:#fff; border:1px solid #e5e7eb; border-top:none;
-    border-radius:0 0 12px 12px; padding:48px 32px; text-align:center;
-}}
+/* COMPARATIVO */
+.comp-wrap{{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;}}
+.comp-hdr{{padding:18px 22px;border-bottom:1px solid #e5e7eb;}}
+.comp-title{{font-size:16px;font-weight:800;color:#1a2e4a;}}
+.comp-sub{{font-size:13px;color:#9ca3af;}}
+.comp-body{{padding:22px;font-size:14px;color:#374151;line-height:1.8;min-height:80px;}}
+.comp-empty{{text-align:center;color:#9ca3af;font-size:14px;padding:60px 24px;}}
+.comp-footer{{padding:16px 22px;border-top:1px solid #f3f4f6;background:#f9fafb;}}
+.comp-btn{{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border:none;border-radius:10px;background:#0e2a47;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
+.comp-btn:hover{{background:#1a3a5c;}}
 </style>
 </head>
 <body>
-
-<script id="posts-data" type="application/json">{posts_json_str}</script>
-
-<!-- PERFIL CARD -->
-<div class="perfil-card">
-    <div class="perfil-header">
-        <div class="avatar">{avatar_letras}</div>
-        <div class="info">
-            <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
-            <div class="badge">{badge_lbl}</div>
-        </div>
-        <div class="stat-wrap">
-            <div class="divider-v"></div>
-            <div class="stat">
-                <div class="stat-num">{seg_fmt}</div>
-                <div class="stat-lbl">Seguidores</div>
-            </div>
-            <div class="divider-v"></div>
-            <div class="stat">
-                <div class="stat-num">{posts_fmt}</div>
-                <div class="stat-lbl">Postagens</div>
-            </div>
-            <div class="divider-v"></div>
-            <a class="btn-ig" href="{ig_url}" target="_blank">Ver no Instagram</a>
-        </div>
-    </div>
-
-    <div class="bio-section">
-        <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
-        <div class="bio-left">
-            {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
-        </div>
-        <div class="bio-right">
-            <button class="btn-ia" onclick="triggerBio()">🤖 Analisar Bio</button>
-            <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
-        </div>
-    </div>
-
-    <div class="bio-resultado {'show' if bio_resultado_html else ''}" id="bio-res">
-        <div class="bio-resultado-hdr">✨ Análise de IA</div>
-        {bio_resultado_html}
-    </div>
-
-    <div class="tabs-bar">
-        <button class="tab-btn {'active' if subtab_atual == 'postagens' else ''}" onclick="triggerSub('postagens')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            Postagens
-        </button>
-        <div class="tab-sep"></div>
-        <button class="tab-btn {'active' if subtab_atual == 'ia' else ''}" onclick="triggerSub('ia')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-            </svg>
-            Análise de IA
-        </button>
-    </div>
-</div>
-
-<!-- POSTAGENS -->
-{"" if posts_list else '<div class="no-posts"><div style="font-size:28px;margin-bottom:10px">📸</div><div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px">Sem postagens disponíveis</div><div style="font-size:13px;color:#9ca3af">Colete os dados novamente para carregar as postagens.</div></div>'}
-
-{f"""
-<div class="filters-bar">
-    <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
-    <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
-        <option value="todos">Tipo (todos)</option>
-        <option value="foto">Fotos</option>
-        <option value="video">Vídeos</option>
-    </select>
-    <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
-        <option value="recentes">Mais recentes</option>
-        <option value="likes">Mais curtidas</option>
-        <option value="eng">Maior engajamento</option>
-    </select>
-    <button class="col-toggle" onclick="toggleCols()" title="Alternar colunas">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="5" height="18" rx="1"/>
-            <rect x="10" y="3" width="5" height="18" rx="1"/>
-            <rect x="17" y="3" width="5" height="18" rx="1"/>
-        </svg>
-    </button>
-</div>
-
-<div class="stats-row">
-    <div class="stat-card"><div class="stat-num2" id="stat-total">{n_total}</div><div class="stat-lbl2">Postagens</div></div>
-    <div class="stat-card"><div class="stat-num2" id="stat-fotos">{n_fotos}</div><div class="stat-lbl2">Fotos</div></div>
-    <div class="stat-card"><div class="stat-num2" id="stat-videos">{n_videos}</div><div class="stat-lbl2">Vídeos</div></div>
-    <div class="stat-card"><div class="stat-num2" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl2">Curtidas</div></div>
-    <div class="stat-card"><div class="stat-num2" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl2">Comentários</div></div>
-    <div class="stat-card"><div class="stat-num2" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl2">Melhor Engaj.</div></div>
-</div>
-
-<div class="posts-grid" id="posts-grid"></div>
-""" if posts_list else ""}
-
 <script>
-var ALL_POSTS = {posts_json_str if posts_list else "[]"};
-var N_COLS   = {n_cols_posts};
-var R_SEG    = {r_seg_val};
+var DATA = {payload_json};
+var abaAtiva = DATA.aba_ativa;
+var mainTab  = DATA.main_tab;
+var subtab   = DATA.subtab;
+var nCols    = 4;
 
-function fmtNum(n) {{
-    n = Math.round(n || 0);
-    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-    if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
-    return String(n);
+function fmtNum(n){{n=Math.round(n||0);if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return String(n);}}
+
+// ── Navegar sem rerun: apenas troca abaAtiva localmente ──────────
+function selectEmpresa(i){{
+    abaAtiva = i;
+    // Atualiza cards
+    document.querySelectorAll('.emp-card').forEach(function(c){{c.classList.remove('active');}});
+    var card = document.getElementById('emp_card_'+i);
+    if(card) card.classList.add('active');
+    // Re-renderiza painel do perfil
+    renderPerfil();
+    syncHeight();
 }}
 
-function updateStats(posts) {{
-    var nF = posts.filter(function(p){{ return !p.is_video; }}).length;
-    var nV = posts.filter(function(p){{ return  p.is_video; }}).length;
-    var tL = posts.reduce(function(s,p){{ return s+(p.likes||0); }}, 0);
-    var tC = posts.reduce(function(s,p){{ return s+(p.comments||0); }}, 0);
-    var bE = posts.reduce(function(mx,p){{ return Math.max(mx,(p.likes||0)+(p.comments||0)); }}, 0);
-    document.getElementById('stat-total').textContent  = posts.length;
-    document.getElementById('stat-fotos').textContent  = nF;
-    document.getElementById('stat-videos').textContent = nV;
-    document.getElementById('stat-likes').textContent  = fmtNum(tL);
-    document.getElementById('stat-coms').textContent   = fmtNum(tC);
-    document.getElementById('stat-best').textContent   = fmtNum(bE);
-}}
-
-function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
-    var wrap = doc.createElement('div');
-    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
-    if (thumbUrl) {{
-        var img = doc.createElement('img');
-        img.src = thumbUrl;
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.6);';
-        wrap.appendChild(img);
-    }}
-    var playBtn = doc.createElement('a');
-    playBtn.href = igUrl;
-    playBtn.target = '_blank';
-    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
-    playBtn.innerHTML =
-        '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);">'
-        + '<svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
-        + '</div>'
-        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
-    wrap.appendChild(playBtn);
-    content.appendChild(wrap);
-}}
-
-function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
-    var doc = window.parent.document;
-    var old = doc.getElementById('redes_modal_overlay');
-    if (old) old.remove();
-    var overlay = doc.createElement('div');
-    overlay.id = 'redes_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
-    var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
-    closeBtn.onclick = closeModal;
-    var content = doc.createElement('div');
-    content.id = 'redes_modal_content';
-    content.style.cssText = 'display:flex;align-items:center;justify-content:center;position:relative;';
-    box.appendChild(closeBtn);
-    box.appendChild(content);
-    overlay.appendChild(box);
-    doc.body.appendChild(overlay);
-    window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
-    doc.addEventListener('keydown', window.parent.__redesModalEscFn);
-    if (isVideo) {{
-        if (videoUrl) {{
-            var vid = doc.createElement('video');
-            vid.src = videoUrl;
-            vid.controls = true; vid.autoplay = true; vid.playsInline = true;
-            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
-            vid.onerror = function() {{ content.innerHTML = ''; _showVideoFallback(content, doc, thumbUrl, igUrl); }};
-            content.appendChild(vid);
-        }} else {{
-            _showVideoFallback(content, doc, thumbUrl, igUrl);
-        }}
-        return;
-    }}
-    var imgs = (carouselImgs && carouselImgs.length > 1) ? carouselImgs : (thumbUrl ? [thumbUrl] : []);
-    if (!imgs.length) {{ window.parent.open(igUrl, '_blank'); closeModal(); return; }}
-    var curIdx = 0;
-    function renderSlide(i) {{
-        content.innerHTML = '';
-        var img = doc.createElement('img');
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
-        img.src = imgs[i];
-        img.onerror = function() {{
-            img.style.display = 'none';
-            var fb = doc.createElement('div');
-            fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;font-family:DM Sans,sans-serif;';
-            fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível.</p>'
-                + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
-            content.appendChild(fb);
-        }};
-        content.appendChild(img);
-        if (imgs.length > 1) {{
-            var counter = doc.createElement('div');
-            counter.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;';
-            counter.textContent = (i + 1) + ' / ' + imgs.length;
-            content.appendChild(counter);
-            if (i > 0) {{
-                var prev = doc.createElement('button');
-                prev.innerHTML = '&#8249;';
-                prev.style.cssText = 'position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-                prev.onclick = function(e) {{ e.stopPropagation(); curIdx--; renderSlide(curIdx); }};
-                content.appendChild(prev);
-            }}
-            if (i < imgs.length - 1) {{
-                var next = doc.createElement('button');
-                next.innerHTML = '&#8250;';
-                next.style.cssText = 'position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-                next.onclick = function(e) {{ e.stopPropagation(); curIdx++; renderSlide(curIdx); }};
-                content.appendChild(next);
-            }}
-        }}
-    }}
-    renderSlide(0);
-}}
-
-function closeModal() {{
-    var doc = window.parent.document;
-    var overlay = doc.getElementById('redes_modal_overlay');
-    if (overlay) overlay.remove();
-    if (window.parent.__redesModalEscFn) {{
-        doc.removeEventListener('keydown', window.parent.__redesModalEscFn);
-        window.parent.__redesModalEscFn = null;
-    }}
-}}
-
-function getFiltered() {{
-    var texto = (document.getElementById('filter-text') ? document.getElementById('filter-text').value : '').toLowerCase().trim();
-    var tipo  = document.getElementById('filter-tipo') ? document.getElementById('filter-tipo').value : 'todos';
-    var ordem = document.getElementById('filter-ordem') ? document.getElementById('filter-ordem').value : 'recentes';
-    var posts = ALL_POSTS.slice();
-    if (texto) posts = posts.filter(function(p){{ return (p.caption||'').toLowerCase().indexOf(texto) !== -1; }});
-    if (tipo === 'foto')  posts = posts.filter(function(p){{ return !p.is_video; }});
-    if (tipo === 'video') posts = posts.filter(function(p){{ return  p.is_video; }});
-    if (ordem === 'likes') posts.sort(function(a,b){{ return (b.likes||0)-(a.likes||0); }});
-    else if (ordem === 'eng') posts.sort(function(a,b){{ return ((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0)); }});
-    return posts;
-}}
-
-function buildGrid(posts) {{
-    var grid = document.getElementById('posts-grid');
-    if (!grid) return;
-    grid.style.gridTemplateColumns = 'repeat(' + N_COLS + ', 1fr)';
-    grid.innerHTML = '';
-    posts.forEach(function(p) {{
-        var idx        = p.jp;
-        var hasCaption = !!(p.caption && p.caption.trim());
-        var iconFallback = p.is_video ? '🎬' : '📷';
-        var mediaType  = p.media_type || 1;
-        var typeLbl    = mediaType === 8 ? 'Carrossel' : (mediaType === 2 ? 'Vídeo' : 'Foto');
-        var badgeColor = mediaType === 8 ? '#7c3aed' : (mediaType === 2 ? '#e1306c' : '#0ea5e9');
-        var thumbUrl   = (p.thumb || '').trim();
-        var engTotal   = (p.likes||0) + (p.comments||0);
-        var igUrl      = p.ig_url || '#';
-        var videoUrl   = (p.video_url || '').trim();
-        var carouselImgs = p.carousel_imgs || [];
-        var card = document.createElement('div');
-        card.className = 'post-card';
-        card.id = 'pcard_' + idx;
-        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgs))+'\\')))"';
-        var playOverlay = p.is_video
-            ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
-              + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">'
-              + '<svg width="20" height="20" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="white"/></svg>'
-              + '</div></div>'
-            : '';
-        var thumbInner = thumbUrl
-            ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />' + playOverlay
-            : '<div class="thumb-fallback" ' + thumbClickAttr + '><span style="font-size:28px">' + iconFallback + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
-        card.innerHTML =
-            '<div class="thumb-wrap" id="tw_' + idx + '" ' + thumbClickAttr + '>'
-            + thumbInner
-            + '<div class="zoom-badge" style="background:' + badgeColor + 'cc">'
-            + (mediaType === 2
-                ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg> ' + typeLbl
-                : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> ' + typeLbl)
-            + '</div>'
-            + '</div>'
-            + '<div class="metrics-row">'
-            + '<div class="metric-cell"><span class="metric-cell-val" style="font-size:11px;font-weight:700">' + (p.date || '—') + '</span></div>'
-            + '<div class="metric-cell"><span class="metric-cell-lbl">❤️</span><span class="metric-cell-val">' + fmtNum(p.likes||0) + '</span></div>'
-            + '<div class="metric-cell"><span class="metric-cell-lbl">💬</span><span class="metric-cell-val">' + fmtNum(p.comments||0) + '</span></div>'
-            + '<div class="metric-cell"><span class="metric-cell-lbl">⚡</span><span class="metric-cell-val eng">' + fmtNum(engTotal) + '</span></div>'
-            + '</div>'
-            + '<div class="card-caption-wrap">'
-            + (hasCaption
-                ? '<div class="card-caption" id="cap_' + idx + '">' + p.caption + '</div>'
-                  + '<button class="ver-copy-btn" id="vcb_' + idx + '" onclick="toggleCopy(' + idx + ')">ver mais</button>'
-                : '<span class="no-caption">Sem legenda</span>'
-              )
-            + '</div>'
-            + (p.resultado_ia
-                ? '<div class="post-ia-panel"><div class="post-ia-hdr">✨ Análise de IA</div>' + p.resultado_ia + '</div>'
-                : ''
-              )
-            + '<div class="card-footer-btns">'
-            + (igUrl && igUrl !== '#'
-                ? '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram ↗</a>'
-                : '<span class="footer-btn ig" style="opacity:0.35;cursor:default;pointer-events:none">Sem link</span>')
-            + '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">'
-            + (p.tem_ia ? 'Reanalisar' : 'Analisar postagem')
-            + '</button>'
-            + '</div>';
-        if (thumbUrl) {{
-            var imgEl = card.querySelector('#pimg_' + idx);
-            if (imgEl) {{
-                imgEl.onerror = (function(i, icon, tw_url, ig_u, vid_u, is_vid) {{
-                    return function() {{
-                        var tw = document.getElementById('tw_' + i);
-                        if (tw) tw.innerHTML =
-                            '<div class="thumb-fallback" onclick="openModal(\\''+tw_url+'\\',\\''+ig_u+'\\',\\''+vid_u+'\\','+is_vid+')">'
-                            + '<span style="font-size:28px">' + icon + '</span>'
-                            + '<span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
-                    }};
-                }})(idx, iconFallback, thumbUrl, igUrl, videoUrl, p.is_video);
-            }}
-        }}
-        grid.appendChild(card);
+// ── Navegar main tab ─────────────────────────────────────────────
+function selectMainTab(tab){{
+    mainTab = tab;
+    document.getElementById('section-perfis').style.display = tab==='perfis' ? 'block' : 'none';
+    document.getElementById('section-analise').style.display = tab==='analise' ? 'block' : 'none';
+    document.querySelectorAll('.nav-item').forEach(function(el,idx){{
+        el.classList.toggle('active', (idx===0 && tab==='perfis')||(idx===1 && tab==='analise'));
     }});
     syncHeight();
 }}
 
-function toggleCopy(idx) {{
-    var capEl = document.getElementById('cap_' + idx);
-    var btn   = document.getElementById('vcb_' + idx);
-    if (!capEl || !btn) return;
-    var expanded = capEl.classList.contains('expanded');
-    capEl.classList.toggle('expanded', !expanded);
-    btn.textContent = expanded ? 'ver mais' : 'ver menos';
-    setTimeout(syncHeight, 60);
+// ── Navegar subtab ───────────────────────────────────────────────
+function selectSubtab(sub){{
+    subtab = sub;
+    document.getElementById('subtab-postagens').style.display = sub==='postagens'?'block':'none';
+    document.getElementById('subtab-ia').style.display = sub==='ia'?'block':'none';
+    document.querySelectorAll('.tab-btn').forEach(function(b,i){{
+        b.classList.toggle('active',(i===0&&sub==='postagens')||(i===2&&sub==='ia'));
+    }});
+    syncHeight();
 }}
 
-function analisarPost(idx) {{
-    var btn = document.getElementById('ia_btn_' + idx);
-    if (btn) {{ btn.textContent = 'Analisando…'; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }}
-    var label = 'post_ia_{aba_ativa}_' + idx;
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
+// ── Chamar IA via query_params → rerun Python ────────────────────
+function chamarIA(acao){{
+    setQP('rt', mainTab);
+    setQP('ra', String(abaAtiva));
+    setQP('rs', subtab);
+    setQP('ria', acao);
+    // força rerun lendo a URL atual e adicionando params
+    window.parent.location.href = buildURL();
 }}
 
-function applyFilters() {{
-    var posts = getFiltered();
-    updateStats(posts);
-    buildGrid(posts);
+function setQP(k,v){{ _qp[k]=v; }}
+var _qp = {{}};
+function buildURL(){{
+    // Pega URL atual do parent sem query
+    var base = window.parent.location.pathname;
+    _qp['rt']=_qp['rt']||mainTab;
+    _qp['ra']=_qp['ra']!==undefined?_qp['ra']:String(abaAtiva);
+    _qp['rs']=_qp['rs']||subtab;
+    var qs = Object.keys(_qp).map(function(k){{return encodeURIComponent(k)+'='+encodeURIComponent(_qp[k]);}}).join('&');
+    return base + '?' + qs;
 }}
 
-function toggleCols() {{
-    var btns = window.parent.document.querySelectorAll('button');
-    var label = 'posts_toggle_{aba_ativa}';
-    for (var b of btns) {{
-        if ((b.textContent||b.innerText||'').split(/\s+/).join(' ').trim() === label) {{ b.click(); return; }}
-    }}
+// Melhor abordagem: postMessage para Streamlit
+function chamarIA(acao){{
+    // Streamlit escuta postMessage com tipo "streamlit:setComponentValue" mas
+    // para query_params a forma mais simples é mudar window.parent.location
+    var url = new URL(window.parent.location.href);
+    url.searchParams.set('rt', mainTab);
+    url.searchParams.set('ra', String(abaAtiva));
+    url.searchParams.set('rs', subtab);
+    url.searchParams.set('ria', acao);
+    window.parent.location.href = url.toString();
 }}
 
-function triggerBio() {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === '__bio_{aba_ativa}__') {{ b.click(); return; }}
-    }}
-}}
+// ── Modal ────────────────────────────────────────────────────────
+function _showVideoFallback(content,doc,thumbUrl,igUrl){{var wrap=doc.createElement('div');wrap.style.cssText='position:relative;display:inline-flex;flex-direction:column;align-items:center;';if(thumbUrl){{var img=doc.createElement('img');img.src=thumbUrl;img.style.cssText='display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.6);';wrap.appendChild(img);}}var playBtn=doc.createElement('a');playBtn.href=igUrl;playBtn.target='_blank';playBtn.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';playBtn.innerHTML='<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);"><svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg></div><span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';wrap.appendChild(playBtn);content.appendChild(wrap);}}
 
-function triggerSub(sub) {{
-    var label = 'redes_sub_{aba_ativa}_' + sub;
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
-}}
+function openModal(thumbUrl,igUrl,videoUrl,isVideo,carouselImgs){{var doc=window.parent.document;var old=doc.getElementById('redes_modal_overlay');if(old)old.remove();var overlay=doc.createElement('div');overlay.id='redes_modal_overlay';overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';overlay.onclick=function(e){{if(e.target===overlay)closeModal();}};var box=doc.createElement('div');box.style.cssText='background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';var closeBtn=doc.createElement('button');closeBtn.textContent='✕';closeBtn.style.cssText='position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';closeBtn.onclick=closeModal;var content=doc.createElement('div');content.id='redes_modal_content';content.style.cssText='display:flex;align-items:center;justify-content:center;position:relative;';box.appendChild(closeBtn);box.appendChild(content);overlay.appendChild(box);doc.body.appendChild(overlay);window.parent.__redesModalEscFn=function(e){{if(e.key==='Escape')closeModal();}};doc.addEventListener('keydown',window.parent.__redesModalEscFn);if(isVideo){{if(videoUrl){{var vid=doc.createElement('video');vid.src=videoUrl;vid.controls=true;vid.autoplay=true;vid.playsInline=true;vid.style.cssText='display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';vid.onerror=function(){{content.innerHTML='';_showVideoFallback(content,doc,thumbUrl,igUrl);}};content.appendChild(vid);}}else{{_showVideoFallback(content,doc,thumbUrl,igUrl);}}return;}}var imgs=(carouselImgs&&carouselImgs.length>1)?carouselImgs:(thumbUrl?[thumbUrl]:[]);if(!imgs.length){{window.parent.open(igUrl,'_blank');closeModal();return;}}var curIdx=0;function renderSlide(i){{content.innerHTML='';var img=doc.createElement('img');img.style.cssText='display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';img.src=imgs[i];img.onerror=function(){{img.style.display='none';var fb=doc.createElement('div');fb.style.cssText='display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;font-family:DM Sans,sans-serif;';fb.innerHTML='<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível.</p><a href="'+igUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';content.appendChild(fb);}};content.appendChild(img);if(imgs.length>1){{var counter=doc.createElement('div');counter.style.cssText='position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;';counter.textContent=(i+1)+' / '+imgs.length;content.appendChild(counter);if(i>0){{var prev=doc.createElement('button');prev.innerHTML='&#8249;';prev.style.cssText='position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';prev.onclick=function(e){{e.stopPropagation();curIdx--;renderSlide(curIdx);}};content.appendChild(prev);}}if(i<imgs.length-1){{var next=doc.createElement('button');next.innerHTML='&#8250;';next.style.cssText='position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';next.onclick=function(e){{e.stopPropagation();curIdx++;renderSlide(curIdx);}};content.appendChild(next);}}}}}}renderSlide(0);}}
 
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{
-            if (frames[i].contentWindow === window) {{
-                frames[i].style.height = (h + 12) + 'px';
-                frames[i].style.marginTop = '-53px';
-                break;
+function closeModal(){{var doc=window.parent.document;var overlay=doc.getElementById('redes_modal_overlay');if(overlay)overlay.remove();if(window.parent.__redesModalEscFn){{doc.removeEventListener('keydown',window.parent.__redesModalEscFn);window.parent.__redesModalEscFn=null;}}}}
+
+// ── Render grid de posts ─────────────────────────────────────────
+function buildGrid(posts, gridEl){{
+    gridEl.style.gridTemplateColumns='repeat('+nCols+',1fr)';
+    gridEl.innerHTML='';
+    posts.forEach(function(p){{
+        var idx=p.jp;
+        var hasCaption=!!(p.caption&&p.caption.trim());
+        var iconFallback=p.is_video?'🎬':'📷';
+        var mediaType=p.media_type||1;
+        var typeLbl=mediaType===8?'Carrossel':(mediaType===2?'Vídeo':'Foto');
+        var badgeColor=mediaType===8?'#7c3aed':(mediaType===2?'#e1306c':'#0ea5e9');
+        var thumbUrl=(p.thumb||'').trim();
+        var engTotal=(p.likes||0)+(p.comments||0);
+        var igUrl=p.ig_url||'#';
+        var videoUrl=(p.video_url||'').trim();
+        var carouselImgs=p.carousel_imgs||[];
+        var card=document.createElement('div');
+        card.className='post-card';
+        card.id='pcard_'+idx;
+        var carouselStr=encodeURIComponent(JSON.stringify(carouselImgs));
+        var playOverlay=p.is_video?'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;"><div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="white"/></svg></div></div>':'';
+        var thumbInner=thumbUrl?'<img id="pimg_'+idx+'" src="'+thumbUrl+'" loading="lazy" alt="" />'+playOverlay:'<div class="thumb-fallback"><span style="font-size:28px">'+iconFallback+'</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
+        card.innerHTML=
+            '<div class="thumb-wrap" id="tw_'+idx+'" onclick="openModal(\''+thumbUrl+'\',\''+igUrl+'\',\''+videoUrl+'\','+(p.is_video?'true':'false')+',JSON.parse(decodeURIComponent(\''+carouselStr+'\')))">'
+            +thumbInner
+            +'<div class="zoom-badge" style="background:'+badgeColor+'cc">'+(mediaType===2?'<svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg> ':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> ')+typeLbl+'</div>'
+            +'</div>'
+            +'<div class="metrics-row"><div class="metric-cell"><span class="metric-cell-val" style="font-size:11px;font-weight:700">'+(p.date||'—')+'</span></div><div class="metric-cell"><span class="metric-cell-lbl">❤️</span><span class="metric-cell-val">'+fmtNum(p.likes||0)+'</span></div><div class="metric-cell"><span class="metric-cell-lbl">💬</span><span class="metric-cell-val">'+fmtNum(p.comments||0)+'</span></div><div class="metric-cell"><span class="metric-cell-lbl">⚡</span><span class="metric-cell-val eng">'+fmtNum(engTotal)+'</span></div></div>'
+            +'<div class="card-caption-wrap">'+(hasCaption?'<div class="card-caption" id="cap_'+idx+'">'+p.caption+'</div><button class="ver-copy-btn" id="vcb_'+idx+'" onclick="toggleCopy('+idx+')">ver mais</button>':'<span class="no-caption">Sem legenda</span>')+'</div>'
+            +(p.resultado_ia?'<div class="post-ia-panel"><div class="post-ia-hdr">✨ Análise de IA</div>'+p.resultado_ia+'</div>':'')
+            +'<div class="card-footer-btns">'
+            +(igUrl&&igUrl!=='#'?'<a class="footer-btn ig" href="'+igUrl+'" target="_blank">Ver no Instagram ↗</a>':'<span class="footer-btn ig" style="opacity:0.35;cursor:default;pointer-events:none">Sem link</span>')
+            +'<button class="footer-btn ia" id="ia_btn_'+idx+'" onclick="chamarIA(\'post_'+idx+'\')">'+(p.tem_ia?'Reanalisar':'Analisar postagem')+'</button>'
+            +'</div>';
+        if(thumbUrl){{
+            var imgEl=card.querySelector('#pimg_'+idx);
+            if(imgEl){{
+                imgEl.onerror=(function(i,icon,turl,igu,vidu,isvid){{return function(){{var tw=document.getElementById('tw_'+i);if(tw)tw.innerHTML='<div class="thumb-fallback" onclick="openModal(\''+turl+'\',\''+igu+'\',\''+vidu+'\','+isvid+')"><span style="font-size:28px">'+icon+'</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';}};}})(idx,iconFallback,thumbUrl,igUrl,videoUrl,p.is_video);
             }}
-        }} catch(e) {{}}
-    }}
+        }}
+        gridEl.appendChild(card);
+    }});
 }}
 
+function toggleCopy(idx){{
+    var capEl=document.getElementById('cap_'+idx);
+    var btn=document.getElementById('vcb_'+idx);
+    if(!capEl||!btn)return;
+    var expanded=capEl.classList.contains('expanded');
+    capEl.classList.toggle('expanded',!expanded);
+    btn.textContent=expanded?'ver mais':'ver menos';
+    setTimeout(syncHeight,60);
+}}
+
+function getFiltered(posts){{
+    var texto=(document.getElementById('filter-text')?document.getElementById('filter-text').value:'').toLowerCase().trim();
+    var tipo=document.getElementById('filter-tipo')?document.getElementById('filter-tipo').value:'todos';
+    var ordem=document.getElementById('filter-ordem')?document.getElementById('filter-ordem').value:'recentes';
+    var ps=posts.slice();
+    if(texto)ps=ps.filter(function(p){{return(p.caption||'').toLowerCase().indexOf(texto)!==-1;}});
+    if(tipo==='foto')ps=ps.filter(function(p){{return!p.is_video;}});
+    if(tipo==='video')ps=ps.filter(function(p){{return p.is_video;}});
+    if(ordem==='likes')ps.sort(function(a,b){{return(b.likes||0)-(a.likes||0);}});
+    else if(ordem==='eng')ps.sort(function(a,b){{return((b.likes||0)+(b.comments||0))-((a.likes||0)+(a.comments||0));}});
+    return ps;
+}}
+
+function applyFilters(){{
+    var perf=DATA.perfis[abaAtiva];
+    if(!perf)return;
+    var posts=getFiltered(perf.posts);
+    // stats
+    var nF=posts.filter(function(p){{return!p.is_video;}}).length;
+    var nV=posts.filter(function(p){{return p.is_video;}}).length;
+    var tL=posts.reduce(function(s,p){{return s+(p.likes||0);}},0);
+    var tC=posts.reduce(function(s,p){{return s+(p.comments||0);}},0);
+    var bE=posts.reduce(function(mx,p){{return Math.max(mx,(p.likes||0)+(p.comments||0));}},0);
+    var el=function(id){{return document.getElementById(id);}};
+    if(el('stat-total'))el('stat-total').textContent=posts.length;
+    if(el('stat-fotos'))el('stat-fotos').textContent=nF;
+    if(el('stat-videos'))el('stat-videos').textContent=nV;
+    if(el('stat-likes'))el('stat-likes').textContent=fmtNum(tL);
+    if(el('stat-coms'))el('stat-coms').textContent=fmtNum(tC);
+    if(el('stat-best'))el('stat-best').textContent=fmtNum(bE);
+    var grid=document.getElementById('posts-grid');
+    if(grid)buildGrid(posts,grid);
+    setTimeout(syncHeight,50);
+}}
+
+// ── Render painel do perfil ativo ────────────────────────────────
+function renderPerfil(){{
+    var perf=DATA.perfis[abaAtiva];
+    if(!perf)return;
+    // header
+    document.getElementById('pf-avatar').style.background=perf.cor;
+    document.getElementById('pf-avatar').textContent=perf.avatar;
+    document.getElementById('pf-nome').innerHTML=perf.nome+'<span style="font-size:14px;font-weight:400;color:#9ca3af;margin-left:6px">'+perf.handle+'</span>';
+    var badge=document.getElementById('pf-badge');
+    badge.textContent=perf.badge_lbl;
+    badge.style.background=perf.badge_bg;
+    badge.style.color=perf.badge_txt;
+    badge.style.border='1px solid '+perf.badge_brd;
+    document.getElementById('pf-seg').textContent=perf.seg_fmt;
+    document.getElementById('pf-posts').textContent=perf.posts_fmt;
+    document.getElementById('pf-iglink').href=perf.ig_url;
+    // bio
+    var bioEl=document.getElementById('pf-bio');
+    bioEl.innerHTML=perf.bio?'&ldquo;'+perf.bio+'&rdquo;':'<span style="color:#d1d5db;font-style:italic">Sem bio cadastrada neste perfil.</span>';
+    // bio resultado
+    var bioRes=document.getElementById('bio-resultado');
+    if(perf.bio_resultado_html){{bioRes.innerHTML='<div class="bio-resultado-hdr">✨ Análise de IA</div>'+perf.bio_resultado_html;bioRes.style.display='block';}}
+    else{{bioRes.innerHTML='';bioRes.style.display='none';}}
+    // ia panels
+    document.getElementById('ia-panel-geral-content').innerHTML=perf.ia_geral||'';
+    document.getElementById('ia-panel-criativo-content').innerHTML=perf.ia_criativo||'';
+    document.getElementById('ia-panel-copy-content').innerHTML=perf.ia_copy||'';
+    // posts
+    applyFilters();
+    syncHeight();
+}}
+
+// ── Sync height ──────────────────────────────────────────────────
+function syncHeight(){{
+    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
+    var frames=window.parent.document.querySelectorAll('iframe');
+    for(var i=0;i<frames.length;i++){{
+        try{{if(frames[i].contentWindow===window){{frames[i].style.height=(h+8)+'px';break;}}}}catch(e){{}}
+    }}
+}}
+</script>
+
+<!-- ══ NAVEGAÇÃO PRINCIPAL ══ -->
+<div class="nav-bar">
+    <div class="nav-item{' active' if main_tab=='perfis' else ''}" onclick="selectMainTab('perfis')">
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{'#fff' if main_tab=='perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="nav-content"><span class="nav-title">Perfis configurados</span><span class="nav-sub">Visualize e analise cada perfil individualmente</span></div>
+    </div>
+    <div class="nav-item{' active' if main_tab=='analise' else ''}" onclick="selectMainTab('analise')">
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{'#fff' if main_tab=='analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <div class="nav-content"><span class="nav-title">Análise de IA</span><span class="nav-sub">Relatório comparativo completo</span></div>
+    </div>
+</div>
+
+<!-- ══ SEÇÃO: PERFIS ══ -->
+<div id="section-perfis" style="display:{'block' if main_tab=='perfis' else 'none'}">
+
+    <!-- Cards empresas -->
+    <div class="empresas-wrap">
+        <div class="cards-grid" id="cards-grid">
+        {''.join([
+            f'''<div class="emp-card{' active' if i==aba_ativa else ''}" id="emp_card_{i}" onclick="selectEmpresa({i})">
+                <div class="emp-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{'#3b82f6' if i==aba_ativa else '#64748b'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.5" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="{'#3b82f6' if i==aba_ativa else '#64748b'}"/></svg></div>
+                <div class="emp-info">
+                    <div class="emp-nome">{r["nome"]} <span style="color:#d1d5db">|</span> <span style="font-size:13px;font-weight:400;color:#9ca3af">{r.get("handle","")}</span></div>
+                    <span class="{'badge-minha' if r.get('tipo')=='minha' else 'badge-conc'}">{'Minha empresa' if r.get('tipo')=='minha' else 'Concorrente'}</span>
+                </div>
+            </div>'''
+            for i, r in enumerate(ok)
+        ])}
+        </div>
+    </div>
+
+    <!-- Perfil card (estrutura fixa, conteúdo atualizado por JS) -->
+    <div class="perfil-card">
+        <div class="perfil-header">
+            <div class="avatar" id="pf-avatar" style="background:{get_avatar_color(aba_ativa)}">{gerar_avatar(ok[aba_ativa]["nome"]) if ok else ""}</div>
+            <div class="info">
+                <div class="nome" id="pf-nome">{ok[aba_ativa]["nome"] if ok else ""}<span style="font-size:14px;font-weight:400;color:#9ca3af;margin-left:6px">{ok[aba_ativa].get("handle","") if ok else ""}</span></div>
+                <div class="badge-perfil" id="pf-badge" style="background:{perfis_payload[aba_ativa]['badge_bg']};color:{perfis_payload[aba_ativa]['badge_txt']};border:1px solid {perfis_payload[aba_ativa]['badge_brd']}">{perfis_payload[aba_ativa]["badge_lbl"]}</div>
+            </div>
+            <div class="stat-wrap">
+                <div class="divider-v"></div>
+                <div class="stat"><div class="stat-num" id="pf-seg">{perfis_payload[aba_ativa]["seg_fmt"]}</div><div class="stat-lbl">Seguidores</div></div>
+                <div class="divider-v"></div>
+                <div class="stat"><div class="stat-num" id="pf-posts">{perfis_payload[aba_ativa]["posts_fmt"]}</div><div class="stat-lbl">Postagens</div></div>
+                <div class="divider-v"></div>
+                <a class="btn-ig" id="pf-iglink" href="{perfis_payload[aba_ativa]['ig_url']}" target="_blank">Ver no Instagram</a>
+            </div>
+        </div>
+        <div class="bio-section">
+            <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
+            <div class="bio-left"><div class="bio-text" id="pf-bio">{f"&ldquo;{perfis_payload[aba_ativa]['bio']}&rdquo;" if perfis_payload[aba_ativa]['bio'] else '<span style="color:#d1d5db;font-style:italic">Sem bio cadastrada neste perfil.</span>'}</div></div>
+            <div class="bio-right">
+                <button class="btn-ia" onclick="chamarIA('bio')">🤖 Analisar Bio</button>
+                <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
+            </div>
+        </div>
+        <div id="bio-resultado" style="background:#f0fdf4;border-top:1px solid #bbf7d0;padding:14px 20px;font-size:13px;color:#374151;line-height:1.75;border-bottom:1px solid #f3f4f6;display:{'block' if perfis_payload[aba_ativa]['bio_resultado_html'] else 'none'}">
+            {'<div style="font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✨ Análise de IA</div>'+perfis_payload[aba_ativa]['bio_resultado_html'] if perfis_payload[aba_ativa]['bio_resultado_html'] else ''}
+        </div>
+        <div class="tabs-bar">
+            <button class="tab-btn{' active' if subtab=='postagens' else ''}" onclick="selectSubtab('postagens')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Postagens
+            </button>
+            <div class="tab-sep"></div>
+            <button class="tab-btn{' active' if subtab=='ia' else ''}" onclick="selectSubtab('ia')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                Análise de IA
+            </button>
+        </div>
+    </div>
+
+    <!-- Subtab: Postagens -->
+    <div id="subtab-postagens" style="display:{'block' if subtab=='postagens' else 'none'}">
+        {'<div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:48px 32px;text-align:center"><div style="font-size:28px;margin-bottom:10px">📸</div><div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px">Sem postagens disponíveis</div><div style="font-size:13px;color:#9ca3af">Colete os dados novamente.</div></div>' if not ok[aba_ativa].get("posts") else f"""
+        <div class="filters-bar">
+            <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
+            <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
+                <option value="todos">Tipo (todos)</option>
+                <option value="foto">Fotos</option>
+                <option value="video">Vídeos</option>
+            </select>
+            <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
+                <option value="recentes">Mais recentes</option>
+                <option value="likes">Mais curtidas</option>
+                <option value="eng">Maior engajamento</option>
+            </select>
+            <button class="col-toggle" onclick="nCols=(nCols===4?3:4);applyFilters();" title="Alternar colunas">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="5" height="18" rx="1"/></svg>
+            </button>
+        </div>
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-num2" id="stat-total">{len(ok[aba_ativa].get("posts",[]))}</div><div class="stat-lbl2">Postagens</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-fotos">{sum(1 for p in ok[aba_ativa].get("posts",[]) if not p.get("is_video"))}</div><div class="stat-lbl2">Fotos</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-videos">{sum(1 for p in ok[aba_ativa].get("posts",[]) if p.get("is_video"))}</div><div class="stat-lbl2">Vídeos</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-likes">{fmt_num(sum(p.get("likes",0) for p in ok[aba_ativa].get("posts",[])))}</div><div class="stat-lbl2">Curtidas</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-coms">{fmt_num(sum(p.get("comments",0) for p in ok[aba_ativa].get("posts",[])))}</div><div class="stat-lbl2">Comentários</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-best">{fmt_num(max((p.get("likes",0)+p.get("comments",0) for p in ok[aba_ativa].get("posts",[])), default=0))}</div><div class="stat-lbl2">Melhor Engaj.</div></div>
+        </div>
+        <div class="posts-grid" id="posts-grid"></div>
+        """}
+    </div>
+
+    <!-- Subtab: IA -->
+    <div id="subtab-ia" style="display:{'block' if subtab=='ia' else 'none'}">
+        <div class="ia-wrap">
+            <div style="padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Análise de Conteúdos</div>
+            <div class="ia-tabs">
+                <button class="ia-tab active" onclick="showIaTab('geral',this)">Analisar Postagens 🖼️</button>
+                <button class="ia-tab" onclick="showIaTab('criativo',this)">Analisar Criativos 🎨</button>
+                <button class="ia-tab" onclick="showIaTab('copy',this)">Analisar Copys 📝</button>
+            </div>
+            <div id="ia-panel-geral" class="ia-panel active">
+                <div id="ia-panel-geral-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_geral'] else 'none'}">{perfis_payload[aba_ativa]["ia_geral"]}</div>
+                {f'<div class="ia-empty" style="display:{\'none\' if perfis_payload[aba_ativa][\'ia_geral\'] else \'block\'}">Clique no botão abaixo para gerar a análise.</div>' }
+                <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('geral')">Gerar Análise de Postagens 🤖</button></div>
+            </div>
+            <div id="ia-panel-criativo" class="ia-panel">
+                <div id="ia-panel-criativo-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_criativo'] else 'none'}">{perfis_payload[aba_ativa]["ia_criativo"]}</div>
+                {f'<div class="ia-empty" style="display:{\'none\' if perfis_payload[aba_ativa][\'ia_criativo\'] else \'block\'}">Clique no botão abaixo para gerar a análise.</div>'}
+                <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('criativo')">Gerar Análise de Criativos 🤖</button></div>
+            </div>
+            <div id="ia-panel-copy" class="ia-panel">
+                <div id="ia-panel-copy-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_copy'] else 'none'}">{perfis_payload[aba_ativa]["ia_copy"]}</div>
+                {f'<div class="ia-empty" style="display:{\'none\' if perfis_payload[aba_ativa][\'ia_copy\'] else \'block\'}">Clique no botão abaixo para gerar a análise.</div>'}
+                <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('copy')">Gerar Análise de Copys 🤖</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ SEÇÃO: ANÁLISE COMPARATIVA ══ -->
+<div id="section-analise" style="display:{'block' if main_tab=='analise' else 'none'}">
+    <div class="comp-wrap">
+        <div class="comp-hdr">
+            <div class="comp-title">✨ Análise Comparativa de Redes Sociais</div>
+            <div class="comp-sub">Comparativo inteligente de todos os perfis configurados</div>
+        </div>
+        <div class="comp-body">
+            {'<div>'+comp_html_redes+'</div>' if comp_html_redes else '<div class="comp-empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar todos os perfis com IA.</div>'}
+        </div>
+        <div class="comp-footer">
+            <button class="comp-btn" onclick="chamarIA('comparativo')">{'🔄 Regerar Análise' if comp_html_redes else '⚡ Gerar Análise Comparativa'}</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showIaTab(name,el){{
+    document.querySelectorAll('.ia-panel').forEach(function(p){{p.classList.remove('active');}});
+    document.querySelectorAll('.ia-tab').forEach(function(t){{t.classList.remove('active');}});
+    document.getElementById('ia-panel-'+name).classList.add('active');
+    el.classList.add('active');
+    setTimeout(syncHeight,50);
+}}
+
+// Init
 applyFilters();
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
+if(window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
+document.addEventListener('DOMContentLoaded',syncHeight);
+window.addEventListener('load',syncHeight);
+setTimeout(syncHeight,300);setTimeout(syncHeight,800);
 </script>
 </body></html>
-""", height=500, scrolling=False)
+""", height=600, scrolling=False)
  
         # ══════════════════════════════════════════════════════════════
         # SUB-ABA: ANÁLISE DE IA
