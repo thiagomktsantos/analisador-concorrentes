@@ -1768,7 +1768,7 @@ setTimeout(ajustarAltura, 800);
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "cad":
-
+ 
     st.markdown("""
     <style>
     div[data-testid="stForm"] {
@@ -1788,7 +1788,7 @@ elif st.session_state.pagina == "cad":
     }
     </style>
     """, unsafe_allow_html=True)
-
+ 
     top1, top2 = st.columns([7, 3])
     with top1:
         components.html("""
@@ -1810,36 +1810,36 @@ html, body { background: transparent; overflow: hidden; }
 <div class="titulo">Concorrentes</div>
 <div class="sub">Acompanhe e gerencie seus concorrentes para uma análise mais estratégica.</div>
 """, height=70)
-
+ 
     with top2:
         st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
         if st.button("＋ Adicionar Concorrente", use_container_width=True, type="primary"):
             st.session_state.mostrar_form_concorrente = True
             st.session_state.editando_concorrente = None
             st.rerun()
-
+ 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 24px 0'/>", unsafe_allow_html=True)
-
+ 
     if st.session_state.mostrar_form_concorrente or st.session_state.editando_concorrente is not None:
         concorrente_edit = None
         if st.session_state.editando_concorrente is not None:
             concorrente_edit = st.session_state.dados["concorrentes"][st.session_state.editando_concorrente]
-
+ 
         titulo_form = "✏️ Editar Concorrente" if concorrente_edit else "➕ Novo Concorrente"
         st.markdown(f"<div style='font-size:16px;font-weight:700;color:#111827;margin-bottom:16px'>{titulo_form}</div>", unsafe_allow_html=True)
-
+ 
         with st.form("cad_concorrente", clear_on_submit=False):
             st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Identificação</div>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
             n = c1.text_input("Nome do Concorrente", value=(concorrente_edit["nome"] if concorrente_edit else ""))
             u = c2.text_input("URL do Site", value=(concorrente_edit["url"] if concorrente_edit else ""))
-
+ 
             st.markdown("<div style='margin:16px 0;border-top:1px solid #f3f4f6'/>", unsafe_allow_html=True)
             st.markdown("<div style='font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px'>Redes Sociais</div>", unsafe_allow_html=True)
             c3, c4 = st.columns(2)
             insta_handle = c3.text_input("Instagram", value=(concorrente_edit["instagram"] if concorrente_edit else "@"))
             fb_p = c4.text_input("Facebook", value=(concorrente_edit["fb_page"] if concorrente_edit else ""))
-
+ 
             ads_manual = st.text_input(
                 "ads_id_hidden",
                 value=(concorrente_edit.get("ads_id", "") if concorrente_edit else ""),
@@ -1847,21 +1847,21 @@ html, body { background: transparent; overflow: hidden; }
                 label_visibility="hidden",
                 autocomplete="off",
             )
-
+ 
             col1, col2 = st.columns(2)
             salvar   = col1.form_submit_button("Salvar",   use_container_width=True)
             cancelar = col2.form_submit_button("Cancelar", use_container_width=True)
-
+ 
             if cancelar:
                 st.session_state.mostrar_form_concorrente = False
                 st.session_state.editando_concorrente = None
                 st.rerun()
-
+ 
             if salvar:
                 clean_handle = obter_instagram_handle(insta_handle)
                 fb_clean     = obter_facebook_handle(fb_p)
                 site_clean   = limpar_site(u)
-                existing_ads_id  = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
+                existing_ads_id   = (concorrente_edit.get("ads_id", "") if concorrente_edit else "").strip()
                 existing_page_pic = (concorrente_edit.get("ads_page_pic", "") if concorrente_edit else "")
                 dados_novos = {
                     "nome":         n,
@@ -1879,29 +1879,44 @@ html, body { background: transparent; overflow: hidden; }
                 st.session_state.editando_concorrente = None
                 salvar_dados_usuario(st.session_state.user.id)
                 st.rerun()
-
+ 
     concorrentes = st.session_state.dados["concorrentes"]
-
+ 
     if concorrentes:
         import json as _json_conc
  
-        hide_btns_css = "\\n".join([
-            f".st-key-editar_{{i}} button, .st-key-remove_{{i}} button {{ display: none !important; }}"
+        # ── Oculta todos os botões Streamlit e seus containers ──
+        hide_btns_css = "\n".join([
+            f"""
+            .st-key-editar_{i},
+            .st-key-remove_{i},
+            .stElementContainer:has(.st-key-editar_{i}),
+            .stElementContainer:has(.st-key-remove_{i}) {{
+                display: none !important;
+                height: 0 !important;
+                min-height: 0 !important;
+                max-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                visibility: hidden !important;
+            }}
+            """
             for i in range(len(concorrentes))
         ])
-        st.markdown(f"<style>{{hide_btns_css}}</style>", unsafe_allow_html=True)
+        st.markdown(f"<style>{hide_btns_css}</style>", unsafe_allow_html=True)
  
-        # ── Monta JSON dos cards para o HTML único ──────────────
+        # ── Monta JSON para o componente HTML único ──────────────
         cards_conc = []
         for i, c in enumerate(concorrentes):
             cards_conc.append({
-                "idx": i,
-                "nome": c["nome"],
-                "url": c.get("url", ""),
+                "idx":      i,
+                "nome":     c["nome"],
+                "url":      c.get("url", ""),
                 "instagram": c.get("instagram", ""),
-                "fb_page": c.get("fb_page", ""),
-                "cor": get_concorrente_color(i),
-                "avatar": gerar_avatar(c["nome"]),
+                "fb_page":  c.get("fb_page", ""),
+                "cor":      get_concorrente_color(i),
+                "avatar":   gerar_avatar(c["nome"]),
             })
         cards_json = _json_conc.dumps(cards_conc, ensure_ascii=False)
  
@@ -1912,108 +1927,121 @@ html, body { background: transparent; overflow: hidden; }
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{
-    background:transparent;
-    font-family:\'DM Sans\',sans-serif;
-    -webkit-font-smoothing:antialiased;
-    overflow:visible;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: visible;
 }}
-body {{ padding-bottom:8px; }}
+body {{ padding-bottom: 8px; }}
  
-/* ── Outer wrapper (igual Confronto de Sites) ── */
+/* ── Outer wrapper ── */
 .outer-wrap {{
-    background:#d2dde9;
-    border-radius:16px;
-    padding:20px;
+    background: #d2dde9;
+    border-radius: 16px;
+    padding: 20px;
 }}
  
-/* ── Grid de cards ── */
+/* ── Grid ── */
 .cards-grid {{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
-    gap:20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
 }}
  
 /* ── Card ── */
 .card {{
-    background:#ffffff;
-    border:1px solid #dde1e7;
-    border-radius:14px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
-    transition:border-color 0.15s,box-shadow 0.15s;
-    box-shadow:0 4px 20px rgba(0,0,0,0.10);
+    background: #ffffff;
+    border: 1px solid #dde1e7;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+    transition: border-color 0.15s, box-shadow 0.15s;
 }}
 .card:hover {{
-    border-color:#6fd1f3 !important;
+    border-color: #6fd1f3 !important;
 }}
+ 
+/* ── Header ── */
 .card-header {{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:18px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px 14px;
 }}
 .avatar {{
-    width:44px;height:44px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    font-size:16px;font-weight:700;color:#fff;flex-shrink:0;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0;
 }}
 .name {{
-    font-size:16px;font-weight:700;color:#111827;
+    font-size: 16px; font-weight: 700; color: #111827;
+    margin-bottom: 4px;
 }}
+.badge {{
+    display: inline-block;
+    padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+}}
+ 
+/* ── Divider ── */
 .divider {{
-    height:1px;background:#f3f4f6;margin:0 20px;
+    height: 1px; background: #f3f4f6; margin: 0 20px;
 }}
+ 
+/* ── Body ── */
 .card-body {{
-    padding:14px 20px 18px;
-    display:flex;flex-direction:column;gap:10px;
+    padding: 14px 20px 18px;
+    display: flex; flex-direction: column; gap: 10px;
 }}
- 
-/* ── Subtítulo "PRESENÇA DIGITAL" ── */
 .sec-title {{
-    font-size:11px;font-weight:700;
-    text-transform:uppercase;letter-spacing:1.2px;
-    color:#6b7280;
-    padding-bottom:8px;
-    border-bottom:1px solid #f3f4f6;
-    margin-bottom:4px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: #6b7280;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 2px;
 }}
- 
 .row {{
-    display:flex;align-items:center;gap:12px;
+    display: flex; align-items: center; gap: 12px;
 }}
 .icon-wrap {{
-    width:36px;height:36px;border-radius:8px;
-    background:#f3f4f6;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #f3f4f6;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }}
 .row-info {{
-    display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;
+    display: flex; flex-direction: column; gap: 1px;
+    min-width: 0; flex: 1;
 }}
 .row-label {{
-    font-size:13px;color:#717885;
+    font-size: 13px; color: #717885;
 }}
 .row-value {{
-    font-size:14px;color:#111827;font-weight:600;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-size: 14px; color: #111827; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }}
+ 
+/* ── Footer ── */
 .card-footer {{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    border-top:1px solid #f3f4f6;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #f3f4f6;
 }}
 .footer-btn {{
-    padding:11px 0;text-align:center;
-    font-size:15px;font-weight:600;color:#6b7280;
-    cursor:pointer;background:transparent;border:none;
-    font-family:\'DM Sans\',sans-serif;
-    transition:background 0.12s;
-    display:flex;align-items:center;justify-content:center;gap:6px;
+    padding: 11px 0; text-align: center;
+    font-size: 14px; font-weight: 600; color: #6b7280;
+    cursor: pointer; background: transparent; border: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.12s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
 }}
-.footer-btn:hover {{ background:#f9fafb;color:#111827; }}
-.footer-btn.danger {{ border-left:1px solid #f3f4f6; }}
-.footer-btn.danger:hover {{ background:#fef2f2; }}
+.footer-btn:hover {{ background: #f9fafb; color: #111827; }}
+.footer-btn.danger {{ border-left: 1px solid #f3f4f6; }}
+.footer-btn.danger:hover {{ background: #fef2f2; color: #dc2626; }}
 </style>
 </head>
 <body>
@@ -2025,70 +2053,93 @@ body {{ padding-bottom:8px; }}
 var CARDS = {cards_json};
  
 function buildCards() {{
-    var grid = document.getElementById(\'grid\');
-    grid.innerHTML = \'\';
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
  
     CARDS.forEach(function(c) {{
-        var card = document.createElement(\'div\');
-        card.className = \'card\';
-        card.id = \'card_\' + c.idx;
+        var card = document.createElement('div');
+        card.className = 'card';
  
-        /* header */
-        card.innerHTML +=
-            \'<div class="card-header">\' +
-            \'<div class="avatar" style="background:\' + c.cor + \'">\' + c.avatar + \'</div>\' +
-            \'<div class="name">\' + c.nome + \'</div>\' +
-            \'</div>\' +
-            \'<div class="divider"></div>\';
+        /* ── Header ── */
+        var hdr = document.createElement('div');
+        hdr.className = 'card-header';
+        hdr.innerHTML =
+            '<div class="avatar" style="background:' + c.cor + '">' + c.avatar + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+            '<div class="name">' + c.nome + '</div>' +
+            '<span class="badge">Concorrente</span>' +
+            '</div>';
+        card.appendChild(hdr);
  
-        /* body */
-        var body = document.createElement(\'div\');
-        body.className = \'card-body\';
+        /* ── Divider ── */
+        var div = document.createElement('div');
+        div.className = 'divider';
+        card.appendChild(div);
+ 
+        /* ── Body ── */
+        var body = document.createElement('div');
+        body.className = 'card-body';
         body.innerHTML =
-            \'<div class="sec-title">Presença Digital</div>\' +
+            '<div class="sec-title">Presença Digital</div>' +
  
             /* Site */
-            \'<div class="row">\' +
-            \'<div class="icon-wrap">\' +
-            \'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>\' +
-            \'</div>\' +
-            \'<div class="row-info">\' +
-            \'<span class="row-label">Site</span>\' +
-            \'<span class="row-value">\' + (c.url || \'—\') + \'</span>\' +
-            \'</div></div>\' +
+            '<div class="row">' +
+            '<div class="icon-wrap">' +
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>' +
+            '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>' +
+            '</svg></div>' +
+            '<div class="row-info">' +
+            '<span class="row-label">Site</span>' +
+            '<span class="row-value">' + (c.url || '—') + '</span>' +
+            '</div></div>' +
  
             /* Instagram */
-            \'<div class="row">\' +
-            \'<div class="icon-wrap" style="background:#fff0f6;">\' +
-            \'<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig_\' + c.idx + \'" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_\' + c.idx + \')"/><circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="white"/></svg>\' +
-            \'</div>\' +
-            \'<div class="row-info">\' +
-            \'<span class="row-label">Instagram</span>\' +
-            \'<span class="row-value">\' + (c.instagram || \'—\') + \'</span>\' +
-            \'</div></div>\' +
+            '<div class="row">' +
+            '<div class="icon-wrap" style="background:#fff0f6;">' +
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none">' +
+            '<defs><linearGradient id="ig_' + c.idx + '" x1="0%" y1="100%" x2="100%" y2="0%">' +
+            '<stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/>' +
+            '<stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/>' +
+            '<stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>' +
+            '<rect x="2" y="2" width="20" height="20" rx="5" fill="url(#ig_' + c.idx + ')"/>' +
+            '<circle cx="12" cy="12" r="4.5" stroke="white" stroke-width="1.8" fill="none"/>' +
+            '<circle cx="17.5" cy="6.5" r="1.2" fill="white"/>' +
+            '</svg></div>' +
+            '<div class="row-info">' +
+            '<span class="row-label">Instagram</span>' +
+            '<span class="row-value">' + (c.instagram || '—') + '</span>' +
+            '</div></div>' +
  
             /* Facebook */
-            \'<div class="row">\' +
-            \'<div class="icon-wrap" style="background:#e8f0fe;">\' +
-            \'<svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>\' +
-            \'</div>\' +
-            \'<div class="row-info">\' +
-            \'<span class="row-label">Facebook</span>\' +
-            \'<span class="row-value">\' + (c.fb_page || \'—\') + \'</span>\' +
-            \'</div></div>\';
- 
+            '<div class="row">' +
+            '<div class="icon-wrap" style="background:#e8f0fe;">' +
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">' +
+            '<path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>' +
+            '</svg></div>' +
+            '<div class="row-info">' +
+            '<span class="row-label">Facebook</span>' +
+            '<span class="row-value">' + (c.fb_page || '—') + '</span>' +
+            '</div></div>';
         card.appendChild(body);
  
-        /* footer */
-        card.innerHTML +=
-            \'<div class="card-footer">\' +
-            \'<button class="footer-btn" onclick="acionar(\\\'editar_\' + c.idx + \'\\\')">\' +
-            \'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>\' +
-            \'Editar</button>\' +
-            \'<button class="footer-btn danger" onclick="acionar(\\\'remove_\' + c.idx + \'\\\')">\' +
-            \'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>\' +
-            \'Remover</button>\' +
-            \'</div>\';
+        /* ── Footer ── */
+        var footer = document.createElement('div');
+        footer.className = 'card-footer';
+        footer.innerHTML =
+            '<button class="footer-btn" onclick="acionar(' + c.idx + ', \'editar\')">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>' +
+            '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' +
+            '</svg>Editar</button>' +
+            '<button class="footer-btn danger" onclick="acionar(' + c.idx + ', \'remove\')">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"/>' +
+            '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>' +
+            '<path d="M10 11v6M14 11v6"/>' +
+            '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>' +
+            '</svg>Remover</button>';
+        card.appendChild(footer);
  
         grid.appendChild(card);
     }});
@@ -2096,24 +2147,12 @@ function buildCards() {{
     syncHeight();
 }}
  
-function acionar(key) {{
-    var btns = window.parent.document.querySelectorAll(\'button\');
-    var keyMap = {{}};
-    CARDS.forEach(function(c) {{
-        keyMap[\'editar_\' + c.idx] = c.idx;
-        keyMap[\'remove_\' + c.idx] = c.idx;
-    }});
-    var labels = {{
-        \'editar\': \'Editar Concorrente\',
-        \'remove\': \'Remover Concorrente\',
-    }};
-    var parts  = key.split(\'_\');
-    var action = parts[0];
-    var idx    = parseInt(parts[1]);
-    var label  = labels[action];
-    var found  = [];
+function acionar(idx, action) {{
+    var label = action === 'editar' ? 'Editar Concorrente' : 'Remover Concorrente';
+    var btns  = window.parent.document.querySelectorAll('button');
+    var found = [];
     btns.forEach(function(b) {{
-        if ((b.innerText || b.textContent || \'\').split(/\\s+/).join(\' \').trim() === label) found.push(b);
+        if ((b.innerText || b.textContent || '').split(/\s+/).join(' ').trim() === label) found.push(b);
     }});
     if (found[idx]) {{ found[idx].click(); return; }}
     if (found[0])   {{ found[0].click(); }}
@@ -2121,11 +2160,11 @@ function acionar(key) {{
  
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var iframes = window.parent.document.querySelectorAll(\'iframe\');
+    var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{
             if (iframes[i].contentWindow === window) {{
-                iframes[i].style.height = (h + 12) + \'px\';
+                iframes[i].style.height = (h + 12) + 'px';
                 break;
             }}
         }} catch(e) {{}}
@@ -2134,16 +2173,17 @@ function syncHeight() {{
  
 buildCards();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener(\'DOMContentLoaded\', syncHeight);
-window.addEventListener(\'load\', syncHeight);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200);
 setTimeout(syncHeight, 600);
 setTimeout(syncHeight, 1200);
 </script>
-</body></html>
+</body>
+</html>
 """, height=500, scrolling=False)
  
-        # ── Botões Streamlit reais (ocultos via CSS) ─────────────
+        # ── Botões Streamlit reais (completamente ocultos via CSS) ─
         for i, c in enumerate(concorrentes):
             b1, b2 = st.columns(2)
             with b1:
@@ -2163,11 +2203,11 @@ setTimeout(syncHeight, 1200);
  
     else:
         st.markdown("""
-        <div style=\'background:#fff;border:1px dashed #d1d5db;border-radius:14px;
-                    padding:48px 32px;text-align:center;margin-top:10px;\'>
-            <div style=\'font-size:32px;margin-bottom:12px\'>🎯</div>
-            <div style=\'font-size:16px;font-weight:600;color:#374151;margin-bottom:6px\'>Nenhum concorrente cadastrado</div>
-            <div style=\'font-size:14px;color:#9ca3af\'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
+        <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
+                    padding:48px 32px;text-align:center;margin-top:10px;'>
+            <div style='font-size:32px;margin-bottom:12px'>🎯</div>
+            <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Nenhum concorrente cadastrado</div>
+            <div style='font-size:14px;color:#9ca3af'>Clique em <b>＋ Adicionar</b> para começar a monitorar seus concorrentes.</div>
         </div>
         """, unsafe_allow_html=True)
 
