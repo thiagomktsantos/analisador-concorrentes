@@ -2177,112 +2177,14 @@ html, body { background: transparent; overflow: hidden; }
 """, height=70)
 
     with h2:
-        coletar = st.button(
-            "Coletar dados",
-            type="primary",
-            use_container_width=True,
-        )
+        st.markdown("<div style='padding-top:6px'/>", unsafe_allow_html=True)
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
-        dados_brutos  = st.session_state.metricas_redes.get("dados", [])
         if ultima_coleta:
-            import json as _jr
-            d = st.session_state.metricas_redes.get("dados", [])
-            djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
-            fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
-            
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.link-btn {{
-    font-size:13px; color:#3a9fd6; text-align:center;
-    display:block; cursor:pointer; text-decoration:underline;
-    text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0; margin-top:4px; font-family:'DM Sans',sans-serif;
-}}
-.link-btn:hover {{ color:#065f9e; }}
-</style>
-<button class="link-btn" onclick="abrirModal()">
-    🕒 Última coleta: <b>{ultima_coleta}</b>
-</button>
-<script>
-var DADOS_JSON = `{djs}`;
-var FILENAME   = '{fn}';
-var ULTIMA     = '{ultima_coleta}';
-
-function abrirModal() {{
-    var doc = window.parent.document;
-    var old = doc.getElementById('raw_modal_overlay');
-    if (old) old.remove();
-
-    var D;
-    try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = []; }}
-    var Dstr = JSON.stringify(D, null, 2);
-
-    var ov = doc.createElement('div');
-    ov.id = 'raw_modal_overlay';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
-    ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
-
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
-
-    var hdr = doc.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
-    hdr.innerHTML =
-        '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
-        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
-        + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button>'
-        + '</div>';
-
-    var pre = doc.createElement('pre');
-    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
-    pre.textContent = Dstr;
-
-    box.appendChild(hdr);
-    box.appendChild(pre);
-    ov.appendChild(box);
-    doc.body.appendChild(ov);
-
-    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') fechar(); }};
-    doc.addEventListener('keydown', window.parent.__rawEsc);
-
-    window.fechar = function() {{
-        var o = doc.getElementById('raw_modal_overlay');
-        if (o) o.remove();
-        if (window.parent.__rawEsc) {{
-            doc.removeEventListener('keydown', window.parent.__rawEsc);
-            window.parent.__rawEsc = null;
-        }}
-    }};
-
-    window.copiarDados = function() {{
-        var b = doc.getElementById('raw_copy_btn');
-        navigator.clipboard.writeText(Dstr).then(function() {{
-            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
-        }});
-    }};
-
-    window.baixarDados = function() {{
-        var a = doc.createElement('a');
-        a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
-        a.download = FILENAME;
-        a.click();
-    }};
-}}
-
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '30px'; break; }} }} catch(e) {{}}
-    }}
-}})();
-</script>
-        """, height=30, scrolling=False)
+            st.markdown(
+                f"<div style='font-size:13px;color:#6b7280;text-align:center;padding-top:8px'>"
+                f"🕒 Dados de: <b>{ultima_coleta}</b></div>",
+                unsafe_allow_html=True,
+            )
 
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 24px 0'/>",
@@ -5771,16 +5673,10 @@ setTimeout(ajustarAltura,100);
                     debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
-                    # Thumb do card: feed baixa qualidade (índice 1), fallback para índice 0
-                    img_thumb_url = images[1] if len(images) > 1 else (images[0] if images else "")
-                    img_primary = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
-
-                    # Fallbacks para o thumb (não usados no modal de 4 imagens)
+                    img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
                     img_fallbacks = []
-                    if img_thumb_url and img_thumb_url not in img_fallbacks:
-                        img_fallbacks.append(img_thumb_url)
-                    if images_b64 and images_b64[0] not in img_fallbacks:
-                        img_fallbacks.append(images_b64[0])
+                    if images_b64 and len(images_b64) > 1:
+                        img_fallbacks.extend(images_b64[1:])
                     img_fallbacks.extend([u for u in images if u not in img_fallbacks])
                     srcs_js = _json.dumps(img_fallbacks)
 
@@ -5856,16 +5752,9 @@ setTimeout(ajustarAltura,100);
 </script>"""
 
                     elif img_primary:
-                        all_imgs_js = _json.dumps(images[:4], ensure_ascii=True)
-                        main_modal_imgs_js = _json.dumps(
-                            [img for img in [
-                                images[0] if len(images) > 0 else "",
-                                images[2] if len(images) > 2 else "",
-                            ] if img],
-                            ensure_ascii=True
-                        )
                         media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer">
+<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
+     onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
@@ -5875,26 +5764,14 @@ setTimeout(ajustarAltura,100);
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ver criativos</div>
 </div>
 <script>
-(function(){{
-    var IMGS_{uid} = {all_imgs_js};
-    var MAIN_IMGS_{uid} = {main_modal_imgs_js};
-    var SNAP_{uid} = '{snap_url.replace("'","").replace('"',"")}';
-    var wrap = document.getElementById('mwrap_{uid}');
-    if (wrap) {{
-        wrap.addEventListener('click', function() {{
-            openModalHQ(MAIN_IMGS_{uid}, IMGS_{uid}, SNAP_{uid});
-        }});
-    }}
-    var _srcs_{uid} = {srcs_js};
-    var _idx_{uid} = 0;
-}})();
+var _srcs_{uid}={srcs_js};
+var _idx_{uid}=0;
 function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if(_idx_{uid} < _srcs_{uid}.length){{ img.src = _srcs_{uid}[_idx_{uid}]; }}
-    else{{ img.style.display='none'; var e=document.getElementById('merr_{uid}'); if(e) e.style.display='flex'; }}
+    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
+    else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
 }}
 </script>"""
-
                     else:
                         _sv = snap_url.replace("'", "")
                         _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
@@ -5985,112 +5862,6 @@ window.__PLATS_{uid}__ = {plat_js};
                 cards_joined = "\n".join(all_cards_html)
                 n_cols = st.session_state.get(col_key, 4)
 
-                _js_modal_hq = """
-function openModalHQ(hqImgs, allImgs, snapUrl) {
-    var doc = window.parent.document;
-    var old = doc.getElementById('ads_modal_overlay');
-    if (old) old.remove();
-    var overlay = doc.createElement('div');
-    overlay.id = 'ads_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
-    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;padding:40px 24px 24px;min-width:320px;max-width:min(92vw,900px);';
-    var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
-    closeBtn.onclick = closeModal;
-    var title = doc.createElement('div');
-    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = hqImgs.length > 1 ? 'Feed · Stories (alta qualidade)' : 'Feed (alta qualidade)';
-    var labels = ['Feed', 'Stories'];
-    var colors = ['#3a9fd6', '#2ecc71'];
-    var grid = doc.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;';
-    hqImgs.forEach(function(src, i) {
-        var cell = doc.createElement('div');
-        cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
-        var lbl = doc.createElement('div');
-        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
-        var imgEl = doc.createElement('img');
-        imgEl.src = src || '';
-        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:70vh;';
-        imgEl.onerror = function() {
-            cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
-        };
-        cell.appendChild(lbl);
-        cell.appendChild(imgEl);
-        grid.appendChild(cell);
-    });
-    var debugBtn = doc.createElement('button');
-    debugBtn.textContent = '🔍 Ver todas as 4 imagens (debug)';
-    debugBtn.style.cssText = 'margin-top:14px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;';
-    debugBtn.onclick = function() {
-        closeModal();
-        setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
-    };
-    box.appendChild(closeBtn);
-    box.appendChild(title);
-    box.appendChild(grid);
-    box.appendChild(debugBtn);
-    overlay.appendChild(box);
-    doc.body.appendChild(overlay);
-    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
-    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
-}
-
-function openModalImages(imgs, snapUrl) {
-    var doc = window.parent.document;
-    var old = doc.getElementById('ads_modal_overlay');
-    if (old) old.remove();
-    var overlay = doc.createElement('div');
-    overlay.id = 'ads_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
-    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
-    var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
-    closeBtn.onclick = closeModal;
-    var title = doc.createElement('div');
-    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = '4 imagens da API — índices e qualidades:';
-    var labels = ['Idx 0 — Feed Alta', 'Idx 1 — Feed Baixa (thumb)', 'Idx 2 — Stories Alta', 'Idx 3 — Stories Baixa'];
-    var colors = ['#3a9fd6', '#e67e22', '#2ecc71', '#e74c3c'];
-    var grid = doc.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
-    imgs.forEach(function(src, i) {
-        var cell = doc.createElement('div');
-        cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
-        var lbl = doc.createElement('div');
-        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Idx ' + i);
-        var imgEl = doc.createElement('img');
-        imgEl.src = src || '';
-        imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:220px;';
-        imgEl.onerror = function() {
-            cell.innerHTML = '<div style="color:#555;font-size:11px;font-family:DM Sans,sans-serif;text-align:center;padding:20px;">Sem imagem</div>';
-        };
-        var srcLbl = doc.createElement('div');
-        srcLbl.style.cssText = 'padding:4px 8px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;';
-        srcLbl.textContent = src ? src.substring(0,70) + '…' : 'vazio';
-        cell.appendChild(lbl);
-        cell.appendChild(imgEl);
-        cell.appendChild(srcLbl);
-        grid.appendChild(cell);
-    });
-    box.appendChild(closeBtn);
-    box.appendChild(title);
-    box.appendChild(grid);
-    overlay.appendChild(box);
-    doc.body.appendChild(overlay);
-    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
-    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
-}
-"""
-
                 components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -6138,136 +5909,98 @@ body{{padding-bottom:4px;min-height:0;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:10px;color:#374151;padding:8px 12px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:180px;overflow-y:auto;border-top:1px solid #fde68a;}}
+#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
+#modal-overlay.open{{display:flex;}}
+#modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
+#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
+#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
+#modal-video{{display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;}}
+#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
+#modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
+#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
 </style>
 </head>
 <body>
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div id="modal-box">
+        <button id="modal-close" onclick="closeModal()">✕</button>
+        <div id="modal-content"></div>
+    </div>
+</div>
 <div class="ads-grid">{cards_joined}</div>
 <script>
-/* ── Fallback visual para vídeo sem URL reproduzível ── */
-function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
-    var wrap = doc.createElement('div');
-    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;min-width:280px;min-height:200px;';
-
-    if (thumbUrl) {{
-        var img = doc.createElement('img');
-        img.src = thumbUrl;
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.55);';
-        wrap.appendChild(img);
-    }}
-
-    var playBtn = doc.createElement('a');
-    playBtn.href = igUrl;
-    playBtn.target = '_blank';
-    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
-        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
-    playBtn.innerHTML =
-        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
-        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
-        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
-        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
-        + '</div>'
-        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
-        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
-
-    wrap.appendChild(playBtn);
-    content.appendChild(wrap);
-}}
-
-/* ── Modal principal ── */
-function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
-
-    var doc = window.parent.document;
-    var old = doc.getElementById('redes_modal_overlay');
-    if (old) old.remove();
-
-    var overlay = doc.createElement('div');
-    overlay.id = 'redes_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
-
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
-
-    var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
-    closeBtn.onclick = closeModal;
-
-    var content = doc.createElement('div');
-    content.id = 'redes_modal_content';
-    content.style.cssText = 'display:flex;align-items:center;justify-content:center;';
-
-    box.appendChild(closeBtn);
-    box.appendChild(content);
-    overlay.appendChild(box);
-    doc.body.appendChild(overlay);
-
-    window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
-    doc.addEventListener('keydown', window.parent.__redesModalEscFn);
-
-    /* ── VÍDEO ── */
+function openModal(mediaSrc, snapUrl, isVideo) {{
+    var overlay = document.getElementById('modal-overlay');
+    var content = document.getElementById('modal-content');
+    content.innerHTML = '';
     if (isVideo) {{
-        var vUrl = (videoUrl || '').trim();
-        if (vUrl) {{
-            var vid = doc.createElement('video');
-            vid.src = vUrl;
+        var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
+        if (isDirectVideo) {{
+            var vid = document.createElement('video');
+            vid.id = 'modal-video';
+            vid.src = mediaSrc;
             vid.controls = true;
-            vid.autoplay  = true;
+            vid.autoplay = true;
             vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
             vid.onerror = function() {{
                 content.innerHTML = '';
-                _showVideoFallback(content, doc, thumbUrl, igUrl);
+                if (snapUrl) {{
+                    var wrap = document.createElement('div');
+                    wrap.id = 'modal-video-wrap';
+                    var btn = document.createElement('a');
+                    btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
+                    btn.innerHTML = '↗ Abrir no Ad Library';
+                    wrap.appendChild(btn);
+                    content.appendChild(wrap);
+                }}
             }};
             content.appendChild(vid);
         }} else {{
-            _showVideoFallback(content, doc, thumbUrl, igUrl);
+            var wrap = document.createElement('div');
+            wrap.id = 'modal-video-wrap';
+            if (snapUrl) {{
+                var btn = document.createElement('a');
+                btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
+                btn.innerHTML = '↗ Abrir vídeo no Ad Library';
+                wrap.appendChild(btn);
+            }}
+            content.appendChild(wrap);
         }}
-        return;
+        overlay.classList.add('open');
+    }} else {{
+        if (!mediaSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
+        if (!mediaSrc) return;
+        var loading = document.createElement('div');
+        loading.id = 'modal-loading'; loading.textContent = 'Carregando…';
+        content.appendChild(loading);
+        overlay.classList.add('open');
+        var tmp = new Image();
+        tmp.onload = function() {{
+            content.innerHTML = '';
+            var img = document.createElement('img');
+            img.id = 'modal-img'; img.src = mediaSrc;
+            content.appendChild(img);
+        }};
+        tmp.onerror = function() {{
+            content.innerHTML = '';
+            if (snapUrl) {{ window.open(snapUrl, '_blank'); closeModal(); }}
+            else {{
+                var msg = document.createElement('div');
+                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center';
+                msg.textContent = 'Imagem não disponível.';
+                content.appendChild(msg);
+            }}
+        }};
+        tmp.src = mediaSrc;
     }}
-
-    /* ── FOTO ── */
-    var tUrl = (thumbUrl || '').trim();
-    if (!tUrl) {{
-        window.parent.open(igUrl, '_blank');
-        closeModal();
-        return;
-    }}
-
-    var loading = doc.createElement('div');
-    loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
-    loading.textContent = 'Carregando criativo…';
-    content.appendChild(loading);
-
-    var tmp = new window.parent.Image();
-    tmp.onload = function() {{
-        content.innerHTML = '';
-        var img = doc.createElement('img');
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
-        img.src = tUrl;
-        content.appendChild(img);
-    }};
-    tmp.onerror = function() {{
-        content.innerHTML = '';
-        var fb = doc.createElement('div');
-        fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
-        fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
-            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
-        content.appendChild(fb);
-    }};
-    tmp.src = tUrl;
 }}
-
 function closeModal() {{
-    var doc = window.parent.document;
-    var overlay = doc.getElementById('redes_modal_overlay');
-    if (overlay) overlay.remove();
-    if (window.parent.__redesModalEscFn) {{
-        doc.removeEventListener('keydown', window.parent.__redesModalEscFn);
-        window.parent.__redesModalEscFn = null;
-    }}
+    var vid = document.getElementById('modal-video');
+    if (vid) {{ vid.pause(); vid.src = ''; }}
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.getElementById('modal-content').innerHTML = '';
 }}
-
 document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
@@ -6895,104 +6628,11 @@ html, body { background: transparent; overflow: hidden; }
         )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         if ultima_coleta:
-            import json as _jr
-            d = st.session_state.metricas_redes.get("dados", [])
-            djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
-            fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
-            
-            components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.link-btn {{
-    font-size:13px; color:#3a9fd6; text-align:center;
-    display:block; cursor:pointer; text-decoration:underline;
-    text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0; margin-top:4px; font-family:'DM Sans',sans-serif;
-}}
-.link-btn:hover {{ color:#065f9e; }}
-</style>
-<button class="link-btn" onclick="abrirModal()">
-    🕒 Última coleta: <b>{ultima_coleta}</b>
-</button>
-<script>
-var DADOS_JSON = `{djs}`;
-var FILENAME   = '{fn}';
-var ULTIMA     = '{ultima_coleta}';
-
-function abrirModal() {{
-    var doc = window.parent.document;
-    var old = doc.getElementById('raw_modal_overlay');
-    if (old) old.remove();
-
-    var D;
-    try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = []; }}
-    var Dstr = JSON.stringify(D, null, 2);
-
-    var ov = doc.createElement('div');
-    ov.id = 'raw_modal_overlay';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
-    ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
-
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
-
-    var hdr = doc.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
-    hdr.innerHTML =
-        '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
-        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
-        + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button>'
-        + '</div>';
-
-    var pre = doc.createElement('pre');
-    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
-    pre.textContent = Dstr;
-
-    box.appendChild(hdr);
-    box.appendChild(pre);
-    ov.appendChild(box);
-    doc.body.appendChild(ov);
-
-    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') fechar(); }};
-    doc.addEventListener('keydown', window.parent.__rawEsc);
-
-    window.fechar = function() {{
-        var o = doc.getElementById('raw_modal_overlay');
-        if (o) o.remove();
-        if (window.parent.__rawEsc) {{
-            doc.removeEventListener('keydown', window.parent.__rawEsc);
-            window.parent.__rawEsc = null;
-        }}
-    }};
-
-    window.copiarDados = function() {{
-        var b = doc.getElementById('raw_copy_btn');
-        navigator.clipboard.writeText(Dstr).then(function() {{
-            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
-        }});
-    }};
-
-    window.baixarDados = function() {{
-        var a = doc.createElement('a');
-        a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
-        a.download = FILENAME;
-        a.click();
-    }};
-}}
-
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '30px'; break; }} }} catch(e) {{}}
-    }}
-}})();
-</script>
-""", height=30, scrolling=False)
+            st.markdown(
+                f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
+                f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
+                unsafe_allow_html=True,
+            )
  
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
@@ -7106,16 +6746,12 @@ function abrirModal() {{
                                 shortcode = p.get("code") or p.get("shortcode") or ""
                                 post_url  = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
 
-                                # Tipo de mídia: 1=foto, 2=vídeo/reel, 8=carrossel
-                                media_type = p.get("media_type", 1)
-                                is_reel = media_type == 2
-
-                                # URL do vídeo (Reel ou Vídeo normal)
+                                # URL do vídeo
                                 video_url = ""
-                                if is_reel:
+                                if p.get("media_type", 1) == 2:
                                     video_url = (
                                         p.get("video_url")
-                                        or (p.get("video_versions") or [{}])[0].get("url", "")
+                                        or p.get("video_versions", [{}])[0].get("url", "") if p.get("video_versions") else ""
                                         or ""
                                     )
 
@@ -7125,8 +6761,7 @@ function abrirModal() {{
                                     "thumb":     thumb,
                                     "caption":   caption,
                                     "date":      date_str,
-                                    "is_video":   is_reel,
-                                    "media_type": media_type,
+                                    "is_video":  p.get("media_type", 1) == 2,
                                     "video_url": video_url,
                                     "post_url":  post_url,
                                     "shortcode": shortcode,
@@ -8013,7 +7648,7 @@ Como interpretar as métricas desta postagem?
                     shortcode = p.get("shortcode", "")
                     if not post_url and shortcode:
                         post_url = f"https://www.instagram.com/p/{shortcode}/"
-                    ig_post_url = post_url if post_url else ""
+                    ig_post_url = post_url if post_url else f"https://www.instagram.com/{handle_clean_post}/"
 
                     posts_json_data.append({
                         "jp":           jp,
@@ -8028,7 +7663,6 @@ Como interpretar as métricas desta postagem?
                         "ig_url":       ig_post_url,
                         "resultado_ia": resultado_ia_html,
                         "tem_ia":       bool(resultado_ia),
-                        "media_type":   p.get("media_type", 1),
                     })
 
                 posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
@@ -8272,60 +7906,7 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
     content.appendChild(wrap);
 }}
 
-/* ── Modal: vídeo abre video_url direto; foto abre modal com imagem ── */
 function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
-
-    /* ── VÍDEO ── */
-    if (isVideo) {{
-        var doc = window.parent.document;
-        var old = doc.getElementById('redes_modal_overlay');
-        if (old) old.remove();
-
-        var overlay = doc.createElement('div');
-        overlay.id = 'redes_modal_overlay';
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-        overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
-
-        var box = doc.createElement('div');
-        box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
-
-        var closeBtn = doc.createElement('button');
-        closeBtn.textContent = '✕';
-        closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
-        closeBtn.onclick = closeModal;
-
-        var content = doc.createElement('div');
-        content.id = 'redes_modal_content';
-
-        box.appendChild(closeBtn);
-        box.appendChild(content);
-        overlay.appendChild(box);
-        doc.body.appendChild(overlay);
-
-        window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
-        doc.addEventListener('keydown', window.parent.__redesModalEscFn);
-
-        if (videoUrl) {{
-            /* Tem URL de vídeo da API: reproduz direto */
-            var vid = doc.createElement('video');
-            vid.src = videoUrl;
-            vid.controls = true;
-            vid.autoplay = true;
-            vid.playsInline = true;
-            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
-            vid.onerror = function() {{
-                content.innerHTML = '';
-                _showVideoFallback(content, doc, thumbUrl, igUrl);
-            }};
-            content.appendChild(vid);
-        }} else {{
-            /* Sem video_url: mostra thumb com botão para abrir no Instagram */
-            _showVideoFallback(content, doc, thumbUrl, igUrl);
-        }}
-        return;
-    }}
-
-    /* ── FOTO ── */
     var doc = window.parent.document;
     var old = doc.getElementById('redes_modal_overlay');
     if (old) old.remove();
@@ -8354,6 +7935,30 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
 
+    // ── VÍDEO ──
+    if (isVideo) {{
+        // Tenta reproduzir se tiver URL direta
+        if (videoUrl) {{
+            var vid = doc.createElement('video');
+            vid.src = videoUrl;
+            vid.controls = true;
+            vid.autoplay = true;
+            vid.playsInline = true;
+            vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
+            vid.onerror = function() {{
+                // Fallback: mostra thumb + botão Instagram
+                content.innerHTML = '';
+                _showVideoFallback(content, doc, thumbUrl, igUrl);
+            }};
+            content.appendChild(vid);
+        }} else {{
+            // Sem URL de vídeo: mostra thumb com botão para abrir no Instagram
+            _showVideoFallback(content, doc, thumbUrl, igUrl);
+        }}
+        return;
+    }}
+
+    // ── IMAGEM ──
     if (!thumbUrl) {{
         window.parent.open(igUrl, '_blank');
         closeModal();
@@ -8382,36 +7987,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
         content.appendChild(fb);
     }};
     tmp.src = thumbUrl;
-}}
-
-/* ── Fallback visual para vídeo sem URL reproduzível ── */
-function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
-    var wrap = doc.createElement('div');
-    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
-
-    if (thumbUrl) {{
-        var img = doc.createElement('img');
-        img.src = thumbUrl;
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.55);';
-        wrap.appendChild(img);
-    }}
-
-    var playBtn = doc.createElement('a');
-    playBtn.href = igUrl;
-    playBtn.target = '_blank';
-    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
-        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
-    playBtn.innerHTML =
-        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
-        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
-        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
-        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
-        + '</div>'
-        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
-        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
-
-    wrap.appendChild(playBtn);
-    content.appendChild(wrap);
 }}
 
 function closeModal() {{
@@ -8446,9 +8021,7 @@ function buildGrid(posts) {{
         var idx        = p.jp;
         var hasCaption = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? '🎬' : '📷';
-        var mediaType  = p.media_type || 1;
-        var typeLbl    = mediaType === 8 ? 'Carrossel' : (mediaType === 2 ? (p.is_reel ? 'Reel' : 'Vídeo') : 'Foto');
-        var badgeColor = mediaType === 8 ? '#7c3aed' : (mediaType === 2 ? '#e1306c' : '#0ea5e9');
+        var typeLbl    = p.is_video ? 'Vídeo' : 'Foto';
         var thumbUrl   = (p.thumb || '').trim();
         var engTotal   = (p.likes||0) + (p.comments||0);
         var igUrl      = p.ig_url || '#';
@@ -8467,11 +8040,7 @@ function buildGrid(posts) {{
         card.innerHTML =
             '<div class="thumb-wrap" id="tw_' + idx + '" ' + thumbClickAttr + '>'
             + thumbInner
-            + '<div class="zoom-badge" style="background:' + badgeColor + 'cc">'
-            + (mediaType === 2
-                ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg> ' + typeLbl
-                : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> ' + typeLbl)
-            + '</div>'
+            + '<div class="zoom-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> Ver criativo</div>'
             + '</div>'
 
             + '<div class="metrics-row">'
@@ -8495,9 +8064,7 @@ function buildGrid(posts) {{
               )
 
             + '<div class="card-footer-btns">'
-            + (igUrl
-                ? '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram ↗</a>'
-                : '<span class="footer-btn ig" style="opacity:0.35;cursor:default;pointer-events:none">Sem link</span>')
+            + '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram</a>'
             + '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">'
             + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>'
             + (p.tem_ia ? 'Reanalisar' : 'Analisar postagem')
