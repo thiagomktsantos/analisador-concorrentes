@@ -7589,38 +7589,151 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
         bio_resultado = st.session_state.get(chave_bio_ia, "")
         bio_resultado_html = bio_resultado.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>") if bio_resultado else ""
  
+# ══════════════════════════════════════════════════════════════
+        # IFRAME UNIFICADO: header + bio + tabs + conteúdo
         # ══════════════════════════════════════════════════════════════
-        # IFRAME UNIFICADO: header + bio + tabs
-        # ══════════════════════════════════════════════════════════════
- 
-        components.html(f"""
+
+        if subtab_atual == "postagens":
+            posts_col_key = f"posts_cols_{aba_ativa}"
+            if posts_col_key not in st.session_state:
+                st.session_state[posts_col_key] = 4
+            n_cols_posts = st.session_state.get(posts_col_key, 4)
+
+            ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
+            st.markdown(f"""
+            <style>
+            .st-key-{ghost_toggle_key} {{
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:0 !important; height:0 !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; display:none !important;
+            }}
+            .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
+                display:none !important; height:0 !important; min-height:0 !important;
+                max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
+            if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
+                st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
+                st.rerun()
+
+            for jp in range(len(posts_list)):
+                ghost_post_ia_key = f"btn_post_ia_{aba_ativa}_{jp}"
+                st.markdown(f"""
+                <style>
+                .st-key-{ghost_post_ia_key} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:0 !important; height:0 !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; display:none !important;
+                }}
+                .stElementContainer:has(.st-key-{ghost_post_ia_key}) {{
+                    display:none !important; height:0 !important; min-height:0 !important;
+                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+                if st.button(f"post_ia_{aba_ativa}_{jp}", key=ghost_post_ia_key):
+                    chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
+                    p_data = posts_list[jp]
+                    if gemini_model is None:
+                        st.session_state[chave_post_ia] = "Configure GEMINI_API_KEY nos secrets."
+                    else:
+                        with st.spinner(f"Analisando postagem {jp+1}…"):
+                            try:
+                                resp_post = gemini_model.generate_content(f"""Você é especialista em redes sociais e copywriting.
+Analise esta postagem do Instagram e dê feedback estratégico em português.
+
+Perfil: {r.get('handle','')} — {r.get('nome','')}
+Data: {p_data.get('date','')}
+Tipo: {'Vídeo' if p_data.get('is_video') else 'Foto'}
+Curtidas: {p_data.get('likes',0)} | Comentários: {p_data.get('comments',0)} | Engajamento total: {p_data.get('likes',0)+p_data.get('comments',0)}
+Legenda: {p_data.get('caption','') or 'Sem legenda'}
+
+### 🎯 Objetivo da Postagem
+Qual parece ser o objetivo desta publicação?
+
+### ✍️ Análise da Legenda
+Pontos fortes e fracos do copy utilizado.
+
+### 📊 Desempenho
+Como interpretar as métricas desta postagem?
+
+### 💡 Sugestões de Melhoria
+2 ações concretas para aumentar o engajamento.
+""")
+                                st.session_state[chave_post_ia] = resp_post.text
+                                st.rerun()
+                            except Exception as e_post:
+                                st.session_state[chave_post_ia] = f"Erro: {e_post}"
+                                st.rerun()
+
+            import json as _json_posts
+            posts_json_data = []
+            for jp, p in enumerate(posts_list):
+                chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
+                resultado_ia = st.session_state.get(chave_post_ia, "")
+                resultado_ia_html = resultado_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado_ia else ""
+                handle_clean_post = (r.get("handle") or "").lstrip("@")
+                post_url = p.get("post_url", "")
+                shortcode = p.get("shortcode", "")
+                if not post_url and shortcode:
+                    post_url = f"https://www.instagram.com/p/{shortcode}/"
+                ig_post_url = post_url if post_url else ""
+
+                posts_json_data.append({
+                    "jp":             jp,
+                    "thumb":          p.get("thumb", ""),
+                    "caption":        p.get("caption", ""),
+                    "date":           p.get("date", ""),
+                    "likes":          p.get("likes", 0),
+                    "comments":       p.get("comments", 0),
+                    "eng":            p.get("likes", 0) + p.get("comments", 0),
+                    "is_video":       p.get("is_video", False),
+                    "video_url":      p.get("video_url", ""),
+                    "ig_url":         ig_post_url,
+                    "resultado_ia":   resultado_ia_html,
+                    "tem_ia":         bool(resultado_ia),
+                    "media_type":     p.get("media_type", 1),
+                    "carousel_imgs":  p.get("carousel_imgs", []),
+                })
+
+            posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
+            r_seg_val = r.get("seguidores", 0)
+
+            n_total     = len(posts_list)
+            n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
+            n_videos    = sum(1 for p in posts_list if p.get("is_video"))
+            total_likes = sum(p.get("likes", 0) for p in posts_list)
+            total_coms  = sum(p.get("comments", 0) for p in posts_list)
+            best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
+
+            def _fmt(n):
+                n = int(n or 0)
+                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
+                if n >= 1_000:     return f"{n/1_000:.1f}K"
+                return str(n)
+
+            # ── ÚNICO components.html: perfil + postagens ──────────────
+            components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
-    background:transparent;
-    font-family:'DM Sans',sans-serif;
-    -webkit-font-smoothing:antialiased;
-    overflow:hidden;
-}}
- 
-/* ── CARD CONTAINER ── */
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
+body{{padding-bottom:8px;}}
+
+/* ── PERFIL CARD ── */
 .perfil-card {{
     background:#fff;
     border:1px solid #e5e7eb;
     border-radius:14px 14px 0 0;
     overflow:hidden;
 }}
- 
-/* ── HEADER ── */
 .perfil-header {{
-    display:flex;
-    align-items:center;
-    gap:16px;
-    padding:18px 22px 16px;
-    border-bottom:1px solid #f3f4f6;
+    display:flex; align-items:center; gap:16px;
+    padding:18px 22px 16px; border-bottom:1px solid #f3f4f6;
 }}
 .avatar {{
     width:52px; height:52px; border-radius:50%;
@@ -7648,54 +7761,32 @@ html, body {{
     background:#0e2a47; color:#fff;
     padding:9px 18px; border-radius:9px;
     font-size:13px; font-weight:700; text-decoration:none;
-    white-space:nowrap; flex-shrink:0;
-    transition:background 0.15s;
+    white-space:nowrap; flex-shrink:0; transition:background 0.15s;
 }}
 .btn-ig:hover {{ background:#1a3a5c; }}
- 
+
 /* ── BIO ── */
 .bio-section {{
-    display:grid;
-    grid-template-columns:15% 50% 35%;
-    border-bottom:1px solid #f3f4f6;
-    min-height:80px;
+    display:grid; grid-template-columns:15% 50% 35%;
+    border-bottom:1px solid #f3f4f6; min-height:80px;
 }}
 .bio-label-col {{
-    padding:18px 16px;
-    border-right:1px solid #f3f4f6;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#fafbfc;
+    padding:18px 16px; border-right:1px solid #f3f4f6;
+    display:flex; align-items:center; justify-content:center; background:#fafbfc;
 }}
 .bio-label-txt {{
-    font-size:10px;
-    font-weight:700;
-    color:#9ca3af;
-    text-transform:uppercase;
-    letter-spacing:1px;
-    text-align:center;
+    font-size:10px; font-weight:700; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:1px; text-align:center;
 }}
 .bio-left {{
-    padding:18px 20px;
-    border-right:1px solid #f3f4f6;
-    display:flex;
-    align-items:center;
+    padding:18px 20px; border-right:1px solid #f3f4f6;
+    display:flex; align-items:center;
 }}
-.bio-text {{
-    font-size:15px; color:#374151; line-height:1.75;
-}}
-.bio-empty {{
-    font-size:14px; color:#d1d5db; font-style:italic;
-}}
+.bio-text {{ font-size:15px; color:#374151; line-height:1.75; }}
+.bio-empty {{ font-size:14px; color:#d1d5db; font-style:italic; }}
 .bio-right {{
-    padding:16px 20px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    background:#fafbfc;
+    padding:16px 20px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:8px; background:#fafbfc;
 }}
 .btn-ia {{
     width:100%; padding:10px 0; border:1px solid #3a9fd6; border-radius:8px;
@@ -7705,52 +7796,156 @@ html, body {{
 }}
 .btn-ia:hover {{ background:#dbeafe; }}
 .ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.4; }}
- 
-/* ── BIO RESULTADO ── */
 .bio-resultado {{
-    background:#f0fdf4;
-    border-top:1px solid #bbf7d0;
-    padding:14px 20px;
-    font-size:13px; color:#374151; line-height:1.75;
-    border-bottom:1px solid #f3f4f6;
-    display:none;
+    background:#f0fdf4; border-top:1px solid #bbf7d0;
+    padding:14px 20px; font-size:13px; color:#374151; line-height:1.75;
+    border-bottom:1px solid #f3f4f6; display:none;
 }}
 .bio-resultado.show {{ display:block; }}
 .bio-resultado-hdr {{
     font-size:10px; font-weight:800; color:#15803d;
-    text-transform:uppercase; letter-spacing:0.5px;
-    margin-bottom:8px;
+    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
 }}
- 
+
 /* ── TABS ── */
-.tabs-bar {{
-    display:flex;
-    background:#f9fafb;
-}}
+.tabs-bar {{ display:flex; background:#f9fafb; }}
 .tab-btn {{
     flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af;
     background:transparent; border:none; cursor:pointer;
-    font-family:'DM Sans',sans-serif;
-    border-bottom:3px solid transparent;
+    font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent;
     transition:all 0.15s;
     display:flex; align-items:center; justify-content:center; gap:8px;
 }}
 .tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
 .tab-btn.active {{
-    color:#1a2e4a;
-    border-bottom:4px solid #3a9fd6;
-    background:#fff;
-    font-weight:800;
-    border-top:1px solid #e5e7eb;
+    color:#1a2e4a; border-bottom:4px solid #3a9fd6;
+    background:#fff; font-weight:800; border-top:1px solid #e5e7eb;
 }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
+
+/* ── POSTAGENS ── */
+.filters-bar {{
+    display:flex; align-items:center; gap:10px;
+    padding:16px 20px;
+    border:1px solid #e5e7eb; border-top:none;
+    background:#fff; flex-wrap:wrap;
+}}
+.filter-input {{
+    flex:1; min-width:160px; max-width:260px; height:40px;
+    padding:0 14px; border:1px solid #e5e7eb; border-radius:8px;
+    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
+    background:#fafafa; outline:none; transition:border-color 0.15s;
+}}
+.filter-input:focus {{ border-color:#3a9fd6; background:#fff; }}
+.filter-input::placeholder {{ color:#9ca3af; }}
+.filter-select {{
+    height:40px; padding:0 32px 0 12px;
+    border:1px solid #e5e7eb; border-radius:8px;
+    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+    -webkit-appearance:none; appearance:none; cursor:pointer; outline:none;
+}}
+.filter-select:focus {{ border-color:#3a9fd6; }}
+.col-toggle {{
+    margin-left:auto; width:40px; height:40px;
+    border:1px solid #e5e7eb; border-radius:8px;
+    background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#6b7280; flex-shrink:0; transition:all 0.12s;
+}}
+.col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
+
+.stats-row {{ display:flex; gap:12px; padding:16px 0 4px; flex-wrap:wrap; }}
+.stat-card {{
+    flex:1; min-width:90px; background:#fff;
+    border:1px solid #e5e7eb; border-radius:12px;
+    padding:14px 10px; text-align:center;
+}}
+.stat-num2 {{ font-size:22px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; }}
+.stat-lbl2 {{ font-size:12px; font-weight:600; color:#9ca3af; text-transform:uppercase; }}
+
+.posts-grid {{ display:grid; gap:12px; margin-top:16px; }}
+
+.post-card {{
+    background:#fff; border:1px solid #e5e7eb;
+    display:flex; flex-direction:column; overflow:hidden;
+    position:relative; border-radius:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    transition:box-shadow 0.15s, border-color 0.15s;
+}}
+.post-card:hover {{ border-color:#6fd1f3; box-shadow:0 4px 16px rgba(58,159,214,0.12); }}
+.thumb-wrap {{
+    position:relative; width:100%; aspect-ratio:1/1;
+    background:#f0f2f5; overflow:hidden; flex-shrink:0; cursor:pointer;
+}}
+.thumb-wrap img {{ width:100%; height:100%; object-fit:cover; display:block; }}
+.thumb-fallback {{
+    width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#e9eef5,#d2dde9); gap:6px; cursor:pointer;
+}}
+.zoom-badge {{
+    position:absolute; bottom:8px; right:8px;
+    background:rgba(0,0,0,0.45); color:#fff;
+    font-size:10px; font-weight:600; padding:3px 8px;
+    border-radius:6px; pointer-events:none;
+    display:flex; align-items:center; gap:4px;
+}}
+.metrics-row {{
+    display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
+    border-bottom:1px solid #f3f4f6; background:#fafbfc;
+}}
+.metric-cell {{ padding:8px 6px; text-align:center; border-right:1px solid #f3f4f6; }}
+.metric-cell:last-child {{ border-right:none; }}
+.metric-cell-lbl {{ font-size:13px; margin-bottom:2px; line-height:1; }}
+.metric-cell-val {{ font-size:13px; font-weight:800; color:#111827; }}
+.metric-cell-val.eng {{ color:#3a9fd6; }}
+.card-caption-wrap {{ padding:10px 12px 8px; flex:1; }}
+.card-caption {{
+    font-size:12px; color:#374151; line-height:1.55; word-break:break-word;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+}}
+.card-caption.expanded {{ display:block; -webkit-line-clamp:unset; }}
+.ver-copy-btn {{
+    background:none; border:none; padding:2px 0 0;
+    font-size:11px; font-weight:700; color:#3a9fd6;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:block; margin-top:4px; transition:color 0.12s;
+}}
+.ver-copy-btn:hover {{ color:#065f9e; }}
+.no-caption {{ font-size:12px; color:#d1d5db; font-style:italic; }}
+.card-footer-btns {{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #f3f4f6; margin-top:auto; }}
+.footer-btn {{
+    padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:12px; font-weight:700; border:none; background:#eff6ff;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
+    text-decoration:none; color:#275f8d;
+}}
+.footer-btn:hover {{ background:#13649a; color:#ffffff !important; }}
+.footer-btn.ig {{ border-right:1px solid #ffffff; }}
+.post-ia-panel {{
+    border-top:1px solid #bbf7d0; background:#f0fdf4;
+    padding:12px 14px; font-size:12px; color:#374151; line-height:1.7;
+    max-height:200px; overflow-y:auto;
+}}
+.post-ia-hdr {{
+    font-size:10px; font-weight:800; color:#15803d;
+    text-transform:uppercase; letter-spacing:0.5px;
+    margin-bottom:6px; display:flex; align-items:center; gap:5px;
+}}
+
+.no-posts {{
+    background:#fff; border:1px solid #e5e7eb; border-top:none;
+    border-radius:0 0 12px 12px; padding:48px 32px; text-align:center;
+}}
 </style>
 </head>
 <body>
- 
+
+<script id="posts-data" type="application/json">{posts_json_str}</script>
+
+<!-- PERFIL CARD -->
 <div class="perfil-card">
- 
-    <!-- HEADER -->
     <div class="perfil-header">
         <div class="avatar">{avatar_letras}</div>
         <div class="info">
@@ -7769,17 +7964,12 @@ html, body {{
                 <div class="stat-lbl">Postagens</div>
             </div>
             <div class="divider-v"></div>
-            <a class="btn-ig" href="{ig_url}" target="_blank">
-                Ver no Instagram
-            </a>
+            <a class="btn-ig" href="{ig_url}" target="_blank">Ver no Instagram</a>
         </div>
     </div>
- 
-    <!-- BIO -->
+
     <div class="bio-section">
-        <div class="bio-label-col">
-            <span class="bio-label-txt">Bio do Perfil</span>
-        </div>
+        <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
         <div class="bio-left">
             {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
         </div>
@@ -7788,14 +7978,12 @@ html, body {{
             <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
         </div>
     </div>
- 
-    <!-- BIO RESULTADO (hidden se vazio) -->
+
     <div class="bio-resultado {'show' if bio_resultado_html else ''}" id="bio-res">
         <div class="bio-resultado-hdr">✨ Análise de IA</div>
         {bio_resultado_html}
     </div>
- 
-    <!-- TABS -->
+
     <div class="tabs-bar">
         <button class="tab-btn {'active' if subtab_atual == 'postagens' else ''}" onclick="triggerSub('postagens')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -7814,316 +8002,12 @@ html, body {{
             Análise de IA
         </button>
     </div>
- 
 </div>
- 
-<script>
-function triggerBio() {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
-        if (txt === '__bio_{aba_ativa}__') {{ b.click(); return; }}
-    }}
-}}
-function triggerSub(sub) {{
-    var label = 'redes_sub_{aba_ativa}_' + sub;
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
-}}
-function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = (h + 4) + 'px';
-            iframes[i].style.marginTop = '-53px';
-            break;
-        }} }} catch(e) {{}}
-    }}
-}}
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 100); setTimeout(syncHeight, 400); setTimeout(syncHeight, 900);
-</script>
-</body></html>
-""", height=250, scrolling=False)
- 
 
-        # ══════════════════════════════════════════════════════════════
-        # SUB-ABA: POSTAGENS
-        # ══════════════════════════════════════════════════════════════
-        if subtab_atual == "postagens":
+<!-- POSTAGENS -->
+{"" if posts_list else '<div class="no-posts"><div style="font-size:28px;margin-bottom:10px">📸</div><div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px">Sem postagens disponíveis</div><div style="font-size:13px;color:#9ca3af">Colete os dados novamente para carregar as postagens.</div></div>'}
 
-                if not posts_list:
-                        st.markdown("""
-                        <div style='background:#fff;border:1px solid #e5e7eb;border-top:none;
-                                    border-radius:0 0 12px 12px;padding:48px 32px;text-align:center'>
-                            <div style='font-size:28px;margin-bottom:10px'>&#128248;</div>
-                            <div style='font-size:15px;font-weight:600;color:#374151;margin-bottom:6px'>Sem postagens disponíveis</div>
-                            <div style='font-size:13px;color:#9ca3af'>Colete os dados novamente para carregar as postagens.</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                else:
-                        posts_col_key = f"posts_cols_{aba_ativa}"
-                        if posts_col_key not in st.session_state:
-                                st.session_state[posts_col_key] = 4
-                        n_cols_posts = st.session_state.get(posts_col_key, 4)
-
-                        ghost_toggle_key = f"btn_posts_toggle_{aba_ativa}"
-                        st.markdown(f"""
-                        <style>
-                        .st-key-{ghost_toggle_key} {{
-                            position:fixed !important; top:-9999px !important; left:-9999px !important;
-                            width:0 !important; height:0 !important; overflow:hidden !important;
-                            opacity:0 !important; pointer-events:none !important; display:none !important;
-                        }}
-                        .stElementContainer:has(.st-key-{ghost_toggle_key}) {{
-                            display:none !important; height:0 !important; min-height:0 !important;
-                            max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                        }}
-                        </style>
-                        """, unsafe_allow_html=True)
-
-                        if st.button(f"posts_toggle_{aba_ativa}", key=ghost_toggle_key):
-                                st.session_state[posts_col_key] = 3 if n_cols_posts == 4 else 4
-                                st.rerun()
-
-                        for jp in range(len(posts_list)):
-                                ghost_post_ia_key = f"btn_post_ia_{aba_ativa}_{jp}"
-                                st.markdown(f"""
-                                <style>
-                                .st-key-{ghost_post_ia_key} {{
-                                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                                    width:0 !important; height:0 !important; overflow:hidden !important;
-                                    opacity:0 !important; pointer-events:none !important; display:none !important;
-                                }}
-                                .stElementContainer:has(.st-key-{ghost_post_ia_key}) {{
-                                    display:none !important; height:0 !important; min-height:0 !important;
-                                    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-                                }}
-                                </style>
-                                """, unsafe_allow_html=True)
-                                if st.button(f"post_ia_{aba_ativa}_{jp}", key=ghost_post_ia_key):
-                                        chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
-                                        p_data = posts_list[jp]
-                                        if gemini_model is None:
-                                                st.session_state[chave_post_ia] = "Configure GEMINI_API_KEY nos secrets."
-                                        else:
-                                                with st.spinner(f"Analisando postagem {jp+1}…"):
-                                                        try:
-                                                                resp_post = gemini_model.generate_content(f"""Você é especialista em redes sociais e copywriting.
-Analise esta postagem do Instagram e dê feedback estratégico em português.
-
-Perfil: {r.get('handle','')} — {r.get('nome','')}
-Data: {p_data.get('date','')}
-Tipo: {'Vídeo' if p_data.get('is_video') else 'Foto'}
-Curtidas: {p_data.get('likes',0)} | Comentários: {p_data.get('comments',0)} | Engajamento total: {p_data.get('likes',0)+p_data.get('comments',0)}
-Legenda: {p_data.get('caption','') or 'Sem legenda'}
-
-### 🎯 Objetivo da Postagem
-Qual parece ser o objetivo desta publicação?
-
-### ✍️ Análise da Legenda
-Pontos fortes e fracos do copy utilizado.
-
-### 📊 Desempenho
-Como interpretar as métricas desta postagem?
-
-### 💡 Sugestões de Melhoria
-2 ações concretas para aumentar o engajamento.
-""")
-                                                                st.session_state[chave_post_ia] = resp_post.text
-                                                                st.rerun()
-                                                        except Exception as e_post:
-                                                                st.session_state[chave_post_ia] = f"Erro: {e_post}"
-                                                                st.rerun()
-
-                        import json as _json_posts
-                        posts_json_data = []
-                        for jp, p in enumerate(posts_list):
-                                chave_post_ia = f"ia_post_{aba_ativa}_{jp}"
-                                resultado_ia = st.session_state.get(chave_post_ia, "")
-                                resultado_ia_html = resultado_ia.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado_ia else ""
-                                handle_clean_post = (r.get("handle") or "").lstrip("@")
-                                post_url = p.get("post_url", "")
-                                shortcode = p.get("shortcode", "")
-                                if not post_url and shortcode:
-                                        post_url = f"https://www.instagram.com/p/{shortcode}/"
-                                ig_post_url = post_url if post_url else ""
-
-                                posts_json_data.append({
-                                        "jp":             jp,
-                                        "thumb":          p.get("thumb", ""),
-                                        "caption":        p.get("caption", ""),
-                                        "date":           p.get("date", ""),
-                                        "likes":          p.get("likes", 0),
-                                        "comments":       p.get("comments", 0),
-                                        "eng":            p.get("likes", 0) + p.get("comments", 0),
-                                        "is_video":       p.get("is_video", False),
-                                        "video_url":      p.get("video_url", ""),
-                                        "ig_url":         ig_post_url,
-                                        "resultado_ia":   resultado_ia_html,
-                                        "tem_ia":         bool(resultado_ia),
-                                        "media_type":     p.get("media_type", 1),
-                                        "carousel_imgs":  p.get("carousel_imgs", []),
-                                })
-
-                        posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
-                        r_seg_val = r.get("seguidores", 0)
-
-                        n_total     = len(posts_list)
-                        n_fotos     = sum(1 for p in posts_list if not p.get("is_video"))
-                        n_videos    = sum(1 for p in posts_list if p.get("is_video"))
-                        total_likes = sum(p.get("likes", 0) for p in posts_list)
-                        total_coms  = sum(p.get("comments", 0) for p in posts_list)
-                        best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
-
-                        def _fmt(n):
-                                n = int(n or 0)
-                                if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
-                                if n >= 1_000:     return f"{n/1_000:.1f}K"
-                                return str(n)
-
-                        components.html(f"""
-<!DOCTYPE html><html>
-<head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-*{{margin:0;padding:0;box-sizing:border-box;}}
-html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
-body{{padding-bottom:8px;}}
-
-.filters-bar {{
-    display:flex; align-items:center; gap:10px;
-    padding:16px 20px;
-    border:1px solid #e5e7eb; border-top:none;
-    background:#fff; flex-wrap:wrap;
-    border-radius:0 0 14px 14px;
-}}
-.filter-input {{
-    flex:1; min-width:160px; max-width:260px; height:40px;
-    padding:0 14px; border:1px solid #e5e7eb; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
-    background:#fafafa; outline:none; transition:border-color 0.15s;
-}}
-.filter-input:focus {{ border-color:#3a9fd6; background:#fff; }}
-.filter-input::placeholder {{ color:#9ca3af; }}
-.filter-select {{
-    height:40px; padding:0 32px 0 12px;
-    border:1px solid #e5e7eb; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
-    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
-    -webkit-appearance:none; appearance:none; cursor:pointer; outline:none; transition:border-color 0.15s;
-}}
-.filter-select:focus {{ border-color:#3a9fd6; }}
-.col-toggle {{
-    margin-left:auto; width:40px; height:40px;
-    border:1px solid #e5e7eb; border-radius:8px;
-    background:#fff; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:#6b7280; flex-shrink:0; transition:all 0.12s;
-}}
-.col-toggle:hover {{ border-color:#3a9fd6; color:#1d4ed8; background:#eff6ff; }}
-
-.stats-row {{ display:flex; gap:12px; padding:16px 0 4px; flex-wrap:wrap; }}
-.stat-card {{
-    flex:1; min-width:90px; background:#fff;
-    border:1px solid #e5e7eb; border-radius:12px;
-    padding:14px 10px; text-align:center;
-}}
-.stat-num {{ font-size:22px; font-weight:800; color:#0f1f35; line-height:1; margin-bottom:5px; }}
-.stat-lbl {{ font-size:12px; font-weight:600; color:#9ca3af; text-transform:uppercase; }}
-
-.posts-grid {{ display:grid; gap:12px; margin-top:16px; }}
-
-.post-card {{
-    background:#fff; border:1px solid #e5e7eb;
-    display:flex; flex-direction:column; overflow:hidden;
-    position:relative; border-radius:14px;
-    box-shadow:0 1px 4px rgba(0,0,0,0.06);
-    transition:box-shadow 0.15s, border-color 0.15s;
-}}
-.post-card:hover {{ border-color:#6fd1f3; box-shadow:0 4px 16px rgba(58,159,214,0.12); }}
-
-.thumb-wrap {{
-    position:relative; width:100%; aspect-ratio:1/1;
-    background:#f0f2f5; overflow:hidden; flex-shrink:0;
-    cursor:pointer;
-}}
-.thumb-wrap img {{
-    width:100%; height:100%; object-fit:cover; display:block;
-}}
-.thumb-fallback {{
-    width:100%; height:100%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:linear-gradient(135deg,#e9eef5,#d2dde9); gap:6px;
-    cursor:pointer;
-}}
-.zoom-badge {{
-    position:absolute; bottom:8px; right:8px;
-    background:rgba(0,0,0,0.45); color:#fff;
-    font-size:10px; font-weight:600; padding:3px 8px;
-    border-radius:6px; pointer-events:none;
-    display:flex; align-items:center; gap:4px;
-}}
-
-.metrics-row {{
-    display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
-    border-bottom:1px solid #f3f4f6; background:#fafbfc;
-}}
-.metric-cell {{ padding:8px 6px; text-align:center; border-right:1px solid #f3f4f6; }}
-.metric-cell:last-child {{ border-right:none; }}
-.metric-cell-lbl {{ font-size:13px; margin-bottom:2px; line-height:1; }}
-.metric-cell-val {{ font-size:13px; font-weight:800; color:#111827; }}
-.metric-cell-val.eng {{ color:#3a9fd6; }}
-
-.card-caption-wrap {{ padding:10px 12px 8px; flex:1; }}
-.card-caption {{
-    font-size:12px; color:#374151; line-height:1.55; word-break:break-word;
-    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
-}}
-.card-caption.expanded {{ display:block; -webkit-line-clamp:unset; }}
-.ver-copy-btn {{
-    background:none; border:none; padding:2px 0 0;
-    font-size:11px; font-weight:700; color:#3a9fd6;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    display:block; margin-top:4px; transition:color 0.12s;
-}}
-.ver-copy-btn:hover {{ color:#065f9e; }}
-.no-caption {{ font-size:12px; color:#d1d5db; font-style:italic; }}
-
-.card-footer-btns {{ display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #f3f4f6; margin-top:auto; }}
-.footer-btn {{
-    padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px;
-    font-size:12px; font-weight:700; border:none; background:#eff6ff;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
-    text-decoration:none; color:#275f8d;
-}}
-.footer-btn:hover {{ background:#13649a; color: #ffffff!important; }}
-.footer-btn.ig {{ border-right:1px solid #ffffff;}}
-.footer-btn.ig:hover {{ background:#13649a; }}
-.footer-btn.ia:hover {{ background:#13649a; }}
-
-.post-ia-panel {{
-    border-top:1px solid #bbf7d0; background:#f0fdf4;
-    padding:12px 14px; font-size:12px; color:#374151; line-height:1.7;
-    max-height:200px; overflow-y:auto;
-}}
-.post-ia-hdr {{
-    font-size:10px; font-weight:800; color:#15803d;
-    text-transform:uppercase; letter-spacing:0.5px;
-    margin-bottom:6px; display:flex; align-items:center; gap:5px;
-}}
-</style>
-</head>
-<body>
-
-<script id="posts-data" type="application/json">{posts_json_str}</script>
-
+{f"""
 <div class="filters-bar">
     <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
     <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
@@ -8146,18 +8030,19 @@ body{{padding-bottom:8px;}}
 </div>
 
 <div class="stats-row">
-    <div class="stat-card"><div class="stat-num" id="stat-total">{n_total}</div><div class="stat-lbl">Postagens</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-fotos">{n_fotos}</div><div class="stat-lbl">Fotos</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-videos">{n_videos}</div><div class="stat-lbl">Vídeos</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl">Curtidas</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl">Comentários</div></div>
-    <div class="stat-card"><div class="stat-num" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl">Melhor Engaj.</div></div>
+    <div class="stat-card"><div class="stat-num2" id="stat-total">{n_total}</div><div class="stat-lbl2">Postagens</div></div>
+    <div class="stat-card"><div class="stat-num2" id="stat-fotos">{n_fotos}</div><div class="stat-lbl2">Fotos</div></div>
+    <div class="stat-card"><div class="stat-num2" id="stat-videos">{n_videos}</div><div class="stat-lbl2">Vídeos</div></div>
+    <div class="stat-card"><div class="stat-num2" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl2">Curtidas</div></div>
+    <div class="stat-card"><div class="stat-num2" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl2">Comentários</div></div>
+    <div class="stat-card"><div class="stat-num2" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl2">Melhor Engaj.</div></div>
 </div>
 
 <div class="posts-grid" id="posts-grid"></div>
+""" if posts_list else ""}
 
 <script>
-var ALL_POSTS = JSON.parse(document.getElementById('posts-data').textContent);
+var ALL_POSTS = {posts_json_str if posts_list else "[]"};
 var N_COLS   = {n_cols_posts};
 var R_SEG    = {r_seg_val};
 
@@ -8196,7 +8081,7 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
     playBtn.target = '_blank';
     playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
     playBtn.innerHTML =
-        '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);border:1px solid #0b3e55 !important;">'
+        '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);">'
         + '<svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
         + '</div>'
         + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
@@ -8231,9 +8116,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
         if (videoUrl) {{
             var vid = doc.createElement('video');
             vid.src = videoUrl;
-            vid.controls = true;
-            vid.autoplay = true;
-            vid.playsInline = true;
+            vid.controls = true; vid.autoplay = true; vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
             vid.onerror = function() {{ content.innerHTML = ''; _showVideoFallback(content, doc, thumbUrl, igUrl); }};
             content.appendChild(vid);
@@ -8257,7 +8140,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
             fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível.</p>'
                 + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
             content.appendChild(fb);
-            syncHeight();
         }};
         content.appendChild(img);
         if (imgs.length > 1) {{
@@ -8268,26 +8150,17 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
             if (i > 0) {{
                 var prev = doc.createElement('button');
                 prev.innerHTML = '&#8249;';
-                prev.style.cssText = 'position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;';
-                prev.onmouseover = function() {{ this.style.background='rgba(255,255,255,0.32)'; }};
-                prev.onmouseout  = function() {{ this.style.background='rgba(255,255,255,0.18)'; }};
+                prev.style.cssText = 'position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
                 prev.onclick = function(e) {{ e.stopPropagation(); curIdx--; renderSlide(curIdx); }};
                 content.appendChild(prev);
             }}
             if (i < imgs.length - 1) {{
                 var next = doc.createElement('button');
                 next.innerHTML = '&#8250;';
-                next.style.cssText = 'position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;';
-                next.onmouseover = function() {{ this.style.background='rgba(255,255,255,0.32)'; }};
-                next.onmouseout  = function() {{ this.style.background='rgba(255,255,255,0.18)'; }};
+                next.style.cssText = 'position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
                 next.onclick = function(e) {{ e.stopPropagation(); curIdx++; renderSlide(curIdx); }};
                 content.appendChild(next);
             }}
-            window.parent.__redesModalArrowFn = function(e) {{
-                if (e.key === 'ArrowLeft'  && curIdx > 0)              {{ curIdx--; renderSlide(curIdx); }}
-                if (e.key === 'ArrowRight' && curIdx < imgs.length - 1) {{ curIdx++; renderSlide(curIdx); }}
-            }};
-            doc.addEventListener('keydown', window.parent.__redesModalArrowFn);
         }}
     }}
     renderSlide(0);
@@ -8301,16 +8174,12 @@ function closeModal() {{
         doc.removeEventListener('keydown', window.parent.__redesModalEscFn);
         window.parent.__redesModalEscFn = null;
     }}
-    if (window.parent.__redesModalArrowFn) {{
-        doc.removeEventListener('keydown', window.parent.__redesModalArrowFn);
-        window.parent.__redesModalArrowFn = null;
-    }}
 }}
 
 function getFiltered() {{
-    var texto = (document.getElementById('filter-text').value || '').toLowerCase().trim();
-    var tipo  = document.getElementById('filter-tipo').value;
-    var ordem = document.getElementById('filter-ordem').value;
+    var texto = (document.getElementById('filter-text') ? document.getElementById('filter-text').value : '').toLowerCase().trim();
+    var tipo  = document.getElementById('filter-tipo') ? document.getElementById('filter-tipo').value : 'todos';
+    var ordem = document.getElementById('filter-ordem') ? document.getElementById('filter-ordem').value : 'recentes';
     var posts = ALL_POSTS.slice();
     if (texto) posts = posts.filter(function(p){{ return (p.caption||'').toLowerCase().indexOf(texto) !== -1; }});
     if (tipo === 'foto')  posts = posts.filter(function(p){{ return !p.is_video; }});
@@ -8322,6 +8191,7 @@ function getFiltered() {{
 
 function buildGrid(posts) {{
     var grid = document.getElementById('posts-grid');
+    if (!grid) return;
     grid.style.gridTemplateColumns = 'repeat(' + N_COLS + ', 1fr)';
     grid.innerHTML = '';
     posts.forEach(function(p) {{
@@ -8329,20 +8199,20 @@ function buildGrid(posts) {{
         var hasCaption = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? '🎬' : '📷';
         var mediaType  = p.media_type || 1;
-        var typeLbl    = mediaType === 8 ? 'Carrossel' : (mediaType === 2 ? (p.is_reel ? 'Reel' : 'Vídeo') : 'Foto');
+        var typeLbl    = mediaType === 8 ? 'Carrossel' : (mediaType === 2 ? 'Vídeo' : 'Foto');
         var badgeColor = mediaType === 8 ? '#7c3aed' : (mediaType === 2 ? '#e1306c' : '#0ea5e9');
         var thumbUrl   = (p.thumb || '').trim();
         var engTotal   = (p.likes||0) + (p.comments||0);
         var igUrl      = p.ig_url || '#';
+        var videoUrl   = (p.video_url || '').trim();
+        var carouselImgs = p.carousel_imgs || [];
         var card = document.createElement('div');
         card.className = 'post-card';
         card.id = 'pcard_' + idx;
-        var videoUrl      = (p.video_url || '').trim();
-        var carouselImgs  = p.carousel_imgs || [];
         var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgs))+'\\')))"';
         var playOverlay = p.is_video
             ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
-              + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.4);border:1px solid #0b3e55 !important;">'
+              + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">'
               + '<svg width="20" height="20" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="white"/></svg>'
               + '</div></div>'
             : '';
@@ -8372,15 +8242,14 @@ function buildGrid(posts) {{
               )
             + '</div>'
             + (p.resultado_ia
-                ? '<div class="post-ia-panel"><div class="post-ia-hdr"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Análise de IA</div>' + p.resultado_ia + '</div>'
+                ? '<div class="post-ia-panel"><div class="post-ia-hdr">✨ Análise de IA</div>' + p.resultado_ia + '</div>'
                 : ''
               )
             + '<div class="card-footer-btns">'
-            + (igUrl
+            + (igUrl && igUrl !== '#'
                 ? '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram ↗</a>'
                 : '<span class="footer-btn ig" style="opacity:0.35;cursor:default;pointer-events:none">Sem link</span>')
             + '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">'
-            + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>'
             + (p.tem_ia ? 'Reanalisar' : 'Analisar postagem')
             + '</button>'
             + '</div>';
@@ -8438,6 +8307,23 @@ function toggleCols() {{
     }}
 }}
 
+function triggerBio() {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === '__bio_{aba_ativa}__') {{ b.click(); return; }}
+    }}
+}}
+
+function triggerSub(sub) {{
+    var label = 'redes_sub_{aba_ativa}_' + sub;
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var frames = window.parent.document.querySelectorAll('iframe');
@@ -8445,7 +8331,7 @@ function syncHeight() {{
         try {{
             if (frames[i].contentWindow === window) {{
                 frames[i].style.height = (h + 12) + 'px';
-                frames[i].style.marginTop = '-107px';
+                frames[i].style.marginTop = '-53px';
                 break;
             }}
         }} catch(e) {{}}
@@ -8459,7 +8345,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=600, scrolling=False)
+""", height=900, scrolling=False)
  
         # ══════════════════════════════════════════════════════════════
         # SUB-ABA: ANÁLISE DE IA
