@@ -1965,7 +1965,7 @@ body {{ padding-bottom: 4px; }}
     grid-template-columns: 1fr 1fr;
     border-top: 1px solid #f3f4f6;
 }}
-.footer-btn {{
+. {{
     padding: 11px 0;
     text-align: center;
     font-size: 15px; font-weight: 600;
@@ -1977,14 +1977,14 @@ body {{ padding-bottom: 4px; }}
     transition: background 0.12s;
     display: flex; align-items: center; justify-content: center; gap: 6px;
 }}
-.footer-btn:hover {{
+.:hover {{
     background: #f9fafb;
     color: #111827;
 }}
-.footer-btn.danger {{
+..danger {{
     border-left: 1px solid #f3f4f6;
 }}
-.footer-btn.danger:hover {{
+..danger:hover {{
     background: #fef2f2;
 }}
 </style>
@@ -2051,7 +2051,7 @@ body {{ padding-bottom: 4px; }}
         </div>
     </div>
     <div class="card-footer">
-        <button class="footer-btn" onclick="acionar('editar_{i}')">
+        <button class="" onclick="acionar('editar_{i}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -2059,7 +2059,7 @@ body {{ padding-bottom: 4px; }}
             </svg>
             Editar
         </button>
-        <button class="footer-btn danger" onclick="acionar('remove_{i}')">
+        <button class=" danger" onclick="acionar('remove_{i}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"/>
@@ -8060,7 +8060,7 @@ body{{padding-bottom:8px;}}
     cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.12s;
     text-decoration:none; color:#275f8d;
 }}
-.footer-btn:hover {{ background:#13649a; }}
+.footer-btn:hover {{ background:#13649a; color: #fff; }}
 .footer-btn.ig {{ border-right:1px solid #ffffff;}}
 .footer-btn.ig:hover {{ background:#13649a; }}
 .footer-btn.ia:hover {{ background:#13649a; }}
