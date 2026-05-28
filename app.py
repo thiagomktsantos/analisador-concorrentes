@@ -6772,106 +6772,101 @@ elif st.session_state.pagina == "redes":
     concorrentes = st.session_state.dados["concorrentes"]
  
     # ── Cabeçalho ──────────────────────────────────────────────────
-# ── Ghost button: Coletar dados ─────────────────────────────────
-    st.markdown("""
-    <style>
-    .st-key-_redes_coletar_ghost_ {
-        position: fixed !important; top: -9999px !important; left: -9999px !important;
-        width: 0 !important; height: 0 !important; overflow: hidden !important;
-        opacity: 0 !important; pointer-events: none !important; display: none !important;
-    }
-    .stElementContainer:has(.st-key-_redes_coletar_ghost_) {
-        display: none !important; height: 0 !important; min-height: 0 !important;
-        max-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    coletar = st.button("redes_coletar_dados", key="_redes_coletar_ghost_")
+    col1, col2, col3 = st.columns([6, 2, 3])
 
-    # ── Cabeçalho unificado ─────────────────────────────────────────
-    ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
-
-    import json as _jr
-    d   = st.session_state.metricas_redes.get("dados", [])
-    djs = _jr.dumps(d, ensure_ascii=False, indent=2) \
-             .replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
-    fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json' \
-          if ultima_coleta else ""
-
-    components.html(f"""
+    with col1:
+        components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@font-face {{
+@font-face {
     font-family: 'Animo';
     src: url('https://raw.githubusercontent.com/thiagomktsantos/marketylics/63946b2d891db6b45cc75a45550b7aa5fe67244a/utils/Animo-font.otf') format('opentype');
-}}
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; overflow:hidden; font-family:'DM Sans',sans-serif; }}
-.header-wrap {{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:16px; padding:0;
-}}
-.header-left {{ flex:1; min-width:0; }}
-.titulo {{
-    font-family:'Animo','DM Sans',sans-serif;
-    font-size:32px; font-weight:700; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;
-}}
-.sub {{ font-size:14px; color:#6b7280; }}
-.header-right {{ flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }}
-.btn-coletar {{
-    padding:13px 32px; border:none; border-radius:8px;
-    background:#1d6fa8; color:#fff;
-    font-size:16px; font-weight:700; cursor:pointer;
-    font-family:'DM Sans',sans-serif; transition:background 0.15s;
-    white-space:nowrap; min-width:220px;
-}}
-.btn-coletar:hover {{ background:#155e8a; }}
-.ultima {{
-    font-size:13px; color:#3a9fd6; cursor:pointer;
-    text-decoration:underline; text-underline-offset:3px;
-    background:none; border:none; font-family:'DM Sans',sans-serif;
-    display:{'flex' if ultima_coleta else 'none'}; align-items:center; gap:5px;
-}}
-.ultima:hover {{ color:#065f9e; }}
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; overflow: hidden; }
+.titulo {
+    font-family: 'Animo', 'DM Sans', sans-serif;
+    font-size: 32px; font-weight: 700; color: #1a2e4a;
+    text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;
+}
+.sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: #6b7280; }
 </style>
-<div class="header-wrap">
-    <div class="header-left">
-        <div class="titulo">Redes Sociais</div>
-        <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
-    </div>
-    <div class="header-right">
-        <button class="btn-coletar" onclick="triggerColetar()">Coletar dados</button>
-        <button class="ultima" onclick="abrirModal()">
-            🕒 Última coleta: <b>{ultima_coleta}</b>
-        </button>
-    </div>
-</div>
+<div class="titulo">Redes Sociais</div>
+<div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
+""", height=65)
+
+    with col2:
+        st.markdown("""
+        <style>
+        .st-key-_redes_ghost_tab_perfis_,
+        .st-key-_redes_ghost_tab_analise_ {
+            display: none !important;
+        }
+        .stElementContainer:has(.st-key-_redes_ghost_tab_perfis_),
+        .stElementContainer:has(.st-key-_redes_ghost_tab_analise_) {
+            display: none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        if st.button("perfis_tab", key="_redes_ghost_tab_perfis_"):
+            st.session_state.redes_main_tab = "perfis"
+            st.rerun()
+        if st.button("analise_tab", key="_redes_ghost_tab_analise_"):
+            st.session_state.redes_main_tab = "analise"
+            st.rerun()
+
+    with col3:
+        coletar = st.button(
+            "Coletar dados",
+            type="primary",
+            use_container_width=True,
+        )
+        ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
+        if ultima_coleta:
+            import json as _jr
+            d = st.session_state.metricas_redes.get("dados", [])
+            djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
+            fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
+
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.link-btn {{
+    font-size:13px; color:#3a9fd6; text-align:center;
+    display:block; cursor:pointer; text-decoration:underline;
+    text-underline-offset:3px; background:none; border:none;
+    width:100%; padding:0; margin-top:4px; font-family:'DM Sans',sans-serif;
+}}
+.link-btn:hover {{ color:#065f9e; }}
+</style>
+<button class="link-btn" onclick="abrirModal()">
+    🕒 Última coleta: <b>{ultima_coleta}</b>
+</button>
 <script>
 var DADOS_JSON = `{djs}`;
 var FILENAME   = '{fn}';
 var ULTIMA     = '{ultima_coleta}';
 
-function triggerColetar() {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === 'redes_coletar_dados') {{ b.click(); return; }}
-    }}
-}}
-
 function abrirModal() {{
     var doc = window.parent.document;
     var old = doc.getElementById('raw_modal_overlay');
     if (old) old.remove();
-    var D; try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = []; }}
+
+    var D;
+    try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = []; }}
     var Dstr = JSON.stringify(D, null, 2);
+
     var ov = doc.createElement('div');
     ov.id = 'raw_modal_overlay';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
     ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
+
     var box = doc.createElement('div');
     box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
+
     var hdr = doc.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
     hdr.innerHTML =
@@ -6882,38 +6877,51 @@ function abrirModal() {{
         + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
         + '<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button>'
         + '</div>';
+
     var pre = doc.createElement('pre');
     pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
     pre.textContent = Dstr;
-    box.appendChild(hdr); box.appendChild(pre);
-    ov.appendChild(box); doc.body.appendChild(ov);
+
+    box.appendChild(hdr);
+    box.appendChild(pre);
+    ov.appendChild(box);
+    doc.body.appendChild(ov);
+
     window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') fechar(); }};
     doc.addEventListener('keydown', window.parent.__rawEsc);
+
     window.fechar = function() {{
-        var o = doc.getElementById('raw_modal_overlay'); if(o) o.remove();
-        if(window.parent.__rawEsc) {{ doc.removeEventListener('keydown',window.parent.__rawEsc); window.parent.__rawEsc=null; }}
+        var o = doc.getElementById('raw_modal_overlay');
+        if (o) o.remove();
+        if (window.parent.__rawEsc) {{
+            doc.removeEventListener('keydown', window.parent.__rawEsc);
+            window.parent.__rawEsc = null;
+        }}
     }};
+
     window.copiarDados = function() {{
         var b = doc.getElementById('raw_copy_btn');
         navigator.clipboard.writeText(Dstr).then(function() {{
-            if(b) {{ b.textContent='✅ Copiado!'; setTimeout(function(){{ b.textContent='📋 Copiar'; }},2000); }}
+            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
         }});
     }};
+
     window.baixarDados = function() {{
         var a = doc.createElement('a');
-        a.href = URL.createObjectURL(new Blob([Dstr],{{type:'application/json'}}));
-        a.download = FILENAME; a.click();
+        a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
+        a.download = FILENAME;
+        a.click();
     }};
 }}
 
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '90px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '30px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=90, scrolling=False)
+""", height=30, scrolling=False)
 
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
