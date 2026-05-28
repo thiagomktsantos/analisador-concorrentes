@@ -1345,19 +1345,6 @@ if st.session_state.pagina == "home":
         box-shadow: none !important;
         padding: 0 !important;
     }
-    .st-key-btn_home_editar_ghost,
-    .stElementContainer:has(.st-key-btn_home_editar_ghost) {
-        position: fixed !important;
-        top: -9999px !important;
-        left: -9999px !important;
-        width: 1px !important;
-        height: 1px !important;
-        overflow: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        visibility: hidden !important;
-        display: block !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1387,6 +1374,10 @@ html, body { background: transparent; overflow: hidden; }
 
         with h2:
             st.markdown("<div style='padding-top:6px;'/>", unsafe_allow_html=True)
+            if st.button("Editar Empresa", key="btn_home_editar",
+                         use_container_width=True, type="primary"):
+                st.session_state.editar_empresa = True
+                st.rerun()
 
         st.markdown(
             "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px 0'/>",
@@ -1520,11 +1511,6 @@ html, body { background: transparent; overflow: hidden; }
 
     else:
         # ── MODO VISUALIZAÇÃO ─────────────────────────────────────
-
-        # Botão ghost — oculto via CSS, acionado pelo HTML abaixo
-        if st.button("Editar Empresa", key="btn_home_editar_ghost"):
-            st.session_state.editar_empresa = True
-            st.rerun()
 
         h1, h2 = st.columns([7, 3])
         with h1:
