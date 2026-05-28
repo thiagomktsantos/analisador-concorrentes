@@ -6772,10 +6772,19 @@ elif st.session_state.pagina == "redes":
     concorrentes = st.session_state.dados["concorrentes"]
  
     # ── Cabeçalho ──────────────────────────────────────────────────
-    col1, col2, col3 = st.columns([6, 2, 3])
+col1, col2, col3 = st.columns([6, 2, 3])
 
-    with col1:
-        components.html("""
+st.markdown("""
+<style>
+[data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3) {
+    padding-left: 0rem !important;
+    margin-left: 0rem !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+with col1:
+    components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @font-face {
@@ -6795,34 +6804,34 @@ html, body { background: transparent; overflow: hidden; }
 <div class="sub">Acompanhe e compare métricas do Instagram dos seus concorrentes em tempo real.</div>
 """, height=65)
 
-    with col2:
-        st.markdown("""
-        <style>
-        .st-key-_redes_ghost_tab_perfis_,
-        .st-key-_redes_ghost_tab_analise_ {
-            display: none !important;
-        }
-        .stElementContainer:has(.st-key-_redes_ghost_tab_perfis_),
-        .stElementContainer:has(.st-key-_redes_ghost_tab_analise_) {
-            display: none !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+with col2:
+    st.markdown("""
+    <style>
+    .st-key-_redes_ghost_tab_perfis_,
+    .st-key-_redes_ghost_tab_analise_ {
+        display: none !important;
+    }
+    .stElementContainer:has(.st-key-_redes_ghost_tab_perfis_),
+    .stElementContainer:has(.st-key-_redes_ghost_tab_analise_) {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    with col3:
-        coletar = st.button(
-            "Coletar dados",
-            type="primary",
-            use_container_width=True,
-        )
-        ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
-        if ultima_coleta:
-            import json as _jr
-            d = st.session_state.metricas_redes.get("dados", [])
-            djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
-            fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
+with col3:
+    coletar = st.button(
+        "Coletar dados",
+        type="primary",
+        use_container_width=True,
+    )
+    ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
+    if ultima_coleta:
+        import json as _jr
+        d = st.session_state.metricas_redes.get("dados", [])
+        djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
+        fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
 
-            components.html(f"""
+        components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -6831,7 +6840,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     font-size:13px; color:#3a9fd6; text-align:center;
     display:block; cursor:pointer; text-decoration:underline;
     text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0;font-family:'DM Sans',sans-serif;
+    width:100%; padding:0; margin-top:4px; font-family:'DM Sans',sans-serif;
 }}
 .link-btn:hover {{ color:#065f9e; }}
 </style>
@@ -6910,7 +6919,7 @@ function abrirModal() {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '20px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '30px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
