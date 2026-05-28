@@ -8259,7 +8259,6 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
 /* ── Modal: vídeo abre video_url direto; foto abre modal com imagem ── */
 function openModal(thumbUrl, igUrl, videoUrl, isVideo) {
 
-    /* ── VÍDEO ── */
     if (isVideo) {
         var doc = window.parent.document;
         var old = doc.getElementById('redes_modal_overlay');
