@@ -6782,11 +6782,104 @@ html, body { background: transparent; overflow: hidden; }
         )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
         if ultima_coleta:
-            st.markdown(
-                f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
-                f"🕒 Última coleta: <b>{ultima_coleta}</b></div>",
-                unsafe_allow_html=True,
-            )
+            import json as _jr
+            d = st.session_state.metricas_redes.get("dados", [])
+            djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
+            fn  = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json'
+            
+            components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.link-btn {{
+    font-size:13px; color:#3a9fd6; text-align:center;
+    display:block; cursor:pointer; text-decoration:underline;
+    text-underline-offset:3px; background:none; border:none;
+    width:100%; padding:0; margin-top:4px; font-family:'DM Sans',sans-serif;
+}}
+.link-btn:hover {{ color:#065f9e; }}
+</style>
+<button class="link-btn" onclick="abrirModal()">
+    🕒 Última coleta: <b>{ultima_coleta}</b>
+</button>
+<script>
+var DADOS_JSON = `{djs}`;
+var FILENAME   = '{fn}';
+var ULTIMA     = '{ultima_coleta}';
+
+function abrirModal() {{
+    var doc = window.parent.document;
+    var old = doc.getElementById('raw_modal_overlay');
+    if (old) old.remove();
+
+    var D;
+    try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = []; }}
+    var Dstr = JSON.stringify(D, null, 2);
+
+    var ov = doc.createElement('div');
+    ov.id = 'raw_modal_overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
+    ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
+
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
+
+    var hdr = doc.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
+    hdr.innerHTML =
+        '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
+        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
+        + '<div style="display:flex;gap:10px;">'
+        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        + '<button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button>'
+        + '</div>';
+
+    var pre = doc.createElement('pre');
+    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
+    pre.textContent = Dstr;
+
+    box.appendChild(hdr);
+    box.appendChild(pre);
+    ov.appendChild(box);
+    doc.body.appendChild(ov);
+
+    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') fechar(); }};
+    doc.addEventListener('keydown', window.parent.__rawEsc);
+
+    window.fechar = function() {{
+        var o = doc.getElementById('raw_modal_overlay');
+        if (o) o.remove();
+        if (window.parent.__rawEsc) {{
+            doc.removeEventListener('keydown', window.parent.__rawEsc);
+            window.parent.__rawEsc = null;
+        }}
+    }};
+
+    window.copiarDados = function() {{
+        var b = doc.getElementById('raw_copy_btn');
+        navigator.clipboard.writeText(Dstr).then(function() {{
+            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
+        }});
+    }};
+
+    window.baixarDados = function() {{
+        var a = doc.createElement('a');
+        a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
+        a.download = FILENAME;
+        a.click();
+    }};
+}}
+
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '30px'; break; }} }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=30, scrolling=False)
  
     st.markdown(
         "<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>",
@@ -6900,25 +6993,38 @@ html, body { background: transparent; overflow: hidden; }
                                 shortcode = p.get("code") or p.get("shortcode") or ""
                                 post_url  = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
 
-                                # URL do vídeo
+                                # Tipo de mídia: 1=foto, 2=vídeo/reel, 8=carrossel
+                                media_type = p.get("media_type", 1)
+                                is_reel = media_type == 2
+
+                                # URL do vídeo (Reel ou Vídeo normal)
                                 video_url = ""
-                                if p.get("media_type", 1) == 2:
+                                if is_reel:
                                     video_url = (
                                         p.get("video_url")
-                                        or p.get("video_versions", [{}])[0].get("url", "") if p.get("video_versions") else ""
+                                        or (p.get("video_versions") or [{}])[0].get("url", "")
                                         or ""
                                     )
 
+                                carousel_imgs = []
+                                if media_type == 8 and p.get("carousel_media"):
+                                    for slide in p["carousel_media"]:
+                                        cands = slide.get("image_versions2", {}).get("candidates", [])
+                                        if cands:
+                                            carousel_imgs.append(cands[-1].get("url", ""))
+
                                 posts_data.append({
-                                    "likes":     likes,
-                                    "comments":  comments,
-                                    "thumb":     thumb,
-                                    "caption":   caption,
-                                    "date":      date_str,
-                                    "is_video":  p.get("media_type", 1) == 2,
-                                    "video_url": video_url,
-                                    "post_url":  post_url,
-                                    "shortcode": shortcode,
+                                    "likes":          likes,
+                                    "comments":       comments,
+                                    "thumb":          thumb,
+                                    "caption":        caption,
+                                    "date":           date_str,
+                                    "is_video":       is_reel,
+                                    "media_type":     media_type,
+                                    "video_url":      video_url,
+                                    "post_url":       post_url,
+                                    "shortcode":      shortcode,
+                                    "carousel_imgs":  carousel_imgs,
                                 })
                             break
                     except Exception:
@@ -7802,21 +7908,23 @@ Como interpretar as métricas desta postagem?
                     shortcode = p.get("shortcode", "")
                     if not post_url and shortcode:
                         post_url = f"https://www.instagram.com/p/{shortcode}/"
-                    ig_post_url = post_url if post_url else f"https://www.instagram.com/{handle_clean_post}/"
+                    ig_post_url = post_url if post_url else ""
 
                     posts_json_data.append({
-                        "jp":           jp,
-                        "thumb":        p.get("thumb", ""),
-                        "caption":      p.get("caption", ""),
-                        "date":         p.get("date", ""),
-                        "likes":        p.get("likes", 0),
-                        "comments":     p.get("comments", 0),
-                        "eng":          p.get("likes", 0) + p.get("comments", 0),
-                        "is_video":     p.get("is_video", False),
-                        "video_url":    p.get("video_url", ""),
-                        "ig_url":       ig_post_url,
-                        "resultado_ia": resultado_ia_html,
-                        "tem_ia":       bool(resultado_ia),
+                        "jp":             jp,
+                        "thumb":          p.get("thumb", ""),
+                        "caption":        p.get("caption", ""),
+                        "date":           p.get("date", ""),
+                        "likes":          p.get("likes", 0),
+                        "comments":       p.get("comments", 0),
+                        "eng":            p.get("likes", 0) + p.get("comments", 0),
+                        "is_video":       p.get("is_video", False),
+                        "video_url":      p.get("video_url", ""),
+                        "ig_url":         ig_post_url,
+                        "resultado_ia":   resultado_ia_html,
+                        "tem_ia":         bool(resultado_ia),
+                        "media_type":     p.get("media_type", 1),
+                        "carousel_imgs":  p.get("carousel_imgs", []),
                     })
 
                 posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
@@ -8060,7 +8168,8 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
     content.appendChild(wrap);
 }}
 
-function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
+/* ── Modal: vídeo abre video_url direto; foto abre modal com imagem ── */
+function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
     var doc = window.parent.document;
     var old = doc.getElementById('redes_modal_overlay');
     if (old) old.remove();
@@ -8080,6 +8189,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
 
     var content = doc.createElement('div');
     content.id = 'redes_modal_content';
+    content.style.cssText = 'display:flex;align-items:center;justify-content:center;position:relative;';
 
     box.appendChild(closeBtn);
     box.appendChild(content);
@@ -8089,9 +8199,8 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
     window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
 
-    // ── VÍDEO ──
+    /* ── VÍDEO ── */
     if (isVideo) {{
-        // Tenta reproduzir se tiver URL direta
         if (videoUrl) {{
             var vid = doc.createElement('video');
             vid.src = videoUrl;
@@ -8100,47 +8209,106 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
             vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
             vid.onerror = function() {{
-                // Fallback: mostra thumb + botão Instagram
                 content.innerHTML = '';
                 _showVideoFallback(content, doc, thumbUrl, igUrl);
             }};
             content.appendChild(vid);
         }} else {{
-            // Sem URL de vídeo: mostra thumb com botão para abrir no Instagram
             _showVideoFallback(content, doc, thumbUrl, igUrl);
         }}
         return;
     }}
 
-    // ── IMAGEM ──
-    if (!thumbUrl) {{
-        window.parent.open(igUrl, '_blank');
-        closeModal();
-        return;
+    /* ── CARROSSEL ── */
+    var imgs = (carouselImgs && carouselImgs.length > 1) ? carouselImgs : (thumbUrl ? [thumbUrl] : []);
+    if (!imgs.length) {{ window.parent.open(igUrl, '_blank'); closeModal(); return; }}
+
+    var curIdx = 0;
+
+    function renderSlide(i) {{
+        content.innerHTML = '';
+
+        var img = doc.createElement('img');
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
+        img.src = imgs[i];
+        img.onerror = function() {{
+            img.style.display = 'none';
+            var fb = doc.createElement('div');
+            fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;font-family:DM Sans,sans-serif;';
+            fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível.</p>'
+                + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
+            content.appendChild(fb);
+            syncHeight();
+        }};
+        content.appendChild(img);
+
+        /* Contador e navegação só se tiver mais de 1 slide */
+        if (imgs.length > 1) {{
+            var counter = doc.createElement('div');
+            counter.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;';
+            counter.textContent = (i + 1) + ' / ' + imgs.length;
+            content.appendChild(counter);
+
+            if (i > 0) {{
+                var prev = doc.createElement('button');
+                prev.innerHTML = '&#8249;';
+                prev.style.cssText = 'position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;';
+                prev.onmouseover = function() {{ this.style.background='rgba(255,255,255,0.32)'; }};
+                prev.onmouseout  = function() {{ this.style.background='rgba(255,255,255,0.18)'; }};
+                prev.onclick = function(e) {{ e.stopPropagation(); curIdx--; renderSlide(curIdx); }};
+                content.appendChild(prev);
+            }}
+
+            if (i < imgs.length - 1) {{
+                var next = doc.createElement('button');
+                next.innerHTML = '&#8250;';
+                next.style.cssText = 'position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;';
+                next.onmouseover = function() {{ this.style.background='rgba(255,255,255,0.32)'; }};
+                next.onmouseout  = function() {{ this.style.background='rgba(255,255,255,0.18)'; }};
+                next.onclick = function(e) {{ e.stopPropagation(); curIdx++; renderSlide(curIdx); }};
+                content.appendChild(next);
+            }}
+
+            /* Navegação por teclado (setas) */
+            window.parent.__redesModalArrowFn = function(e) {{
+                if (e.key === 'ArrowLeft'  && curIdx > 0)              {{ curIdx--; renderSlide(curIdx); }}
+                if (e.key === 'ArrowRight' && curIdx < imgs.length - 1) {{ curIdx++; renderSlide(curIdx); }}
+            }};
+            doc.addEventListener('keydown', window.parent.__redesModalArrowFn);
+        }}
     }}
 
-    var loading = doc.createElement('div');
-    loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
-    loading.textContent = 'Carregando criativo…';
-    content.appendChild(loading);
+    renderSlide(0);
+}}
 
-    var tmp = new window.parent.Image();
-    tmp.onload = function() {{
-        content.innerHTML = '';
+/* ── Fallback visual para vídeo sem URL reproduzível ── */
+function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
+    var wrap = doc.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-flex;flex-direction:column;align-items:center;';
+
+    if (thumbUrl) {{
         var img = doc.createElement('img');
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
         img.src = thumbUrl;
-        content.appendChild(img);
-    }};
-    tmp.onerror = function() {{
-        content.innerHTML = '';
-        var fb = doc.createElement('div');
-        fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
-        fb.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível diretamente.</p>'
-            + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
-        content.appendChild(fb);
-    }};
-    tmp.src = thumbUrl;
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.55);';
+        wrap.appendChild(img);
+    }}
+
+    var playBtn = doc.createElement('a');
+    playBtn.href = igUrl;
+    playBtn.target = '_blank';
+    playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+        + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
+    playBtn.innerHTML =
+        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
+        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
+        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
+        + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
+        + '</div>'
+        + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
+        + 'background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';
+
+    wrap.appendChild(playBtn);
+    content.appendChild(wrap);
 }}
 
 function closeModal() {{
@@ -8150,6 +8318,10 @@ function closeModal() {{
     if (window.parent.__redesModalEscFn) {{
         doc.removeEventListener('keydown', window.parent.__redesModalEscFn);
         window.parent.__redesModalEscFn = null;
+    }}
+    if (window.parent.__redesModalArrowFn) {{
+        doc.removeEventListener('keydown', window.parent.__redesModalArrowFn);
+        window.parent.__redesModalArrowFn = null;
     }}
 }}
 
@@ -8175,7 +8347,9 @@ function buildGrid(posts) {{
         var idx        = p.jp;
         var hasCaption = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? '🎬' : '📷';
-        var typeLbl    = p.is_video ? 'Vídeo' : 'Foto';
+        var mediaType  = p.media_type || 1;
+        var typeLbl    = mediaType === 8 ? 'Carrossel' : (mediaType === 2 ? (p.is_reel ? 'Reel' : 'Vídeo') : 'Foto');
+        var badgeColor = mediaType === 8 ? '#7c3aed' : (mediaType === 2 ? '#e1306c' : '#0ea5e9');
         var thumbUrl   = (p.thumb || '').trim();
         var engTotal   = (p.likes||0) + (p.comments||0);
         var igUrl      = p.ig_url || '#';
@@ -8185,16 +8359,28 @@ function buildGrid(posts) {{
         card.id = 'pcard_' + idx;
 
         // thumb — clicável para abrir modal
-        var videoUrl   = (p.video_url || '').trim();
-        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ')"';
+        var videoUrl      = (p.video_url || '').trim();
+        var carouselImgs  = p.carousel_imgs || [];
+        var carouselJson  = JSON.stringify(carouselImgs).replace(/'/g, "\\'");
+        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgs))+'\\')))"';
+        var playOverlay = p.is_video
+            ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
+              + '<div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
+              + '<svg width="20" height="20" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="white"/></svg>'
+              + '</div></div>'
+            : '';
         var thumbInner = thumbUrl
-            ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />'
+            ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />' + playOverlay
             : '<div class="thumb-fallback" ' + thumbClickAttr + '><span style="font-size:28px">' + iconFallback + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
 
         card.innerHTML =
             '<div class="thumb-wrap" id="tw_' + idx + '" ' + thumbClickAttr + '>'
             + thumbInner
-            + '<div class="zoom-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> Ver criativo</div>'
+            + '<div class="zoom-badge" style="background:' + badgeColor + 'cc">'
+            + (mediaType === 2
+                ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg> ' + typeLbl
+                : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> ' + typeLbl)
+            + '</div>'
             + '</div>'
 
             + '<div class="metrics-row">'
@@ -8218,7 +8404,9 @@ function buildGrid(posts) {{
               )
 
             + '<div class="card-footer-btns">'
-            + '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram</a>'
+            + (igUrl
+                ? '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram ↗</a>'
+                : '<span class="footer-btn ig" style="opacity:0.35;cursor:default;pointer-events:none">Sem link</span>')
             + '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">'
             + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>'
             + (p.tem_ia ? 'Reanalisar' : 'Analisar postagem')
