@@ -8013,7 +8013,7 @@ Como interpretar as métricas desta postagem?
                     shortcode = p.get("shortcode", "")
                     if not post_url and shortcode:
                         post_url = f"https://www.instagram.com/p/{shortcode}/"
-                    ig_post_url = post_url if post_url else f"https://www.instagram.com/{handle_clean_post}/"
+                    ig_post_url = post_url if post_url else ""
 
                     posts_json_data.append({
                         "jp":           jp,
@@ -8028,6 +8028,7 @@ Como interpretar as métricas desta postagem?
                         "ig_url":       ig_post_url,
                         "resultado_ia": resultado_ia_html,
                         "tem_ia":       bool(resultado_ia),
+                        "media_type":   p.get("media_type", 1),
                     })
 
                 posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
@@ -8445,7 +8446,9 @@ function buildGrid(posts) {{
         var idx        = p.jp;
         var hasCaption = !!(p.caption && p.caption.trim());
         var iconFallback = p.is_video ? '🎬' : '📷';
-        var typeLbl    = p.is_video ? 'Vídeo' : 'Foto';
+        var mediaType  = p.media_type || 1;
+        var typeLbl    = mediaType === 8 ? 'Carrossel' : (mediaType === 2 ? (p.is_reel ? 'Reel' : 'Vídeo') : 'Foto');
+        var badgeColor = mediaType === 8 ? '#7c3aed' : (mediaType === 2 ? '#e1306c' : '#0ea5e9');
         var thumbUrl   = (p.thumb || '').trim();
         var engTotal   = (p.likes||0) + (p.comments||0);
         var igUrl      = p.ig_url || '#';
@@ -8464,7 +8467,11 @@ function buildGrid(posts) {{
         card.innerHTML =
             '<div class="thumb-wrap" id="tw_' + idx + '" ' + thumbClickAttr + '>'
             + thumbInner
-            + '<div class="zoom-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> Ver criativo</div>'
+            + '<div class="zoom-badge" style="background:' + badgeColor + 'cc">'
+            + (mediaType === 2
+                ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg> ' + typeLbl
+                : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg> ' + typeLbl)
+            + '</div>'
             + '</div>'
 
             + '<div class="metrics-row">'
@@ -8488,7 +8495,9 @@ function buildGrid(posts) {{
               )
 
             + '<div class="card-footer-btns">'
-            + '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram</a>'
+            + (igUrl
+                ? '<a class="footer-btn ig" href="' + igUrl + '" target="_blank">Ver no Instagram ↗</a>'
+                : '<span class="footer-btn ig" style="opacity:0.35;cursor:default;pointer-events:none">Sem link</span>')
             + '<button class="footer-btn ia" id="ia_btn_' + idx + '" onclick="analisarPost(' + idx + ')">'
             + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>'
             + (p.tem_ia ? 'Reanalisar' : 'Analisar postagem')
