@@ -7119,17 +7119,25 @@ function abrirModal() {{
                                         or ""
                                     )
 
+                                carousel_imgs = []
+                                if media_type == 8 and p.get("carousel_media"):
+                                    for slide in p["carousel_media"]:
+                                        cands = slide.get("image_versions2", {}).get("candidates", [])
+                                        if cands:
+                                            carousel_imgs.append(cands[-1].get("url", ""))
+
                                 posts_data.append({
-                                    "likes":     likes,
-                                    "comments":  comments,
-                                    "thumb":     thumb,
-                                    "caption":   caption,
-                                    "date":      date_str,
-                                    "is_video":   is_reel,
-                                    "media_type": media_type,
-                                    "video_url": video_url,
-                                    "post_url":  post_url,
-                                    "shortcode": shortcode,
+                                    "likes":          likes,
+                                    "comments":       comments,
+                                    "thumb":          thumb,
+                                    "caption":        caption,
+                                    "date":           date_str,
+                                    "is_video":       is_reel,
+                                    "media_type":     media_type,
+                                    "video_url":      video_url,
+                                    "post_url":       post_url,
+                                    "shortcode":      shortcode,
+                                    "carousel_imgs":  carousel_imgs,
                                 })
                             break
                     except Exception:
@@ -8460,8 +8468,14 @@ function buildGrid(posts) {{
         // thumb — clicável para abrir modal
         var videoUrl   = (p.video_url || '').trim();
         var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ')"';
+        var playOverlay = p.is_video
+            ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
+              + '<div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
+              + '<svg width="20" height="20" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="white"/></svg>'
+              + '</div></div>'
+            : '';
         var thumbInner = thumbUrl
-            ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />'
+            ? '<img id="pimg_' + idx + '" src="' + thumbUrl + '" loading="lazy" alt="" />' + playOverlay
             : '<div class="thumb-fallback" ' + thumbClickAttr + '><span style="font-size:28px">' + iconFallback + '</span><span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
 
         card.innerHTML =
