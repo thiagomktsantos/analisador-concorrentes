@@ -1973,7 +1973,7 @@ body {{ padding-bottom: 8px; }}
     display: flex; align-items: center; justify-content: center;
     font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0;
 }}
-.name {{ font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 4px; }}
+.name {{ font-size: 16px; font-weight: 700; color: #111827; }}
 .badge {{
     display: inline-block; padding: 2px 10px; border-radius: 20px;
     font-size: 11px; font-weight: 700;
@@ -3198,7 +3198,6 @@ body {{ padding-bottom:8px; }}
 .card-name {{
     font-size:16px;font-weight:700;color:#111827;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    margin-bottom:4px;
 }}
 .badge {{
     display:inline-block;
