@@ -6919,7 +6919,7 @@ function abrirModal() {{
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '20px';iframes[i].style.margin-top = '-10px'; break; }} }} catch(e) {{}}
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = '20px';iframes[i].style.marginTop = '-10px'; break; }} }} catch(e) {{}}
     }}
 }})();
 </script>
