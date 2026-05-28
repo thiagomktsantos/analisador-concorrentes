@@ -5673,10 +5673,16 @@ setTimeout(ajustarAltura,100);
                     debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
-                    img_primary = images_b64[0] if images_b64 else (images[0] if images else "")
+                    # Thumb do card: feed baixa qualidade (índice 1), fallback para índice 0
+                    img_thumb_url = images[1] if len(images) > 1 else (images[0] if images else "")
+                    img_primary = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
+
+                    # Fallbacks para o thumb (não usados no modal de 4 imagens)
                     img_fallbacks = []
-                    if images_b64 and len(images_b64) > 1:
-                        img_fallbacks.extend(images_b64[1:])
+                    if img_thumb_url and img_thumb_url not in img_fallbacks:
+                        img_fallbacks.append(img_thumb_url)
+                    if images_b64 and images_b64[0] not in img_fallbacks:
+                        img_fallbacks.append(images_b64[0])
                     img_fallbacks.extend([u for u in images if u not in img_fallbacks])
                     srcs_js = _json.dumps(img_fallbacks)
 
@@ -5752,9 +5758,16 @@ setTimeout(ajustarAltura,100);
 </script>"""
 
                     elif img_primary:
+                        all_imgs_js = _json.dumps(images[:4], ensure_ascii=True)
+                        main_modal_imgs_js = _json.dumps(
+                            [img for img in [
+                                images[0] if len(images) > 0 else "",
+                                images[2] if len(images) > 2 else "",
+                            ] if img],
+                            ensure_ascii=True
+                        )
                         media_block = f"""
-<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer"
-     onclick="openModal(document.getElementById('mimg_{uid}')?document.getElementById('mimg_{uid}').src:'{img_primary.replace("'","")}','{snap_url.replace("'","")}',false)">
+<div class="media-block img-block" id="mwrap_{uid}" style="position:relative;cursor:pointer">
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
@@ -5764,14 +5777,26 @@ setTimeout(ajustarAltura,100);
     <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ver criativos</div>
 </div>
 <script>
-var _srcs_{uid}={srcs_js};
-var _idx_{uid}=0;
+(function(){{
+    var IMGS_{uid} = {all_imgs_js};
+    var MAIN_IMGS_{uid} = {main_modal_imgs_js};
+    var SNAP_{uid} = '{snap_url.replace("'","").replace('"',"")}';
+    var wrap = document.getElementById('mwrap_{uid}');
+    if (wrap) {{
+        wrap.addEventListener('click', function() {{
+            openModalHQ(MAIN_IMGS_{uid}, IMGS_{uid}, SNAP_{uid});
+        }});
+    }}
+    var _srcs_{uid} = {srcs_js};
+    var _idx_{uid} = 0;
+}})();
 function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if(_idx_{uid}<_srcs_{uid}.length){{img.src=_srcs_{uid}[_idx_{uid}];}}
-    else{{img.style.display='none';var e=document.getElementById('merr_{uid}');if(e)e.style.display='flex';}}
+    if(_idx_{uid} < _srcs_{uid}.length){{ img.src = _srcs_{uid}[_idx_{uid}]; }}
+    else{{ img.style.display='none'; var e=document.getElementById('merr_{uid}'); if(e) e.style.display='flex'; }}
 }}
 </script>"""
+
                     else:
                         _sv = snap_url.replace("'", "")
                         _nm_onclick = f'onclick="openModal(\'\',\'{_sv}\',false)"' if snap_url else ""
@@ -5862,6 +5887,112 @@ window.__PLATS_{uid}__ = {plat_js};
                 cards_joined = "\n".join(all_cards_html)
                 n_cols = st.session_state.get(col_key, 4)
 
+                _js_modal_hq = """
+function openModalHQ(hqImgs, allImgs, snapUrl) {
+    var doc = window.parent.document;
+    var old = doc.getElementById('ads_modal_overlay');
+    if (old) old.remove();
+    var overlay = doc.createElement('div');
+    overlay.id = 'ads_modal_overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;padding:40px 24px 24px;min-width:320px;max-width:min(92vw,900px);';
+    var closeBtn = doc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.onclick = closeModal;
+    var title = doc.createElement('div');
+    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
+    title.textContent = hqImgs.length > 1 ? 'Feed · Stories (alta qualidade)' : 'Feed (alta qualidade)';
+    var labels = ['Feed', 'Stories'];
+    var colors = ['#3a9fd6', '#2ecc71'];
+    var grid = doc.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;';
+    hqImgs.forEach(function(src, i) {
+        var cell = doc.createElement('div');
+        cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
+        var lbl = doc.createElement('div');
+        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
+        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
+        var imgEl = doc.createElement('img');
+        imgEl.src = src || '';
+        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:70vh;';
+        imgEl.onerror = function() {
+            cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
+        };
+        cell.appendChild(lbl);
+        cell.appendChild(imgEl);
+        grid.appendChild(cell);
+    });
+    var debugBtn = doc.createElement('button');
+    debugBtn.textContent = '🔍 Ver todas as 4 imagens (debug)';
+    debugBtn.style.cssText = 'margin-top:14px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;';
+    debugBtn.onclick = function() {
+        closeModal();
+        setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
+    };
+    box.appendChild(closeBtn);
+    box.appendChild(title);
+    box.appendChild(grid);
+    box.appendChild(debugBtn);
+    overlay.appendChild(box);
+    doc.body.appendChild(overlay);
+    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+}
+
+function openModalImages(imgs, snapUrl) {
+    var doc = window.parent.document;
+    var old = doc.getElementById('ads_modal_overlay');
+    if (old) old.remove();
+    var overlay = doc.createElement('div');
+    overlay.id = 'ads_modal_overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
+    var closeBtn = doc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.onclick = closeModal;
+    var title = doc.createElement('div');
+    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
+    title.textContent = '4 imagens da API — índices e qualidades:';
+    var labels = ['Idx 0 — Feed Alta', 'Idx 1 — Feed Baixa (thumb)', 'Idx 2 — Stories Alta', 'Idx 3 — Stories Baixa'];
+    var colors = ['#3a9fd6', '#e67e22', '#2ecc71', '#e74c3c'];
+    var grid = doc.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
+    imgs.forEach(function(src, i) {
+        var cell = doc.createElement('div');
+        cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
+        var lbl = doc.createElement('div');
+        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
+        lbl.textContent = labels[i] || ('Idx ' + i);
+        var imgEl = doc.createElement('img');
+        imgEl.src = src || '';
+        imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:220px;';
+        imgEl.onerror = function() {
+            cell.innerHTML = '<div style="color:#555;font-size:11px;font-family:DM Sans,sans-serif;text-align:center;padding:20px;">Sem imagem</div>';
+        };
+        var srcLbl = doc.createElement('div');
+        srcLbl.style.cssText = 'padding:4px 8px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;';
+        srcLbl.textContent = src ? src.substring(0,70) + '…' : 'vazio';
+        cell.appendChild(lbl);
+        cell.appendChild(imgEl);
+        cell.appendChild(srcLbl);
+        grid.appendChild(cell);
+    });
+    box.appendChild(closeBtn);
+    box.appendChild(title);
+    box.appendChild(grid);
+    overlay.appendChild(box);
+    doc.body.appendChild(overlay);
+    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+}
+"""
+
                 components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -5909,35 +6040,45 @@ body{{padding-bottom:4px;min-height:0;}}
 .debug-block{{border-top:1px solid #fde68a;background:#fffbeb;}}
 .debug-header{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;font-size:11px;font-weight:700;color:#92400e;cursor:pointer;}}
 .debug-pre{{font-family:monospace;font-size:10px;color:#374151;padding:8px 12px;overflow-x:auto;white-space:pre;background:#fffbeb;max-height:180px;overflow-y:auto;border-top:1px solid #fde68a;}}
-#modal-overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;align-items:center;justify-content:center;padding:20px;}}
-#modal-overlay.open{{display:flex;}}
-#modal-box{{background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;}}
-#modal-close{{position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}}
-#modal-img{{display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;}}
-#modal-video{{display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;}}
-#modal-video-wrap{{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:320px;}}
-#modal-video-btn{{display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;}}
-#modal-loading{{padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;}}
 </style>
 </head>
 <body>
-<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div id="modal-box">
-        <button id="modal-close" onclick="closeModal()">✕</button>
-        <div id="modal-content"></div>
-    </div>
-</div>
 <div class="ads-grid">{cards_joined}</div>
 <script>
 function openModal(mediaSrc, snapUrl, isVideo) {{
-    var overlay = document.getElementById('modal-overlay');
-    var content = document.getElementById('modal-content');
-    content.innerHTML = '';
+    var doc = window.parent.document;
+    var old = doc.getElementById('ads_modal_overlay');
+    if (old) old.remove();
+
+    var overlay = doc.createElement('div');
+    overlay.id = 'ads_modal_overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
+
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
+
+    var closeBtn = doc.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.onclick = closeModal;
+
+    var content = doc.createElement('div');
+    content.id = 'ads_modal_content';
+
+    box.appendChild(closeBtn);
+    box.appendChild(content);
+    overlay.appendChild(box);
+    doc.body.appendChild(overlay);
+
+    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
+    doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+
     if (isVideo) {{
         var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
         if (isDirectVideo) {{
-            var vid = document.createElement('video');
-            vid.id = 'modal-video';
+            var vid = doc.createElement('video');
+            vid.id = 'ads_modal_video';
             vid.src = mediaSrc;
             vid.controls = true;
             vid.autoplay = true;
@@ -5946,48 +6087,52 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
             vid.onerror = function() {{
                 content.innerHTML = '';
                 if (snapUrl) {{
-                    var wrap = document.createElement('div');
-                    wrap.id = 'modal-video-wrap';
-                    var btn = document.createElement('a');
-                    btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
-                    btn.innerHTML = '↗ Abrir no Ad Library';
+                    var wrap = doc.createElement('div');
+                    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
+                    var btn = doc.createElement('a');
+                    btn.href = snapUrl; btn.target = '_blank';
+                    btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
+                    btn.textContent = '↗ Abrir no Ad Library';
                     wrap.appendChild(btn);
                     content.appendChild(wrap);
                 }}
             }};
             content.appendChild(vid);
         }} else {{
-            var wrap = document.createElement('div');
-            wrap.id = 'modal-video-wrap';
+            var wrap = doc.createElement('div');
+            wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;min-width:280px;font-family:DM Sans,sans-serif;';
             if (snapUrl) {{
-                var btn = document.createElement('a');
-                btn.href = snapUrl; btn.target = '_blank'; btn.id = 'modal-video-btn';
-                btn.innerHTML = '↗ Abrir vídeo no Ad Library';
+                var btn = doc.createElement('a');
+                btn.href = snapUrl; btn.target = '_blank';
+                btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
+                btn.textContent = '↗ Abrir vídeo no Ad Library';
                 wrap.appendChild(btn);
             }}
             content.appendChild(wrap);
         }}
-        overlay.classList.add('open');
     }} else {{
-        if (!mediaSrc && snapUrl) {{ window.open(snapUrl, '_blank'); return; }}
-        if (!mediaSrc) return;
-        var loading = document.createElement('div');
-        loading.id = 'modal-loading'; loading.textContent = 'Carregando…';
+        if (!mediaSrc && snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); return; }}
+        if (!mediaSrc) {{ closeModal(); return; }}
+
+        var loading = doc.createElement('div');
+        loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
+        loading.textContent = 'Carregando…';
         content.appendChild(loading);
-        overlay.classList.add('open');
-        var tmp = new Image();
+
+        var tmp = new window.parent.Image();
         tmp.onload = function() {{
             content.innerHTML = '';
-            var img = document.createElement('img');
-            img.id = 'modal-img'; img.src = mediaSrc;
+            var img = doc.createElement('img');
+            img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
+            img.src = mediaSrc;
             content.appendChild(img);
         }};
         tmp.onerror = function() {{
             content.innerHTML = '';
-            if (snapUrl) {{ window.open(snapUrl, '_blank'); closeModal(); }}
+            if (snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); }}
             else {{
-                var msg = document.createElement('div');
-                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center';
+                var msg = doc.createElement('div');
+                msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center;font-family:DM Sans,sans-serif;';
                 msg.textContent = 'Imagem não disponível.';
                 content.appendChild(msg);
             }}
@@ -5995,12 +6140,21 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
         tmp.src = mediaSrc;
     }}
 }}
+
+{_js_modal_hq}
+
 function closeModal() {{
-    var vid = document.getElementById('modal-video');
+    var doc = window.parent.document;
+    var vid = doc.getElementById('ads_modal_video');
     if (vid) {{ vid.pause(); vid.src = ''; }}
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('modal-content').innerHTML = '';
+    var overlay = doc.getElementById('ads_modal_overlay');
+    if (overlay) overlay.remove();
+    if (window.parent.__adsModalEscFn) {{
+        doc.removeEventListener('keydown', window.parent.__adsModalEscFn);
+        window.parent.__adsModalEscFn = null;
+    }}
 }}
+
 document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
