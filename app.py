@@ -6259,9 +6259,9 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo) {{
 
 function closeModal() {{
     var doc = window.parent.document;
-    var overlay = doc.getElementById('ads_modal_overlay');   // ← era redes_modal_overlay
+    var overlay = doc.getElementById('ads_modal_overlay');
     if (overlay) overlay.remove();
-    if (window.parent.__adsModalEscFn) {                     // ← era __redesModalEscFn
+    if (window.parent.__adsModalEscFn) {{
         doc.removeEventListener('keydown', window.parent.__adsModalEscFn);
         window.parent.__adsModalEscFn = null;
     }}
