@@ -5711,7 +5711,7 @@ setTimeout(ajustarAltura,100);
          justify-content:center;pointer-events:none">
         <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);
                     display:flex;align-items:center;justify-content:center;
-                    box-shadow:0 2px 12px rgba(0,0,0,0.5)">
+                    box-shadow:0 2px 12px rgba(0,0,0,0.5);border: 1px solid #0b3e55 !important;">
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none">
                 <polygon points="18,12 44,27 18,42" fill="white"/>
             </svg>
@@ -8156,9 +8156,9 @@ function _showVideoFallback(content, doc, thumbUrl, igUrl) {{
     playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
         + 'display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';
     playBtn.innerHTML =
-        '<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);'
-        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4)">'
-        + '<svg width="28" height="28" viewBox="0 0 54 54" fill="none">'
+        '<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);'
+        + 'display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);border: 1px solid #0b3e55 !important;">'
+        + '<svg width="22" height="22" viewBox="0 0 54 54" fill="none">'
         + '<polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg>'
         + '</div>'
         + '<span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;'
