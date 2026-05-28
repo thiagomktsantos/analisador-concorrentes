@@ -8472,17 +8472,10 @@ function buildGrid(posts) {{
         card.id = 'pcard_' + idx;
 
         // thumb — clicável para abrir modal
-        var videoUrl     = (p.video_url || '').trim();
-        var carouselImgs = p.carousel_imgs || [];
-        // Armazena dados no objeto global para evitar problemas de escaping no onclick
-        window['__post_data_' + idx] = {{
-            thumbUrl:     thumbUrl,
-            igUrl:        igUrl,
-            videoUrl:     videoUrl,
-            isVideo:      p.is_video,
-            carouselImgs: carouselImgs,
-        }};
-        var thumbClickAttr = 'onclick="var d=window[\'__post_data_' + idx + '\']; openModal(d.thumbUrl,d.igUrl,d.videoUrl,d.isVideo,d.carouselImgs);"';
+        var videoUrl      = (p.video_url || '').trim();
+        var carouselImgs  = p.carousel_imgs || [];
+        var carouselJson  = JSON.stringify(carouselImgs).replace(/'/g, "\\'");
+        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgs))+'\\')))"';
         var playOverlay = p.is_video
             ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
               + '<div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
@@ -8536,15 +8529,15 @@ function buildGrid(posts) {{
         if (thumbUrl) {{
             var imgEl = card.querySelector('#pimg_' + idx);
             if (imgEl) {{
-                imgEl.onerror = (function(i, icon) {{
+                imgEl.onerror = (function(i, icon, tw_url, ig_u, vid_u, is_vid) {{
                     return function() {{
                         var tw = document.getElementById('tw_' + i);
                         if (tw) tw.innerHTML =
-                            '<div class="thumb-fallback" onclick="var d=window[\'__post_data_'+i+'\']; openModal(d.thumbUrl,d.igUrl,d.videoUrl,d.isVideo,d.carouselImgs);">'
+                            '<div class="thumb-fallback" onclick="openModal(\\''+tw_url+'\\',\\''+ig_u+'\\',\\''+vid_u+'\\','+is_vid+')">'
                             + '<span style="font-size:28px">' + icon + '</span>'
                             + '<span style="font-size:11px;color:#9ca3af;margin-top:4px">Sem imagem</span></div>';
                     }};
-                }})(idx, iconFallback);
+                }})(idx, iconFallback, thumbUrl, igUrl, videoUrl, p.is_video);
             }}
         }}
 
