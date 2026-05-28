@@ -6879,7 +6879,7 @@ html, body { background: transparent; overflow: hidden; }
             use_container_width=True,
         )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
-if ultima_coleta:
+        if ultima_coleta:
             import json as _jr
             d = st.session_state.metricas_redes.get("dados", [])
             djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\")
