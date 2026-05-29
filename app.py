@@ -7022,18 +7022,45 @@ function abrirModal() {{
                                 if p.get("image_versions2"):
                                     cands = p["image_versions2"].get("candidates", [])
                                     if cands:
-                                        # Ordena por largura decrescente para garantir maior resolução primeiro
                                         cands_sorted = sorted(cands, key=lambda c: c.get("width", 0), reverse=True)
-                                        thumb_hd = cands_sorted[0].get("url", "")   # maior resolução
-                                        thumb = cands_sorted[-1].get("url", "")      # menor resolução para o grid
+                                        thumb_hd = cands_sorted[0].get("url", "")
+                                        thumb = cands_sorted[-1].get("url", "")
                                         if len(cands_sorted) == 1:
                                             thumb = thumb_hd
                                     else:
                                         thumb_hd = ""
                                         thumb = ""
- 
+
+                                # Tenta sobrescrever thumb_hd com URLs de maior qualidade se disponíveis
+                                if not thumb_hd:
+                                    thumb_hd = (
+                                        p.get("display_url")
+                                        or p.get("thumbnail_src")
+                                        or p.get("image_url")
+                                        or ""
+                                    )
+
+                                # display_resources: pega o de maior largura
+                                if p.get("display_resources"):
+                                    resources = sorted(
+                                        p["display_resources"],
+                                        key=lambda r: r.get("config_width", 0),
+                                        reverse=True
+                                    )
+                                    if resources:
+                                        thumb_hd = resources[0].get("src", "") or thumb_hd
+
+                                # fallback final
                                 if not thumb_hd:
                                     thumb_hd = thumb
+
+                                if not thumb:
+                                    thumb = thumb_hd
+
+                                if p.get("thumbnail_url") and not thumb:
+                                    thumb = p["thumbnail_url"]
+                                    if not thumb_hd:
+                                        thumb_hd = thumb
  
                                 caption  = ""
                                 if p.get("caption"):
