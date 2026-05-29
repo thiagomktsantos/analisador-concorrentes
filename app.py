@@ -4114,7 +4114,9 @@ elif st.session_state.pagina == "ads":
         check     = '<div style="width:28px;height:28px;border-radius:50%;background:#22c55e22;border:1.5px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✅</div>' if finalizado else ''
         fechar_js = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m){m.style.opacity='0';m.style.transition='opacity 0.4s';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);}},1500);" if finalizado else ""
 
-        placeholder.markdown(f"""
+        placeholder.empty()
+        with placeholder:
+            st.markdown(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 @keyframes fadeIn {{from{{opacity:0;transform:scale(0.96)}}to{{opacity:1;transform:scale(1)}}}}
@@ -4141,7 +4143,6 @@ elif st.session_state.pagina == "ads":
 </style>
 <div id="ads_loader_modal">
 <div id="ads_loader_box">
-
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         {spinner}{check}
         <div>
@@ -4150,15 +4151,11 @@ elif st.session_state.pagina == "ads":
         </div>
         <div style="margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}">{progresso_pct}%</div>
     </div>
-
     <div style="background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden">
         <div style="height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}"></div>
     </div>
-
     <div>{itens_html}</div>
-
-    {'<div style="text-align:center;margin-top:16px;font-size:12px;color:#1e3a5f;font-weight:600">Fechando automaticamente...</div>' if finalizado else ''}
-
+    {'<div style="text-align:center;margin-top:16px;font-size:12px;color:#475569;font-weight:600">Fechando automaticamente...</div>' if finalizado else ''}
 </div>
 </div>
 <script>{fechar_js}</script>
@@ -4238,7 +4235,7 @@ elif st.session_state.pagina == "ads":
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
 
         _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
-        import time as _ttt; _ttt.sleep(1.2)
+        import time as _ttt; _ttt.sleep(3)
         loader_placeholder.empty()
 
         cache_mergeado = merge_ads(cache_atual, novos)
