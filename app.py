@@ -6265,6 +6265,7 @@ function openModalImages(imgs, snapUrl) {
 }
 """
 
+                altura_estimada = max(2000, len(ads_f) * 500)
                 components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -6456,7 +6457,9 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=100, scrolling=False)
+""", height=altura_estimada, scrolling=False)
+
+
  
             # ── ABA: ANÁLISE DE IA ────────────────────────────────────
             # (código idêntico ao documento 3 — sem alterações nesta seção)
