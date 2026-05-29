@@ -3724,12 +3724,271 @@ elif st.session_state.pagina == "ads":
 
         return resultado
 
+    def buscar_ads_apify(query: str, limit: int = 100) -> tuple:
+        return _apify_run_sync(query.strip(), limit=limit)
+
+    def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
+        items_html = ""
+        for item in progresso:
+            status = item["status"]
+            nome   = item["nome"]
+            msg    = item["msg"]
+            count  = item["count"]
+
+            if status == "loading":
+                icon_html = '''
+                <div class="spin-wrap">
+                    <div class="spinner"></div>
+                </div>'''
+                row_class = "row-loading"
+                count_html = ""
+            elif status == "done":
+                icon_html = '''<div class="icon-done">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>'''
+                row_class = "row-done"
+                count_html = f'<span class="count-badge">{count} ads</span>' if count is not None else ""
+            elif status == "cache":
+                icon_html = '''<div class="icon-cache">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>'''
+                row_class = "row-cache"
+                count_html = f'<span class="count-badge count-cache">{item.get("count",0)} ativos</span>'
+            elif status == "error":
+                icon_html = '''<div class="icon-error">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>'''
+                row_class = "row-error"
+                count_html = '<span class="count-badge count-error">Erro</span>'
+            else:
+                icon_html  = '<div class="icon-pending"></div>'
+                row_class  = "row-pending"
+                count_html = ""
+
+            items_html += f'''
+            <div class="search-row {row_class}">
+                {icon_html}
+                <div class="row-info">
+                    <span class="row-nome">{nome}</span>
+                    <span class="row-msg">{msg}</span>
+                </div>
+                {count_html}
+            </div>
+            '''
+
+        pct = int((atual / max(total, 1)) * 100)
+        if finalizado:
+            pct = 100
+            header_html = '''
+            <div class="loader-header done-header">
+                <div class="done-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="header-title">Busca concluída!</div>
+                    <div class="header-sub">Todos os anúncios foram carregados</div>
+                </div>
+            </div>
+            '''
+        else:
+            header_html = '''
+            <div class="loader-header">
+                <div class="header-spinner">
+                    <div class="header-spin"></div>
+                </div>
+                <div>
+                    <div class="header-title">Buscando anúncios...</div>
+                    <div class="header-sub">Conectando à Meta Ads Library</div>
+                </div>
+            </div>
+            '''
+
+        html = f'''
+        <div style="font-family:'DM Sans',sans-serif;">
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        .loader-wrap {{
+            background:#fff;
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 4px 24px rgba(0,0,0,0.08);
+        }}
+        .loader-header {{
+            display:flex;
+            align-items:center;
+            gap:14px;
+            padding:18px 22px;
+            background:linear-gradient(135deg,#0e2a47 0%,#1a4a7a 100%);
+            border-bottom:1px solid rgba(255,255,255,0.08);
+        }}
+        .done-header {{
+            background:linear-gradient(135deg,#065f46 0%,#059669 100%);
+        }}
+        .header-spinner {{
+            width:38px;height:38px;border-radius:50%;
+            background:rgba(255,255,255,0.12);
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .header-spin {{
+            width:22px;height:22px;border-radius:50%;
+            border:2.5px solid rgba(255,255,255,0.25);
+            border-top-color:#fff;
+            animation:spin 0.8s linear infinite;
+        }}
+        .done-icon {{
+            width:38px;height:38px;border-radius:50%;
+            background:rgba(255,255,255,0.2);
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        @keyframes spin {{ to {{ transform:rotate(360deg); }} }}
+        .header-title {{
+            font-size:15px;font-weight:800;color:#fff;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .header-sub {{
+            font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .progress-wrap {{
+            padding:0 22px;
+            background:#f8fafc;
+            border-bottom:1px solid #e5e7eb;
+        }}
+        .progress-inner {{ padding:12px 0; }}
+        .progress-labels {{
+            display:flex;justify-content:space-between;align-items:center;
+            margin-bottom:8px;
+        }}
+        .progress-pct {{
+            font-size:13px;font-weight:800;color:#0e2a47;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .progress-count {{
+            font-size:12px;color:#9ca3af;font-family:'DM Sans',sans-serif;
+        }}
+        .progress-bar-bg {{
+            height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;
+        }}
+        .progress-bar-fill {{
+            height:100%;border-radius:99px;
+            background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+            transition:width 0.4s ease;
+        }}
+        .rows-wrap {{
+            padding:12px 16px;
+            display:flex;flex-direction:column;gap:6px;
+        }}
+        .search-row {{
+            display:flex;align-items:center;gap:10px;
+            padding:10px 12px;border-radius:10px;
+            border:1px solid transparent;
+        }}
+        .row-loading {{ background:#eff6ff;border-color:#bfdbfe; }}
+        .row-done    {{ background:#f0fdf4;border-color:#bbf7d0; }}
+        .row-cache   {{ background:#fafafa;border-color:#e5e7eb; }}
+        .row-error   {{ background:#fef2f2;border-color:#fecaca; }}
+        .row-pending {{ background:#fafafa;border-color:#e5e7eb;opacity:0.5; }}
+        .spin-wrap {{
+            width:26px;height:26px;border-radius:50%;
+            background:#3b82f6;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .spinner {{
+            width:14px;height:14px;border-radius:50%;
+            border:2px solid rgba(255,255,255,0.3);
+            border-top-color:#fff;
+            animation:spin 0.8s linear infinite;
+        }}
+        .icon-done {{
+            width:26px;height:26px;border-radius:50%;
+            background:#22c55e;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .icon-cache {{
+            width:26px;height:26px;border-radius:50%;
+            background:#6b7280;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .icon-error {{
+            width:26px;height:26px;border-radius:50%;
+            background:#ef4444;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .icon-pending {{
+            width:26px;height:26px;border-radius:50%;
+            background:#e5e7eb;flex-shrink:0;
+        }}
+        .row-info {{ flex:1;min-width:0; }}
+        .row-nome {{
+            font-size:13px;font-weight:700;color:#111827;
+            display:block;font-family:'DM Sans',sans-serif;
+        }}
+        .row-msg {{
+            font-size:11px;color:#6b7280;margin-top:1px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+            display:block;font-family:'DM Sans',sans-serif;
+        }}
+        .count-badge {{
+            background:#dcfce7;color:#15803d;
+            border:1px solid #bbf7d0;
+            padding:3px 10px;border-radius:20px;
+            font-size:11px;font-weight:700;
+            white-space:nowrap;flex-shrink:0;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .count-cache {{ background:#f3f4f6;color:#6b7280;border-color:#e5e7eb; }}
+        .count-error {{ background:#fef2f2;color:#dc2626;border-color:#fecaca; }}
+        </style>
+        <div class="loader-wrap">
+            {header_html}
+            <div class="progress-wrap">
+                <div class="progress-inner">
+                    <div class="progress-labels">
+                        <span class="progress-pct">{pct}%</span>
+                        <span class="progress-count">{atual} de {total}</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width:{pct}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="rows-wrap">
+                {items_html}
+            </div>
+        </div>
+        </div>
+        '''
+        placeholder.markdown(html, unsafe_allow_html=True)
+
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
         novos  = {}
         cache_atual = dict(st.session_state.ads_cache or {})
 
         loader_placeholder = st.empty()
+
         total = len(empresas)
         progresso = []
 
@@ -3737,18 +3996,15 @@ elif st.session_state.pagina == "ads":
             ck = e["nome"]
 
             entrada_cache = cache_atual.get(ck, {})
-            ts_cache      = entrada_cache.get("ts", "")
-
-            # Verifica se cache ainda é fresco (menos de 1h) — evita rebuscar acidentalmente
-            if not forcar and entrada_cache and cache_esta_fresco(ts_cache):
+            if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
                 total_ads = len(entrada_cache.get("data", []))
-                ativos    = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
-                inativos  = total_ads - ativos
+                ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                inativos = total_ads - ativos
                 progresso.append({
-                    "nome":     ck,
-                    "status":   "cache",
-                    "msg":      f"Cache recente ({ts_cache})",
-                    "count":    ativos,
+                    "nome": ck,
+                    "status": "cache",
+                    "msg": f"Cache válido ({entrada_cache.get('ts','')})",
+                    "count": ativos,
                     "inativos": inativos,
                 })
                 _render_loader(loader_placeholder, progresso, total, idx_e + 1)
@@ -3765,40 +4021,26 @@ elif st.session_state.pagina == "ads":
 
             label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
             progresso.append({
-                "nome":     ck,
-                "status":   "loading",
-                "msg":      f"Buscando ({label})...",
-                "count":    None,
+                "nome": ck,
+                "status": "loading",
+                "msg": f"Buscando ({label})...",
+                "count": None,
                 "inativos": 0,
             })
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
 
-            # Busca sempre como dados novos (URLs frescas do Facebook)
             ads, raw, erro = buscar_ads_apify(query)
 
             if erro:
                 erros[ck] = erro
                 progresso[-1] = {
-                    "nome":     ck,
-                    "status":   "error",
-                    "msg":      erro[:80],
-                    "count":    0,
+                    "nome": ck,
+                    "status": "error",
+                    "msg": erro[:80],
+                    "count": 0,
                     "inativos": 0,
                 }
             else:
-                # Calcula diff antes do merge para exibir no loader
-                ads_ant   = entrada_cache.get("data", [])
-                ids_ant   = {str(a.get("id","")) for a in ads_ant if a.get("id")}
-                ids_novos = {str(a.get("id","")) for a in ads     if a.get("id")}
-
-                n_novos     = len(ids_novos - ids_ant)
-                n_pausados  = len(ids_ant   - ids_novos)
-                n_total     = len(ads)
-
-                msg_parts = [f"{n_total} anúncios ativos"]
-                if n_novos:    msg_parts.append(f"+{n_novos} novos")
-                if n_pausados: msg_parts.append(f"{n_pausados} pausados")
-
                 novos[ck] = {
                     "data":  ads,
                     "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
@@ -3806,20 +4048,18 @@ elif st.session_state.pagina == "ads":
                     "query": query,
                 }
                 progresso[-1] = {
-                    "nome":     ck,
-                    "status":   "done",
-                    "msg":      " · ".join(msg_parts),
-                    "count":    n_total,
-                    "inativos": n_pausados,
+                    "nome": ck,
+                    "status": "done",
+                    "msg": f"{len(ads)} anúncios encontrados",
+                    "count": len(ads),
+                    "inativos": 0,
                 }
-
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
 
         _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
-        import time as _ttt; _ttt.sleep(3)
+        import time as _ttt; _ttt.sleep(1.2)
         loader_placeholder.empty()
 
-        # Merge: novos substituem antigos (URLs frescas), pausados são marcados
         cache_mergeado = merge_ads(cache_atual, novos)
         st.session_state.ads_cache = cache_mergeado
         st.session_state.ads_erro  = erros
