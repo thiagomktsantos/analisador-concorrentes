@@ -4069,11 +4069,11 @@ elif st.session_state.pagina == "ads":
         progresso_pct = int((atual / total) * 100) if total else 100
 
         if finalizado:
-            texto_status = "✅ Concluído!"
+            texto_status = "Busca concluída"
             subtexto     = f"{atual}/{total} empresas processadas"
         else:
-            texto_status = f"🔄 Buscando anúncios..."
-            subtexto     = f"{atual} de {total} empresas processadas"
+            texto_status = "Buscando anúncios..."
+            subtexto     = f"Processando {atual} de {total} empresas"
 
         itens_html = ""
         for item in progresso:
@@ -4083,68 +4083,82 @@ elif st.session_state.pagina == "ads":
             count  = item.get("count")
 
             if status == "loading":
-                icone = "⏳"; cor = "#f59e0b"; bg = "#fffbeb"; brd = "#fde68a"
+                icone = "⏳"; cor_txt = "#f59e0b"; bg = "#1a3a2a"; brd = "#f59e0b22"
             elif status == "done":
-                icone = "✅"; cor = "#15803d"; bg = "#f0fdf4"; brd = "#86efac"
+                icone = "✅"; cor_txt = "#22c55e"; bg = "#0f2a1a"; brd = "#22c55e33"
             elif status == "error":
-                icone = "❌"; cor = "#dc2626"; bg = "#fef2f2"; brd = "#fca5a5"
+                icone = "❌"; cor_txt = "#f87171"; bg = "#2a0f0f"; brd = "#f8717133"
             elif status == "cache":
-                icone = "🗂️"; cor = "#1d4ed8"; bg = "#eff6ff"; brd = "#bfdbfe"
+                icone = "🗂️"; cor_txt = "#3a9fd6"; bg = "#0e2240"; brd = "#3a9fd633"
             else:
-                icone = "•"; cor = "#6b7280"; bg = "#f9fafb"; brd = "#e5e7eb"
+                icone = "•"; cor_txt = "#9ca3af"; bg = "#1a2535"; brd = "#ffffff11"
 
-            count_str = f'<span style="font-weight:700;color:{cor}">{count} anúncios</span>' if count is not None else ""
+            count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else ""
             msg_safe  = msg.replace("<","&lt;").replace(">","&gt;")
 
             itens_html += f"""
             <div style="display:flex;align-items:center;gap:12px;
-                        padding:10px 14px;border-radius:10px;
-                        background:{bg};border:1px solid {brd};margin-bottom:8px">
-                <span style="font-size:18px;flex-shrink:0">{icone}</span>
+                        padding:11px 14px;border-radius:10px;
+                        background:{bg};border:1px solid {brd};
+                        margin-bottom:8px">
+                <span style="font-size:17px;flex-shrink:0">{icone}</span>
                 <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:700;color:#111827">{nome}</div>
-                    <div style="font-size:12px;color:#6b7280;margin-top:1px">{msg_safe}</div>
+                    <div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>
                 </div>
                 {count_str}
             </div>"""
 
-        barra_cor   = "#22c55e" if finalizado else "#3a9fd6"
-        fechar_js   = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.style.opacity='0';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);},1500);" if finalizado else ""
+        barra_cor = "#22c55e" if finalizado else "#3a9fd6"
+        spinner   = '' if finalizado else '<div style="width:22px;height:22px;border:2.5px solid #1e3a5f;border-top-color:#3a9fd6;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>'
+        check     = '<div style="width:28px;height:28px;border-radius:50%;background:#22c55e22;border:1.5px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✅</div>' if finalizado else ''
+        fechar_js = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m){m.style.opacity='0';m.style.transition='opacity 0.4s';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);}},1500);" if finalizado else ""
 
         placeholder.markdown(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-@keyframes fadeIn {{from{{opacity:0;transform:translateY(-16px)}}to{{opacity:1;transform:translateY(0)}}}}
-@keyframes spin {{to{{transform:rotate(360deg)}}}}
+@keyframes fadeIn {{from{{opacity:0;transform:scale(0.96)}}to{{opacity:1;transform:scale(1)}}}}
+@keyframes spin   {{to{{transform:rotate(360deg)}}}}
 #ads_loader_modal{{
-    position:fixed;top:0;left:0;right:0;bottom:0;
-    background:rgba(0,0,0,0.45);
+    position:fixed;inset:0;
+    background:rgba(5,15,30,0.75);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
     z-index:99999;
     display:flex;align-items:center;justify-content:center;
     animation:fadeIn 0.2s ease;
     transition:opacity 0.4s;
-}}
-#ads_loader_box{{
-    background:#fff;border-radius:18px;
-    padding:28px 28px 22px;
-    width:min(92vw,480px);
-    box-shadow:0 20px 60px rgba(0,0,0,0.25);
     font-family:'DM Sans',sans-serif;
 }}
+#ads_loader_box{{
+    background:#0e1e35;
+    border:1px solid #1e3a5f;
+    border-radius:18px;
+    padding:28px;
+    width:min(92vw,460px);
+    box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(58,159,214,0.1);
+}}
 </style>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <div id="ads_loader_modal">
 <div id="ads_loader_box">
+
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        {'<div style="width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:#3a9fd6;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>' if not finalizado else '<span style="font-size:26px">✅</span>'}
+        {spinner}{check}
         <div>
-            <div style="font-size:16px;font-weight:800;color:#111827">{texto_status}</div>
-            <div style="font-size:13px;color:#9ca3af;margin-top:1px">{subtexto}</div>
+            <div style="font-size:16px;font-weight:800;color:#f1f5f9;letter-spacing:-0.2px">{texto_status}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">{subtexto}</div>
         </div>
+        <div style="margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}">{progresso_pct}%</div>
     </div>
-    <div style="background:#f3f4f6;border-radius:8px;height:6px;margin-bottom:20px;overflow:hidden">
-        <div style="height:100%;width:{progresso_pct}%;background:{barra_cor};border-radius:8px;transition:width 0.4s ease"></div>
+
+    <div style="background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden">
+        <div style="height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}"></div>
     </div>
+
     <div>{itens_html}</div>
+
+    {'<div style="text-align:center;margin-top:16px;font-size:12px;color:#1e3a5f;font-weight:600">Fechando automaticamente...</div>' if finalizado else ''}
+
 </div>
 </div>
 <script>{fechar_js}</script>
