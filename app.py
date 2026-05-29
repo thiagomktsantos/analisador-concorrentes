@@ -6872,37 +6872,19 @@ function abrirModal() {{
  
     var hdr = doc.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
-
-    var hdrLeft = doc.createElement('div');
-    hdrLeft.innerHTML =
-        '<div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
-        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div>';
-
-    var hdrRight = doc.createElement('div');
-    hdrRight.style.cssText = 'display:flex;gap:10px;';
-
-    var btnCopy = doc.createElement('button');
-    btnCopy.id = 'raw_copy_btn';
-    btnCopy.textContent = '📋 Copiar';
-    btnCopy.style.cssText = 'padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;';
-    btnCopy.onclick = function() {{ window.copiarDados(); }};
-
-    var btnDownload = doc.createElement('button');
-    btnDownload.textContent = '⬇️ Baixar JSON';
-    btnDownload.style.cssText = 'padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;';
-    btnDownload.onclick = function() {{ window.baixarDados(); }};
-
-    var btnClose = doc.createElement('button');
-    btnClose.textContent = '✕';
-    btnClose.style.cssText = 'width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;';
-    btnClose.onclick = function() {{ window.fechar(); }};
-
-    hdrRight.appendChild(btnCopy);
-    hdrRight.appendChild(btnDownload);
-    hdrRight.appendChild(btnClose);
-    hdr.appendChild(hdrLeft);
-    hdr.appendChild(hdrRight);
-
+    hdr.innerHTML =
+        '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
+        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
+        + '<div style="display:flex;gap:10px;">'
+        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '</div>';
+ 
+    var pre = doc.createElement('pre');
+    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
+    pre.textContent = Dstr;
+ 
     box.appendChild(hdr);
     box.appendChild(pre);
     ov.appendChild(box);
