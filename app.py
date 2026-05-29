@@ -3738,7 +3738,10 @@ elif st.session_state.pagina == "ads":
         if not api_token:
             return [], [], "APIFY_TOKEN não configurada nos secrets."
 
-        run_url = f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs?token={api_token}"
+        run_url = (
+            f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
+            f"?token={api_token}"
+        )
 
         import urllib.parse
         search_term_stripped = search_term.strip()
@@ -3831,260 +3834,100 @@ elif st.session_state.pagina == "ads":
         return _apify_run_sync(query.strip(), limit=limit)
 
     def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
-        items_html = ""
+        progresso_pct = int((atual / total) * 100) if total else 100
+
+        if finalizado:
+            texto_status = "Busca concluída"
+            subtexto     = f"{atual}/{total} empresas processadas"
+        else:
+            texto_status = "Buscando anúncios..."
+            subtexto     = f"Processando {atual} de {total} empresas"
+
+        itens_html = ""
         for item in progresso:
-            status = item["status"]
-            nome   = item["nome"]
-            msg    = item["msg"]
-            count  = item["count"]
+            status = item.get("status", "")
+            nome   = item.get("nome", "")
+            msg    = item.get("msg", "")
+            count  = item.get("count")
 
             if status == "loading":
-                icon_html = '''
-                <div class="spin-wrap">
-                    <div class="spinner"></div>
-                </div>'''
-                row_class = "row-loading"
-                count_html = ""
+                icone = "⏳"; cor_txt = "#f59e0b"; bg = "#1a3a2a"; brd = "#f59e0b22"
             elif status == "done":
-                icon_html = '''<div class="icon-done">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                         stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                </div>'''
-                row_class = "row-done"
-                count_html = f'<span class="count-badge">{count} ads</span>' if count is not None else ""
-            elif status == "cache":
-                icon_html = '''<div class="icon-cache">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                </div>'''
-                row_class = "row-cache"
-                count_html = f'<span class="count-badge count-cache">{item.get("count",0)} ativos</span>'
+                icone = "✅"; cor_txt = "#22c55e"; bg = "#0f2a1a"; brd = "#22c55e33"
             elif status == "error":
-                icon_html = '''<div class="icon-error">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="15" y1="9" x2="9" y2="15"/>
-                        <line x1="9" y1="9" x2="15" y2="15"/>
-                    </svg>
-                </div>'''
-                row_class = "row-error"
-                count_html = '<span class="count-badge count-error">Erro</span>'
+                icone = "❌"; cor_txt = "#f87171"; bg = "#2a0f0f"; brd = "#f8717133"
+            elif status == "cache":
+                icone = "🗂️"; cor_txt = "#3a9fd6"; bg = "#0e2240"; brd = "#3a9fd633"
             else:
-                icon_html  = '<div class="icon-pending"></div>'
-                row_class  = "row-pending"
-                count_html = ""
+                icone = "•"; cor_txt = "#9ca3af"; bg = "#1a2535"; brd = "#ffffff11"
 
-            items_html += f'''
-            <div class="search-row {row_class}">
-                {icon_html}
-                <div class="row-info">
-                    <span class="row-nome">{nome}</span>
-                    <span class="row-msg">{msg}</span>
-                </div>
-                {count_html}
-            </div>
-            '''
+            count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else ""
+            msg_safe  = msg.replace("<","&lt;").replace(">","&gt;")
 
-        pct = int((atual / max(total, 1)) * 100)
-        if finalizado:
-            pct = 100
-            header_html = '''
-            <div class="loader-header done-header">
-                <div class="done-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+            itens_html += f"""
+            <div style="display:flex;align-items:center;gap:12px;
+                        padding:11px 14px;border-radius:10px;
+                        background:{bg};border:1px solid {brd};
+                        margin-bottom:8px">
+                <span style="font-size:17px;flex-shrink:0">{icone}</span>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>
                 </div>
-                <div>
-                    <div class="header-title">Busca concluída!</div>
-                    <div class="header-sub">Todos os anúncios foram carregados</div>
-                </div>
-            </div>
-            '''
-        else:
-            header_html = '''
-            <div class="loader-header">
-                <div class="header-spinner">
-                    <div class="header-spin"></div>
-                </div>
-                <div>
-                    <div class="header-title">Buscando anúncios...</div>
-                    <div class="header-sub">Conectando à Meta Ads Library</div>
-                </div>
-            </div>
-            '''
+                {count_str}
+            </div>"""
 
-        html = f'''
-        <div style="font-family:'DM Sans',sans-serif;">
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        .loader-wrap {{
-            background:#fff;
-            border:1px solid #e5e7eb;
-            border-radius:16px;
-            overflow:hidden;
-            box-shadow:0 4px 24px rgba(0,0,0,0.08);
-        }}
-        .loader-header {{
-            display:flex;
-            align-items:center;
-            gap:14px;
-            padding:18px 22px;
-            background:linear-gradient(135deg,#0e2a47 0%,#1a4a7a 100%);
-            border-bottom:1px solid rgba(255,255,255,0.08);
-        }}
-        .done-header {{
-            background:linear-gradient(135deg,#065f46 0%,#059669 100%);
-        }}
-        .header-spinner {{
-            width:38px;height:38px;border-radius:50%;
-            background:rgba(255,255,255,0.12);
-            display:flex;align-items:center;justify-content:center;
-            flex-shrink:0;
-        }}
-        .header-spin {{
-            width:22px;height:22px;border-radius:50%;
-            border:2.5px solid rgba(255,255,255,0.25);
-            border-top-color:#fff;
-            animation:spin 0.8s linear infinite;
-        }}
-        .done-icon {{
-            width:38px;height:38px;border-radius:50%;
-            background:rgba(255,255,255,0.2);
-            display:flex;align-items:center;justify-content:center;
-            flex-shrink:0;
-        }}
-        @keyframes spin {{ to {{ transform:rotate(360deg); }} }}
-        .header-title {{
-            font-size:15px;font-weight:800;color:#fff;
-            font-family:'DM Sans',sans-serif;
-        }}
-        .header-sub {{
-            font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;
-            font-family:'DM Sans',sans-serif;
-        }}
-        .progress-wrap {{
-            padding:0 22px;
-            background:#f8fafc;
-            border-bottom:1px solid #e5e7eb;
-        }}
-        .progress-inner {{ padding:12px 0; }}
-        .progress-labels {{
-            display:flex;justify-content:space-between;align-items:center;
-            margin-bottom:8px;
-        }}
-        .progress-pct {{
-            font-size:13px;font-weight:800;color:#0e2a47;
-            font-family:'DM Sans',sans-serif;
-        }}
-        .progress-count {{
-            font-size:12px;color:#9ca3af;font-family:'DM Sans',sans-serif;
-        }}
-        .progress-bar-bg {{
-            height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;
-        }}
-        .progress-bar-fill {{
-            height:100%;border-radius:99px;
-            background:linear-gradient(90deg,#3a9fd6,#2ecc71);
-            transition:width 0.4s ease;
-        }}
-        .rows-wrap {{
-            padding:12px 16px;
-            display:flex;flex-direction:column;gap:6px;
-        }}
-        .search-row {{
-            display:flex;align-items:center;gap:10px;
-            padding:10px 12px;border-radius:10px;
-            border:1px solid transparent;
-        }}
-        .row-loading {{ background:#eff6ff;border-color:#bfdbfe; }}
-        .row-done    {{ background:#f0fdf4;border-color:#bbf7d0; }}
-        .row-cache   {{ background:#fafafa;border-color:#e5e7eb; }}
-        .row-error   {{ background:#fef2f2;border-color:#fecaca; }}
-        .row-pending {{ background:#fafafa;border-color:#e5e7eb;opacity:0.5; }}
-        .spin-wrap {{
-            width:26px;height:26px;border-radius:50%;
-            background:#3b82f6;
-            display:flex;align-items:center;justify-content:center;
-            flex-shrink:0;
-        }}
-        .spinner {{
-            width:14px;height:14px;border-radius:50%;
-            border:2px solid rgba(255,255,255,0.3);
-            border-top-color:#fff;
-            animation:spin 0.8s linear infinite;
-        }}
-        .icon-done {{
-            width:26px;height:26px;border-radius:50%;
-            background:#22c55e;
-            display:flex;align-items:center;justify-content:center;
-            flex-shrink:0;
-        }}
-        .icon-cache {{
-            width:26px;height:26px;border-radius:50%;
-            background:#6b7280;
-            display:flex;align-items:center;justify-content:center;
-            flex-shrink:0;
-        }}
-        .icon-error {{
-            width:26px;height:26px;border-radius:50%;
-            background:#ef4444;
-            display:flex;align-items:center;justify-content:center;
-            flex-shrink:0;
-        }}
-        .icon-pending {{
-            width:26px;height:26px;border-radius:50%;
-            background:#e5e7eb;flex-shrink:0;
-        }}
-        .row-info {{ flex:1;min-width:0; }}
-        .row-nome {{
-            font-size:13px;font-weight:700;color:#111827;
-            display:block;font-family:'DM Sans',sans-serif;
-        }}
-        .row-msg {{
-            font-size:11px;color:#6b7280;margin-top:1px;
-            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-            display:block;font-family:'DM Sans',sans-serif;
-        }}
-        .count-badge {{
-            background:#dcfce7;color:#15803d;
-            border:1px solid #bbf7d0;
-            padding:3px 10px;border-radius:20px;
-            font-size:11px;font-weight:700;
-            white-space:nowrap;flex-shrink:0;
-            font-family:'DM Sans',sans-serif;
-        }}
-        .count-cache {{ background:#f3f4f6;color:#6b7280;border-color:#e5e7eb; }}
-        .count-error {{ background:#fef2f2;color:#dc2626;border-color:#fecaca; }}
-        </style>
-        <div class="loader-wrap">
-            {header_html}
-            <div class="progress-wrap">
-                <div class="progress-inner">
-                    <div class="progress-labels">
-                        <span class="progress-pct">{pct}%</span>
-                        <span class="progress-count">{atual} de {total}</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width:{pct}%"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="rows-wrap">
-                {items_html}
-            </div>
-        </div>
-        </div>
-        '''
+        barra_cor = "#22c55e" if finalizado else "#3a9fd6"
+        spinner   = '' if finalizado else '<div style="width:22px;height:22px;border:2.5px solid #1e3a5f;border-top-color:#3a9fd6;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>'
+        check     = '<div style="width:28px;height:28px;border-radius:50%;background:#22c55e22;border:1.5px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✅</div>' if finalizado else ''
+        fechar_js = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m){m.style.opacity='0';m.style.transition='opacity 0.4s';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);}},1500);" if finalizado else ""
+
+        placeholder.empty()
         with placeholder:
-            components.html(html, height=80 + len(progresso) * 60, scrolling=False)
+            st.markdown(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+@keyframes fadeIn {{from{{opacity:0;transform:scale(0.96)}}to{{opacity:1;transform:scale(1)}}}}
+@keyframes spin   {{to{{transform:rotate(360deg)}}}}
+#ads_loader_modal{{
+    position:fixed;inset:0;
+    background:rgba(5,15,30,0.75);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+    z-index:99999;
+    display:flex;align-items:center;justify-content:center;
+    animation:fadeIn 0.2s ease;
+    transition:opacity 0.4s;
+    font-family:'DM Sans',sans-serif;
+}}
+#ads_loader_box{{
+    background:#0e1e35;
+    border:1px solid #1e3a5f;
+    border-radius:18px;
+    padding:28px;
+    width:min(92vw,460px);
+    box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(58,159,214,0.1);
+}}
+</style>
+<div id="ads_loader_modal">
+<div id="ads_loader_box">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        {spinner}{check}
+        <div>
+            <div style="font-size:16px;font-weight:800;color:#f1f5f9;letter-spacing:-0.2px">{texto_status}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">{subtexto}</div>
+        </div>
+        <div style="margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}">{progresso_pct}%</div>
+    </div>
+    <div style="background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden">
+        <div style="height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}"></div>
+    </div>
+    <div>{itens_html}</div>
+    {'<div style="text-align:center;margin-top:16px;font-size:12px;color:#475569;font-weight:600">Fechando automaticamente...</div>' if finalizado else ''}
+</div>
+</div>
+<script>{fechar_js}</script>
+""", unsafe_allow_html=True)
 
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
