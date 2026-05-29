@@ -6582,7 +6582,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=600, scrolling=True)
+""", height=600, scrolling=False)
 
         # ── Renderiza empresa da aba ativa ───────────────────────────
 
@@ -7648,13 +7648,241 @@ window.addEventListener('load',syncHeight);
 setTimeout(syncHeight,300);setTimeout(syncHeight,800);
 </script>
 </body></html>
-""", height=2400, scrolling=False)
+""", height=600, scrolling=False)
+ 
+        # ══════════════════════════════════════════════════════════════
+        # SUB-ABA: ANÁLISE DE IA
+        # ══════════════════════════════════════════════════════════════
+        else:
+            chave_criativo = f"ia_criativo_{r['handle']}"
+            chave_copy     = f"ia_copy_{r['handle']}"
+            chave_geral    = f"ia_geral_{r['handle']}"
+            for ch in [chave_criativo, chave_copy, chave_geral]:
+                if ch not in st.session_state:
+                    st.session_state[ch] = ""
+ 
+            resumo_posts = "\n".join([
+                f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
+                f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+                for p in posts_list[:12]
+            ]) if posts_list else "Sem posts disponíveis."
+ 
+            perfil_ctx = f"""
+Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
+Bio: {r.get('bio','')}
+Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
+Últimos posts:
+{resumo_posts}
+"""
+ 
+            for btn_sfx in ["criativo", "copy", "geral"]:
+                ghost_k_ia = f"btn_{btn_sfx}_{aba_ativa}_ia"
+                st.markdown(f"""
+                <style>
+                .st-key-{ghost_k_ia} {{
+                    position:fixed !important; top:-9999px !important; left:-9999px !important;
+                    width:1px !important; height:1px !important; overflow:hidden !important;
+                    opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+ 
+            if st.button(f"__criativo_{aba_ativa}__", key=f"btn_criativo_{aba_ativa}_ia"):
+                if gemini_model is None:
+                    st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando criativos…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
+Responda em português com:
+### Análise de Criativo
+**Estilo visual predominante:** ...
+**Formatos mais usados:** ...
+**Posts com melhor desempenho:** ...
+**Pontos fortes visuais:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""")
+                            st.session_state[chave_criativo] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_criativo] = f"Erro: {e}"
+ 
+            if st.button(f"__copy_{aba_ativa}__", key=f"btn_copy_{aba_ativa}_ia"):
+                if gemini_model is None:
+                    st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Analisando copies…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Analise as LEGENDAS (copy) deste perfil Instagram.
+Responda em português com:
+### Análise de Copy
+**Tom de voz predominante:** ...
+**Uso de CTAs:** ...
+**Uso de hashtags:** ...
+**Pontos fortes nas legendas:** (3 pontos)
+**O que melhorar:** (2 pontos)
+Seja direto e objetivo.
+""")
+                            st.session_state[chave_copy] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_copy] = f"Erro: {e}"
+ 
+            if st.button(f"__geral_{aba_ativa}__", key=f"btn_geral_{aba_ativa}_ia"):
+                if gemini_model is None:
+                    st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+                else:
+                    with st.spinner("Gerando análise geral…"):
+                        try:
+                            resp = gemini_model.generate_content(f"""
+{perfil_ctx}
+Faça uma análise geral estratégica deste perfil Instagram.
+Responda em português com:
+### Análise Geral
+**Posicionamento:** ...
+**Frequência de posts:** ...
+### Pontos Fortes (3 pontos)
+### Pontos de Atenção (2 pontos)
+### Recomendações Estratégicas (3 ações concretas)
+Seja direto e objetivo.
+""")
+                            st.session_state[chave_geral] = resp.text
+                            st.rerun()
+                        except Exception as e:
+                            st.session_state[chave_geral] = f"Erro: {e}"
+ 
+            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
+            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
+            geral_html_ia = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
+ 
+            def _panel_ia_redes(html_content, btn_label, btn_trigger):
+                btn_html = f"""
+                    <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
+                        <button onclick="
+                            const btns = window.parent.document.querySelectorAll('button');
+                            for (const b of btns) {{
+                                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{
+                                    b.click(); break;
+                                }}
+                            }}
+                        " style="
+                            width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
+                            background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
+                            cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;
+                        "
+                        onmouseover="this.style.background='#dbeafe'"
+                        onmouseout="this.style.background='#eff6ff'">
+                            {btn_label}
+                        </button>
+                    </div>
+                """
+                if html_content:
+                    return (
+                        f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">'
+                        f'{html_content}</div>'
+                        f'{btn_html}'
+                    )
+                return (
+                    f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">'
+                    f'Clique no botão abaixo para gerar a análise.</div>'
+                    f'{btn_html}'
+                )
+ 
+            ia_html = f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
+.ia-wrap {{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-top:none;
+    border-radius:0 0 12px 12px;
+    overflow:hidden;
+    margin-top:-4px;
+}}
+.ia-header {{
+    padding:14px 18px;
+    font-size:14px; font-weight:800; color:#1a2e4a;
+    text-transform:uppercase; letter-spacing:0.3px;
+    border-bottom:1px solid #e5e7eb;
+    background:#fff;
+}}
+.tabs {{
+    display:flex;
+    border-bottom:1px solid #e5e7eb;
+    background:#f9fafb;
+}}
+.tab {{
+    flex:1; padding:11px 0; text-align:center;
+    font-size:14px; font-weight:600; color:#9ca3af;
+    cursor:pointer; border:none; background:transparent;
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    font-family:'DM Sans',sans-serif; transition:color 0.15s;
+}}
+.tab:hover {{ color:#374151; background:#f3f4f6; }}
+.tab.active {{
+    color:#1a2e4a;
+    border-bottom:2px solid #3a9fd6;
+    background:#fff;
+}}
+.panel {{ display:none; }}
+.panel.active {{ display:block; }}
+</style>
+ 
+<div class="ia-wrap">
+    <div class="ia-header">Análise de Conteúdos</div>
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
+        <button class="tab"        onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
+        <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
+    </div>
+    <div id="panel-geral" class="panel active">
+        {_panel_ia_redes(geral_html_ia, "Gerar Análise de Postagens 🤖", f"__geral_{aba_ativa}__")}
+    </div>
+    <div id="panel-criativo" class="panel">
+        {_panel_ia_redes(criativo_html, "Gerar Análise de Criativos 🤖", f"__criativo_{aba_ativa}__")}
+    </div>
+    <div id="panel-copy" class="panel">
+        {_panel_ia_redes(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{aba_ativa}__")}
+    </div>
+</div>
+ 
+<script>
+function syncHeight() {{
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+8)+'px'; break; }} }} catch(e) {{}}
+    }}
+}}
+function showTab(name, el) {{
+    document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
+    document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
+    document.getElementById('panel-' + name).classList.add('active');
+    el.classList.add('active');
+    setTimeout(syncHeight, 50);
+}}
+var ro = new ResizeObserver(syncHeight);
+ro.observe(document.body);
+document.addEventListener('DOMContentLoaded', syncHeight);
+window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight, 1000);
+</script>
+"""
+            components.html(ia_html, height=420, scrolling=False)
  
     # ══════════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA — Comparativo geral
     # ══════════════════════════════════════════════════════════════════
  
-    if main_tab == "analise":
+    elif main_tab == "analise":
  
         if not ok:
             st.markdown("""
