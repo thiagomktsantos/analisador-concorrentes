@@ -6046,7 +6046,7 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;padding:40px 24px 24px;min-width:320px;max-width:min(92vw,900px);';
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
     var title = doc.createElement('div');
     title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
@@ -6100,7 +6100,7 @@ function openModalImages(imgs, snapUrl) {
     box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
     var title = doc.createElement('div');
     title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
@@ -6206,7 +6206,7 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
 
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
 
     var content = doc.createElement('div');
@@ -7002,9 +7002,9 @@ function abrirModal() {{
         '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
         + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
         + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#0e1e35;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#0e1e35;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
         + '</div>';
  
     var pre = doc.createElement('pre');
@@ -8342,7 +8342,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
  
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
  
     var content = doc.createElement('div');
