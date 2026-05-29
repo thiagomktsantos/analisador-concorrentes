@@ -3668,93 +3668,30 @@ elif st.session_state.pagina == "ads":
             pass
         return {}
 
-    def merge_ads(cache_existente: dict, novos: dict, query_limit: int = 100) -> dict:
-        """
-        Mescla cache existente com novos dados da API.
- 
-        Regras:
-        - Ads presentes na nova busca → usam objeto NOVO (URLs frescas).
-          Campos de histórico (data_inicio original) são preservados do
-          objeto antigo quando o novo não tiver.
-        - Ads ausentes na nova busca → marcados como 'pausado' SOMENTE
-          se a nova busca retornou menos itens que query_limit.
-          Se retornou exatamente o limite (API truncada), mantém status
-          anterior — o ad pode só estar fora do top-N.
-        - Ads reativados (estavam inativos, voltaram) → 'reativado'.
-        - Ads novos (nunca vistos antes)              → 'novo'.
-        - Ads continuamente ativos                    → '' (sem mudança).
-        """
+    def merge_ads(cache_existente: dict, novos: dict) -> dict:
         resultado = dict(cache_existente)
- 
         for nome_empresa, novo_entry in novos.items():
             novos_ads = novo_entry.get("data", [])
-            entry_ant = resultado.get(nome_empresa, {})
-            ads_ant   = entry_ant.get("data", [])
- 
-            # Índice dos ads anteriores por ID
-            ant_por_id = {str(a.get("id", "")): a for a in ads_ant if a.get("id")}
-            # IDs que chegaram nesta busca
-            ids_novos  = {str(a.get("id", "")) for a in novos_ads if a.get("id")}
- 
-            # Se a API retornou exatamente o limite, pode ter truncado.
-            # Nesse caso NÃO marcamos ausentes como pausados.
-            api_pode_ter_truncado = len(novos_ads) >= query_limit
- 
-            ads_finais = []
- 
-            # ── 1. Ads que vieram da nova busca (URLs frescas) ──────
+            novos_ids = {str(a.get("id", "")) for a in novos_ads if a.get("id")}
+            entry_existente = resultado.get(nome_empresa, {})
+            ads_anteriores = entry_existente.get("data", [])
+            ads_anteriores_atualizados = []
+            for ad in ads_anteriores:
+                ad_id = str(ad.get("id", ""))
+                ad["ativo"] = (ad_id in novos_ids) if ad_id else ad.get("ativo", True)
+                ads_anteriores_atualizados.append(ad)
+            ids_existentes = {str(a.get("id", "")) for a in ads_anteriores_atualizados if a.get("id")}
             for ad in novos_ads:
-                ad_id  = str(ad.get("id", ""))
-                ad_ant = ant_por_id.get(ad_id) if ad_id else None
- 
-                ad["ativo"] = True
- 
-                if ad_ant:
-                    # Ad já conhecido — define status_change
-                    if not ad_ant.get("ativo", True):
-                        ad["status_change"] = "reativado"
-                    else:
-                        ad["status_change"] = ""
- 
-                    # Preserva a data de início ORIGINAL (mais antiga)
-                    data_original = ad_ant.get("data_raw") or ad_ant.get("data_inicio")
-                    data_novo     = ad.get("data_raw") or ad.get("data_inicio")
-                    if data_original and not data_novo:
-                        ad["data_raw"]    = data_original
-                        ad["data_inicio"] = data_original
-                else:
-                    ad["status_change"] = "novo" if ads_ant else ""
- 
-                ads_finais.append(ad)
- 
-            # ── 2. Ads do cache que NÃO vieram agora ───────────────
-            for ad_ant in ads_ant:
-                ad_id = str(ad_ant.get("id", ""))
-                if ad_id and ad_id in ids_novos:
-                    continue  # já processado acima
- 
-                ad_pausado = dict(ad_ant)  # cópia do objeto antigo
- 
-                if api_pode_ter_truncado:
-                    # Não sabemos se pausou ou só ficou fora do top-N.
-                    # Mantém o status anterior sem alterar.
-                    pass
-                else:
-                    # API retornou tudo (abaixo do limite): ausência = pausado.
-                    ad_pausado["ativo"] = False
-                    if ad_pausado.get("status_change") != "pausado":
-                        ad_pausado["status_change"] = "pausado"
- 
-                ads_finais.append(ad_pausado)
- 
+                ad_id = str(ad.get("id", ""))
+                if not ad_id or ad_id not in ids_existentes:
+                    ad["ativo"] = True
+                    ads_anteriores_atualizados.append(ad)
             resultado[nome_empresa] = {
                 **novo_entry,
-                "data":        ads_finais,
-                "ts":          novo_entry.get("ts", entry_ant.get("ts", "")),
-                "ts_anterior": entry_ant.get("ts", ""),
-                "query_limit": query_limit,
+                "data": ads_anteriores_atualizados,
+                "ts": novo_entry.get("ts", entry_existente.get("ts", "")),
+                "ts_historico": entry_existente.get("ts", ""),
             }
- 
         return resultado
 
     def cache_esta_fresco(ts_str: str) -> bool:
@@ -3765,6 +3702,268 @@ elif st.session_state.pagina == "ads":
             return (_dt.datetime.now() - ts).total_seconds() < CACHE_TTL_HORAS * 3600
         except Exception:
             return False
+
+    def _url_para_base64(url: str) -> str:
+        if not url or not url.startswith("http"):
+            return ""
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://www.facebook.com/",
+            }
+            r = requests.get(url, headers=headers, timeout=10, stream=True)
+            if r.status_code != 200:
+                return ""
+            ct = r.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+            if not ct.startswith("image/"):
+                ct = "image/jpeg"
+            data = _b64.b64encode(r.content).decode("utf-8")
+            return f"data:{ct};base64,{data}"
+        except Exception:
+            return ""
+
+    def _truncar(txt, n=160):
+        if not txt:
+            return ""
+        txt = str(txt).strip()
+        return txt[:n] + "…" if len(txt) > n else txt
+
+    def _is_dynamic(txt):
+        if not txt:
+            return False
+        return bool(re.search(r'\{\{[^}]+\}\}', txt))
+
+    def _clean_dynamic(txt):
+        if not txt:
+            return ""
+        cleaned = re.sub(r'\{\{[^}]+\}\}', '', txt).strip()
+        lines = [l.strip() for l in cleaned.split('\n') if l.strip()]
+        return ' '.join(lines)
+
+    def _dias_ativo(start_raw: str) -> str:
+        if not start_raw:
+            return ""
+        try:
+            ts_int = int(str(start_raw).strip())
+            if ts_int > 10**9:
+                dto = _dt.datetime.utcfromtimestamp(ts_int)
+            else:
+                raise ValueError
+        except (ValueError, OSError):
+            try:
+                dto = _dt.datetime.strptime(str(start_raw)[:10], "%Y-%m-%d")
+            except Exception:
+                return str(start_raw)[:10]
+        data_fmt = f"{dto.day:02d}/{dto.month:02d}/{dto.year}"
+        dias = (_dt.datetime.now() - dto).days
+        if dias == 0:
+            dias_str = "hoje"
+        elif dias == 1:
+            dias_str = "1 dia ativo"
+        else:
+            dias_str = f"{dias} dias ativo"
+        return f"{data_fmt} ({dias_str})"
+
+    def _extract_images(ad: dict) -> list:
+        imgs = []
+        seen = set()
+        def add(url):
+            url = (url or "").strip()
+            if url and url not in seen and url.startswith("http"):
+                seen.add(url); imgs.append(url)
+        snapshot = ad.get("snapshot") or {}
+        cards    = snapshot.get("cards") or []
+        for k in ("image_url","original_image_url","resized_image_url",
+                  "thumbnail_url","preview_image_url","full_picture"):
+            add(ad.get(k))
+        for k in ("image_url","original_image_url","resized_image_url",
+                  "thumbnail_url","background_image"):
+            add(snapshot.get(k))
+        for card in cards:
+            if not isinstance(card, dict): continue
+            for k in ("original_image_url","image_url","resized_image_url",
+                      "thumbnail_url","picture"):
+                add(card.get(k))
+        for obj in (ad.get("creative_images") or []):
+            if isinstance(obj, dict):
+                for k in ("original_image_url","image_url","url"):
+                    add(obj.get(k))
+            elif isinstance(obj, str): add(obj)
+        for obj in (ad.get("images") or []):
+            if isinstance(obj, dict):
+                for k in ("original_image_url","image_url","url","src"):
+                    add(obj.get(k))
+            elif isinstance(obj, str): add(obj)
+        return imgs
+
+    def _extract_copy(ad: dict) -> dict:
+        snapshot = ad.get("snapshot") or {}
+        cards    = snapshot.get("cards") or []
+        def first_str(val):
+            if isinstance(val, list):
+                for v in val:
+                    if v and isinstance(v, str) and v.strip():
+                        return v.strip()
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+            return ""
+        body  = (first_str(ad.get("ad_creative_bodies"))
+                 or first_str(snapshot.get("body"))
+                 or first_str(ad.get("body"))
+                 or first_str(ad.get("message"))
+                 or first_str(snapshot.get("message")))
+        title = (first_str(ad.get("ad_creative_link_titles"))
+                 or first_str(snapshot.get("title"))
+                 or first_str(ad.get("title"))
+                 or first_str(snapshot.get("link_title")))
+        desc  = (first_str(ad.get("ad_creative_link_descriptions"))
+                 or first_str(snapshot.get("link_description"))
+                 or first_str(ad.get("description"))
+                 or first_str(snapshot.get("description")))
+        cta   = (first_str(ad.get("cta_type"))
+                 or first_str(snapshot.get("cta_type"))
+                 or first_str(ad.get("call_to_action_type")))
+        caption = (first_str(snapshot.get("caption"))
+                   or first_str(ad.get("caption")))
+        if not body and cards:
+            for card in cards:
+                if isinstance(card, dict):
+                    v = first_str(card.get("body") or card.get("message") or card.get("title") or "")
+                    if v:
+                        body = v
+                        break
+        return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
+
+    def _extract_videos(ad: dict) -> list:
+        vids = []
+        seen = set()
+        snapshot = ad.get("snapshot") or {}
+        cards    = snapshot.get("cards") or []
+        def add(url):
+            url = (url or "").strip()
+            if url and url not in seen and url.startswith("http"):
+                seen.add(url); vids.append(url)
+        for k in ("video_hd_url","video_sd_url","video_url"):
+            add(ad.get(k)); add(snapshot.get(k))
+        for card in cards:
+            if isinstance(card, dict):
+                for k in ("video_hd_url","video_sd_url","video_url"):
+                    add(card.get(k))
+        for v in (ad.get("videos") or []):
+            add(v)
+        sd = [u for u in vids if any(x in u.lower() for x in ("sd","360","480","_sd"))]
+        hd = [u for u in vids if u not in sd]
+        return sd + hd
+
+    def _normalizar_item_apify(item: dict) -> dict:
+        snapshot = item.get("snapshot") or {}
+        cards    = snapshot.get("cards") or []
+
+        ad_id   = str(item.get("adArchiveID") or item.get("ad_archive_id") or item.get("id") or "")
+        page_id = str(item.get("pageID") or item.get("page_id") or "")
+        page_name = (item.get("pageName") or item.get("page_name") or snapshot.get("page_name") or "")
+        page_profile_picture = (
+            item.get("pageProfilePicture")
+            or item.get("page_profile_picture")
+            or snapshot.get("page_profile_picture_url")
+            or ""
+        )
+
+        images = _extract_images(item)
+        videos = _extract_videos(item)
+        copy = _extract_copy(item)
+
+        plats = (item.get("publisherPlatform")
+                 or item.get("publisher_platforms")
+                 or snapshot.get("publisher_platforms")
+                 or [])
+
+        if isinstance(plats, str):
+            plats = [plats]
+        elif isinstance(plats, list):
+            normalized = []
+            for p in plats:
+                if isinstance(p, dict):
+                    normalized.append(p.get("name") or p.get("value") or str(p))
+                elif isinstance(p, str):
+                    normalized.append(p)
+            plats = normalized
+
+        if not plats:
+            plats = ["facebook", "instagram"]
+
+        raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
+        has_video   = bool(videos) or raw_media_type == "VIDEO"
+        has_cards   = len(cards) > 1 and not has_video
+        has_image   = bool(images) and not has_video
+
+        if has_video:   fmt = "Vídeo"
+        elif has_cards: fmt = "Carrossel"
+        elif has_image: fmt = "Imagem"
+        else:           fmt = "Texto"
+
+        is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"]) or _is_dynamic(copy["desc"]))
+        body_c  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
+        title_c = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
+        desc_c  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
+
+        imp = item.get("impressionsWithIndex") or item.get("impressions") or {}
+        if isinstance(imp, dict):
+            lo = imp.get("lowerBound") or imp.get("lower_bound") or ""
+            hi = imp.get("upperBound") or imp.get("upper_bound") or ""
+            imp_str = f"{lo}–{hi}" if (lo or hi) else ""
+        else:
+            imp_str = str(imp) if imp else ""
+
+        baixo_volume = bool(
+            item.get("isLowVolumeImpressions")
+            or item.get("low_volume")
+            or item.get("low_volume_impressions")
+            or (isinstance(imp, dict) and imp.get("lowerBound") == "<100")
+            or imp_str == "<100"
+        )
+
+        start_raw = (
+            item.get("startDate")
+            or item.get("ad_delivery_start_time")
+            or item.get("start_date")
+            or ""
+        )
+        start_fmt = _dias_ativo(str(start_raw)) if start_raw else ""
+
+        snap_url = (item.get("adSnapshotURL")
+                    or item.get("ad_snapshot_url")
+                    or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""))
+
+        images_b64 = []
+        if images:
+            b64 = _url_para_base64(images[0])
+            images_b64.append(b64 if b64 else images[0])
+            images_b64.extend(images[1:3])
+
+        return {
+            "id":                  ad_id,
+            "page_name":           page_name,
+            "page_id":             page_id,
+            "page_profile_picture": page_profile_picture,
+            "body":                body_c,
+            "body_raw":            copy["body"],
+            "title":               title_c,
+            "description":         desc_c,
+            "cta":                 copy["cta"],
+            "caption":             copy["caption"],
+            "images":              images,
+            "images_b64":          images_b64,
+            "videos":              videos,
+            "snapshot_url":        snap_url,
+            "data_inicio":         start_fmt,
+            "data_raw":            str(start_raw),
+            "impressoes":          imp_str,
+            "baixo_volume":        baixo_volume,
+            "plataformas":         plats,
+            "formato":             fmt,
+            "is_dynamic":          is_dyn,
+        }
 
     def _apify_run_sync(search_term: str, limit: int = 100) -> tuple:
         api_token = st.secrets.get("APIFY_TOKEN", "")
@@ -3860,7 +4059,6 @@ elif st.session_state.pagina == "ads":
         if not raw_items:
             return [], [], None
 
-        st.session_state["apify_raw_debug"] = raw_items[:3] if isinstance(raw_items, list) else []
         ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
         return ads_normalizados, raw_items[:3], None
 
@@ -3896,134 +4094,128 @@ elif st.session_state.pagina == "ads":
                 icone = "•"; cor_txt = "#9ca3af"; bg = "#1a2535"; brd = "#ffffff11"
 
             count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else ""
-            msg_safe  = str(msg).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-            nome_safe = str(nome).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            msg_safe  = msg.replace("<","&lt;").replace(">","&gt;")
 
-            itens_html += (
-                f'<div style="display:flex;align-items:center;gap:12px;'
-                f'padding:11px 14px;border-radius:10px;'
-                f'background:{bg};border:1px solid {brd};'
-                f'margin-bottom:8px">'
-                f'<span style="font-size:17px;flex-shrink:0">{icone}</span>'
-                f'<div style="flex:1;min-width:0">'
-                f'<div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome_safe}</div>'
-                f'<div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>'
-                f'</div>'
-                f'{count_str}'
-                f'</div>'
-            )
+            itens_html += f"""
+            <div style="display:flex;align-items:center;gap:12px;
+                        padding:11px 14px;border-radius:10px;
+                        background:{bg};border:1px solid {brd};
+                        margin-bottom:8px">
+                <span style="font-size:17px;flex-shrink:0">{icone}</span>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>
+                </div>
+                {count_str}
+            </div>"""
 
         barra_cor = "#22c55e" if finalizado else "#3a9fd6"
         spinner   = '' if finalizado else '<div style="width:22px;height:22px;border:2.5px solid #1e3a5f;border-top-color:#3a9fd6;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>'
         check     = '<div style="width:28px;height:28px;border-radius:50%;background:#22c55e22;border:1.5px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✅</div>' if finalizado else ''
         fechar_js = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m){m.style.opacity='0';m.style.transition='opacity 0.4s';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);}},1500);" if finalizado else ""
 
-        html_content = (
-            "<link href='https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap' rel='stylesheet'>"
-            "<style>"
-            "@keyframes fadeIn {from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}"
-            "@keyframes spin   {to{transform:rotate(360deg)}}"
-            "#ads_loader_modal{"
-            "position:fixed;inset:0;"
-            "background:rgba(5,15,30,0.75);"
-            "backdrop-filter:blur(4px);"
-            "-webkit-backdrop-filter:blur(4px);"
-            "z-index:99999;"
-            "display:flex;align-items:center;justify-content:center;"
-            "animation:fadeIn 0.2s ease;"
-            "transition:opacity 0.4s;"
-            "font-family:'DM Sans',sans-serif;"
-            "}"
-            "#ads_loader_box{"
-            "background:#0e1e35;"
-            "border:1px solid #1e3a5f;"
-            "border-radius:18px;"
-            "padding:28px;"
-            "width:min(92vw,460px);"
-            "box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(58,159,214,0.1);"
-            "}"
-            "</style>"
-            "<div id='ads_loader_modal'>"
-            "<div id='ads_loader_box'>"
-            f"<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>"
-            f"{spinner}{check}"
-            f"<div>"
-            f"<div style='font-size:16px;font-weight:800;color:#f1f5f9;letter-spacing:-0.2px'>{texto_status}</div>"
-            f"<div style='font-size:12px;color:#64748b;margin-top:2px'>{subtexto}</div>"
-            f"</div>"
-            f"<div style='margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}'>{progresso_pct}%</div>"
-            f"</div>"
-            f"<div style='background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden'>"
-            f"<div style='height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}'></div>"
-            f"</div>"
-            f"<div>{itens_html}</div>"
-            f"{'<div style=\"text-align:center;margin-top:16px;font-size:12px;color:#475569;font-weight:600\">Fechando automaticamente...</div>' if finalizado else ''}"
-            "</div>"
-            "</div>"
-            f"<script>{fechar_js}</script>"
-        )
-
         placeholder.empty()
         with placeholder:
-            st.markdown(html_content, unsafe_allow_html=True)
+            st.markdown(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+@keyframes fadeIn {{from{{opacity:0;transform:scale(0.96)}}to{{opacity:1;transform:scale(1)}}}}
+@keyframes spin   {{to{{transform:rotate(360deg)}}}}
+#ads_loader_modal{{
+    position:fixed;inset:0;
+    background:rgba(5,15,30,0.75);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+    z-index:99999;
+    display:flex;align-items:center;justify-content:center;
+    animation:fadeIn 0.2s ease;
+    transition:opacity 0.4s;
+    font-family:'DM Sans',sans-serif;
+}}
+#ads_loader_box{{
+    background:#0e1e35;
+    border:1px solid #1e3a5f;
+    border-radius:18px;
+    padding:28px;
+    width:min(92vw,460px);
+    box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(58,159,214,0.1);
+}}
+</style>
+<div id="ads_loader_modal">
+<div id="ads_loader_box">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        {spinner}{check}
+        <div>
+            <div style="font-size:16px;font-weight:800;color:#f1f5f9;letter-spacing:-0.2px">{texto_status}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">{subtexto}</div>
+        </div>
+        <div style="margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}">{progresso_pct}%</div>
+    </div>
+    <div style="background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden">
+        <div style="height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}"></div>
+    </div>
+    <div>{itens_html}</div>
+    {'<div style="text-align:center;margin-top:16px;font-size:12px;color:#475569;font-weight:600">Fechando automaticamente...</div>' if finalizado else ''}
+</div>
+</div>
+<script>{fechar_js}</script>
+""", unsafe_allow_html=True)
 
-    ADS_QUERY_LIMIT = 100  # mesma constante usada em _apify_run_sync
- 
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
-        erros       = {}
-        novos       = {}
+        erros  = {}
+        novos  = {}
         cache_atual = dict(st.session_state.ads_cache or {})
- 
+
         loader_placeholder = st.empty()
-        total     = len(empresas)
+        total = len(empresas)
         progresso = []
- 
+
         for idx_e, e in enumerate(empresas):
-            ck            = e["nome"]
+            ck = e["nome"]
+
             entrada_cache = cache_atual.get(ck, {})
- 
             if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
                 total_ads = len(entrada_cache.get("data", []))
-                ativos    = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
-                inativos  = total_ads - ativos
+                ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                inativos = total_ads - ativos
                 progresso.append({
-                    "nome":     ck,
-                    "status":   "cache",
-                    "msg":      f"Cache válido ({entrada_cache.get('ts', '')})",
-                    "count":    ativos,
+                    "nome": ck,
+                    "status": "cache",
+                    "msg": f"Cache válido ({entrada_cache.get('ts','')})",
+                    "count": ativos,
                     "inativos": inativos,
                 })
                 _render_loader(loader_placeholder, progresso, total, idx_e + 1)
                 continue
- 
+
             if e["tipo"] == "minha":
                 ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
             else:
                 ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
- 
+
             query = ads_id_salvo or query_values.get(ck, "").strip()
             if not query:
                 continue
- 
+
             label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
             progresso.append({
-                "nome":     ck,
-                "status":   "loading",
-                "msg":      f"Buscando ({label})...",
-                "count":    None,
+                "nome": ck,
+                "status": "loading",
+                "msg": f"Buscando ({label})...",
+                "count": None,
                 "inativos": 0,
             })
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
- 
-            ads, raw, erro = buscar_ads_apify(query, limit=ADS_QUERY_LIMIT)
- 
+
+            ads, raw, erro = buscar_ads_apify(query)
+
             if erro:
                 erros[ck] = erro
                 progresso[-1] = {
-                    "nome":     ck,
-                    "status":   "error",
-                    "msg":      erro[:80],
-                    "count":    0,
+                    "nome": ck,
+                    "status": "error",
+                    "msg": erro[:80],
+                    "count": 0,
                     "inativos": 0,
                 }
             else:
@@ -4034,21 +4226,19 @@ elif st.session_state.pagina == "ads":
                     "query": query,
                 }
                 progresso[-1] = {
-                    "nome":     ck,
-                    "status":   "done",
-                    "msg":      f"{len(ads)} anúncios encontrados",
-                    "count":    len(ads),
+                    "nome": ck,
+                    "status": "done",
+                    "msg": f"{len(ads)} anúncios encontrados",
+                    "count": len(ads),
                     "inativos": 0,
                 }
- 
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
- 
+
         _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
-        import time as _ttt; _ttt.sleep(1.2)
+        import time as _ttt; _ttt.sleep(3)
         loader_placeholder.empty()
- 
-        cache_mergeado = merge_ads(cache_atual, novos, query_limit=ADS_QUERY_LIMIT)
- 
+
+        cache_mergeado = merge_ads(cache_atual, novos)
         st.session_state.ads_cache = cache_mergeado
         st.session_state.ads_erro  = erros
         salvar_cache_ads(cache_mergeado)
@@ -4100,57 +4290,6 @@ elif st.session_state.pagina == "ads":
             if page_pic:
                 st.session_state.dados["concorrentes"][e["idx"]]["ads_page_pic"] = page_pic
         salvar_dados_usuario(st.session_state.user.id)
-
-    def _normalizar_item_apify(item: dict) -> dict:
-        images  = item.get("images") or []
-        videos  = item.get("videos") or []
-        plats   = item.get("publisher_platforms") or []
-        snap    = item.get("snapshot_url") or item.get("ad_snapshot_url") or ""
-        ad_id   = str(item.get("id") or item.get("ad_archive_id") or "")
- 
-        if videos:
-            formato = "Vídeo"
-        elif len(images) > 1:
-            formato = "Carrossel"
-        elif images:
-            formato = "Imagem"
-        else:
-            formato = "Texto"
- 
-        snapshot_url_estavel = f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else snap
-        render_url           = f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else ""
- 
-        # Só URLs frescas da API. Quando expirar, o usuário busca de novo
-        # e o merge traz URLs novas para todos os ads ativos.
-        images_stable = list(images)
- 
-        return {
-            "id":                   ad_id,
-            "page_id":              str(item.get("page_id") or ""),
-            "page_name":            item.get("page_name") or "",
-            "page_profile_picture": item.get("page_profile_picture_url") or item.get("page_profile_picture") or "",
-            "body":                 item.get("ad_creative_body") or item.get("body") or "",
-            "body_raw":             item.get("ad_creative_body") or item.get("body") or "",
-            "title":                item.get("ad_creative_link_title") or item.get("title") or "",
-            "description":          item.get("ad_creative_link_description") or item.get("description") or "",
-            "cta":                  item.get("ad_creative_link_button_call_to_action_type") or item.get("cta_type") or item.get("cta") or "",
-            "caption":              item.get("ad_creative_link_caption") or item.get("caption") or "",
-            "formato":              formato,
-            "plataformas":          [p.lower() for p in plats],
-            "images":               images,
-            "images_b64":           [],
-            "images_stable":        images_stable,
-            "videos":               videos,
-            "snapshot_url":         snapshot_url_estavel,
-            "preview_url":          render_url or snapshot_url_estavel,
-            "data_inicio":          item.get("ad_delivery_start_time") or item.get("start_date") or "",
-            "data_raw":             item.get("ad_delivery_start_time") or item.get("start_date") or "",
-            "impressoes":           str(item.get("impressions") or item.get("reach_estimate") or ""),
-            "is_dynamic":           bool(item.get("is_aaa_eligible")),
-            "baixo_volume":         bool(item.get("bylines")),
-            "ativo":                True,
-            "status_change":        "",
-        }
 
     def buscar_paginas_facebook(termo: str) -> list:
         ads, _, erro = _apify_run_sync(termo, limit=20)
@@ -4205,143 +4344,11 @@ html, body { background: transparent; overflow: hidden; }
         if st.session_state.ads_cache:
             _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
             if _tss:
-                _ultima_ts = min(_tss)
-
-                import json as _json_modal
-                import base64 as _b64_modal
-
-                _cache_display = {}
-                for _ck, _entry in st.session_state.ads_cache.items():
-                    _cache_display[_ck] = {
-                        "empresa": _ck,
-                        "ts": _entry.get("ts", ""),
-                        "query": _entry.get("query", ""),
-                        "total_ads": len(_entry.get("data", [])),
-                        "ativos": sum(1 for a in _entry.get("data", []) if a.get("ativo", True)),
-                        "inativos": sum(1 for a in _entry.get("data", []) if not a.get("ativo", True)),
-                        "data": _entry.get("data", []),
-                    }
-
-                _cache_display["__RAW_APIFY_SAMPLE__"] = st.session_state.get("apify_raw_debug", [])
-
-                _djs_b64 = _b64_modal.b64encode(
-                    _json_modal.dumps(_cache_display, ensure_ascii=False, indent=2).encode("utf-8")
-                ).decode("ascii")
-
-                _fn = f'ads_cache_{_ultima_ts.replace("/","_").replace(" ","_").replace(":","")}.json'
-
-                components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.link-btn {{
-    font-size:13px; color:#6b7280; text-align:center;
-    display:block; cursor:pointer;
-    background:none; border:none;
-    width:100%; padding:0; font-family:'DM Sans',sans-serif;
-    margin-top:-6px;
-}}
-.link-btn:hover {{ text-decoration:underline; text-underline-offset:3px; }}
-</style>
-<button class="link-btn" onclick="abrirModal()">
-    🕒 Última busca: <b>{_ultima_ts}</b>
-</button>
-<script>
-var DADOS_B64 = "{_djs_b64}";
-var FILENAME  = "{_fn}";
-var ULTIMA    = "{_ultima_ts}";
-
-function getDadosStr() {{
-    try {{
-        return decodeURIComponent(escape(atob(DADOS_B64)));
-    }} catch(e) {{
-        return "Erro ao decodificar dados: " + e;
-    }}
-}}
-
-window.fecharAdsRaw = function() {{
-    var o = window.parent.document.getElementById('ads_raw_modal_overlay');
-    if (o) o.remove();
-    if (window.parent.__adsRawEsc) {{
-        window.parent.document.removeEventListener('keydown', window.parent.__adsRawEsc);
-        window.parent.__adsRawEsc = null;
-    }}
-}};
-
-function abrirModal() {{
-    var doc = window.parent.document;
-    var old = doc.getElementById('ads_raw_modal_overlay');
-    if (old) old.remove();
-
-    var Dstr = getDadosStr();
-
-    var ov = doc.createElement('div');
-    ov.id = 'ads_raw_modal_overlay';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
-    ov.onclick = function(e) {{ if(e.target===ov) window.fecharAdsRaw(); }};
-
-    var box = doc.createElement('div');
-    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #1e395e;';
-
-    var hdr = doc.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #1e395e;background:#0e1e35;flex-shrink:0;';
-    hdr.innerHTML =
-        '<div>'
-        + '<div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos do cache de Ads</div>'
-        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última busca: ' + ULTIMA + '</div>'
-        + '</div>'
-        + '<div style="display:flex;gap:10px;align-items:center;">'
-        + '<button id="ads_raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">⬇️ Baixar JSON</button>'
-        + '<button onclick="window.fecharAdsRaw()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#22c45e;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'
-        + '</div>';
-
-    var pre = doc.createElement('pre');
-    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
-    pre.textContent = Dstr;
-
-    box.appendChild(hdr);
-    box.appendChild(pre);
-    ov.appendChild(box);
-    doc.body.appendChild(ov);
-
-    window.parent.__adsRawEsc = function(e) {{ if(e.key==='Escape') window.fecharAdsRaw(); }};
-    doc.addEventListener('keydown', window.parent.__adsRawEsc);
-
-    window.copiarDados = function() {{
-        var b = doc.getElementById('ads_raw_copy_btn');
-        navigator.clipboard.writeText(Dstr).then(function() {{
-            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
-        }}).catch(function() {{
-            if(b) {{ b.textContent = '❌ Erro'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
-        }});
-    }};
-
-    window.baixarDados = function() {{
-        var blob = new Blob([Dstr], {{type:'application/json'}});
-        var a = doc.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = FILENAME;
-        doc.body.appendChild(a);
-        a.click();
-        doc.body.removeChild(a);
-        setTimeout(function() {{ URL.revokeObjectURL(a.href); }}, 1000);
-    }};
-}}
-
-(function() {{
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = '22px';
-            iframes[i].style.marginTop = '-8px';
-            break;
-        }} }} catch(e) {{}}
-    }}
-}})();
-</script>
-""", height=22, scrolling=False)
+                st.markdown(
+                    f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
+                    f"🕒 Última busca: <b>{min(_tss)}</b></div>",
+                    unsafe_allow_html=True,
+                )
 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
 
@@ -4437,7 +4444,7 @@ function abrirModal() {{
                 ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
                 query_values_header[ck] = ads_id_salvo
         if query_values_header:
-            executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values_header, forcar=True)
+            executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values_header, forcar=False)
         else:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
 
@@ -5413,24 +5420,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         # ══════════════════════════════════════════════════════════════
         # FUNÇÃO PRINCIPAL: render_ads_empresa
         # ══════════════════════════════════════════════════════════════
-        
         def render_ads_empresa(emp_item):
-
-            # ── helpers locais ──────────────────────────────────────
-            def _truncar(txt, n=160):
-                if not txt: return ""
-                txt = str(txt).strip()
-                return txt[:n] + "…" if len(txt) > n else txt
-
-            def _urls_estaveis_por_id(ad_id: str) -> dict:
-                if not ad_id:
-                    return {}
-                return {
-                    "snapshot_url": f"https://www.facebook.com/ads/library/?id={ad_id}",
-                    "preview_url":  f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}",
-                    "thumb_url":    f"https://www.facebook.com/ads/image/?adarchiveid={ad_id}&ad_type=all",
-                }
-
             ck       = emp_item["nome"]
             nome     = emp_item["nome"]
             is_minha = emp_item["tipo"] == "minha"
@@ -5455,19 +5445,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             ads_list_raw = cache_entry["data"]
             ts           = cache_entry["ts"]
             query        = cache_entry.get("query","")
-
-            # Patch: garante images_stable e preview_url em ads do cache antigo
-            for _ad in ads_list_raw:
-                _ad_id = _ad.get("id", "")
-                if _ad_id and not _ad.get("images_stable"):
-                    _eu = _urls_estaveis_por_id(_ad_id)
-                    _ad["images_stable"] = [
-                        _eu.get("thumb_url", ""),
-                        _eu.get("preview_url", ""),
-                    ]
-                    _ad["preview_url"] = _eu.get("preview_url", "")
-                if _ad_id and not _ad.get("snapshot_url"):
-                    _ad["snapshot_url"] = f"https://www.facebook.com/ads/library/?id={_ad_id}"
 
             if configured_page:
                 if configured_page.isdigit():
@@ -5793,26 +5770,24 @@ setTimeout(ajustarAltura,100);
                 all_cards_html = []
 
                 for j, ad in enumerate(ads_f):
-                    snap_url      = ad.get("snapshot_url") or ""
-                    images        = ad.get("images") or []
-                    images_b64    = ad.get("images_b64") or []
-                    images_stable = ad.get("images_stable") or []
-                    preview_url   = ad.get("preview_url") or ""
-                    videos        = ad.get("videos") or []
-                    is_dyn        = ad.get("is_dynamic", False)
-                    baixo_vol     = ad.get("baixo_volume", False)
-                    ad_id         = ad.get("id","")
-                    ad_id_short   = ad_id
-                    plats         = ad.get("plataformas") or []
-                    plat_js       = _json.dumps([p.lower() for p in plats])
-                    data_inicio   = ad.get("data_inicio","")
-                    impressoes    = ad.get("impressoes","")
-                    body          = ad.get("body") or ""
-                    title         = ad.get("title") or ""
-                    desc          = ad.get("description") or ""
-                    cta           = ad.get("cta") or ""
-                    uid           = f"{sk}_{j}"
-                    page_pic      = ad.get("page_profile_picture") or ""
+                    snap_url    = ad.get("snapshot_url") or ""
+                    images      = ad.get("images") or []
+                    images_b64  = ad.get("images_b64") or []
+                    videos      = ad.get("videos") or []
+                    is_dyn      = ad.get("is_dynamic", False)
+                    baixo_vol   = ad.get("baixo_volume", False)
+                    ad_id       = ad.get("id","")
+                    ad_id_short = ad_id
+                    plats       = ad.get("plataformas") or []
+                    plat_js     = _json.dumps([p.lower() for p in plats])
+                    data_inicio = ad.get("data_inicio","")
+                    impressoes  = ad.get("impressoes","")
+                    body        = ad.get("body") or ""
+                    title       = ad.get("title") or ""
+                    desc        = ad.get("description") or ""
+                    cta         = ad.get("cta") or ""
+                    uid         = f"{sk}_{j}"
+                    page_pic    = ad.get("page_profile_picture") or ""
 
                     snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
 
@@ -5837,34 +5812,31 @@ setTimeout(ajustarAltura,100);
                        "tem_video": bool(videos),
                        "n_videos": len(videos),
                        "snapshot_url": (snap_url or "")[:80],
-                       "preview_url": (preview_url or "")[:80],
-                       "images_stable": images_stable,
                        "body_len": len(body),
                        "title_len": len(title),
                        "cta": cta,
                     }
-                    debug_json_str  = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
+                    debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
+                    # Thumb do card: feed baixa qualidade (índice 1), fallback para índice 0
                     img_thumb_url = images[1] if len(images) > 1 else (images[0] if images else "")
-                    img_primary   = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
+                    img_primary = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
 
+                    # Fallbacks para o thumb (não usados no modal de 4 imagens)
                     img_fallbacks = []
                     if img_thumb_url and img_thumb_url not in img_fallbacks:
                         img_fallbacks.append(img_thumb_url)
                     if images_b64 and images_b64[0] not in img_fallbacks:
                         img_fallbacks.append(images_b64[0])
                     img_fallbacks.extend([u for u in images if u not in img_fallbacks])
-                    for _su in images_stable:
-                        if _su and _su not in img_fallbacks:
-                            img_fallbacks.append(_su)
                     srcs_js = _json.dumps(img_fallbacks)
 
                     if videos:
                         vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
                         vid_hd = next((v for v in videos if v != vid_sd), "")
-                        vid_primary      = vid_sd or vid_hd or videos[0]
-                        vid_fallback     = vid_hd if vid_hd and vid_hd != vid_primary else ""
+                        vid_primary = vid_sd or vid_hd or videos[0]
+                        vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
                         vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
                         vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
                         snap_url_safe_vid = snap_url_safe
@@ -5885,7 +5857,7 @@ setTimeout(ajustarAltura,100);
          justify-content:center;pointer-events:none">
         <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);
                     display:flex;align-items:center;justify-content:center;
-                    box-shadow:0 2px 12px rgba(0,0,0,0.5);border:1px solid #0b3e55 !important;">
+                    box-shadow:0 2px 12px rgba(0,0,0,0.5);border: 1px solid #0b3e55 !important;">
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none">
                 <polygon points="18,12 44,27 18,42" fill="white"/>
             </svg>
@@ -5897,7 +5869,8 @@ setTimeout(ajustarAltura,100);
 </div>
 <script>
 (function(){{
-    var wrapEl   = document.getElementById('vwrap_{uid}');
+    var vidEl   = document.getElementById('vid_{uid}');
+    var wrapEl  = document.getElementById('vwrap_{uid}');
     var fallback = '{vid_fallback_esc}';
     var snapUrl  = '{snap_url_safe_vid}';
     var _tried   = false;
@@ -5906,7 +5879,7 @@ setTimeout(ajustarAltura,100);
         if (!_tried && fallback) {{
             _tried = true;
             v.src = fallback;
-        }} else if (wrapEl) {{
+        }} else if (snapUrl && wrapEl) {{
             wrapEl.innerHTML =
                 '<div style="position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);'
                 + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer"'
@@ -5944,52 +5917,29 @@ setTimeout(ajustarAltura,100);
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
-    <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;
-         justify-content:center;flex-direction:column;gap:10px;background:#0e1e35;
-         position:absolute;top:0;left:0;cursor:pointer"
-         onclick="window.open('{snap_url_safe}','_blank')">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3a9fd6"
-             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5" fill="#3a9fd6"/>
-            <polyline points="21 15 16 10 5 21"/>
-        </svg>
-        <span style="font-size:11px;color:#3a9fd6;font-weight:700;text-align:center;padding:0 8px;line-height:1.6;">
-            Imagem expirada<br>Ver no Ad Library →
-        </span>
+    <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
+        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
     </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
-                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">
-        🔍 Ver criativos
-    </div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ver criativos</div>
 </div>
 <script>
 (function(){{
-    var IMGS_{uid}      = {all_imgs_js};
+    var IMGS_{uid} = {all_imgs_js};
     var MAIN_IMGS_{uid} = {main_modal_imgs_js};
-    var SNAP_{uid}      = '{snap_url_safe}';
-    var STABLE_{uid}    = {_json.dumps(img_fallbacks)};
+    var SNAP_{uid} = '{snap_url.replace("'","").replace('"',"")}';
     var wrap = document.getElementById('mwrap_{uid}');
     if (wrap) {{
         wrap.addEventListener('click', function() {{
-            var errEl = document.getElementById('merr_{uid}');
-            if (errEl && errEl.style.display !== 'none') return;
             openModalHQ(MAIN_IMGS_{uid}, IMGS_{uid}, SNAP_{uid});
         }});
     }}
-    var _srcs_{uid} = STABLE_{uid};
-    var _idx_{uid}  = 0;
+    var _srcs_{uid} = {srcs_js};
+    var _idx_{uid} = 0;
 }})();
-function imgFallback_{uid}(img) {{
+function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if (_idx_{uid} < _srcs_{uid}.length) {{
-        img.src = _srcs_{uid}[_idx_{uid}];
-    }} else {{
-        img.style.display = 'none';
-        var e = document.getElementById('merr_{uid}');
-        if (e) e.style.display = 'flex';
-        setTimeout(function(){{ syncHeight(); }}, 50);
-    }}
+    if(_idx_{uid} < _srcs_{uid}.length){{ img.src = _srcs_{uid}[_idx_{uid}]; }}
+    else{{ img.style.display='none'; var e=document.getElementById('merr_{uid}'); if(e) e.style.display='flex'; }}
 }}
 </script>"""
 
@@ -6007,8 +5957,8 @@ function imgFallback_{uid}(img) {{
                             f'</div>'
                         )
 
-                    cta_display  = cta_labels.get(cta.upper() if cta else "", cta)
-                    is_ativo     = ad.get("ativo", True)
+                    cta_display = cta_labels.get(cta.upper() if cta else "", cta)
+                    is_ativo    = ad.get("ativo", True)
                     card_opacity = "1" if is_ativo else "0.72"
 
                     status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
@@ -6096,7 +6046,7 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;padding:40px 24px 24px;min-width:320px;max-width:min(92vw,900px);';
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
     var title = doc.createElement('div');
     title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
@@ -6150,7 +6100,7 @@ function openModalImages(imgs, snapUrl) {
     box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
     var title = doc.createElement('div');
     title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
@@ -6245,31 +6195,40 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
+
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
+
     var box = doc.createElement('div');
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
+
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
+
     var content = doc.createElement('div');
     content.id = 'ads_modal_content';
+
     box.appendChild(closeBtn);
     box.appendChild(content);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
+
     window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+
     if (isVideo) {{
         var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
         if (isDirectVideo) {{
             var vid = doc.createElement('video');
             vid.id = 'ads_modal_video';
             vid.src = mediaSrc;
-            vid.controls = true; vid.autoplay = true; vid.playsInline = true;
+            vid.controls = true;
+            vid.autoplay = true;
+            vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
             vid.onerror = function() {{
                 content.innerHTML = '';
@@ -6300,10 +6259,12 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     }} else {{
         if (!mediaSrc && snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); return; }}
         if (!mediaSrc) {{ closeModal(); return; }}
+
         var loading = doc.createElement('div');
         loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
         loading.textContent = 'Carregando…';
         content.appendChild(loading);
+
         var tmp = new window.parent.Image();
         tmp.onload = function() {{
             content.innerHTML = '';
@@ -6388,6 +6349,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
                     if chave_ind not in st.session_state:
                         st.session_state[chave_ind] = ""
 
+                # Ghost buttons para análise IA
                 ia_ghost_keys = (
                     [f"btn_subtab_{sk}_individuais", f"btn_subtab_{sk}_criativos", f"btn_subtab_{sk}_copys"]
                     + [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
@@ -6561,16 +6523,16 @@ CTA: {ad.get("cta","")}
                         img_src = ad["images"][0]
                     resultado_html = resultado.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado else ""
                     ind_cards_data.append({
-                        "j":          j,
-                        "formato":    ad.get("formato",""),
-                        "title":      _truncar(ad.get("title",""), 80),
-                        "body":       _truncar(ad.get("body",""), 120),
-                        "cta":        ad.get("cta",""),
+                        "j": j,
+                        "formato": ad.get("formato",""),
+                        "title": _truncar(ad.get("title",""), 80),
+                        "body": _truncar(ad.get("body",""), 120),
+                        "cta": ad.get("cta",""),
                         "data_inicio": ad.get("data_inicio",""),
                         "plataformas": ", ".join(ad.get("plataformas") or []),
-                        "img_src":    img_src,
-                        "resultado":  resultado_html,
-                        "ativo":      ad.get("ativo", True),
+                        "img_src": img_src,
+                        "resultado": resultado_html,
+                        "ativo": ad.get("ativo", True),
                     })
 
                 ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
@@ -7032,17 +6994,17 @@ function abrirModal() {{
     ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
  
     var box = doc.createElement('div');
-    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #1e395e;';
+    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
  
     var hdr = doc.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #1e395e;background:#0e1e35;flex-shrink:0;';
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
     hdr.innerHTML =
         '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
         + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
         + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#22c45e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
         + '</div>';
  
     var pre = doc.createElement('pre');
@@ -8380,7 +8342,7 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
  
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
  
     var content = doc.createElement('div');
