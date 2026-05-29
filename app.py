@@ -6881,17 +6881,16 @@ function abrirModal() {{
     ov.appendChild(box);
     doc.body.appendChild(ov);
  
-    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') fechar(); }};
-    doc.addEventListener('keydown', window.parent.__rawEsc);
- 
     window.fechar = function() {{
-        var o = doc.getElementById('raw_modal_overlay');
+        var o = window.parent.document.getElementById('raw_modal_overlay');
         if (o) o.remove();
         if (window.parent.__rawEsc) {{
-            doc.removeEventListener('keydown', window.parent.__rawEsc);
+            window.parent.document.removeEventListener('keydown', window.parent.__rawEsc);
             window.parent.__rawEsc = null;
         }}
     }};
+    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') window.fechar(); }};
+    doc.addEventListener('keydown', window.parent.__rawEsc);
  
     window.copiarDados = function() {{
         var b = doc.getElementById('raw_copy_btn');
