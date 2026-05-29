@@ -7114,7 +7114,6 @@ function abrirModal() {{
                                         carousel_imgs_hd = [thumb_hd]
  
                                 posts_data.append({
-                                posts_data.append({
                                     "likes":          likes,
                                     "comments":       comments,
                                     "thumb":          thumb,
