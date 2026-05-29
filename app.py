@@ -6582,7 +6582,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=600, scrolling=False)
+""", height=2400, scrolling=False)
 
         # ── Renderiza empresa da aba ativa ───────────────────────────
 
