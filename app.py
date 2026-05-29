@@ -3724,7 +3724,7 @@ elif st.session_state.pagina == "ads":
 
         return resultado
 
-def cache_esta_fresco(ts_str: str) -> bool:
+    def cache_esta_fresco(ts_str: str) -> bool:
         if not ts_str:
             return False
         try:
