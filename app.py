@@ -6445,7 +6445,7 @@ function syncHeight() {{
             frames[i].style.minHeight = '0';
             break;
         }} }} catch(e) {{}}
-    }
+    }}
 }}
 document.querySelectorAll('img,video').forEach(function(el) {{
     el.addEventListener('load',    function() {{ setTimeout(syncHeight, 30); }});
