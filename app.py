@@ -4153,7 +4153,7 @@ elif st.session_state.pagina == "ads":
      
      
     def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
-        \"\"\"Renderiza o loader visual de busca de anúncios.\"\"\"
+    # Renderiza o loader visual de busca de anúncios.
         items_html = ""
         for item in progresso:
             status = item["status"]
