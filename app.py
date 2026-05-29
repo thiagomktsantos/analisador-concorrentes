@@ -6765,8 +6765,8 @@ function buildIndGrid() {{
         card.className = 'ind-card';
         card.id = 'ind_card_' + d.j;
         var thumbHtml = d.img_src
-            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>\u{1F4F7}</span>\'" />'
-            : (d.formato === 'Vídeo' ? '<span>\u{1F3AC}</span>' : '<span>\u{1F4F7}</span>');
+            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
+            : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
         card.innerHTML =
             '<div class="ind-card-top">'
