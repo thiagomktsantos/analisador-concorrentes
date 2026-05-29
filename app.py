@@ -4065,7 +4065,7 @@ elif st.session_state.pagina == "ads":
     def buscar_ads_apify(query: str, limit: int = 100) -> tuple:
         return _apify_run_sync(query.strip(), limit=limit)
 
-def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
+    def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
         linhas = []
         for item in progresso:
             status = item.get("status", "")
