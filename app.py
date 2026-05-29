@@ -4065,6 +4065,42 @@ elif st.session_state.pagina == "ads":
     def buscar_ads_apify(query: str, limit: int = 100) -> tuple:
         return _apify_run_sync(query.strip(), limit=limit)
 
+def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
+    linhas = []
+    for item in progresso:
+        status = item.get("status", "")
+        nome   = item.get("nome", "")
+        msg    = item.get("msg", "")
+        count  = item.get("count")
+
+        if status == "loading":
+            icone = "⏳"
+        elif status == "done":
+            icone = "✅"
+        elif status == "error":
+            icone = "❌"
+        elif status == "cache":
+            icone = "🗂️"
+        else:
+            icone = "•"
+
+        count_str = f" — {count} anúncios" if count is not None else ""
+        linhas.append(f"{icone} **{nome}**: {msg}{count_str}")
+
+    pendentes = total - atual
+    progresso_pct = int((atual / total) * 100) if total else 100
+
+    if finalizado:
+        texto_status = f"✅ Concluído! {atual}/{total} empresas processadas."
+    else:
+        texto_status = f"🔄 Processando {atual}/{total}..."
+
+    conteudo = "\n".join(linhas)
+    placeholder.markdown(
+        f"**{texto_status}**\n\n{conteudo}\n\n"
+        f"Progresso: `{progresso_pct}%`"
+    )
+
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
         novos  = {}
