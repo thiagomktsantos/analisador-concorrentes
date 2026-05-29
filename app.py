@@ -6315,7 +6315,7 @@ body{{padding-bottom:4px;min-height:0;}}
 </style>
 </head>
 <body>
-<div class="ads-grid">{{cards_joined}}</div>
+<div class="ads-grid">{cards_joined}</div>
 <script>
 function openModal(mediaSrc, snapUrl, isVideo) {{
     var doc = window.parent.document;
