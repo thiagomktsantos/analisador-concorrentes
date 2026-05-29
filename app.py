@@ -4152,58 +4152,58 @@ elif st.session_state.pagina == "ads":
         st.rerun()
      
      
-    def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
-    # Renderiza o loader visual de busca de anúncios.
+def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
+        # Renderiza o loader visual de busca de anúncios.
         items_html = ""
         for item in progresso:
             status = item["status"]
             nome   = item["nome"]
             msg    = item["msg"]
             count  = item["count"]
-     
+
             if status == "loading":
-                icon_html = \"\"\"
+                icon_html = '''
                 <div class="spin-wrap">
                     <div class="spinner"></div>
-                </div>\"\"\"
+                </div>'''
                 row_class = "row-loading"
                 count_html = ""
             elif status == "done":
-                icon_html = \"\"\"<div class="icon-done">
+                icon_html = '''<div class="icon-done">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                          stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
                     </svg>
-                </div>\"\"\"
+                </div>'''
                 row_class = "row-done"
                 count_html = f'<span class="count-badge">{count} ads</span>' if count is not None else ""
             elif status == "cache":
-                icon_html = \"\"\"<div class="icon-cache">
+                icon_html = '''<div class="icon-cache">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
                          stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                         <polyline points="22 4 12 14.01 9 11.01"/>
                     </svg>
-                </div>\"\"\"
+                </div>'''
                 row_class = "row-cache"
                 count_html = f'<span class="count-badge count-cache">{item.get("count",0)} ativos</span>'
             elif status == "error":
-                icon_html = \"\"\"<div class="icon-error">
+                icon_html = '''<div class="icon-error">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
                          stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/>
                         <line x1="15" y1="9" x2="9" y2="15"/>
                         <line x1="9" y1="9" x2="15" y2="15"/>
                     </svg>
-                </div>\"\"\"
+                </div>'''
                 row_class = "row-error"
                 count_html = '<span class="count-badge count-error">Erro</span>'
             else:
                 icon_html  = '<div class="icon-pending"></div>'
                 row_class  = "row-pending"
                 count_html = ""
-     
-            items_html += f\"\"\"
+
+            items_html += f'''
             <div class="search-row {row_class}">
                 {icon_html}
                 <div class="row-info">
@@ -4212,12 +4212,12 @@ elif st.session_state.pagina == "ads":
                 </div>
                 {count_html}
             </div>
-            \"\"\"
-     
+            '''
+
         pct = int((atual / max(total, 1)) * 100)
         if finalizado:
             pct = 100
-            header_html = \"\"\"
+            header_html = '''
             <div class="loader-header done-header">
                 <div class="header-icon done-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -4230,9 +4230,9 @@ elif st.session_state.pagina == "ads":
                     <div class="header-sub">Todos os anúncios foram carregados</div>
                 </div>
             </div>
-            \"\"\"
+            '''
         else:
-            header_html = \"\"\"
+            header_html = '''
             <div class="loader-header">
                 <div class="header-spinner">
                     <div class="header-spin"></div>
@@ -4242,9 +4242,9 @@ elif st.session_state.pagina == "ads":
                     <div class="header-sub">Conectando à Meta Ads Library</div>
                 </div>
             </div>
-            \"\"\"
-     
-        html = f\"\"\"
+            '''
+
+        html = f'''
         <div style="font-family:'DM Sans',sans-serif;">
         <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
@@ -4330,21 +4330,11 @@ elif st.session_state.pagina == "ads":
             border:1px solid transparent;
             transition:all 0.2s;
         }}
-        .row-loading {{
-            background:#eff6ff;border-color:#bfdbfe;
-        }}
-        .row-done {{
-            background:#f0fdf4;border-color:#bbf7d0;
-        }}
-        .row-cache {{
-            background:#fafafa;border-color:#e5e7eb;
-        }}
-        .row-error {{
-            background:#fef2f2;border-color:#fecaca;
-        }}
-        .row-pending {{
-            background:#fafafa;border-color:#e5e7eb;opacity:0.5;
-        }}
+        .row-loading {{ background:#eff6ff;border-color:#bfdbfe; }}
+        .row-done    {{ background:#f0fdf4;border-color:#bbf7d0; }}
+        .row-cache   {{ background:#fafafa;border-color:#e5e7eb; }}
+        .row-error   {{ background:#fef2f2;border-color:#fecaca; }}
+        .row-pending {{ background:#fafafa;border-color:#e5e7eb;opacity:0.5; }}
         .spin-wrap {{
             width:26px;height:26px;border-radius:50%;
             background:#3b82f6;
@@ -4379,19 +4369,15 @@ elif st.session_state.pagina == "ads":
             width:26px;height:26px;border-radius:50%;
             background:#e5e7eb;flex-shrink:0;
         }}
-        .row-info {{
-            flex:1;min-width:0;
-        }}
+        .row-info {{ flex:1;min-width:0; }}
         .row-nome {{
             font-size:13px;font-weight:700;color:#111827;
-            display:block;
-            font-family:'DM Sans',sans-serif;
+            display:block;font-family:'DM Sans',sans-serif;
         }}
         .row-msg {{
             font-size:11px;color:#6b7280;margin-top:1px;
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-            display:block;
-            font-family:'DM Sans',sans-serif;
+            display:block;font-family:'DM Sans',sans-serif;
         }}
         .count-badge {{
             background:#dcfce7;color:#15803d;
@@ -4401,12 +4387,8 @@ elif st.session_state.pagina == "ads":
             white-space:nowrap;flex-shrink:0;
             font-family:'DM Sans',sans-serif;
         }}
-        .count-cache {{
-            background:#f3f4f6;color:#6b7280;border-color:#e5e7eb;
-        }}
-        .count-error {{
-            background:#fef2f2;color:#dc2626;border-color:#fecaca;
-        }}
+        .count-cache {{ background:#f3f4f6;color:#6b7280;border-color:#e5e7eb; }}
+        .count-error {{ background:#fef2f2;color:#dc2626;border-color:#fecaca; }}
         </style>
         <div class="loader-wrap">
             {header_html}
@@ -4426,7 +4408,7 @@ elif st.session_state.pagina == "ads":
             </div>
         </div>
         </div>
-        \"\"\"
+        '''
         placeholder.markdown(html, unsafe_allow_html=True)
 
     if "ads_cache" not in st.session_state or not st.session_state.ads_cache:
