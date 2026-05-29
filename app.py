@@ -6795,11 +6795,6 @@ html,body { background:transparent; overflow:hidden; }
         d = st.session_state.metricas_redes.get("dados", [])
         djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\") if ultima_coleta else "[]"
         fn = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json' if ultima_coleta else ""
-
-        # ── CORREÇÃO: pré-calcular altura do iframe ──
-        altura_iframe = "22px" if ultima_coleta else "0px"
-        margin_iframe = "-8px" if ultima_coleta else "0px"
-
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>* {{margin:0;padding:0;box-sizing:border-box;}} html,body{{background:transparent;font-family:'DM Sans',sans-serif;overflow:hidden;}}
@@ -6810,18 +6805,7 @@ html,body { background:transparent; overflow:hidden; }
 <script>
 var DADOS_JSON=`{djs}`;var FILENAME='{fn}';var ULTIMA='{ultima_coleta}';
 function abrirModal(){{var doc=window.parent.document;var old=doc.getElementById('raw_modal_overlay');if(old)old.remove();var D;try{{D=JSON.parse(DADOS_JSON);}}catch(e){{D=[];}}var Dstr=JSON.stringify(D,null,2);var ov=doc.createElement('div');ov.id='raw_modal_overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';ov.onclick=function(e){{if(e.target===ov)fechar();}};var box=doc.createElement('div');box.style.cssText='background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';var hdr=doc.createElement('div');hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';hdr.innerHTML='<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div><div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: '+ULTIMA+'</div></div><div style="display:flex;gap:10px;"><button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button><button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button><button onclick="fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;">✕</button></div>';var pre=doc.createElement('pre');pre.style.cssText='flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';pre.textContent=Dstr;box.appendChild(hdr);box.appendChild(pre);ov.appendChild(box);doc.body.appendChild(ov);window.parent.__rawEsc=function(e){{if(e.key==='Escape')fechar();}};doc.addEventListener('keydown',window.parent.__rawEsc);window.fechar=function(){{var o=doc.getElementById('raw_modal_overlay');if(o)o.remove();if(window.parent.__rawEsc){{doc.removeEventListener('keydown',window.parent.__rawEsc);window.parent.__rawEsc=null;}}}};window.copiarDados=function(){{var b=doc.getElementById('raw_copy_btn');navigator.clipboard.writeText(Dstr).then(function(){{if(b){{b.textContent='✅ Copiado!';setTimeout(function(){{b.textContent='📋 Copiar';}},2000);}}}});}};window.baixarDados=function(){{var a=doc.createElement('a');a.href=URL.createObjectURL(new Blob([Dstr],{{type:'application/json'}}));a.download=FILENAME;a.click();}}}}
-(function(){{
-  var iframes=window.parent.document.querySelectorAll('iframe');
-  for(var i=0;i<iframes.length;i++){{
-    try{{
-      if(iframes[i].contentWindow===window){{
-        iframes[i].style.height='{altura_iframe}';
-        iframes[i].style.marginTop='{margin_iframe}';
-        break;
-      }}
-    }}catch(e){{}}
-  }}
-}})();
+(function(){{var iframes=window.parent.document.querySelectorAll('iframe');for(var i=0;i<iframes.length;i++){{try{{if(iframes[i].contentWindow===window){{iframes[i].style.height='{"22px" if ultima_coleta else "0px"}';iframes[i].style.marginTop='-8px';break;}}}}catch(e){{}}}}}}})();
 </script>
 """, height=22, scrolling=False)
 
@@ -6963,6 +6947,12 @@ function abrirModal(){{var doc=window.parent.document;var old=doc.getElementById
         for r in [x for x in cache["dados"] if x.get("erro")]:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
 
+    # ── Estado via query_params (sem ghost buttons) ─────────────────
+    # main_tab: "perfis" | "analise"
+    # aba_ativa: índice int
+    # subtab: "postagens" | "ia"
+    # acao_ia: "" | "bio" | "post_N" | "criativo" | "copy" | "geral" | "comparativo"
+
     params = st.query_params
     main_tab   = params.get("rt", "perfis")
     aba_ativa  = int(params.get("ra", 0))
@@ -6978,6 +6968,7 @@ function abrirModal(){{var doc=window.parent.document;var old=doc.getElementById
         if r_ia:
             posts_list_ia = r_ia.get("posts", [])
 
+            # Bio
             if acao_ia == "bio":
                 chave = f"ia_bio_{r_ia.get('handle','').replace('@','')}"
                 bio_txt_ia = (r_ia.get("bio") or "")
@@ -7003,6 +6994,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).""")
                         except Exception as e:
                             st.session_state[chave] = f"Erro: {e}"
 
+            # Post individual
             elif acao_ia.startswith("post_"):
                 jp = int(acao_ia.split("_")[1])
                 chave = f"ia_post_{aba_ativa}_{jp}"
@@ -7027,6 +7019,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
                             except Exception as e:
                                 st.session_state[chave] = f"Erro: {e}"
 
+            # Criativo
             elif acao_ia == "criativo":
                 chave = f"ia_criativo_{r_ia['handle']}"
                 resumo = "\n".join([f"- {p.get('date','')} | {p.get('likes',0)}❤️ {p.get('comments',0)}💬 | {p.get('caption','')[:80]}" for p in posts_list_ia[:12]]) or "Sem posts."
@@ -7040,6 +7033,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
                         except Exception as e:
                             st.session_state[chave] = f"Erro: {e}"
 
+            # Copy
             elif acao_ia == "copy":
                 chave = f"ia_copy_{r_ia['handle']}"
                 resumo = "\n".join([f"- {p.get('caption','')[:100]}" for p in posts_list_ia[:12]]) or "Sem posts."
@@ -7053,6 +7047,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
                         except Exception as e:
                             st.session_state[chave] = f"Erro: {e}"
 
+            # Geral
             elif acao_ia == "geral":
                 chave = f"ia_geral_{r_ia['handle']}"
                 resumo = "\n".join([f"- {p.get('date','')} | {p.get('likes',0)}❤️ | {p.get('caption','')[:80]}" for p in posts_list_ia[:12]]) or "Sem posts."
@@ -7066,6 +7061,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
                         except Exception as e:
                             st.session_state[chave] = f"Erro: {e}"
 
+            # Comparativo
             elif acao_ia == "comparativo":
                 chave = "ia_redes_comparativo"
                 resumos = []
@@ -7081,6 +7077,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
                         except Exception as e:
                             st.session_state[chave] = f"Erro: {e}"
 
+        # Limpar ação e rerun
         st.query_params["ria"] = ""
         st.rerun()
 
@@ -7094,6 +7091,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
         </div>""", unsafe_allow_html=True)
         st.stop()
 
+    # Montar dados completos com resultados de IA já incluídos
     perfis_payload = []
     for i, r in enumerate(ok):
         is_minha = r.get("tipo") == "minha"
@@ -7101,6 +7099,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
         avatar = gerar_avatar(r["nome"])
         handle_clean = (r.get("handle") or "").lstrip("@")
 
+        # IA resultados deste perfil
         chave_bio    = f"ia_bio_{r.get('handle','').replace('@','')}"
         chave_cria   = f"ia_criativo_{r['handle']}"
         chave_copy   = f"ia_copy_{r['handle']}"
@@ -7313,15 +7312,19 @@ var nCols    = 4;
 
 function fmtNum(n){{n=Math.round(n||0);if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return String(n);}}
 
+// ── Navegar sem rerun: apenas troca abaAtiva localmente ──────────
 function selectEmpresa(i){{
     abaAtiva = i;
+    // Atualiza cards
     document.querySelectorAll('.emp-card').forEach(function(c){{c.classList.remove('active');}});
     var card = document.getElementById('emp_card_'+i);
     if(card) card.classList.add('active');
+    // Re-renderiza painel do perfil
     renderPerfil();
     syncHeight();
 }}
 
+// ── Navegar main tab ─────────────────────────────────────────────
 function selectMainTab(tab){{
     mainTab = tab;
     document.getElementById('section-perfis').style.display = tab==='perfis' ? 'block' : 'none';
@@ -7332,6 +7335,7 @@ function selectMainTab(tab){{
     syncHeight();
 }}
 
+// ── Navegar subtab ───────────────────────────────────────────────
 function selectSubtab(sub){{
     subtab = sub;
     document.getElementById('subtab-postagens').style.display = sub==='postagens'?'block':'none';
@@ -7342,7 +7346,32 @@ function selectSubtab(sub){{
     syncHeight();
 }}
 
+// ── Chamar IA via query_params → rerun Python ────────────────────
 function chamarIA(acao){{
+    setQP('rt', mainTab);
+    setQP('ra', String(abaAtiva));
+    setQP('rs', subtab);
+    setQP('ria', acao);
+    // força rerun lendo a URL atual e adicionando params
+    window.parent.location.href = buildURL();
+}}
+
+function setQP(k,v){{ _qp[k]=v; }}
+var _qp = {{}};
+function buildURL(){{
+    // Pega URL atual do parent sem query
+    var base = window.parent.location.pathname;
+    _qp['rt']=_qp['rt']||mainTab;
+    _qp['ra']=_qp['ra']!==undefined?_qp['ra']:String(abaAtiva);
+    _qp['rs']=_qp['rs']||subtab;
+    var qs = Object.keys(_qp).map(function(k){{return encodeURIComponent(k)+'='+encodeURIComponent(_qp[k]);}}).join('&');
+    return base + '?' + qs;
+}}
+
+// Melhor abordagem: postMessage para Streamlit
+function chamarIA(acao){{
+    // Streamlit escuta postMessage com tipo "streamlit:setComponentValue" mas
+    // para query_params a forma mais simples é mudar window.parent.location
     var url = new URL(window.parent.location.href);
     url.searchParams.set('rt', mainTab);
     url.searchParams.set('ra', String(abaAtiva));
@@ -7351,12 +7380,14 @@ function chamarIA(acao){{
     window.parent.location.href = url.toString();
 }}
 
+// ── Modal ────────────────────────────────────────────────────────
 function _showVideoFallback(content,doc,thumbUrl,igUrl){{var wrap=doc.createElement('div');wrap.style.cssText='position:relative;display:inline-flex;flex-direction:column;align-items:center;';if(thumbUrl){{var img=doc.createElement('img');img.src=thumbUrl;img.style.cssText='display:block;max-width:min(84vw,820px);max-height:min(70vh,700px);width:auto;height:auto;object-fit:contain;border-radius:10px;filter:brightness(0.6);';wrap.appendChild(img);}}var playBtn=doc.createElement('a');playBtn.href=igUrl;playBtn.target='_blank';playBtn.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;';playBtn.innerHTML='<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);"><svg width="22" height="22" viewBox="0 0 54 54" fill="none"><polygon points="18,12 44,27 18,42" fill="#E1306C"/></svg></div><span style="color:#fff;font-size:13px;font-weight:700;font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.5);padding:5px 14px;border-radius:20px;">Ver vídeo no Instagram</span>';wrap.appendChild(playBtn);content.appendChild(wrap);}}
 
 function openModal(thumbUrl,igUrl,videoUrl,isVideo,carouselImgs){{var doc=window.parent.document;var old=doc.getElementById('redes_modal_overlay');if(old)old.remove();var overlay=doc.createElement('div');overlay.id='redes_modal_overlay';overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';overlay.onclick=function(e){{if(e.target===overlay)closeModal();}};var box=doc.createElement('div');box.style.cssText='background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';var closeBtn=doc.createElement('button');closeBtn.textContent='✕';closeBtn.style.cssText='position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';closeBtn.onclick=closeModal;var content=doc.createElement('div');content.id='redes_modal_content';content.style.cssText='display:flex;align-items:center;justify-content:center;position:relative;';box.appendChild(closeBtn);box.appendChild(content);overlay.appendChild(box);doc.body.appendChild(overlay);window.parent.__redesModalEscFn=function(e){{if(e.key==='Escape')closeModal();}};doc.addEventListener('keydown',window.parent.__redesModalEscFn);if(isVideo){{if(videoUrl){{var vid=doc.createElement('video');vid.src=videoUrl;vid.controls=true;vid.autoplay=true;vid.playsInline=true;vid.style.cssText='display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';vid.onerror=function(){{content.innerHTML='';_showVideoFallback(content,doc,thumbUrl,igUrl);}};content.appendChild(vid);}}else{{_showVideoFallback(content,doc,thumbUrl,igUrl);}}return;}}var imgs=(carouselImgs&&carouselImgs.length>1)?carouselImgs:(thumbUrl?[thumbUrl]:[]);if(!imgs.length){{window.parent.open(igUrl,'_blank');closeModal();return;}}var curIdx=0;function renderSlide(i){{content.innerHTML='';var img=doc.createElement('img');img.style.cssText='display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';img.src=imgs[i];img.onerror=function(){{img.style.display='none';var fb=doc.createElement('div');fb.style.cssText='display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;font-family:DM Sans,sans-serif;';fb.innerHTML='<p style="color:rgba(255,255,255,0.6);font-size:13px">Imagem não disponível.</p><a href="'+igUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';content.appendChild(fb);}};content.appendChild(img);if(imgs.length>1){{var counter=doc.createElement('div');counter.style.cssText='position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;';counter.textContent=(i+1)+' / '+imgs.length;content.appendChild(counter);if(i>0){{var prev=doc.createElement('button');prev.innerHTML='&#8249;';prev.style.cssText='position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';prev.onclick=function(e){{e.stopPropagation();curIdx--;renderSlide(curIdx);}};content.appendChild(prev);}}if(i<imgs.length-1){{var next=doc.createElement('button');next.innerHTML='&#8250;';next.style.cssText='position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:none;color:#fff;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;';next.onclick=function(e){{e.stopPropagation();curIdx++;renderSlide(curIdx);}};content.appendChild(next);}}}}}}renderSlide(0);}}
 
 function closeModal(){{var doc=window.parent.document;var overlay=doc.getElementById('redes_modal_overlay');if(overlay)overlay.remove();if(window.parent.__redesModalEscFn){{doc.removeEventListener('keydown',window.parent.__redesModalEscFn);window.parent.__redesModalEscFn=null;}}}}
 
+// ── Render grid de posts ─────────────────────────────────────────
 function buildGrid(posts, gridEl){{
     gridEl.style.gridTemplateColumns='repeat('+nCols+',1fr)';
     gridEl.innerHTML='';
@@ -7427,6 +7458,7 @@ function applyFilters(){{
     var perf=DATA.perfis[abaAtiva];
     if(!perf)return;
     var posts=getFiltered(perf.posts);
+    // stats
     var nF=posts.filter(function(p){{return!p.is_video;}}).length;
     var nV=posts.filter(function(p){{return p.is_video;}}).length;
     var tL=posts.reduce(function(s,p){{return s+(p.likes||0);}},0);
@@ -7444,9 +7476,11 @@ function applyFilters(){{
     setTimeout(syncHeight,50);
 }}
 
+// ── Render painel do perfil ativo ────────────────────────────────
 function renderPerfil(){{
     var perf=DATA.perfis[abaAtiva];
     if(!perf)return;
+    // header
     document.getElementById('pf-avatar').style.background=perf.cor;
     document.getElementById('pf-avatar').textContent=perf.avatar;
     document.getElementById('pf-nome').innerHTML=perf.nome+'<span style="font-size:14px;font-weight:400;color:#9ca3af;margin-left:6px">'+perf.handle+'</span>';
@@ -7458,18 +7492,23 @@ function renderPerfil(){{
     document.getElementById('pf-seg').textContent=perf.seg_fmt;
     document.getElementById('pf-posts').textContent=perf.posts_fmt;
     document.getElementById('pf-iglink').href=perf.ig_url;
+    // bio
     var bioEl=document.getElementById('pf-bio');
     bioEl.innerHTML=perf.bio?'&ldquo;'+perf.bio+'&rdquo;':'<span style="color:#d1d5db;font-style:italic">Sem bio cadastrada neste perfil.</span>';
+    // bio resultado
     var bioRes=document.getElementById('bio-resultado');
     if(perf.bio_resultado_html){{bioRes.innerHTML='<div class="bio-resultado-hdr">✨ Análise de IA</div>'+perf.bio_resultado_html;bioRes.style.display='block';}}
     else{{bioRes.innerHTML='';bioRes.style.display='none';}}
+    // ia panels
     document.getElementById('ia-panel-geral-content').innerHTML=perf.ia_geral||'';
     document.getElementById('ia-panel-criativo-content').innerHTML=perf.ia_criativo||'';
     document.getElementById('ia-panel-copy-content').innerHTML=perf.ia_copy||'';
+    // posts
     applyFilters();
     syncHeight();
 }}
 
+// ── Sync height ──────────────────────────────────────────────────
 function syncHeight(){{
     var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
     var frames=window.parent.document.querySelectorAll('iframe');
@@ -7494,6 +7533,7 @@ function syncHeight(){{
 <!-- ══ SEÇÃO: PERFIS ══ -->
 <div id="section-perfis" style="display:{'block' if main_tab=='perfis' else 'none'}">
 
+    <!-- Cards empresas -->
     <div class="empresas-wrap">
         <div class="cards-grid" id="cards-grid">
         {''.join([
@@ -7509,18 +7549,19 @@ function syncHeight(){{
         </div>
     </div>
 
+    <!-- Perfil card (estrutura fixa, conteúdo atualizado por JS) -->
     <div class="perfil-card">
         <div class="perfil-header">
-            <div class="avatar" id="pf-avatar" style="background:{perfis_payload[aba_ativa]['cor']}">{perfis_payload[aba_ativa]['avatar']}</div>
+            <div class="avatar" id="pf-avatar" style="background:{get_avatar_color(aba_ativa)}">{gerar_avatar(ok[aba_ativa]["nome"]) if ok else ""}</div>
             <div class="info">
-                <div class="nome" id="pf-nome">{perfis_payload[aba_ativa]['nome']}<span style="font-size:14px;font-weight:400;color:#9ca3af;margin-left:6px">{perfis_payload[aba_ativa]['handle']}</span></div>
-                <div class="badge-perfil" id="pf-badge" style="background:{perfis_payload[aba_ativa]['badge_bg']};color:{perfis_payload[aba_ativa]['badge_txt']};border:1px solid {perfis_payload[aba_ativa]['badge_brd']}">{perfis_payload[aba_ativa]['badge_lbl']}</div>
+                <div class="nome" id="pf-nome">{ok[aba_ativa]["nome"] if ok else ""}<span style="font-size:14px;font-weight:400;color:#9ca3af;margin-left:6px">{ok[aba_ativa].get("handle","") if ok else ""}</span></div>
+                <div class="badge-perfil" id="pf-badge" style="background:{perfis_payload[aba_ativa]['badge_bg']};color:{perfis_payload[aba_ativa]['badge_txt']};border:1px solid {perfis_payload[aba_ativa]['badge_brd']}">{perfis_payload[aba_ativa]["badge_lbl"]}</div>
             </div>
             <div class="stat-wrap">
                 <div class="divider-v"></div>
-                <div class="stat"><div class="stat-num" id="pf-seg">{perfis_payload[aba_ativa]['seg_fmt']}</div><div class="stat-lbl">Seguidores</div></div>
+                <div class="stat"><div class="stat-num" id="pf-seg">{perfis_payload[aba_ativa]["seg_fmt"]}</div><div class="stat-lbl">Seguidores</div></div>
                 <div class="divider-v"></div>
-                <div class="stat"><div class="stat-num" id="pf-posts">{perfis_payload[aba_ativa]['posts_fmt']}</div><div class="stat-lbl">Postagens</div></div>
+                <div class="stat"><div class="stat-num" id="pf-posts">{perfis_payload[aba_ativa]["posts_fmt"]}</div><div class="stat-lbl">Postagens</div></div>
                 <div class="divider-v"></div>
                 <a class="btn-ig" id="pf-iglink" href="{perfis_payload[aba_ativa]['ig_url']}" target="_blank">Ver no Instagram</a>
             </div>
@@ -7590,18 +7631,18 @@ function syncHeight(){{
                 <button class="ia-tab" onclick="showIaTab('copy',this)">Analisar Copys 📝</button>
             </div>
             <div id="ia-panel-geral" class="ia-panel active">
-                <div id="ia-panel-geral-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_geral'] else 'none'}">{perfis_payload[aba_ativa]['ia_geral']}</div>
-                <div class="ia-empty" style="display:{'none' if perfis_payload[aba_ativa]['ia_geral'] else 'block'}">Clique no botão abaixo para gerar a análise.</div>
+                <div id="ia-panel-geral-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_geral'] else 'none'}">{perfis_payload[aba_ativa]["ia_geral"]}</div>
+                {f'<div class="ia-empty" style="display:{\'none\' if perfis_payload[aba_ativa][\'ia_geral\'] else \'block\'}">Clique no botão abaixo para gerar a análise.</div>' }
                 <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('geral')">Gerar Análise de Postagens 🤖</button></div>
             </div>
             <div id="ia-panel-criativo" class="ia-panel">
-                <div id="ia-panel-criativo-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_criativo'] else 'none'}">{perfis_payload[aba_ativa]['ia_criativo']}</div>
-                <div class="ia-empty" style="display:{'none' if perfis_payload[aba_ativa]['ia_criativo'] else 'block'}">Clique no botão abaixo para gerar a análise.</div>
+                <div id="ia-panel-criativo-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_criativo'] else 'none'}">{perfis_payload[aba_ativa]["ia_criativo"]}</div>
+                {f'<div class="ia-empty" style="display:{\'none\' if perfis_payload[aba_ativa][\'ia_criativo\'] else \'block\'}">Clique no botão abaixo para gerar a análise.</div>'}
                 <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('criativo')">Gerar Análise de Criativos 🤖</button></div>
             </div>
             <div id="ia-panel-copy" class="ia-panel">
-                <div id="ia-panel-copy-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_copy'] else 'none'}">{perfis_payload[aba_ativa]['ia_copy']}</div>
-                <div class="ia-empty" style="display:{'none' if perfis_payload[aba_ativa]['ia_copy'] else 'block'}">Clique no botão abaixo para gerar a análise.</div>
+                <div id="ia-panel-copy-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_copy'] else 'none'}">{perfis_payload[aba_ativa]["ia_copy"]}</div>
+                {f'<div class="ia-empty" style="display:{\'none\' if perfis_payload[aba_ativa][\'ia_copy\'] else \'block\'}">Clique no botão abaixo para gerar a análise.</div>'}
                 <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('copy')">Gerar Análise de Copys 🤖</button></div>
             </div>
         </div>
@@ -7633,6 +7674,7 @@ function showIaTab(name,el){{
     setTimeout(syncHeight,50);
 }}
 
+// Init
 applyFilters();
 if(window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 document.addEventListener('DOMContentLoaded',syncHeight);
