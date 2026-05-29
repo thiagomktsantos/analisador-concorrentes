@@ -7654,7 +7654,7 @@ setTimeout(syncHeight,300);setTimeout(syncHeight,800);
     # ABA: ANÁLISE DE IA — Comparativo geral
     # ══════════════════════════════════════════════════════════════════
  
-    elif main_tab == "analise":
+    if main_tab == "analise":
  
         if not ok:
             st.markdown("""
