@@ -4339,7 +4339,7 @@ html, body { background: transparent; overflow: hidden; }
             use_container_width=True,
             key="ads_buscar_header_btn",
         )
-if st.session_state.ads_cache:
+        if st.session_state.ads_cache:
             _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
             if _tss:
                 _ultima_ts = min(_tss)
