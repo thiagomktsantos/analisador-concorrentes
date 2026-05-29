@@ -4070,47 +4070,77 @@ elif st.session_state.pagina == "ads":
         novos  = {}
         cache_atual = dict(st.session_state.ads_cache or {})
 
-        with st.status("Buscando anúncios...", expanded=True) as status:
-            for e in empresas:
-                ck = e["nome"]
+        loader_placeholder = st.empty()
+        total = len(empresas)
+        progresso = []
 
-                entrada_cache = cache_atual.get(ck, {})
-                if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
-                    total = len(entrada_cache.get("data", []))
-                    ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
-                    inativos = total - ativos
-                    msg = f"✅ **{ck}** — cache válido ({entrada_cache.get('ts','')}, {ativos} ativos"
-                    if inativos:
-                        msg += f", {inativos} inativos no histórico"
-                    msg += ")"
-                    st.write(msg)
-                    continue
+        for idx_e, e in enumerate(empresas):
+            ck = e["nome"]
 
-                if e["tipo"] == "minha":
-                    ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
-                else:
-                    ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
+            entrada_cache = cache_atual.get(ck, {})
+            if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
+                total_ads = len(entrada_cache.get("data", []))
+                ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                inativos = total_ads - ativos
+                progresso.append({
+                    "nome": ck,
+                    "status": "cache",
+                    "msg": f"Cache válido ({entrada_cache.get('ts','')})",
+                    "count": ativos,
+                    "inativos": inativos,
+                })
+                _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+                continue
 
-                query = ads_id_salvo or query_values.get(ck, "").strip()
+            if e["tipo"] == "minha":
+                ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
+            else:
+                ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
 
-                if not query:
-                    continue
+            query = ads_id_salvo or query_values.get(ck, "").strip()
+            if not query:
+                continue
 
-                label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
-                st.write(f"Buscando **{ck}** ({label})...")
-                ads, raw, erro = buscar_ads_apify(query)
-                if erro:
-                    erros[ck] = erro
-                    st.write(f"❌ {erro}")
-                else:
-                    novos[ck] = {
-                        "data":  ads,
-                        "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "nome":  ck,
-                        "query": query,
-                    }
-                    st.write(f"✅ {len(ads)} anúncios encontrados")
-            status.update(label="✅ Busca concluída!", state="complete")
+            label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
+            progresso.append({
+                "nome": ck,
+                "status": "loading",
+                "msg": f"Buscando ({label})...",
+                "count": None,
+                "inativos": 0,
+            })
+            _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+
+            ads, raw, erro = buscar_ads_apify(query)
+
+            if erro:
+                erros[ck] = erro
+                progresso[-1] = {
+                    "nome": ck,
+                    "status": "error",
+                    "msg": erro[:80],
+                    "count": 0,
+                    "inativos": 0,
+                }
+            else:
+                novos[ck] = {
+                    "data":  ads,
+                    "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "nome":  ck,
+                    "query": query,
+                }
+                progresso[-1] = {
+                    "nome": ck,
+                    "status": "done",
+                    "msg": f"{len(ads)} anúncios encontrados",
+                    "count": len(ads),
+                    "inativos": 0,
+                }
+            _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+
+        _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
+        import time as _ttt; _ttt.sleep(1.2)
+        loader_placeholder.empty()
 
         cache_mergeado = merge_ads(cache_atual, novos)
         st.session_state.ads_cache = cache_mergeado
@@ -5912,102 +5942,324 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
+ 
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.style.cssText = [
+        'position:fixed','inset:0','background:rgba(0,0,0,0.92)',
+        'z-index:999999','display:flex','align-items:center',
+        'justify-content:center','padding:20px','overflow-y:auto'
+    ].join(';') + ';';
     overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+ 
     var box = doc.createElement('div');
-    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;padding:40px 24px 24px;min-width:320px;max-width:min(92vw,900px);';
+    box.id = 'ads_modal_box';
+    box.style.cssText = [
+        'background:#111','border-radius:18px','overflow:hidden',
+        'position:relative','padding:52px 24px 24px',
+        'min-width:320px','max-width:min(94vw,960px)',
+        'width:100%'
+    ].join(';') + ';';
+ 
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.style.cssText = [
+        'position:absolute','top:12px','right:14px',
+        'background:rgba(255,255,255,0.15)','border:none',
+        'border-radius:50%','width:36px','height:36px',
+        'font-size:16px','color:#fff','cursor:pointer',
+        'z-index:10','display:flex','align-items:center',
+        'justify-content:center','transition:background 0.15s'
+    ].join(';') + ';';
+    closeBtn.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.25)'; };
+    closeBtn.onmouseout  = function() { this.style.background = 'rgba(255,255,255,0.15)'; };
     closeBtn.onclick = closeModal;
-    var title = doc.createElement('div');
-    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = hqImgs.length > 1 ? 'Feed · Stories (alta qualidade)' : 'Feed (alta qualidade)';
-    var labels = ['Feed', 'Stories'];
-    var colors = ['#3a9fd6', '#2ecc71'];
+ 
+    var titleEl = doc.createElement('div');
+    titleEl.id = 'ads_modal_title';
+    titleEl.style.cssText = [
+        'color:rgba(255,255,255,0.5)','font-size:11px',
+        'font-weight:800','text-transform:uppercase',
+        'letter-spacing:1.2px','margin-bottom:16px',
+        "font-family:'DM Sans',sans-serif"
+    ].join(';') + ';';
+    titleEl.textContent = 'Carregando criativos\u2026';
+ 
     var grid = doc.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;';
-    hqImgs.forEach(function(src, i) {
-        var cell = doc.createElement('div');
-        cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
-        var lbl = doc.createElement('div');
-        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
-        var imgEl = doc.createElement('img');
-        imgEl.src = src || '';
-        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:70vh;';
-        imgEl.onerror = function() {
-            cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
-        };
-        cell.appendChild(lbl);
-        cell.appendChild(imgEl);
-        grid.appendChild(cell);
-    });
+    grid.id = 'ads_modal_grid';
+    grid.style.cssText = 'display:flex;gap:14px;justify-content:center;align-items:flex-start;flex-wrap:wrap;';
+ 
     var debugBtn = doc.createElement('button');
-    debugBtn.textContent = '🔍 Ver todas as 4 imagens (debug)';
-    debugBtn.style.cssText = 'margin-top:14px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;';
+    debugBtn.textContent = '\uD83D\uDD0D Ver todas as 4 imagens (debug)';
+    debugBtn.style.cssText = [
+        'margin-top:16px','width:100%','padding:9px',
+        'background:rgba(255,255,255,0.06)',
+        'border:1px solid rgba(255,255,255,0.12)',
+        'border-radius:8px','color:rgba(255,255,255,0.4)',
+        'font-size:11px','font-weight:700','cursor:pointer',
+        "font-family:'DM Sans',sans-serif",'transition:background 0.15s'
+    ].join(';') + ';';
+    debugBtn.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.1)'; };
+    debugBtn.onmouseout  = function() { this.style.background = 'rgba(255,255,255,0.06)'; };
     debugBtn.onclick = function() {
         closeModal();
         setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
     };
+ 
     box.appendChild(closeBtn);
-    box.appendChild(title);
+    box.appendChild(titleEl);
     box.appendChild(grid);
     box.appendChild(debugBtn);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
+ 
     window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+ 
+    // Carregar imagens e calcular proporções dinamicamente
+    var validImgs = hqImgs.filter(function(s) { return s && s.length > 0; });
+    if (validImgs.length === 0) {
+        titleEl.textContent = 'Sem criativos disponíveis';
+        return;
+    }
+ 
+    var loaded  = 0;
+    var imgData = new Array(validImgs.length).fill(null);
+ 
+    validImgs.forEach(function(src, i) {
+        var tmp = new window.parent.Image();
+        tmp.crossOrigin = 'anonymous';
+        tmp.onload = function() {
+            imgData[i] = { src: src, w: tmp.naturalWidth, h: tmp.naturalHeight };
+            loaded++;
+            if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
+        };
+        tmp.onerror = function() {
+            imgData[i] = { src: src, w: 0, h: 0, error: true };
+            loaded++;
+            if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
+        };
+        tmp.src = src;
+        // Timeout de segurança: 8s
+        setTimeout(function() {
+            if (imgData[i] === null) {
+                imgData[i] = { src: src, w: 0, h: 0, error: false };
+                loaded++;
+                if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
+            }
+        }, 8000);
+    });
 }
-
+ 
+function buildModalGrid(imgData, grid, titleEl) {
+    var doc = window.parent.document;
+    grid.innerHTML = '';
+ 
+    var COLORS_BY_TYPE = {
+        'stories':   '#2ecc71',
+        'feed':      '#3a9fd6',
+        'landscape': '#f59e0b',
+        'unknown':   '#6b7280'
+    };
+    var LABELS_BY_TYPE = {
+        'stories':   'Stories / Reels',
+        'feed':      'Feed',
+        'landscape': 'Landscape',
+        'unknown':   'Criativo'
+    };
+ 
+    function classifyAspect(w, h) {
+        if (!w || !h) return 'unknown';
+        var ratio = w / h;
+        if (ratio < 0.75)  return 'stories';
+        if (ratio <= 1.35) return 'feed';
+        return 'landscape';
+    }
+ 
+    var classified = imgData.map(function(d) {
+        var type = classifyAspect(d.w, d.h);
+        return { src: d.src, w: d.w, h: d.h, error: d.error, type: type };
+    });
+ 
+    // Deduplica tipos iguais mantendo a primeira ocorrência
+    var seen = {};
+    var deduped = [];
+    classified.forEach(function(c) {
+        if (!seen[c.type]) {
+            seen[c.type] = true;
+            deduped.push(c);
+        }
+    });
+    if (deduped.length === 0) deduped = classified;
+ 
+    var typeNames = deduped.map(function(c) { return LABELS_BY_TYPE[c.type] || c.type; });
+    titleEl.textContent = typeNames.join(' \u00B7 ');
+ 
+    var totalCards = deduped.length;
+    var maxCardW = totalCards === 1 ? 'min(72vw, 560px)'
+                 : totalCards === 2 ? 'min(44vw, 420px)'
+                 : 'min(30vw, 300px)';
+ 
+    deduped.forEach(function(item) {
+        var color = COLORS_BY_TYPE[item.type] || '#6b7280';
+        var label = LABELS_BY_TYPE[item.type] || 'Criativo';
+ 
+        var maxH;
+        if (item.type === 'stories')   maxH = 'min(75vh, 640px)';
+        else if (item.type === 'feed') maxH = 'min(65vh, 560px)';
+        else                           maxH = 'min(50vh, 420px)';
+ 
+        var imgFit = (item.w && item.h && !item.error) ? 'cover' : 'contain';
+        var wrapperStyle = 'width:' + maxCardW + ';max-height:' + maxH + ';';
+ 
+        var cell = doc.createElement('div');
+        cell.style.cssText = [
+            'background:#0d0d0d',
+            'border-radius:12px',
+            'overflow:hidden',
+            'border:2px solid ' + color,
+            'display:flex','flex-direction:column',
+            'flex-shrink:0',
+            wrapperStyle
+        ].join(';') + ';';
+ 
+        var lbl = doc.createElement('div');
+        lbl.style.cssText = [
+            'padding:7px 14px',
+            'font-size:11px','font-weight:800',
+            'color:' + color,
+            "font-family:'DM Sans',sans-serif",
+            'background:rgba(0,0,0,0.5)',
+            'border-bottom:1px solid ' + color,
+            'display:flex','align-items:center','gap:8px',
+            'letter-spacing:0.5px'
+        ].join(';') + ';';
+ 
+        var dot = doc.createElement('span');
+        dot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:' + color + ';display:inline-block;flex-shrink:0;';
+        var lblTxt = doc.createElement('span');
+        lblTxt.textContent = label;
+ 
+        if (item.w && item.h) {
+            var ratio_str = doc.createElement('span');
+            ratio_str.style.cssText = 'opacity:0.55;font-weight:600;font-size:10px;margin-left:auto;';
+            ratio_str.textContent = item.w + '\u00D7' + item.h + ' (' + (item.w / item.h).toFixed(2) + ':1)';
+            lbl.appendChild(dot);
+            lbl.appendChild(lblTxt);
+            lbl.appendChild(ratio_str);
+        } else {
+            lbl.appendChild(dot);
+            lbl.appendChild(lblTxt);
+        }
+        cell.appendChild(lbl);
+ 
+        if (item.error) {
+            var errDiv = doc.createElement('div');
+            errDiv.style.cssText = "color:#555;font-size:12px;text-align:center;padding:40px 24px;font-family:'DM Sans',sans-serif;";
+            errDiv.textContent = 'Imagem n\u00E3o dispon\u00EDvel';
+            cell.appendChild(errDiv);
+        } else {
+            var imgEl = doc.createElement('img');
+            imgEl.src = item.src;
+            imgEl.style.cssText = [
+                'display:block',
+                'width:100%',
+                'height:auto',
+                'object-fit:' + imgFit,
+                'max-height:' + maxH
+            ].join(';') + ';';
+            imgEl.onerror = function() {
+                cell.innerHTML = '';
+                var d = doc.createElement('div');
+                d.style.cssText = "color:#555;font-size:11px;text-align:center;padding:32px;font-family:'DM Sans',sans-serif;";
+                d.textContent = 'Imagem n\u00E3o dispon\u00EDvel';
+                cell.appendChild(d);
+            };
+            cell.appendChild(imgEl);
+        }
+ 
+        grid.appendChild(cell);
+    });
+ 
+    // Se só Stories, estreitar o modal
+    if (deduped.length === 1 && deduped[0].type === 'stories') {
+        var modalBox = doc.getElementById('ads_modal_box');
+        if (modalBox) modalBox.style.maxWidth = 'min(60vw, 480px)';
+    }
+}
+ 
 function openModalImages(imgs, snapUrl) {
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
+ 
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
     overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+ 
     var box = doc.createElement('div');
-    box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
+    box.style.cssText = 'background:#1a1a2e;border-radius:18px;overflow:hidden;position:relative;width:min(94vw,920px);padding:52px 24px 24px;';
+ 
     var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.textContent = '\u2715';
+    closeBtn.style.cssText = 'position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;font-size:16px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
+ 
     var title = doc.createElement('div');
-    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = '4 imagens da API — índices e qualidades:';
-    var labels = ['Idx 0 — Feed Alta', 'Idx 1 — Feed Baixa (thumb)', 'Idx 2 — Stories Alta', 'Idx 3 — Stories Baixa'];
+    title.style.cssText = "color:rgba(255,255,255,0.5);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px;font-family:'DM Sans',sans-serif;";
+    title.textContent = '4 imagens da API \u2014 propor\u00E7\u00F5es detectadas:';
+ 
+    var labels = ['Idx 0', 'Idx 1', 'Idx 2', 'Idx 3'];
     var colors = ['#3a9fd6', '#e67e22', '#2ecc71', '#e74c3c'];
+ 
     var grid = doc.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
+ 
     imgs.forEach(function(src, i) {
         var cell = doc.createElement('div');
         cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
+ 
         var lbl = doc.createElement('div');
-        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Idx ' + i);
+        lbl.style.cssText = "padding:6px 12px;font-size:11px;font-weight:800;color:" + colors[i] + ";font-family:'DM Sans',sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid " + colors[i] + ";display:flex;align-items:center;justify-content:space-between;";
+ 
+        var lblName = doc.createElement('span');
+        lblName.textContent = labels[i] || ('Idx ' + i);
+        lbl.appendChild(lblName);
+ 
+        var dimLbl = doc.createElement('span');
+        dimLbl.style.cssText = 'font-size:10px;opacity:0.6;font-weight:600;';
+        dimLbl.textContent = '...';
+        lbl.appendChild(dimLbl);
+ 
         var imgEl = doc.createElement('img');
+        imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:240px;';
+ 
+        var tmpI = new window.parent.Image();
+        tmpI.onload = function() { dimLbl.textContent = tmpI.naturalWidth + '\u00D7' + tmpI.naturalHeight; };
+        tmpI.onerror = function() { dimLbl.textContent = 'erro'; };
+        tmpI.src = src || '';
         imgEl.src = src || '';
-        imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:220px;';
         imgEl.onerror = function() {
-            cell.innerHTML = '<div style="color:#555;font-size:11px;font-family:DM Sans,sans-serif;text-align:center;padding:20px;">Sem imagem</div>';
+            cell.innerHTML = "<div style=\"color:#555;font-size:11px;font-family:'DM Sans',sans-serif;text-align:center;padding:24px;\">Sem imagem</div>";
         };
+ 
         var srcLbl = doc.createElement('div');
         srcLbl.style.cssText = 'padding:4px 8px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;';
-        srcLbl.textContent = src ? src.substring(0,70) + '…' : 'vazio';
+        srcLbl.textContent = src ? src.substring(0, 80) + '\u2026' : 'vazio';
+ 
         cell.appendChild(lbl);
         cell.appendChild(imgEl);
         cell.appendChild(srcLbl);
         grid.appendChild(cell);
     });
+ 
     box.appendChild(closeBtn);
     box.appendChild(title);
     box.appendChild(grid);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
+ 
     window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
 }
@@ -6063,37 +6315,37 @@ body{{padding-bottom:4px;min-height:0;}}
 </style>
 </head>
 <body>
-<div class="ads-grid">{cards_joined}</div>
+<div class="ads-grid">{{cards_joined}}</div>
 <script>
 function openModal(mediaSrc, snapUrl, isVideo) {{
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
-
+ 
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
-
+ 
     var box = doc.createElement('div');
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
-
+ 
     var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
+    closeBtn.textContent = '\u2715';
     closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
-
+ 
     var content = doc.createElement('div');
     content.id = 'ads_modal_content';
-
+ 
     box.appendChild(closeBtn);
     box.appendChild(content);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
-
+ 
     window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
-
+ 
     if (isVideo) {{
         var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
         if (isDirectVideo) {{
@@ -6112,7 +6364,7 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
                     var btn = doc.createElement('a');
                     btn.href = snapUrl; btn.target = '_blank';
                     btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
-                    btn.textContent = '↗ Abrir no Ad Library';
+                    btn.textContent = '\u2197 Abrir no Ad Library';
                     wrap.appendChild(btn);
                     content.appendChild(wrap);
                 }}
@@ -6125,7 +6377,7 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
                 var btn = doc.createElement('a');
                 btn.href = snapUrl; btn.target = '_blank';
                 btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;';
-                btn.textContent = '↗ Abrir vídeo no Ad Library';
+                btn.textContent = '\u2197 Abrir v\u00EDdeo no Ad Library';
                 wrap.appendChild(btn);
             }}
             content.appendChild(wrap);
@@ -6133,12 +6385,12 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     }} else {{
         if (!mediaSrc && snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); return; }}
         if (!mediaSrc) {{ closeModal(); return; }}
-
+ 
         var loading = doc.createElement('div');
         loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
-        loading.textContent = 'Carregando…';
+        loading.textContent = 'Carregando\u2026';
         content.appendChild(loading);
-
+ 
         var tmp = new window.parent.Image();
         tmp.onload = function() {{
             content.innerHTML = '';
@@ -6153,16 +6405,16 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
             else {{
                 var msg = doc.createElement('div');
                 msg.style.cssText = 'color:#aaa;font-size:14px;padding:32px;text-align:center;font-family:DM Sans,sans-serif;';
-                msg.textContent = 'Imagem não disponível.';
+                msg.textContent = 'Imagem n\u00E3o dispon\u00EDvel.';
                 content.appendChild(msg);
             }}
         }};
         tmp.src = mediaSrc;
     }}
 }}
-
-{_js_modal_hq}
-
+ 
+{{_js_modal_hq}}
+ 
 function closeModal() {{
     var doc = window.parent.document;
     var vid = doc.getElementById('ads_modal_video');
@@ -6174,7 +6426,7 @@ function closeModal() {{
         window.parent.__adsModalEscFn = null;
     }}
 }}
-
+ 
 document.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeModal(); }});
 function toggleDebug(uid) {{
     var el = document.getElementById('debug_' + uid);
@@ -6205,25 +6457,25 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </script>
 </body></html>
 """, height=100, scrolling=False)
-
+ 
             # ── ABA: ANÁLISE DE IA ────────────────────────────────────
+            # (código idêntico ao documento 3 — sem alterações nesta seção)
             else:
                 ads_f_ia = ads_list
-
+ 
                 chave_ia_geral     = f"ia_ads_geral_{sk}"
                 chave_ia_criativos = f"ia_ads_criativos_{sk}"
                 chave_ia_copys     = f"ia_ads_copys_{sk}"
-
+ 
                 for ch in [chave_ia_geral, chave_ia_criativos, chave_ia_copys]:
                     if ch not in st.session_state:
                         st.session_state[ch] = ""
-
+ 
                 for j in range(len(ads_f_ia)):
                     chave_ind = f"ia_ad_result_{sk}_{j}"
                     if chave_ind not in st.session_state:
                         st.session_state[chave_ind] = ""
-
-                # Ghost buttons para análise IA
+ 
                 ia_ghost_keys = (
                     [f"btn_subtab_{sk}_individuais", f"btn_subtab_{sk}_criativos", f"btn_subtab_{sk}_copys"]
                     + [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
@@ -6244,15 +6496,15 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
                     for k in ia_ghost_keys
                 ])
                 st.markdown(f"<style>{ia_ghost_css}</style>", unsafe_allow_html=True)
-
+ 
                 if f"ads_subtab_{sk}" not in st.session_state:
                     st.session_state[f"ads_subtab_{sk}"] = "individuais"
-
+ 
                 for tab_name in ["individuais", "criativos", "copys"]:
                     if st.button(f"subtab_{sk}_{tab_name}", key=f"btn_subtab_{sk}_{tab_name}"):
                         st.session_state[f"ads_subtab_{sk}"] = tab_name
                         st.rerun()
-
+ 
                 if st.button(f"ia_geral_{sk}", key=f"btn_ia_geral_{sk}"):
                     if gemini_model is None:
                         st.session_state[chave_ia_geral] = "Configure GEMINI_API_KEY nos secrets."
@@ -6269,12 +6521,12 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
                             try:
                                 resp = gemini_model.generate_content(f"""Você é especialista em mídia paga e marketing digital.
 Analise os anúncios de "{nome}" e gere um relatório estratégico completo em português.
-
+ 
 Empresa: {nome} | Total: {len(ads_f_ia)} | {n_img} imagens | {n_vid} vídeos | {n_car} carrosseis | {n_dyn} dinâmicos
-
+ 
 Amostra dos anúncios:
 {resumo}
-
+ 
 ---
 ### 🎯 Estratégia de Mídia
 ### ✍️ Padrões de Copy e Mensagem
@@ -6287,7 +6539,7 @@ Amostra dos anúncios:
                             except Exception as ex:
                                 st.session_state[chave_ia_geral] = f"Erro: {ex}"
                                 st.rerun()
-
+ 
                 if st.button(f"ia_criativos_{sk}", key=f"btn_ia_criativos_{sk}"):
                     if gemini_model is None:
                         st.session_state[chave_ia_criativos] = "Configure GEMINI_API_KEY nos secrets."
@@ -6303,12 +6555,12 @@ Amostra dos anúncios:
                             try:
                                 resp = gemini_model.generate_content(f"""Você é especialista em design e criação de anúncios digitais.
 Analise os CRIATIVOS (formatos visuais) dos anúncios de "{nome}" em português.
-
+ 
 Empresa: {nome} | {n_img} imagens | {n_vid} vídeos | {n_car} carrosseis
-
+ 
 Dados dos criativos:
 {resumo_criativos}
-
+ 
 ---
 ### 🎨 Estilo Visual Predominante
 ### 📱 Mix de Formatos e Plataformas
@@ -6321,7 +6573,7 @@ Dados dos criativos:
                             except Exception as ex:
                                 st.session_state[chave_ia_criativos] = f"Erro: {ex}"
                                 st.rerun()
-
+ 
                 if st.button(f"ia_copys_{sk}", key=f"btn_ia_copys_{sk}"):
                     if gemini_model is None:
                         st.session_state[chave_ia_copys] = "Configure GEMINI_API_KEY nos secrets."
@@ -6334,12 +6586,12 @@ Dados dos criativos:
                             try:
                                 resp = gemini_model.generate_content(f"""Você é especialista em copywriting e marketing de resposta direta.
 Analise as COPIES (textos) dos anúncios de "{nome}" em português.
-
+ 
 Empresa: {nome} | {len(ads_f_ia)} anúncios analisados
-
+ 
 Copies coletadas:
 {todas_copies}
-
+ 
 ---
 ### ✍️ Tom de Voz e Personalidade
 ### 🎯 Principais Promessas e Argumentos
@@ -6353,7 +6605,7 @@ Copies coletadas:
                             except Exception as ex:
                                 st.session_state[chave_ia_copys] = f"Erro: {ex}"
                                 st.rerun()
-
+ 
                 for j, ad in enumerate(ads_f_ia):
                     if st.button(f"ia_ind_{sk}_{j}", key=f"btn_ia_ind_{sk}_{j}"):
                         chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -6364,7 +6616,7 @@ Copies coletadas:
                                 try:
                                     resp = gemini_model.generate_content(f"""Você é especialista em mídia paga e copywriting.
 Analise este anúncio específico e dê feedback estratégico em português.
-
+ 
 Empresa: {nome}
 Formato: {ad.get("formato","")}
 Plataformas: {", ".join(ad.get("plataformas") or [])}
@@ -6373,7 +6625,7 @@ Título: {ad.get("title","")}
 Copy: {ad.get("body","")}
 Descrição: {ad.get("description","")}
 CTA: {ad.get("cta","")}
-
+ 
 ### 🎯 Objetivo do Anúncio
 ### ✍️ Análise de Copy
 ### 🎨 Análise de Formato e Criativo
@@ -6383,9 +6635,9 @@ CTA: {ad.get("cta","")}
                                 except Exception as ex:
                                     st.session_state[chave_ind] = f"Erro: {ex}"
                                     st.rerun()
-
+ 
                 subtab_atual = st.session_state.get(f"ads_subtab_{sk}", "individuais")
-
+ 
                 ind_cards_data = []
                 for j, ad in enumerate(ads_f_ia):
                     chave_ind = f"ia_ad_result_{sk}_{j}"
@@ -6408,18 +6660,18 @@ CTA: {ad.get("cta","")}
                         "resultado": resultado_html,
                         "ativo": ad.get("ativo", True),
                     })
-
+ 
                 ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
-
+ 
                 geral_html     = st.session_state.get(chave_ia_geral, "").replace("\n","<br>")
                 criativos_html = st.session_state.get(chave_ia_criativos, "").replace("\n","<br>")
                 copys_html     = st.session_state.get(chave_ia_copys, "").replace("\n","<br>")
-
+ 
                 n_anuncios = len(ads_f_ia)
                 n_vid2 = sum(1 for a in ads_f_ia if "Vídeo" in a["formato"])
                 n_img2 = sum(1 for a in ads_f_ia if "Imagem" in a["formato"])
                 n_car2 = sum(1 for a in ads_f_ia if "Carrossel" in a["formato"])
-
+ 
                 components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -6513,19 +6765,19 @@ function buildIndGrid() {{
         card.className = 'ind-card';
         card.id = 'ind_card_' + d.j;
         var thumbHtml = d.img_src
-            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>📷</span>\'" />'
-            : (d.formato === 'Vídeo' ? '<span>🎬</span>' : '<span>📷</span>');
+            ? '<img src="' + d.img_src + '" onerror="this.outerHTML=\'<span>\u{1F4F7}</span>\'" />'
+            : (d.formato === 'Vídeo' ? '<span>\u{1F3AC}</span>' : '<span>\u{1F4F7}</span>');
         var statusBadge = d.ativo ? '' : '<span class="ind-fmt-inativo">Inativo</span>';
         card.innerHTML =
             '<div class="ind-card-top">'
             + '<div class="ind-thumb">' + thumbHtml + '</div>'
             + '<div class="ind-info">'
             + '<span class="ind-fmt">' + (d.formato || 'Anúncio') + '</span>' + statusBadge
-            + '<div class="ind-title">' + (d.title || '—') + '</div>'
-            + '<div class="ind-body">' + (d.body || '—') + '</div>'
+            + '<div class="ind-title">' + (d.title || '\u2014') + '</div>'
+            + '<div class="ind-body">' + (d.body || '\u2014') + '</div>'
             + '<div class="ind-meta">'
-            + (d.data_inicio ? '🕒 ' + d.data_inicio + ' &nbsp;' : '')
-            + (d.plataformas ? '📱 ' + d.plataformas : '')
+            + (d.data_inicio ? '\u{1F552} ' + d.data_inicio + ' &nbsp;' : '')
+            + (d.plataformas ? '\u{1F4F1} ' + d.plataformas : '')
             + '</div></div></div>';
         if (d.resultado) {{
             var res = document.createElement('div');
@@ -6536,11 +6788,11 @@ function buildIndGrid() {{
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
-        btn.innerHTML = d.resultado ? '🔄 Reanalisar' : '⚡ Analisar este anúncio';
+        btn.innerHTML = d.resultado ? '\u{1F504} Reanalisar' : '\u26A1 Analisar este anúncio';
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
-                if (b) {{ b.textContent = 'Analisando…'; b.style.color = '#9ca3af'; }}
+                if (b) {{ b.textContent = 'Analisando\u2026'; b.style.color = '#9ca3af'; }}
                 triggerGlobal('ia_ind_{sk}_' + idx);
             }};
         }})(d.j);
@@ -6583,14 +6835,14 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 </script>
 </body></html>
 """, height=600, scrolling=False)
-
+ 
         # ── Renderiza empresa da aba ativa ───────────────────────────
-
+ 
         empresas_com_dados = [
             e for e in empresas_configuradas
             if e["nome"] in st.session_state.ads_cache or e["nome"] in st.session_state.ads_erro
         ]
-
+ 
         if not empresas_com_dados:
             st.markdown("""
             <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
@@ -6602,20 +6854,20 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
         else:
             aba_idx = min(st.session_state.get("ads_aba_ativa", 0), len(empresas_com_dados) - 1)
             render_ads_empresa(empresas_com_dados[aba_idx])
-
+ 
     # ══════════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA (resumo comparativo)
     # ══════════════════════════════════════════════════════════════════
     elif main_tab == "analise":
-
+ 
         if not st.session_state.ads_cache:
             st.info("Busque anúncios primeiro na aba **Empresas configuradas** para ver análises aqui.")
             st.stop()
-
+ 
         chave_comp = "ia_ads_comparativo"
         if chave_comp not in st.session_state:
             st.session_state[chave_comp] = ""
-
+ 
         ghost_comp_css = """
         .st-key-btn_ia_comp_geral {
             position:fixed !important; top:-9999px !important; left:-9999px !important;
@@ -6628,7 +6880,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
         }
         """
         st.markdown(f"<style>{ghost_comp_css}</style>", unsafe_allow_html=True)
-
+ 
         if st.button("ia_comparativo", key="btn_ia_comp_geral"):
             if gemini_model is None:
                 st.session_state[chave_comp] = "Configure GEMINI_API_KEY nos secrets."
@@ -6653,9 +6905,9 @@ Amostra:
                     try:
                         resp = gemini_model.generate_content(f"""Você é especialista em inteligência competitiva e mídia paga.
 Compare os anúncios das empresas abaixo e gere uma análise competitiva completa em português.
-
+ 
 {'---'.join(resumos)}
-
+ 
 ---
 ### 🏆 Ranking de Presença Digital
 ### 🎯 Estratégias Comparadas
@@ -6668,9 +6920,9 @@ Compare os anúncios das empresas abaixo e gere uma análise competitiva complet
                     except Exception as ex:
                         st.session_state[chave_comp] = f"Erro: {ex}"
                         st.rerun()
-
+ 
         comp_html = st.session_state.get(chave_comp, "").replace("\n","<br>")
-
+ 
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
