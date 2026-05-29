@@ -6517,7 +6517,7 @@ function openModalImages(imgs, snapUrl) {
 }
 """
 
-                components.html(f"""
+            components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
