@@ -6201,7 +6201,7 @@ window.__PLATS_{uid}__ = {plat_js};
                 n_cols = st.session_state.get(col_key, 4)
 
                 _js_modal_hq = """
-function openModalHQ(hqImgs, allImgs, snapUrl) {
+function openModalHQ(hqImgs, allImgs, snapUrl) {{
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
@@ -6213,7 +6213,7 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
         'z-index:999999','display:flex','align-items:center',
         'justify-content:center','padding:20px','overflow-y:auto'
     ].join(';') + ';';
-    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
  
     var box = doc.createElement('div');
     box.id = 'ads_modal_box';
@@ -6234,8 +6234,8 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
         'z-index:10','display:flex','align-items:center',
         'justify-content:center','transition:background 0.15s'
     ].join(';') + ';';
-    closeBtn.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.25)'; };
-    closeBtn.onmouseout  = function() { this.style.background = 'rgba(255,255,255,0.15)'; };
+    closeBtn.onmouseover = function() {{ this.style.background = 'rgba(255,255,255,0.25)'; }};
+    closeBtn.onmouseout  = function() {{ this.style.background = 'rgba(255,255,255,0.15)'; }};
     closeBtn.onclick = closeModal;
  
     var titleEl = doc.createElement('div');
@@ -6262,12 +6262,12 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
         'font-size:11px','font-weight:700','cursor:pointer',
         "font-family:'DM Sans',sans-serif",'transition:background 0.15s'
     ].join(';') + ';';
-    debugBtn.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.1)'; };
-    debugBtn.onmouseout  = function() { this.style.background = 'rgba(255,255,255,0.06)'; };
-    debugBtn.onclick = function() {
+    debugBtn.onmouseover = function() {{ this.style.background = 'rgba(255,255,255,0.1)'; }};
+    debugBtn.onmouseout  = function() {{ this.style.background = 'rgba(255,255,255,0.06)'; }};
+    debugBtn.onclick = function() {{
         closeModal();
-        setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
-    };
+        setTimeout(function() {{ openModalImages(allImgs, snapUrl); }}, 100);
+    }};
  
     box.appendChild(closeBtn);
     box.appendChild(titleEl);
@@ -6276,83 +6276,83 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
  
-    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
  
-    var validImgs = hqImgs.filter(function(s) { return s && s.length > 0; });
-    if (validImgs.length === 0) {
+    var validImgs = hqImgs.filter(function(s) {{ return s && s.length > 0; }});
+    if (validImgs.length === 0) {{
         titleEl.textContent = 'Sem criativos dispon\u00edveis';
         return;
-    }
+    }}
  
     var loaded  = 0;
     var imgData = new Array(validImgs.length).fill(null);
  
-    validImgs.forEach(function(src, i) {
+    validImgs.forEach(function(src, i) {{
         var tmp = new window.parent.Image();
         tmp.crossOrigin = 'anonymous';
-        tmp.onload = function() {
-            imgData[i] = { src: src, w: tmp.naturalWidth, h: tmp.naturalHeight };
+        tmp.onload = function() {{
+            imgData[i] = {{ src: src, w: tmp.naturalWidth, h: tmp.naturalHeight }};
             loaded++;
             if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
-        };
-        tmp.onerror = function() {
-            imgData[i] = { src: src, w: 0, h: 0, error: true };
+        }};
+        tmp.onerror = function() {{
+            imgData[i] = {{ src: src, w: 0, h: 0, error: true }};
             loaded++;
             if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
-        };
+        }};
         tmp.src = src;
-        setTimeout(function() {
-            if (imgData[i] === null) {
-                imgData[i] = { src: src, w: 0, h: 0, error: false };
+        setTimeout(function() {{
+            if (imgData[i] === null) {{
+                imgData[i] = {{ src: src, w: 0, h: 0, error: false }};
                 loaded++;
                 if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
-            }
-        }, 8000);
-    });
-}
+            }}
+        }}, 8000);
+    }});
+}}
  
-function buildModalGrid(imgData, grid, titleEl) {
+function buildModalGrid(imgData, grid, titleEl) {{
     var doc = window.parent.document;
     grid.innerHTML = '';
  
-    var COLORS_BY_TYPE = {
+    var COLORS_BY_TYPE = {{
         'stories':   '#2ecc71',
         'feed':      '#3a9fd6',
         'landscape': '#f59e0b',
         'unknown':   '#6b7280'
-    };
-    var LABELS_BY_TYPE = {
+    }};
+    var LABELS_BY_TYPE = {{
         'stories':   'Stories / Reels',
         'feed':      'Feed',
         'landscape': 'Landscape',
         'unknown':   'Criativo'
-    };
+    }};
  
-    function classifyAspect(w, h) {
+    function classifyAspect(w, h) {{
         if (!w || !h) return 'unknown';
         var ratio = w / h;
         if (ratio < 0.75)  return 'stories';
         if (ratio <= 1.35) return 'feed';
         return 'landscape';
-    }
+    }}
  
-    var classified = imgData.map(function(d) {
+    var classified = imgData.map(function(d) {{
         var type = classifyAspect(d.w, d.h);
-        return { src: d.src, w: d.w, h: d.h, error: d.error, type: type };
-    });
+        return {{ src: d.src, w: d.w, h: d.h, error: d.error, type: type }};
+    }});
  
-    var seen   = {};
+    var seen   = {{}};
     var deduped = [];
-    classified.forEach(function(c) {
-        if (!seen[c.type]) {
+    classified.forEach(function(c) {{
+        if (!seen[c.type]) {{
             seen[c.type] = true;
             deduped.push(c);
-        }
-    });
+        }}
+    }});
     if (deduped.length === 0) deduped = classified;
  
-    var typeNames = deduped.map(function(c) { return LABELS_BY_TYPE[c.type] || c.type; });
+    var typeNames = deduped.map(function(c) {{ return LABELS_BY_TYPE[c.type] || c.type; }});
     titleEl.textContent = typeNames.join(' \u00b7 ');
  
     var totalCards = deduped.length;
@@ -6360,7 +6360,7 @@ function buildModalGrid(imgData, grid, titleEl) {
                  : totalCards === 2 ? 'min(44vw, 420px)'
                  : 'min(30vw, 300px)';
  
-    deduped.forEach(function(item) {
+    deduped.forEach(function(item) {{
         var color = COLORS_BY_TYPE[item.type] || '#6b7280';
         var label = LABELS_BY_TYPE[item.type] || 'Criativo';
  
@@ -6402,20 +6402,20 @@ function buildModalGrid(imgData, grid, titleEl) {
         lbl.appendChild(dot);
         lbl.appendChild(lblTxt);
  
-        if (item.w && item.h) {
+        if (item.w && item.h) {{
             var ratio_str = doc.createElement('span');
             ratio_str.style.cssText = 'opacity:0.55;font-weight:600;font-size:10px;margin-left:auto;';
             ratio_str.textContent = item.w + '\u00d7' + item.h + ' (' + (item.w / item.h).toFixed(2) + ':1)';
             lbl.appendChild(ratio_str);
-        }
+        }}
         cell.appendChild(lbl);
  
-        if (item.error) {
+        if (item.error) {{
             var errDiv = doc.createElement('div');
             errDiv.style.cssText = "color:#555;font-size:12px;text-align:center;padding:40px 24px;font-family:'DM Sans',sans-serif;";
             errDiv.textContent = 'Imagem n\u00e3o dispon\u00edvel';
             cell.appendChild(errDiv);
-        } else {
+        }} else {{
             var imgEl = doc.createElement('img');
             imgEl.src = item.src;
             imgEl.style.cssText = [
@@ -6425,22 +6425,22 @@ function buildModalGrid(imgData, grid, titleEl) {
                 'object-fit:cover',
                 'max-height:' + maxH
             ].join(';') + ';';
-            imgEl.onerror = function() {
+            imgEl.onerror = function() {{
                 cell.innerHTML = "<div style=\"color:#555;font-size:12px;font-family:'DM Sans',sans-serif;text-align:center;padding:32px;\">Imagem n\u00e3o dispon\u00edvel</div>";
-            };
+            }};
             cell.appendChild(imgEl);
-        }
+        }}
  
         grid.appendChild(cell);
-    });
+    }});
  
-    if (deduped.length === 1 && deduped[0].type === 'stories') {
+    if (deduped.length === 1 && deduped[0].type === 'stories') {{
         var modalBox = doc.getElementById('ads_modal_box');
         if (modalBox) modalBox.style.maxWidth = 'min(60vw, 480px)';
-    }
-}
+    }}
+}}
  
-function openModalImages(imgs, snapUrl) {
+function openModalImages(imgs, snapUrl) {{
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
@@ -6448,7 +6448,7 @@ function openModalImages(imgs, snapUrl) {
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
-    overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+    overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
  
     var box = doc.createElement('div');
     box.style.cssText = 'background:#1a1a2e;border-radius:18px;overflow:hidden;position:relative;width:min(94vw,920px);padding:52px 24px 24px;';
@@ -6468,7 +6468,7 @@ function openModalImages(imgs, snapUrl) {
     var grid = doc.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
  
-    imgs.forEach(function(src, i) {
+    imgs.forEach(function(src, i) {{
         var cell = doc.createElement('div');
         cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
  
@@ -6485,16 +6485,16 @@ function openModalImages(imgs, snapUrl) {
         lbl.appendChild(dimLbl);
  
         var tmpI = new window.parent.Image();
-        tmpI.onload  = function() { dimLbl.textContent = tmpI.naturalWidth + '\u00d7' + tmpI.naturalHeight; };
-        tmpI.onerror = function() { dimLbl.textContent = 'erro'; };
+        tmpI.onload  = function() {{ dimLbl.textContent = tmpI.naturalWidth + '\u00d7' + tmpI.naturalHeight; }};
+        tmpI.onerror = function() {{ dimLbl.textContent = 'erro'; }};
         tmpI.src = src || '';
  
         var imgEl = doc.createElement('img');
         imgEl.src = src || '';
         imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:240px;';
-        imgEl.onerror = function() {
+        imgEl.onerror = function() {{
             cell.innerHTML = "<div style=\"color:#555;font-size:11px;font-family:'DM Sans',sans-serif;text-align:center;padding:24px;\">Sem imagem</div>";
-        };
+        }};
  
         var srcLbl = doc.createElement('div');
         srcLbl.style.cssText = 'padding:4px 8px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;';
@@ -6504,7 +6504,7 @@ function openModalImages(imgs, snapUrl) {
         cell.appendChild(imgEl);
         cell.appendChild(srcLbl);
         grid.appendChild(cell);
-    });
+    }});
  
     box.appendChild(closeBtn);
     box.appendChild(title);
@@ -6512,9 +6512,9 @@ function openModalImages(imgs, snapUrl) {
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
  
-    window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
+    window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
-}
+}}
 """
 
             components.html(f"""
