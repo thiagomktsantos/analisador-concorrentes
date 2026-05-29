@@ -7021,16 +7021,16 @@ function abrirModal() {{
                                 thumb_hd = ""
                                 if p.get("image_versions2"):
                                     cands = p["image_versions2"].get("candidates", [])
-                                    # thumb_hd = maior resolução disponível (cands[0])
-                                    thumb_hd = cands[0].get("url", "") if cands else ""
-                                    # thumb = menor resolução disponível (último candidato) para o grid
-                                    thumb = cands[-1].get("url", "") if cands else ""
-                                    # se só há 1 candidato, ambos são iguais
-                                    if len(cands) == 1:
-                                        thumb = thumb_hd
-                                elif p.get("thumbnail_url"):
-                                    thumb = p["thumbnail_url"]
-                                    thumb_hd = thumb
+                                    if cands:
+                                        # Ordena por largura decrescente para garantir maior resolução primeiro
+                                        cands_sorted = sorted(cands, key=lambda c: c.get("width", 0), reverse=True)
+                                        thumb_hd = cands_sorted[0].get("url", "")   # maior resolução
+                                        thumb = cands_sorted[-1].get("url", "")      # menor resolução para o grid
+                                        if len(cands_sorted) == 1:
+                                            thumb = thumb_hd
+                                    else:
+                                        thumb_hd = ""
+                                        thumb = ""
  
                                 if not thumb_hd:
                                     thumb_hd = thumb
