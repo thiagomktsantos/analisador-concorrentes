@@ -6711,7 +6711,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
 """, height=100, scrolling=False)
 
             # ── ABA: ANÁLISE DE IA ────────────────────────────────────
-            else:
+        else:
                 ads_f_ia = ads_list
 
                 chave_ia_geral     = f"ia_ads_geral_{sk}"
