@@ -3855,6 +3855,15 @@ elif st.session_state.pagina == "ads":
         hd = [u for u in vids if u not in sd]
         return sd + hd
 
+    def _urls_estaveis_por_id(ad_id: str) -> dict:
+        if not ad_id:
+            return {}
+        return {
+            "snapshot_url": f"https://www.facebook.com/ads/library/?id={ad_id}",
+            "preview_url":  f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}",
+            "thumb_url":    f"https://www.facebook.com/ads/image/?adarchiveid={ad_id}&ad_type=all",
+        }
+
     def _normalizar_item_apify(item: dict) -> dict:
         snapshot = item.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
@@ -3931,9 +3940,11 @@ elif st.session_state.pagina == "ads":
         )
         start_fmt = _dias_ativo(str(start_raw)) if start_raw else ""
 
+        urls_estaveis = _urls_estaveis_por_id(ad_id)
+
         snap_url = (item.get("adSnapshotURL")
                     or item.get("ad_snapshot_url")
-                    or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""))
+                    or urls_estaveis.get("snapshot_url", ""))
 
         images_b64 = []
         if images:
@@ -3942,27 +3953,32 @@ elif st.session_state.pagina == "ads":
             images_b64.extend(images[1:3])
 
         return {
-            "id":                  ad_id,
-            "page_name":           page_name,
-            "page_id":             page_id,
+            "id":                   ad_id,
+            "page_name":            page_name,
+            "page_id":              page_id,
             "page_profile_picture": page_profile_picture,
-            "body":                body_c,
-            "body_raw":            copy["body"],
-            "title":               title_c,
-            "description":         desc_c,
-            "cta":                 copy["cta"],
-            "caption":             copy["caption"],
-            "images":              images,
-            "images_b64":          images_b64,
-            "videos":              videos,
-            "snapshot_url":        snap_url,
-            "data_inicio":         start_fmt,
-            "data_raw":            str(start_raw),
-            "impressoes":          imp_str,
-            "baixo_volume":        baixo_volume,
-            "plataformas":         plats,
-            "formato":             fmt,
-            "is_dynamic":          is_dyn,
+            "body":                 body_c,
+            "body_raw":             copy["body"],
+            "title":                title_c,
+            "description":          desc_c,
+            "cta":                  copy["cta"],
+            "caption":              copy["caption"],
+            "images":               images,
+            "images_b64":           images_b64,
+            "images_stable":        [
+                urls_estaveis.get("thumb_url", ""),
+                urls_estaveis.get("preview_url", ""),
+            ],
+            "videos":               videos,
+            "snapshot_url":         snap_url,
+            "preview_url":          urls_estaveis.get("preview_url", ""),
+            "data_inicio":          start_fmt,
+            "data_raw":             str(start_raw),
+            "impressoes":           imp_str,
+            "baixo_volume":         baixo_volume,
+            "plataformas":          plats,
+            "formato":              fmt,
+            "is_dynamic":           is_dyn,
         }
 
     def _apify_run_sync(search_term: str, limit: int = 100) -> tuple:
@@ -5903,6 +5919,8 @@ setTimeout(ajustarAltura,100);
                     snap_url    = ad.get("snapshot_url") or ""
                     images      = ad.get("images") or []
                     images_b64  = ad.get("images_b64") or []
+                    images_stable = ad.get("images_stable") or []
+                    preview_url = ad.get("preview_url") or ""
                     videos      = ad.get("videos") or []
                     is_dyn      = ad.get("is_dynamic", False)
                     baixo_vol   = ad.get("baixo_volume", False)
@@ -5920,6 +5938,7 @@ setTimeout(ajustarAltura,100);
                     page_pic    = ad.get("page_profile_picture") or ""
 
                     snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
+                    preview_esc   = preview_url.replace("'","").replace('"',"")
 
                     body_clean  = re.sub(r'\n{2,}', '\n', body.strip())
                     title_clean = title.strip()
@@ -5942,6 +5961,8 @@ setTimeout(ajustarAltura,100);
                        "tem_video": bool(videos),
                        "n_videos": len(videos),
                        "snapshot_url": (snap_url or "")[:80],
+                       "preview_url": (preview_url or "")[:80],
+                       "images_stable": images_stable,
                        "body_len": len(body),
                        "title_len": len(title),
                        "cta": cta,
@@ -5949,17 +5970,19 @@ setTimeout(ajustarAltura,100);
                     debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
-                    # Thumb do card: feed baixa qualidade (índice 1), fallback para índice 0
                     img_thumb_url = images[1] if len(images) > 1 else (images[0] if images else "")
-                    img_primary = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
+                    img_primary   = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
 
-                    # Fallbacks para o thumb (não usados no modal de 4 imagens)
+                    # Fallbacks em ordem: originais da API → URLs estáveis por ID
                     img_fallbacks = []
                     if img_thumb_url and img_thumb_url not in img_fallbacks:
                         img_fallbacks.append(img_thumb_url)
                     if images_b64 and images_b64[0] not in img_fallbacks:
                         img_fallbacks.append(images_b64[0])
                     img_fallbacks.extend([u for u in images if u not in img_fallbacks])
+                    for _su in images_stable:
+                        if _su and _su not in img_fallbacks:
+                            img_fallbacks.append(_su)
                     srcs_js = _json.dumps(img_fallbacks)
 
                     if videos:
@@ -6009,7 +6032,7 @@ setTimeout(ajustarAltura,100);
         if (!_tried && fallback) {{
             _tried = true;
             v.src = fallback;
-        }} else if (snapUrl && wrapEl) {{
+        }} else if (wrapEl) {{
             wrapEl.innerHTML =
                 '<div style="position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);'
                 + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer"'
@@ -6047,29 +6070,50 @@ setTimeout(ajustarAltura,100);
     <img id="mimg_{uid}" src="{img_primary}" loading="lazy"
         style="width:100%;height:100%;object-fit:cover;display:block;"
         onerror="imgFallback_{uid}(this)" />
-    <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#f9fafb;position:absolute;top:0;left:0;">
-        <span style="font-size:12px;color:#3a9fd6;font-weight:600;">{'Ver criativo →' if snap_url else 'Sem imagem'}</span>
+    <div id="merr_{uid}" style="display:none;width:100%;height:100%;align-items:center;
+         justify-content:center;flex-direction:column;gap:10px;background:#0e1e35;
+         position:absolute;top:0;left:0;cursor:pointer"
+         onclick="window.open('{snap_url_safe}','_blank')">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3a9fd6"
+             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5" fill="#3a9fd6"/>
+            <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span style="font-size:11px;color:#3a9fd6;font-weight:700;text-align:center;padding:0 8px;line-height:1.6;">
+            Imagem expirada<br>Ver no Ad Library →
+        </span>
     </div>
-    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">🔍 Ver criativos</div>
+    <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.45);border-radius:6px;
+                padding:3px 7px;font-size:11px;color:#fff;font-weight:600;pointer-events:none;">
+        🔍 Ver criativos
+    </div>
 </div>
 <script>
 (function(){{
     var IMGS_{uid} = {all_imgs_js};
     var MAIN_IMGS_{uid} = {main_modal_imgs_js};
-    var SNAP_{uid} = '{snap_url.replace("'","").replace('"',"")}';
+    var SNAP_{uid} = '{snap_url_safe}';
+    var STABLE_{uid} = {_json.dumps(img_fallbacks)};
     var wrap = document.getElementById('mwrap_{uid}');
     if (wrap) {{
         wrap.addEventListener('click', function() {{
             openModalHQ(MAIN_IMGS_{uid}, IMGS_{uid}, SNAP_{uid});
         }});
     }}
-    var _srcs_{uid} = {srcs_js};
+    var _srcs_{uid} = STABLE_{uid};
     var _idx_{uid} = 0;
 }})();
 function imgFallback_{uid}(img){{
     _idx_{uid}++;
-    if(_idx_{uid} < _srcs_{uid}.length){{ img.src = _srcs_{uid}[_idx_{uid}]; }}
-    else{{ img.style.display='none'; var e=document.getElementById('merr_{uid}'); if(e) e.style.display='flex'; }}
+    if(_idx_{uid} < _srcs_{uid}.length){{
+        img.src = _srcs_{uid}[_idx_{uid}];
+    }} else {{
+        img.style.display = 'none';
+        var e = document.getElementById('merr_{uid}');
+        if(e) e.style.display = 'flex';
+        setTimeout(function(){{ syncHeight(); }}, 50);
+    }}
 }}
 </script>"""
 
@@ -6086,6 +6130,17 @@ function imgFallback_{uid}(img){{
                             f'<span style="font-size:12px;color:{_nm_color};font-weight:600;margin-top:8px;">{_nm_label}</span>'
                             f'</div>'
                         )
+
+                    cta_labels = {
+                        "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
+                        "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
+                        "WHATSAPP_MESSAGE":"Enviar Mensagem","SEND_WHATSAPP_MESSAGE":"WhatsApp",
+                        "MESSAGE_PAGE":"Enviar Mensagem","SHOP_NOW":"Comprar Agora","DOWNLOAD":"Baixar",
+                        "WATCH_MORE":"Ver Mais","APPLY_NOW":"Candidatar-se","GET_OFFER":"Ver Oferta",
+                        "SUBSCRIBE":"Assinar","CALL_NOW":"Ligar Agora","SEND_MESSAGE":"Enviar Mensagem",
+                        "GET_DIRECTIONS":"Como Chegar","BUY_NOW":"Comprar","DONATE":"Doar",
+                        "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
+                    }
 
                     cta_display = cta_labels.get(cta.upper() if cta else "", cta)
                     is_ativo    = ad.get("ativo", True)
