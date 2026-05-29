@@ -6265,7 +6265,7 @@ function openModalImages(imgs, snapUrl) {
 }
 """
 
-                altura_estimada = max(2000, len(ads_f) * 500)
+                altura_estimada = max(800, len(ads_f) * 500)
                 components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
