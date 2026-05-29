@@ -7027,7 +7027,22 @@ function abrirModal() {{
                                     thumb = p["thumbnail_url"]
 
                                 # URL de alta resolução separada para o modal
-                                thumb_hd = cands[0].get("url", "") if p.get("image_versions2") and cands else thumb
+                                thumb = ""
+                                thumb_hd = ""
+                                if p.get("image_versions2"):
+                                    cands = p["image_versions2"].get("candidates", [])
+                                    if len(cands) > 1:
+                                        thumb = cands[-2].get("url", "")   # resolução média para o grid
+                                    elif cands:
+                                        thumb = cands[0].get("url", "")
+                                    thumb_hd = cands[0].get("url", "") if cands else ""
+                                elif p.get("thumbnail_url"):
+                                    thumb = p["thumbnail_url"]
+                                    thumb_hd = thumb
+
+                                # fallback: se thumb_hd ficou vazio, usa o thumb
+                                if not thumb_hd:
+                                    thumb_hd = thumb
                                 
                                 caption  = ""
                                 if p.get("caption"):
