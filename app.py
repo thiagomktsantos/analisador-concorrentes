@@ -5132,7 +5132,8 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         # ══════════════════════════════════════════════════════════════
         # FUNÇÃO PRINCIPAL: render_ads_empresa
         # ══════════════════════════════════════════════════════════════
-def render_ads_empresa(emp_item):
+        
+        def render_ads_empresa(emp_item):
 
             # ── helpers locais ──────────────────────────────────────
             def _truncar(txt, n=160):
