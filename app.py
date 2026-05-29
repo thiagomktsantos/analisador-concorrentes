@@ -6771,6 +6771,7 @@ elif st.session_state.pagina == "redes":
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
 
+    # ── Cabeçalho ──────────────────────────────────────────────────
     col1, col2, col3 = st.columns([6, 2, 3])
 
     with col1:
@@ -6795,6 +6796,7 @@ html,body { background:transparent; overflow:hidden; }
         djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\") if ultima_coleta else "[]"
         fn = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json' if ultima_coleta else ""
 
+        # ── CORREÇÃO: pré-calcular altura do iframe ──
         altura_iframe = "22px" if ultima_coleta else "0px"
         margin_iframe = "-8px" if ultima_coleta else "0px"
 
@@ -6825,6 +6827,7 @@ function abrirModal(){{var doc=window.parent.document;var old=doc.getElementById
 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
 
+    # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
         n = int(n or 0)
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
@@ -6926,6 +6929,7 @@ function abrirModal(){{var doc=window.parent.document;var old=doc.getElementById
         except Exception as e:
             return {"erro": str(e)}
 
+    # ── Lista de perfis ─────────────────────────────────────────────
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
         todas.append({"key": "__minha__", "nome": emp["nome"], "instagram": emp["instagram"], "tipo": "minha"})
@@ -6960,14 +6964,15 @@ function abrirModal(){{var doc=window.parent.document;var old=doc.getElementById
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
 
     params = st.query_params
-    main_tab  = params.get("rt", "perfis")
-    aba_ativa = int(params.get("ra", 0))
-    subtab    = params.get("rs", "postagens")
-    acao_ia   = params.get("ria", "")
+    main_tab   = params.get("rt", "perfis")
+    aba_ativa  = int(params.get("ra", 0))
+    subtab     = params.get("rs", "postagens")
+    acao_ia    = params.get("ria", "")
 
     if ok:
         aba_ativa = min(aba_ativa, len(ok) - 1)
 
+    # ── Processar ações de IA vindas do iframe via query_params ─────
     if acao_ia and ok:
         r_ia = ok[aba_ativa] if aba_ativa < len(ok) else None
         if r_ia:
@@ -7079,6 +7084,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
         st.query_params["ria"] = ""
         st.rerun()
 
+    # ── Montar payload completo para o iframe ───────────────────────
     if not ok:
         st.markdown("""
         <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px'>
@@ -7095,10 +7101,10 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
         avatar = gerar_avatar(r["nome"])
         handle_clean = (r.get("handle") or "").lstrip("@")
 
-        chave_bio  = f"ia_bio_{r.get('handle','').replace('@','')}"
-        chave_cria = f"ia_criativo_{r['handle']}"
-        chave_copy = f"ia_copy_{r['handle']}"
-        chave_geral = f"ia_geral_{r['handle']}"
+        chave_bio    = f"ia_bio_{r.get('handle','').replace('@','')}"
+        chave_cria   = f"ia_criativo_{r['handle']}"
+        chave_copy   = f"ia_copy_{r['handle']}"
+        chave_geral  = f"ia_geral_{r['handle']}"
 
         posts_payload = []
         for jp, p in enumerate(r.get("posts", [])):
@@ -7158,73 +7164,7 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
         "comp_html": comp_html_redes,
     }, ensure_ascii=False)
 
-    # ── Pré-calcular bloco de postagens (evita f-string aninhado) ──
-    posts_ativas = ok[aba_ativa].get("posts", [])
-    if not posts_ativas:
-        html_postagens = '<div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:48px 32px;text-align:center"><div style="font-size:28px;margin-bottom:10px">📸</div><div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px">Sem postagens disponíveis</div><div style="font-size:13px;color:#9ca3af">Colete os dados novamente.</div></div>'
-    else:
-        _total    = len(posts_ativas)
-        _fotos    = sum(1 for p in posts_ativas if not p.get("is_video"))
-        _videos   = sum(1 for p in posts_ativas if p.get("is_video"))
-        _likes    = fmt_num(sum(p.get("likes",0) for p in posts_ativas))
-        _coms     = fmt_num(sum(p.get("comments",0) for p in posts_ativas))
-        _best     = fmt_num(max((p.get("likes",0)+p.get("comments",0) for p in posts_ativas), default=0))
-        html_postagens = f"""
-        <div class="filters-bar">
-            <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
-            <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
-                <option value="todos">Tipo (todos)</option>
-                <option value="foto">Fotos</option>
-                <option value="video">Vídeos</option>
-            </select>
-            <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
-                <option value="recentes">Mais recentes</option>
-                <option value="likes">Mais curtidas</option>
-                <option value="eng">Maior engajamento</option>
-            </select>
-            <button class="col-toggle" onclick="nCols=(nCols===4?3:4);applyFilters();" title="Alternar colunas">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="5" height="18" rx="1"/></svg>
-            </button>
-        </div>
-        <div class="stats-row">
-            <div class="stat-card"><div class="stat-num2" id="stat-total">{_total}</div><div class="stat-lbl2">Postagens</div></div>
-            <div class="stat-card"><div class="stat-num2" id="stat-fotos">{_fotos}</div><div class="stat-lbl2">Fotos</div></div>
-            <div class="stat-card"><div class="stat-num2" id="stat-videos">{_videos}</div><div class="stat-lbl2">Vídeos</div></div>
-            <div class="stat-card"><div class="stat-num2" id="stat-likes">{_likes}</div><div class="stat-lbl2">Curtidas</div></div>
-            <div class="stat-card"><div class="stat-num2" id="stat-coms">{_coms}</div><div class="stat-lbl2">Comentários</div></div>
-            <div class="stat-card"><div class="stat-num2" id="stat-best">{_best}</div><div class="stat-lbl2">Melhor Engaj.</div></div>
-        </div>
-        <div class="posts-grid" id="posts-grid"></div>
-        """
-
-    # ── Pré-calcular bio inicial ───────────────────────────────────
-    _bio_inicial = perfis_payload[aba_ativa]['bio']
-    _bio_html_inicial = f"&ldquo;{_bio_inicial}&rdquo;" if _bio_inicial else '<span style="color:#d1d5db;font-style:italic">Sem bio cadastrada neste perfil.</span>'
-    _bio_res_display = "block" if perfis_payload[aba_ativa]['bio_resultado_html'] else "none"
-    _bio_res_content = '<div style="font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✨ Análise de IA</div>' + perfis_payload[aba_ativa]['bio_resultado_html'] if perfis_payload[aba_ativa]['bio_resultado_html'] else ''
-
-    # ── Pré-calcular estados dos painéis de IA ─────────────────────
-    _geral_display    = "block" if perfis_payload[aba_ativa]['ia_geral'] else "none"
-    _geral_empty      = "none" if perfis_payload[aba_ativa]['ia_geral'] else "block"
-    _criativo_display = "block" if perfis_payload[aba_ativa]['ia_criativo'] else "none"
-    _criativo_empty   = "none" if perfis_payload[aba_ativa]['ia_criativo'] else "block"
-    _copy_display     = "block" if perfis_payload[aba_ativa]['ia_copy'] else "none"
-    _copy_empty       = "none" if perfis_payload[aba_ativa]['ia_copy'] else "block"
-
-    # ── Pré-calcular nav e tabs ────────────────────────────────────
-    _nav_perfis_active  = " active" if main_tab == "perfis" else ""
-    _nav_analise_active = " active" if main_tab == "analise" else ""
-    _nav_perfis_stroke  = "#fff" if main_tab == "perfis" else "#6b7280"
-    _nav_analise_stroke = "#fff" if main_tab == "analise" else "#6b7280"
-    _sec_perfis_display  = "block" if main_tab == "perfis" else "none"
-    _sec_analise_display = "block" if main_tab == "analise" else "none"
-    _tab_post_active = " active" if subtab == "postagens" else ""
-    _tab_ia_active   = " active" if subtab == "ia" else ""
-    _sub_post_display = "block" if subtab == "postagens" else "none"
-    _sub_ia_display   = "block" if subtab == "ia" else ""
-    _comp_content     = "<div>" + comp_html_redes + "</div>" if comp_html_redes else '<div class="comp-empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar todos os perfis com IA.</div>'
-    _comp_btn_lbl     = "🔄 Regerar Análise" if comp_html_redes else "⚡ Gerar Análise Comparativa"
-
+    # ── ÚNICO iframe — toda a UI ────────────────────────────────────
     components.html(f"""<!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -7232,6 +7172,8 @@ Legenda: {p_data.get('caption','') or 'Sem legenda'}
 *{{margin:0;padding:0;box-sizing:border-box;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:12px;}}
+
+/* NAV */
 .nav-bar{{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-bottom:16px;}}
 .nav-item{{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all 0.15s;position:relative;overflow:hidden;}}
 .nav-item:hover{{border-color:#3a9fd6;box-shadow:0 2px 12px rgba(58,159,214,0.12);}}
@@ -7245,6 +7187,8 @@ body{{padding-bottom:12px;}}
 .nav-item.active .nav-title{{color:#fff;}}
 .nav-sub{{font-size:12px;color:#9ca3af;}}
 .nav-item.active .nav-sub{{color:rgba(255,255,255,0.55);}}
+
+/* CARDS EMPRESAS */
 .empresas-wrap{{background:#d2dde9;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;margin-bottom:16px;}}
 .cards-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:15px;}}
 .emp-card{{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;}}
@@ -7257,11 +7201,14 @@ body{{padding-bottom:12px;}}
 .emp-nome{{font-size:14px;font-weight:700;color:#1a2e4a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}}
 .badge-minha{{display:inline-flex;align-items:center;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
 .badge-conc{{display:inline-flex;align-items:center;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
+
+/* PERFIL CARD */
 .perfil-card{{background:#fff;border:1px solid #e5e7eb;border-radius:14px 14px 0 0;overflow:hidden;}}
 .perfil-header{{display:flex;align-items:center;gap:16px;padding:18px 22px 16px;border-bottom:1px solid #f3f4f6;}}
 .avatar{{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;}}
 .info{{flex:1;min-width:0;}}
 .nome{{font-size:20px;font-weight:700;color:#111827;letter-spacing:-0.3px;}}
+.handle{{font-size:14px;font-weight:400;color:#9ca3af;margin-left:6px;}}
 .badge-perfil{{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-top:4px;}}
 .divider-v{{width:1px;height:44px;background:#e5e7eb;flex-shrink:0;margin:0 8px;}}
 .stat-wrap{{display:flex;align-items:center;gap:24px;flex-shrink:0;}}
@@ -7270,21 +7217,30 @@ body{{padding-bottom:12px;}}
 .stat-lbl{{font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;margin-top:2px;}}
 .btn-ig{{display:inline-flex;align-items:center;gap:7px;background:#0e2a47;color:#fff;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;transition:background 0.15s;}}
 .btn-ig:hover{{background:#1a3a5c;}}
+
+/* BIO */
 .bio-section{{display:grid;grid-template-columns:15% 50% 35%;border-bottom:1px solid #f3f4f6;min-height:80px;}}
 .bio-label-col{{padding:18px 16px;border-right:1px solid #f3f4f6;display:flex;align-items:center;justify-content:center;background:#fafbfc;}}
 .bio-label-txt{{font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;text-align:center;}}
 .bio-left{{padding:18px 20px;border-right:1px solid #f3f4f6;display:flex;align-items:center;}}
 .bio-text{{font-size:15px;color:#374151;line-height:1.75;}}
+.bio-empty{{font-size:14px;color:#d1d5db;font-style:italic;}}
 .bio-right{{padding:16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#fafbfc;}}
 .btn-ia{{width:100%;padding:10px 0;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:13px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;text-align:center;}}
 .btn-ia:hover{{background:#dbeafe;}}
 .ia-hint{{font-size:11px;color:#9ca3af;text-align:center;line-height:1.4;}}
+.bio-resultado{{background:#f0fdf4;border-top:1px solid #bbf7d0;padding:14px 20px;font-size:13px;color:#374151;line-height:1.75;border-bottom:1px solid #f3f4f6;display:none;}}
+.bio-resultado.show{{display:block;}}
 .bio-resultado-hdr{{font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}}
+
+/* TABS */
 .tabs-bar{{display:flex;background:#f9fafb;}}
 .tab-btn{{flex:1;padding:14px 0;font-size:14px;font-weight:700;color:#9ca3af;background:transparent;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:3px solid transparent;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;}}
 .tab-btn:hover{{color:#374151;background:#f3f4f6;}}
 .tab-btn.active{{color:#1a2e4a;border-bottom:4px solid #3a9fd6;background:#fff;font-weight:800;border-top:1px solid #e5e7eb;}}
 .tab-sep{{width:1px;background:#e5e7eb;align-self:stretch;margin:8px 0;}}
+
+/* POSTAGENS */
 .filters-bar{{display:flex;align-items:center;gap:10px;padding:16px 20px;border:1px solid #e5e7eb;border-top:none;background:#fff;flex-wrap:wrap;}}
 .filter-input{{flex:1;min-width:160px;max-width:260px;height:40px;padding:0 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#374151;background:#fafafa;outline:none;}}
 .filter-input:focus{{border-color:#3a9fd6;background:#fff;}}
@@ -7320,6 +7276,8 @@ body{{padding-bottom:12px;}}
 .footer-btn.ig{{border-right:1px solid #fff;}}
 .post-ia-panel{{border-top:1px solid #bbf7d0;background:#f0fdf4;padding:12px 14px;font-size:12px;color:#374151;line-height:1.7;max-height:200px;overflow-y:auto;}}
 .post-ia-hdr{{font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}}
+
+/* IA PANELS */
 .ia-wrap{{background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;}}
 .ia-tabs{{display:flex;border-bottom:1px solid #e5e7eb;background:#f9fafb;}}
 .ia-tab{{flex:1;padding:11px 0;text-align:center;font-size:14px;font-weight:600;color:#9ca3af;cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif;transition:color 0.15s;}}
@@ -7332,6 +7290,8 @@ body{{padding-bottom:12px;}}
 .ia-gen-btn{{width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;}}
 .ia-gen-btn:hover{{background:#dbeafe;}}
 .ia-btn-wrap{{padding:16px 18px;border-top:1px solid #f3f4f6;}}
+
+/* COMPARATIVO */
 .comp-wrap{{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;}}
 .comp-hdr{{padding:18px 22px;border-bottom:1px solid #e5e7eb;}}
 .comp-title{{font-size:16px;font-weight:800;color:#1a2e4a;}}
@@ -7519,26 +7479,29 @@ function syncHeight(){{
 }}
 </script>
 
+<!-- ══ NAVEGAÇÃO PRINCIPAL ══ -->
 <div class="nav-bar">
-    <div class="nav-item{_nav_perfis_active}" onclick="selectMainTab('perfis')">
-        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{_nav_perfis_stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    <div class="nav-item{' active' if main_tab=='perfis' else ''}" onclick="selectMainTab('perfis')">
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{'#fff' if main_tab=='perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
         <div class="nav-content"><span class="nav-title">Perfis configurados</span><span class="nav-sub">Visualize e analise cada perfil individualmente</span></div>
     </div>
-    <div class="nav-item{_nav_analise_active}" onclick="selectMainTab('analise')">
-        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{_nav_analise_stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+    <div class="nav-item{' active' if main_tab=='analise' else ''}" onclick="selectMainTab('analise')">
+        <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{'#fff' if main_tab=='analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
         <div class="nav-content"><span class="nav-title">Análise de IA</span><span class="nav-sub">Relatório comparativo completo</span></div>
     </div>
 </div>
 
-<div id="section-perfis" style="display:{_sec_perfis_display}">
+<!-- ══ SEÇÃO: PERFIS ══ -->
+<div id="section-perfis" style="display:{'block' if main_tab=='perfis' else 'none'}">
+
     <div class="empresas-wrap">
         <div class="cards-grid" id="cards-grid">
         {''.join([
-            f'''<div class="emp-card{" active" if i==aba_ativa else ""}" id="emp_card_{i}" onclick="selectEmpresa({i})">
-                <div class="emp-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{"#3b82f6" if i==aba_ativa else "#64748b"}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.5" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="{"#3b82f6" if i==aba_ativa else "#64748b"}"/></svg></div>
+            f'''<div class="emp-card{' active' if i==aba_ativa else ''}" id="emp_card_{i}" onclick="selectEmpresa({i})">
+                <div class="emp-icon"><svg viewBox="0 0 24 24" fill="none" stroke="{'#3b82f6' if i==aba_ativa else '#64748b'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.5" fill="none"/><circle cx="17.5" cy="6.5" r="1.2" fill="{'#3b82f6' if i==aba_ativa else '#64748b'}"/></svg></div>
                 <div class="emp-info">
                     <div class="emp-nome">{r["nome"]} <span style="color:#d1d5db">|</span> <span style="font-size:13px;font-weight:400;color:#9ca3af">{r.get("handle","")}</span></div>
-                    <span class="{"badge-minha" if r.get("tipo")=="minha" else "badge-conc"}">{"Minha empresa" if r.get("tipo")=="minha" else "Concorrente"}</span>
+                    <span class="{'badge-minha' if r.get('tipo')=='minha' else 'badge-conc'}">{'Minha empresa' if r.get('tipo')=='minha' else 'Concorrente'}</span>
                 </div>
             </div>'''
             for i, r in enumerate(ok)
@@ -7564,33 +7527,61 @@ function syncHeight(){{
         </div>
         <div class="bio-section">
             <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
-            <div class="bio-left"><div class="bio-text" id="pf-bio">{_bio_html_inicial}</div></div>
+            <div class="bio-left"><div class="bio-text" id="pf-bio">{f"&ldquo;{perfis_payload[aba_ativa]['bio']}&rdquo;" if perfis_payload[aba_ativa]['bio'] else '<span style="color:#d1d5db;font-style:italic">Sem bio cadastrada neste perfil.</span>'}</div></div>
             <div class="bio-right">
                 <button class="btn-ia" onclick="chamarIA('bio')">🤖 Analisar Bio</button>
                 <div class="ia-hint">Análise de posicionamento e sugestões de melhoria</div>
             </div>
         </div>
-        <div id="bio-resultado" style="background:#f0fdf4;border-top:1px solid #bbf7d0;padding:14px 20px;font-size:13px;color:#374151;line-height:1.75;border-bottom:1px solid #f3f4f6;display:{_bio_res_display}">
-            {_bio_res_content}
+        <div id="bio-resultado" style="background:#f0fdf4;border-top:1px solid #bbf7d0;padding:14px 20px;font-size:13px;color:#374151;line-height:1.75;border-bottom:1px solid #f3f4f6;display:{'block' if perfis_payload[aba_ativa]['bio_resultado_html'] else 'none'}">
+            {'<div style="font-size:10px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✨ Análise de IA</div>'+perfis_payload[aba_ativa]['bio_resultado_html'] if perfis_payload[aba_ativa]['bio_resultado_html'] else ''}
         </div>
         <div class="tabs-bar">
-            <button class="tab-btn{_tab_post_active}" onclick="selectSubtab('postagens')">
+            <button class="tab-btn{' active' if subtab=='postagens' else ''}" onclick="selectSubtab('postagens')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 Postagens
             </button>
             <div class="tab-sep"></div>
-            <button class="tab-btn{_tab_ia_active}" onclick="selectSubtab('ia')">
+            <button class="tab-btn{' active' if subtab=='ia' else ''}" onclick="selectSubtab('ia')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                 Análise de IA
             </button>
         </div>
     </div>
 
-    <div id="subtab-postagens" style="display:{_sub_post_display}">
-        {html_postagens}
+    <!-- Subtab: Postagens -->
+    <div id="subtab-postagens" style="display:{'block' if subtab=='postagens' else 'none'}">
+        {'<div style="background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:48px 32px;text-align:center"><div style="font-size:28px;margin-bottom:10px">📸</div><div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px">Sem postagens disponíveis</div><div style="font-size:13px;color:#9ca3af">Colete os dados novamente.</div></div>' if not ok[aba_ativa].get("posts") else f"""
+        <div class="filters-bar">
+            <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
+            <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
+                <option value="todos">Tipo (todos)</option>
+                <option value="foto">Fotos</option>
+                <option value="video">Vídeos</option>
+            </select>
+            <select class="filter-select" id="filter-ordem" onchange="applyFilters()">
+                <option value="recentes">Mais recentes</option>
+                <option value="likes">Mais curtidas</option>
+                <option value="eng">Maior engajamento</option>
+            </select>
+            <button class="col-toggle" onclick="nCols=(nCols===4?3:4);applyFilters();" title="Alternar colunas">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="5" height="18" rx="1"/></svg>
+            </button>
+        </div>
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-num2" id="stat-total">{len(ok[aba_ativa].get("posts",[]))}</div><div class="stat-lbl2">Postagens</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-fotos">{sum(1 for p in ok[aba_ativa].get("posts",[]) if not p.get("is_video"))}</div><div class="stat-lbl2">Fotos</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-videos">{sum(1 for p in ok[aba_ativa].get("posts",[]) if p.get("is_video"))}</div><div class="stat-lbl2">Vídeos</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-likes">{fmt_num(sum(p.get("likes",0) for p in ok[aba_ativa].get("posts",[])))}</div><div class="stat-lbl2">Curtidas</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-coms">{fmt_num(sum(p.get("comments",0) for p in ok[aba_ativa].get("posts",[])))}</div><div class="stat-lbl2">Comentários</div></div>
+            <div class="stat-card"><div class="stat-num2" id="stat-best">{fmt_num(max((p.get("likes",0)+p.get("comments",0) for p in ok[aba_ativa].get("posts",[])), default=0))}</div><div class="stat-lbl2">Melhor Engaj.</div></div>
+        </div>
+        <div class="posts-grid" id="posts-grid"></div>
+        """}
     </div>
 
-    <div id="subtab-ia" style="display:{_sub_ia_display}">
+    <!-- Subtab: IA -->
+    <div id="subtab-ia" style="display:{'block' if subtab=='ia' else 'none'}">
         <div class="ia-wrap">
             <div style="padding:14px 18px;font-size:14px;font-weight:800;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid #e5e7eb;">Análise de Conteúdos</div>
             <div class="ia-tabs">
@@ -7599,35 +7590,36 @@ function syncHeight(){{
                 <button class="ia-tab" onclick="showIaTab('copy',this)">Analisar Copys 📝</button>
             </div>
             <div id="ia-panel-geral" class="ia-panel active">
-                <div id="ia-panel-geral-content" class="ia-content" style="display:{_geral_display}">{perfis_payload[aba_ativa]['ia_geral']}</div>
-                <div class="ia-empty" style="display:{_geral_empty}">Clique no botão abaixo para gerar a análise.</div>
+                <div id="ia-panel-geral-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_geral'] else 'none'}">{perfis_payload[aba_ativa]['ia_geral']}</div>
+                <div class="ia-empty" style="display:{'none' if perfis_payload[aba_ativa]['ia_geral'] else 'block'}">Clique no botão abaixo para gerar a análise.</div>
                 <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('geral')">Gerar Análise de Postagens 🤖</button></div>
             </div>
             <div id="ia-panel-criativo" class="ia-panel">
-                <div id="ia-panel-criativo-content" class="ia-content" style="display:{_criativo_display}">{perfis_payload[aba_ativa]['ia_criativo']}</div>
-                <div class="ia-empty" style="display:{_criativo_empty}">Clique no botão abaixo para gerar a análise.</div>
+                <div id="ia-panel-criativo-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_criativo'] else 'none'}">{perfis_payload[aba_ativa]['ia_criativo']}</div>
+                <div class="ia-empty" style="display:{'none' if perfis_payload[aba_ativa]['ia_criativo'] else 'block'}">Clique no botão abaixo para gerar a análise.</div>
                 <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('criativo')">Gerar Análise de Criativos 🤖</button></div>
             </div>
             <div id="ia-panel-copy" class="ia-panel">
-                <div id="ia-panel-copy-content" class="ia-content" style="display:{_copy_display}">{perfis_payload[aba_ativa]['ia_copy']}</div>
-                <div class="ia-empty" style="display:{_copy_empty}">Clique no botão abaixo para gerar a análise.</div>
+                <div id="ia-panel-copy-content" class="ia-content" style="display:{'block' if perfis_payload[aba_ativa]['ia_copy'] else 'none'}">{perfis_payload[aba_ativa]['ia_copy']}</div>
+                <div class="ia-empty" style="display:{'none' if perfis_payload[aba_ativa]['ia_copy'] else 'block'}">Clique no botão abaixo para gerar a análise.</div>
                 <div class="ia-btn-wrap"><button class="ia-gen-btn" onclick="chamarIA('copy')">Gerar Análise de Copys 🤖</button></div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="section-analise" style="display:{_sec_analise_display}">
+<!-- ══ SEÇÃO: ANÁLISE COMPARATIVA ══ -->
+<div id="section-analise" style="display:{'block' if main_tab=='analise' else 'none'}">
     <div class="comp-wrap">
         <div class="comp-hdr">
             <div class="comp-title">✨ Análise Comparativa de Redes Sociais</div>
             <div class="comp-sub">Comparativo inteligente de todos os perfis configurados</div>
         </div>
         <div class="comp-body">
-            {_comp_content}
+            {'<div>'+comp_html_redes+'</div>' if comp_html_redes else '<div class="comp-empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar todos os perfis com IA.</div>'}
         </div>
         <div class="comp-footer">
-            <button class="comp-btn" onclick="chamarIA('comparativo')">{_comp_btn_lbl}</button>
+            <button class="comp-btn" onclick="chamarIA('comparativo')">{'🔄 Regerar Análise' if comp_html_redes else '⚡ Gerar Análise Comparativa'}</button>
         </div>
     </div>
 </div>
