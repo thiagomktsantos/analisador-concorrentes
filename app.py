@@ -4344,11 +4344,129 @@ html, body { background: transparent; overflow: hidden; }
         if st.session_state.ads_cache:
             _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
             if _tss:
-                st.markdown(
-                    f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
-                    f"🕒 Última busca: <b>{min(_tss)}</b></div>",
-                    unsafe_allow_html=True,
+                _ultima_ts = min(_tss)
+
+                # Monta os dados brutos do cache para exibir no modal
+                import json as _json_modal
+                _cache_display = {}
+                for _ck, _entry in st.session_state.ads_cache.items():
+                    _cache_display[_ck] = {
+                        "empresa": _ck,
+                        "ts": _entry.get("ts", ""),
+                        "query": _entry.get("query", ""),
+                        "total_ads": len(_entry.get("data", [])),
+                        "ativos": sum(1 for a in _entry.get("data", []) if a.get("ativo", True)),
+                        "inativos": sum(1 for a in _entry.get("data", []) if not a.get("ativo", True)),
+                        "data": _entry.get("data", []),
+                    }
+
+                _djs = (
+                    _json_modal.dumps(_cache_display, ensure_ascii=False, indent=2)
+                    .replace("</", "<\\/")
+                    .replace("`", "\\`")
                 )
+                _fn = f'ads_cache_{_ultima_ts.replace("/","_").replace(" ","_").replace(":","")}.json'
+
+                components.html(f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.link-btn {{
+    font-size:13px; color:#6b7280; text-align:center;
+    display:block; cursor:pointer;
+    background:none; border:none;
+    width:100%; padding:0; font-family:'DM Sans',sans-serif;
+    margin-top:-6px;
+}}
+.link-btn:hover {{ text-decoration:underline; text-underline-offset:3px; }}
+</style>
+<button class="link-btn" onclick="abrirModal()">
+    🕒 Última busca: <b>{_ultima_ts}</b>
+</button>
+<script>
+var DADOS_JSON = `{_djs}`;
+var FILENAME   = '{_fn}';
+var ULTIMA     = '{_ultima_ts}';
+
+window.fechar = function() {{
+    var o = window.parent.document.getElementById('ads_raw_modal_overlay');
+    if (o) o.remove();
+    if (window.parent.__adsRawEsc) {{
+        window.parent.document.removeEventListener('keydown', window.parent.__adsRawEsc);
+        window.parent.__adsRawEsc = null;
+    }}
+}};
+
+function abrirModal() {{
+    var doc = window.parent.document;
+    var old = doc.getElementById('ads_raw_modal_overlay');
+    if (old) old.remove();
+
+    var D;
+    try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = {{}}; }}
+    var Dstr = JSON.stringify(D, null, 2);
+
+    var ov = doc.createElement('div');
+    ov.id = 'ads_raw_modal_overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
+    ov.onclick = function(e) {{ if(e.target===ov) window.fechar(); }};
+
+    var box = doc.createElement('div');
+    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #1e395e;';
+
+    var hdr = doc.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #1e395e;background:#0e1e35;flex-shrink:0;';
+    hdr.innerHTML =
+        '<div>'
+        + '<div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos do cache de Ads</div>'
+        + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última busca: ' + ULTIMA + '</div>'
+        + '</div>'
+        + '<div style="display:flex;gap:10px;">'
+        + '<button id="ads_raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">📋 Copiar</button>'
+        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">⬇️ Baixar JSON</button>'
+        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#22c45e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '</div>';
+
+    var pre = doc.createElement('pre');
+    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
+    pre.textContent = Dstr;
+
+    box.appendChild(hdr);
+    box.appendChild(pre);
+    ov.appendChild(box);
+    doc.body.appendChild(ov);
+
+    window.parent.__adsRawEsc = function(e) {{ if(e.key==='Escape') window.fechar(); }};
+    doc.addEventListener('keydown', window.parent.__adsRawEsc);
+
+    window.copiarDados = function() {{
+        var b = doc.getElementById('ads_raw_copy_btn');
+        navigator.clipboard.writeText(Dstr).then(function() {{
+            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
+        }});
+    }};
+
+    window.baixarDados = function() {{
+        var a = doc.createElement('a');
+        a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
+        a.download = FILENAME;
+        a.click();
+    }};
+}}
+
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{ if (iframes[i].contentWindow === window) {{
+            iframes[i].style.height = '22px';
+            iframes[i].style.marginTop = '-8px';
+            break;
+        }} }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=22, scrolling=False)
 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
 
