@@ -6414,7 +6414,7 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     }}
 }}
  
-{{_js_modal_hq}}
+{_js_modal_hq}
  
 function closeModal() {{
     var doc = window.parent.document;
