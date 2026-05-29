@@ -3669,513 +3669,60 @@ elif st.session_state.pagina == "ads":
         return {}
 
     def merge_ads(cache_existente: dict, novos: dict) -> dict:
+        """
+        Novos dados sempre substituem os antigos (URLs frescas).
+        Faz diff para marcar status: novo, reativado, pausado.
+        """
         resultado = dict(cache_existente)
+
         for nome_empresa, novo_entry in novos.items():
-            novos_ads = novo_entry.get("data", [])
-            novos_ids = {str(a.get("id", "")) for a in novos_ads if a.get("id")}
-            entry_existente = resultado.get(nome_empresa, {})
-            ads_anteriores = entry_existente.get("data", [])
-            ads_anteriores_atualizados = []
-            for ad in ads_anteriores:
-                ad_id = str(ad.get("id", ""))
-                ad["ativo"] = (ad_id in novos_ids) if ad_id else ad.get("ativo", True)
-                ads_anteriores_atualizados.append(ad)
-            ids_existentes = {str(a.get("id", "")) for a in ads_anteriores_atualizados if a.get("id")}
+            novos_ads  = novo_entry.get("data", [])
+            entry_ant  = resultado.get(nome_empresa, {})
+            ads_ant    = entry_ant.get("data", [])
+
+            # Índice dos ads anteriores por ID
+            ant_por_id = {str(a.get("id", "")): a for a in ads_ant if a.get("id")}
+            # IDs que estão ativos agora
+            ids_novos  = {str(a.get("id", "")) for a in novos_ads if a.get("id")}
+
+            ads_finais = []
+
+            # 1. Processa todos os anúncios novos (URLs frescas)
             for ad in novos_ads:
                 ad_id = str(ad.get("id", ""))
-                if not ad_id or ad_id not in ids_existentes:
-                    ad["ativo"] = True
-                    ads_anteriores_atualizados.append(ad)
+                ad["ativo"] = True
+
+                if ad_id and ad_id in ant_por_id:
+                    ad_ant = ant_por_id[ad_id]
+                    if not ad_ant.get("ativo", True):
+                        # Estava pausado, voltou
+                        ad["status_change"] = "reativado"
+                    else:
+                        ad["status_change"] = ""
+                else:
+                    # É novo
+                    ad["status_change"] = "novo" if ads_ant else ""
+
+                ads_finais.append(ad)
+
+            # 2. Ads que existiam antes mas não vieram agora = pausados
+            for ad_ant in ads_ant:
+                ad_id = str(ad_ant.get("id", ""))
+                if ad_id and ad_id not in ids_novos:
+                    ad_ant = dict(ad_ant)
+                    ad_ant["ativo"] = False
+                    if ad_ant.get("status_change") != "pausado":
+                        ad_ant["status_change"] = "pausado"
+                    ads_finais.append(ad_ant)
+
             resultado[nome_empresa] = {
                 **novo_entry,
-                "data": ads_anteriores_atualizados,
-                "ts": novo_entry.get("ts", entry_existente.get("ts", "")),
-                "ts_historico": entry_existente.get("ts", ""),
+                "data": ads_finais,
+                "ts": novo_entry.get("ts", entry_ant.get("ts", "")),
+                "ts_anterior": entry_ant.get("ts", ""),
             }
+
         return resultado
-
-    def cache_esta_fresco(ts_str: str) -> bool:
-        if not ts_str:
-            return False
-        try:
-            ts = _dt.datetime.strptime(ts_str, "%d/%m/%Y %H:%M")
-            return (_dt.datetime.now() - ts).total_seconds() < CACHE_TTL_HORAS * 3600
-        except Exception:
-            return False
-
-    def _url_para_base64(url: str) -> str:
-        if not url or not url.startswith("http"):
-            return ""
-        try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://www.facebook.com/",
-            }
-            r = requests.get(url, headers=headers, timeout=10, stream=True)
-            if r.status_code != 200:
-                return ""
-            ct = r.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
-            if not ct.startswith("image/"):
-                ct = "image/jpeg"
-            data = _b64.b64encode(r.content).decode("utf-8")
-            return f"data:{ct};base64,{data}"
-        except Exception:
-            return ""
-
-    def _truncar(txt, n=160):
-        if not txt:
-            return ""
-        txt = str(txt).strip()
-        return txt[:n] + "…" if len(txt) > n else txt
-
-    def _is_dynamic(txt):
-        if not txt:
-            return False
-        return bool(re.search(r'\{\{[^}]+\}\}', txt))
-
-    def _clean_dynamic(txt):
-        if not txt:
-            return ""
-        cleaned = re.sub(r'\{\{[^}]+\}\}', '', txt).strip()
-        lines = [l.strip() for l in cleaned.split('\n') if l.strip()]
-        return ' '.join(lines)
-
-    def _dias_ativo(start_raw: str) -> str:
-        if not start_raw:
-            return ""
-        try:
-            ts_int = int(str(start_raw).strip())
-            if ts_int > 10**9:
-                dto = _dt.datetime.utcfromtimestamp(ts_int)
-            else:
-                raise ValueError
-        except (ValueError, OSError):
-            try:
-                dto = _dt.datetime.strptime(str(start_raw)[:10], "%Y-%m-%d")
-            except Exception:
-                return str(start_raw)[:10]
-        data_fmt = f"{dto.day:02d}/{dto.month:02d}/{dto.year}"
-        dias = (_dt.datetime.now() - dto).days
-        if dias == 0:
-            dias_str = "hoje"
-        elif dias == 1:
-            dias_str = "1 dia ativo"
-        else:
-            dias_str = f"{dias} dias ativo"
-        return f"{data_fmt} ({dias_str})"
-
-    def _extract_images(ad: dict) -> list:
-        imgs = []
-        seen = set()
-        def add(url):
-            url = (url or "").strip()
-            if url and url not in seen and url.startswith("http"):
-                seen.add(url); imgs.append(url)
-        snapshot = ad.get("snapshot") or {}
-        cards    = snapshot.get("cards") or []
-        for k in ("image_url","original_image_url","resized_image_url",
-                  "thumbnail_url","preview_image_url","full_picture"):
-            add(ad.get(k))
-        for k in ("image_url","original_image_url","resized_image_url",
-                  "thumbnail_url","background_image"):
-            add(snapshot.get(k))
-        for card in cards:
-            if not isinstance(card, dict): continue
-            for k in ("original_image_url","image_url","resized_image_url",
-                      "thumbnail_url","picture"):
-                add(card.get(k))
-        for obj in (ad.get("creative_images") or []):
-            if isinstance(obj, dict):
-                for k in ("original_image_url","image_url","url"):
-                    add(obj.get(k))
-            elif isinstance(obj, str): add(obj)
-        for obj in (ad.get("images") or []):
-            if isinstance(obj, dict):
-                for k in ("original_image_url","image_url","url","src"):
-                    add(obj.get(k))
-            elif isinstance(obj, str): add(obj)
-        return imgs
-
-    def _extract_copy(ad: dict) -> dict:
-        snapshot = ad.get("snapshot") or {}
-        cards    = snapshot.get("cards") or []
-        def first_str(val):
-            if isinstance(val, list):
-                for v in val:
-                    if v and isinstance(v, str) and v.strip():
-                        return v.strip()
-            if isinstance(val, str) and val.strip():
-                return val.strip()
-            return ""
-        body  = (first_str(ad.get("ad_creative_bodies"))
-                 or first_str(snapshot.get("body"))
-                 or first_str(ad.get("body"))
-                 or first_str(ad.get("message"))
-                 or first_str(snapshot.get("message")))
-        title = (first_str(ad.get("ad_creative_link_titles"))
-                 or first_str(snapshot.get("title"))
-                 or first_str(ad.get("title"))
-                 or first_str(snapshot.get("link_title")))
-        desc  = (first_str(ad.get("ad_creative_link_descriptions"))
-                 or first_str(snapshot.get("link_description"))
-                 or first_str(ad.get("description"))
-                 or first_str(snapshot.get("description")))
-        cta   = (first_str(ad.get("cta_type"))
-                 or first_str(snapshot.get("cta_type"))
-                 or first_str(ad.get("call_to_action_type")))
-        caption = (first_str(snapshot.get("caption"))
-                   or first_str(ad.get("caption")))
-        if not body and cards:
-            for card in cards:
-                if isinstance(card, dict):
-                    v = first_str(card.get("body") or card.get("message") or card.get("title") or "")
-                    if v:
-                        body = v
-                        break
-        return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
-
-    def _extract_videos(ad: dict) -> list:
-        vids = []
-        seen = set()
-        snapshot = ad.get("snapshot") or {}
-        cards    = snapshot.get("cards") or []
-        def add(url):
-            url = (url or "").strip()
-            if url and url not in seen and url.startswith("http"):
-                seen.add(url); vids.append(url)
-        for k in ("video_hd_url","video_sd_url","video_url"):
-            add(ad.get(k)); add(snapshot.get(k))
-        for card in cards:
-            if isinstance(card, dict):
-                for k in ("video_hd_url","video_sd_url","video_url"):
-                    add(card.get(k))
-        for v in (ad.get("videos") or []):
-            add(v)
-        sd = [u for u in vids if any(x in u.lower() for x in ("sd","360","480","_sd"))]
-        hd = [u for u in vids if u not in sd]
-        return sd + hd
-
-    def _urls_estaveis_por_id(ad_id: str) -> dict:
-        if not ad_id:
-            return {}
-        return {
-            "snapshot_url": f"https://www.facebook.com/ads/library/?id={ad_id}",
-            "preview_url":  f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}",
-            "thumb_url":    f"https://www.facebook.com/ads/image/?adarchiveid={ad_id}&ad_type=all",
-        }
-
-    def _normalizar_item_apify(item: dict) -> dict:
-        snapshot = item.get("snapshot") or {}
-        cards    = snapshot.get("cards") or []
-
-        ad_id   = str(item.get("adArchiveID") or item.get("ad_archive_id") or item.get("id") or "")
-        page_id = str(item.get("pageID") or item.get("page_id") or "")
-        page_name = (item.get("pageName") or item.get("page_name") or snapshot.get("page_name") or "")
-        page_profile_picture = (
-            item.get("pageProfilePicture")
-            or item.get("page_profile_picture")
-            or snapshot.get("page_profile_picture_url")
-            or ""
-        )
-
-        images = _extract_images(item)
-        videos = _extract_videos(item)
-        copy = _extract_copy(item)
-
-        plats = (item.get("publisherPlatform")
-                 or item.get("publisher_platforms")
-                 or snapshot.get("publisher_platforms")
-                 or [])
-
-        if isinstance(plats, str):
-            plats = [plats]
-        elif isinstance(plats, list):
-            normalized = []
-            for p in plats:
-                if isinstance(p, dict):
-                    normalized.append(p.get("name") or p.get("value") or str(p))
-                elif isinstance(p, str):
-                    normalized.append(p)
-            plats = normalized
-
-        if not plats:
-            plats = ["facebook", "instagram"]
-
-        raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
-        has_video   = bool(videos) or raw_media_type == "VIDEO"
-        has_cards   = len(cards) > 1 and not has_video
-        has_image   = bool(images) and not has_video
-
-        if has_video:   fmt = "Vídeo"
-        elif has_cards: fmt = "Carrossel"
-        elif has_image: fmt = "Imagem"
-        else:           fmt = "Texto"
-
-        is_dyn  = (_is_dynamic(copy["body"]) or _is_dynamic(copy["title"]) or _is_dynamic(copy["desc"]))
-        body_c  = _clean_dynamic(copy["body"])  if _is_dynamic(copy["body"])  else copy["body"]
-        title_c = _clean_dynamic(copy["title"]) if _is_dynamic(copy["title"]) else copy["title"]
-        desc_c  = _clean_dynamic(copy["desc"])  if _is_dynamic(copy["desc"])  else copy["desc"]
-
-        imp = item.get("impressionsWithIndex") or item.get("impressions") or {}
-        if isinstance(imp, dict):
-            lo = imp.get("lowerBound") or imp.get("lower_bound") or ""
-            hi = imp.get("upperBound") or imp.get("upper_bound") or ""
-            imp_str = f"{lo}–{hi}" if (lo or hi) else ""
-        else:
-            imp_str = str(imp) if imp else ""
-
-        baixo_volume = bool(
-            item.get("isLowVolumeImpressions")
-            or item.get("low_volume")
-            or item.get("low_volume_impressions")
-            or (isinstance(imp, dict) and imp.get("lowerBound") == "<100")
-            or imp_str == "<100"
-        )
-
-        start_raw = (
-            item.get("startDate")
-            or item.get("ad_delivery_start_time")
-            or item.get("start_date")
-            or ""
-        )
-        start_fmt = _dias_ativo(str(start_raw)) if start_raw else ""
-
-        urls_estaveis = _urls_estaveis_por_id(ad_id)
-
-        snap_url = (item.get("adSnapshotURL")
-                    or item.get("ad_snapshot_url")
-                    or urls_estaveis.get("snapshot_url", ""))
-
-        images_b64 = []
-        if images:
-            b64 = _url_para_base64(images[0])
-            images_b64.append(b64 if b64 else images[0])
-            images_b64.extend(images[1:3])
-
-        return {
-            "id":                   ad_id,
-            "page_name":            page_name,
-            "page_id":              page_id,
-            "page_profile_picture": page_profile_picture,
-            "body":                 body_c,
-            "body_raw":             copy["body"],
-            "title":                title_c,
-            "description":          desc_c,
-            "cta":                  copy["cta"],
-            "caption":              copy["caption"],
-            "images":               images,
-            "images_b64":           images_b64,
-            "images_stable":        [
-                urls_estaveis.get("thumb_url", ""),
-                urls_estaveis.get("preview_url", ""),
-            ],
-            "videos":               videos,
-            "snapshot_url":         snap_url,
-            "preview_url":          urls_estaveis.get("preview_url", ""),
-            "data_inicio":          start_fmt,
-            "data_raw":             str(start_raw),
-            "impressoes":           imp_str,
-            "baixo_volume":         baixo_volume,
-            "plataformas":          plats,
-            "formato":              fmt,
-            "is_dynamic":           is_dyn,
-        }
-
-    def _apify_run_sync(search_term: str, limit: int = 100) -> tuple:
-        api_token = st.secrets.get("APIFY_TOKEN", "")
-        if not api_token:
-            return [], [], "APIFY_TOKEN não configurada nos secrets."
-
-        run_url = (
-            f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
-            f"?token={api_token}"
-        )
-
-        import urllib.parse
-        search_term_stripped = search_term.strip()
-
-        if search_term_stripped.isdigit():
-            ad_library_url = (
-                f"https://www.facebook.com/ads/library/"
-                f"?active_status=active&ad_type=all&country=BR"
-                f"&is_targeted_country=false&media_type=all"
-                f"&search_type=page&sort_data[direction]=desc"
-                f"&sort_data[mode]=total_impressions"
-                f"&view_all_page_id={search_term_stripped}"
-            )
-        else:
-            query_encoded = urllib.parse.quote(search_term_stripped)
-            ad_library_url = (
-                f"https://www.facebook.com/ads/library/"
-                f"?active_status=active&ad_type=all&country=BR"
-                f"&is_targeted_country=false&media_type=all"
-                f"&search_type=page&sort_data[direction]=desc"
-                f"&sort_data[mode]=total_impressions"
-                f"&q={query_encoded}"
-            )
-
-        payload = {
-            "urls": [{"url": ad_library_url}],
-            "count": limit,
-            "scrapeAdDetails": False,
-            "scrapePageAds.activeStatus": "active",
-            "scrapePageAds.countryCode": "BR",
-            "scrapePageAds.sortBy": "impressions_desc",
-        }
-
-        try:
-            r_start = requests.post(run_url, json=payload, timeout=30)
-            r_start.raise_for_status()
-            run_data = r_start.json()
-        except Exception as e:
-            return [], [], f"Erro ao iniciar run Apify: {e}"
-
-        run_id     = run_data.get("data", {}).get("id") or run_data.get("id")
-        dataset_id = run_data.get("data", {}).get("defaultDatasetId") or run_data.get("defaultDatasetId")
-
-        if not run_id:
-            return [], [], f"Apify não retornou run ID. Resposta: {run_data}"
-
-        status_url = f"https://api.apify.com/v2/actor-runs/{run_id}?token={api_token}"
-        deadline   = _time.time() + 180
-        status     = "RUNNING"
-        while _time.time() < deadline:
-            try:
-                r_st   = requests.get(status_url, timeout=15)
-                jdata  = r_st.json().get("data", {})
-                status = jdata.get("status", "RUNNING")
-                if not dataset_id:
-                    dataset_id = jdata.get("defaultDatasetId") or dataset_id
-            except Exception:
-                pass
-            if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
-                break
-            _time.sleep(5)
-
-        if status != "SUCCEEDED":
-            return [], [], f"Run Apify terminou com status: {status}"
-
-        if not dataset_id:
-            return [], [], "Apify não retornou dataset ID."
-
-        items_url = (
-            f"https://api.apify.com/v2/datasets/{dataset_id}/items"
-            f"?token={api_token}&limit={limit}&clean=true"
-        )
-        try:
-            r_items = requests.get(items_url, timeout=30)
-            r_items.raise_for_status()
-            raw_items = r_items.json()
-        except Exception as e:
-            return [], [], f"Erro ao ler dataset Apify: {e}"
-
-        if not isinstance(raw_items, list):
-            raw_items = raw_items.get("items", []) if isinstance(raw_items, dict) else []
-
-        if not raw_items:
-            return [], [], None
-
-        ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
-        return ads_normalizados, raw_items[:3], None
-
-    def buscar_ads_apify(query: str, limit: int = 100) -> tuple:
-        return _apify_run_sync(query.strip(), limit=limit)
-
-    def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
-        progresso_pct = int((atual / total) * 100) if total else 100
-
-        if finalizado:
-            texto_status = "Busca concluída"
-            subtexto     = f"{atual}/{total} empresas processadas"
-        else:
-            texto_status = "Buscando anúncios..."
-            subtexto     = f"Processando {atual} de {total} empresas"
-
-        itens_html = ""
-        for item in progresso:
-            status = item.get("status", "")
-            nome   = item.get("nome", "")
-            msg    = item.get("msg", "")
-            count  = item.get("count")
-
-            if status == "loading":
-                icone = "⏳"; cor_txt = "#f59e0b"; bg = "#1a3a2a"; brd = "#f59e0b22"
-            elif status == "done":
-                icone = "✅"; cor_txt = "#22c55e"; bg = "#0f2a1a"; brd = "#22c55e33"
-            elif status == "error":
-                icone = "❌"; cor_txt = "#f87171"; bg = "#2a0f0f"; brd = "#f8717133"
-            elif status == "cache":
-                icone = "🗂️"; cor_txt = "#3a9fd6"; bg = "#0e2240"; brd = "#3a9fd633"
-            else:
-                icone = "•"; cor_txt = "#9ca3af"; bg = "#1a2535"; brd = "#ffffff11"
-
-            count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else ""
-            msg_safe  = msg.replace("<","&lt;").replace(">","&gt;")
-
-            itens_html += f"""
-            <div style="display:flex;align-items:center;gap:12px;
-                        padding:11px 14px;border-radius:10px;
-                        background:{bg};border:1px solid {brd};
-                        margin-bottom:8px">
-                <span style="font-size:17px;flex-shrink:0">{icone}</span>
-                <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome}</div>
-                    <div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>
-                </div>
-                {count_str}
-            </div>"""
-
-        barra_cor = "#22c55e" if finalizado else "#3a9fd6"
-        spinner   = '' if finalizado else '<div style="width:22px;height:22px;border:2.5px solid #1e3a5f;border-top-color:#3a9fd6;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>'
-        check     = '<div style="width:28px;height:28px;border-radius:50%;background:#22c55e22;border:1.5px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✅</div>' if finalizado else ''
-        fechar_js = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m){m.style.opacity='0';m.style.transition='opacity 0.4s';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);}},1500);" if finalizado else ""
-
-        placeholder.empty()
-        with placeholder:
-            st.markdown(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-@keyframes fadeIn {{from{{opacity:0;transform:scale(0.96)}}to{{opacity:1;transform:scale(1)}}}}
-@keyframes spin   {{to{{transform:rotate(360deg)}}}}
-#ads_loader_modal{{
-    position:fixed;inset:0;
-    background:rgba(5,15,30,0.75);
-    backdrop-filter:blur(4px);
-    -webkit-backdrop-filter:blur(4px);
-    z-index:99999;
-    display:flex;align-items:center;justify-content:center;
-    animation:fadeIn 0.2s ease;
-    transition:opacity 0.4s;
-    font-family:'DM Sans',sans-serif;
-}}
-#ads_loader_box{{
-    background:#0e1e35;
-    border:1px solid #1e3a5f;
-    border-radius:18px;
-    padding:28px;
-    width:min(92vw,460px);
-    box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(58,159,214,0.1);
-}}
-</style>
-<div id="ads_loader_modal">
-<div id="ads_loader_box">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        {spinner}{check}
-        <div>
-            <div style="font-size:16px;font-weight:800;color:#f1f5f9;letter-spacing:-0.2px">{texto_status}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px">{subtexto}</div>
-        </div>
-        <div style="margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}">{progresso_pct}%</div>
-    </div>
-    <div style="background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden">
-        <div style="height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}"></div>
-    </div>
-    <div>{itens_html}</div>
-    {'<div style="text-align:center;margin-top:16px;font-size:12px;color:#475569;font-weight:600">Fechando automaticamente...</div>' if finalizado else ''}
-</div>
-</div>
-<script>{fechar_js}</script>
-""", unsafe_allow_html=True)
 
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
@@ -4190,15 +3737,18 @@ elif st.session_state.pagina == "ads":
             ck = e["nome"]
 
             entrada_cache = cache_atual.get(ck, {})
-            if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
+            ts_cache      = entrada_cache.get("ts", "")
+
+            # Verifica se cache ainda é fresco (menos de 1h) — evita rebuscar acidentalmente
+            if not forcar and entrada_cache and cache_esta_fresco(ts_cache):
                 total_ads = len(entrada_cache.get("data", []))
-                ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
-                inativos = total_ads - ativos
+                ativos    = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                inativos  = total_ads - ativos
                 progresso.append({
-                    "nome": ck,
-                    "status": "cache",
-                    "msg": f"Cache válido ({entrada_cache.get('ts','')})",
-                    "count": ativos,
+                    "nome":     ck,
+                    "status":   "cache",
+                    "msg":      f"Cache recente ({ts_cache})",
+                    "count":    ativos,
                     "inativos": inativos,
                 })
                 _render_loader(loader_placeholder, progresso, total, idx_e + 1)
@@ -4215,26 +3765,40 @@ elif st.session_state.pagina == "ads":
 
             label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
             progresso.append({
-                "nome": ck,
-                "status": "loading",
-                "msg": f"Buscando ({label})...",
-                "count": None,
+                "nome":     ck,
+                "status":   "loading",
+                "msg":      f"Buscando ({label})...",
+                "count":    None,
                 "inativos": 0,
             })
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
 
+            # Busca sempre como dados novos (URLs frescas do Facebook)
             ads, raw, erro = buscar_ads_apify(query)
 
             if erro:
                 erros[ck] = erro
                 progresso[-1] = {
-                    "nome": ck,
-                    "status": "error",
-                    "msg": erro[:80],
-                    "count": 0,
+                    "nome":     ck,
+                    "status":   "error",
+                    "msg":      erro[:80],
+                    "count":    0,
                     "inativos": 0,
                 }
             else:
+                # Calcula diff antes do merge para exibir no loader
+                ads_ant   = entrada_cache.get("data", [])
+                ids_ant   = {str(a.get("id","")) for a in ads_ant if a.get("id")}
+                ids_novos = {str(a.get("id","")) for a in ads     if a.get("id")}
+
+                n_novos     = len(ids_novos - ids_ant)
+                n_pausados  = len(ids_ant   - ids_novos)
+                n_total     = len(ads)
+
+                msg_parts = [f"{n_total} anúncios ativos"]
+                if n_novos:    msg_parts.append(f"+{n_novos} novos")
+                if n_pausados: msg_parts.append(f"{n_pausados} pausados")
+
                 novos[ck] = {
                     "data":  ads,
                     "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
@@ -4242,18 +3806,20 @@ elif st.session_state.pagina == "ads":
                     "query": query,
                 }
                 progresso[-1] = {
-                    "nome": ck,
-                    "status": "done",
-                    "msg": f"{len(ads)} anúncios encontrados",
-                    "count": len(ads),
-                    "inativos": 0,
+                    "nome":     ck,
+                    "status":   "done",
+                    "msg":      " · ".join(msg_parts),
+                    "count":    n_total,
+                    "inativos": n_pausados,
                 }
+
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
 
         _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
         import time as _ttt; _ttt.sleep(3)
         loader_placeholder.empty()
 
+        # Merge: novos substituem antigos (URLs frescas), pausados são marcados
         cache_mergeado = merge_ads(cache_atual, novos)
         st.session_state.ads_cache = cache_mergeado
         st.session_state.ads_erro  = erros
