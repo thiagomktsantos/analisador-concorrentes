@@ -4083,7 +4083,8 @@ elif st.session_state.pagina == "ads":
         </div>
         </div>
         '''
-        placeholder.markdown(html, unsafe_allow_html=True)
+        with placeholder:
+            components.html(html, height=80 + len(progresso) * 60, scrolling=False)
 
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
@@ -4499,7 +4500,7 @@ function abrirModal() {{
                 ads_id_salvo = emp.get("ads_id","") if e["tipo"]=="minha" else concs[e["idx"]].get("ads_id","")
                 query_values_header[ck] = ads_id_salvo
         if query_values_header:
-            executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values_header, forcar=False)
+            executar_busca([e for e in todas_empresas if empresa_tem_ads_id(e)], query_values_header, forcar=True)
         else:
             st.warning("Configure pelo menos uma empresa antes de buscar.")
 
