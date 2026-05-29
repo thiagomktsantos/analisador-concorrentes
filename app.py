@@ -5132,7 +5132,23 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         # ══════════════════════════════════════════════════════════════
         # FUNÇÃO PRINCIPAL: render_ads_empresa
         # ══════════════════════════════════════════════════════════════
-        def render_ads_empresa(emp_item):
+def render_ads_empresa(emp_item):
+
+            # ── helpers locais ──────────────────────────────────────
+            def _truncar(txt, n=160):
+                if not txt: return ""
+                txt = str(txt).strip()
+                return txt[:n] + "…" if len(txt) > n else txt
+
+            def _urls_estaveis_por_id(ad_id: str) -> dict:
+                if not ad_id:
+                    return {}
+                return {
+                    "snapshot_url": f"https://www.facebook.com/ads/library/?id={ad_id}",
+                    "preview_url":  f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}",
+                    "thumb_url":    f"https://www.facebook.com/ads/image/?adarchiveid={ad_id}&ad_type=all",
+                }
+
             ck       = emp_item["nome"]
             nome     = emp_item["nome"]
             is_minha = emp_item["tipo"] == "minha"
@@ -5157,6 +5173,19 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             ads_list_raw = cache_entry["data"]
             ts           = cache_entry["ts"]
             query        = cache_entry.get("query","")
+
+            # Patch: garante images_stable e preview_url em ads do cache antigo
+            for _ad in ads_list_raw:
+                _ad_id = _ad.get("id", "")
+                if _ad_id and not _ad.get("images_stable"):
+                    _eu = _urls_estaveis_por_id(_ad_id)
+                    _ad["images_stable"] = [
+                        _eu.get("thumb_url", ""),
+                        _eu.get("preview_url", ""),
+                    ]
+                    _ad["preview_url"] = _eu.get("preview_url", "")
+                if _ad_id and not _ad.get("snapshot_url"):
+                    _ad["snapshot_url"] = f"https://www.facebook.com/ads/library/?id={_ad_id}"
 
             if configured_page:
                 if configured_page.isdigit():
@@ -5482,29 +5511,28 @@ setTimeout(ajustarAltura,100);
                 all_cards_html = []
 
                 for j, ad in enumerate(ads_f):
-                    snap_url    = ad.get("snapshot_url") or ""
-                    images      = ad.get("images") or []
-                    images_b64  = ad.get("images_b64") or []
+                    snap_url      = ad.get("snapshot_url") or ""
+                    images        = ad.get("images") or []
+                    images_b64    = ad.get("images_b64") or []
                     images_stable = ad.get("images_stable") or []
-                    preview_url = ad.get("preview_url") or ""
-                    videos      = ad.get("videos") or []
-                    is_dyn      = ad.get("is_dynamic", False)
-                    baixo_vol   = ad.get("baixo_volume", False)
-                    ad_id       = ad.get("id","")
-                    ad_id_short = ad_id
-                    plats       = ad.get("plataformas") or []
-                    plat_js     = _json.dumps([p.lower() for p in plats])
-                    data_inicio = ad.get("data_inicio","")
-                    impressoes  = ad.get("impressoes","")
-                    body        = ad.get("body") or ""
-                    title       = ad.get("title") or ""
-                    desc        = ad.get("description") or ""
-                    cta         = ad.get("cta") or ""
-                    uid         = f"{sk}_{j}"
-                    page_pic    = ad.get("page_profile_picture") or ""
+                    preview_url   = ad.get("preview_url") or ""
+                    videos        = ad.get("videos") or []
+                    is_dyn        = ad.get("is_dynamic", False)
+                    baixo_vol     = ad.get("baixo_volume", False)
+                    ad_id         = ad.get("id","")
+                    ad_id_short   = ad_id
+                    plats         = ad.get("plataformas") or []
+                    plat_js       = _json.dumps([p.lower() for p in plats])
+                    data_inicio   = ad.get("data_inicio","")
+                    impressoes    = ad.get("impressoes","")
+                    body          = ad.get("body") or ""
+                    title         = ad.get("title") or ""
+                    desc          = ad.get("description") or ""
+                    cta           = ad.get("cta") or ""
+                    uid           = f"{sk}_{j}"
+                    page_pic      = ad.get("page_profile_picture") or ""
 
                     snap_url_safe = snap_url.replace("'", "").replace('"', "").replace("&", "%26")
-                    preview_esc   = preview_url.replace("'","").replace('"',"")
 
                     body_clean  = re.sub(r'\n{2,}', '\n', body.strip())
                     title_clean = title.strip()
@@ -5533,13 +5561,12 @@ setTimeout(ajustarAltura,100);
                        "title_len": len(title),
                        "cta": cta,
                     }
-                    debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
+                    debug_json_str  = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
                     img_thumb_url = images[1] if len(images) > 1 else (images[0] if images else "")
                     img_primary   = images_b64[1] if len(images_b64) > 1 else (images_b64[0] if images_b64 else img_thumb_url)
 
-                    # Fallbacks em ordem: originais da API → URLs estáveis por ID
                     img_fallbacks = []
                     if img_thumb_url and img_thumb_url not in img_fallbacks:
                         img_fallbacks.append(img_thumb_url)
@@ -5554,8 +5581,8 @@ setTimeout(ajustarAltura,100);
                     if videos:
                         vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
                         vid_hd = next((v for v in videos if v != vid_sd), "")
-                        vid_primary = vid_sd or vid_hd or videos[0]
-                        vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
+                        vid_primary      = vid_sd or vid_hd or videos[0]
+                        vid_fallback     = vid_hd if vid_hd and vid_hd != vid_primary else ""
                         vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
                         vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
                         snap_url_safe_vid = snap_url_safe
@@ -5576,7 +5603,7 @@ setTimeout(ajustarAltura,100);
          justify-content:center;pointer-events:none">
         <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);
                     display:flex;align-items:center;justify-content:center;
-                    box-shadow:0 2px 12px rgba(0,0,0,0.5);border: 1px solid #0b3e55 !important;">
+                    box-shadow:0 2px 12px rgba(0,0,0,0.5);border:1px solid #0b3e55 !important;">
             <svg width="22" height="22" viewBox="0 0 54 54" fill="none">
                 <polygon points="18,12 44,27 18,42" fill="white"/>
             </svg>
@@ -5588,8 +5615,7 @@ setTimeout(ajustarAltura,100);
 </div>
 <script>
 (function(){{
-    var vidEl   = document.getElementById('vid_{uid}');
-    var wrapEl  = document.getElementById('vwrap_{uid}');
+    var wrapEl   = document.getElementById('vwrap_{uid}');
     var fallback = '{vid_fallback_esc}';
     var snapUrl  = '{snap_url_safe_vid}';
     var _tried   = false;
@@ -5657,27 +5683,29 @@ setTimeout(ajustarAltura,100);
 </div>
 <script>
 (function(){{
-    var IMGS_{uid} = {all_imgs_js};
+    var IMGS_{uid}      = {all_imgs_js};
     var MAIN_IMGS_{uid} = {main_modal_imgs_js};
-    var SNAP_{uid} = '{snap_url_safe}';
-    var STABLE_{uid} = {_json.dumps(img_fallbacks)};
+    var SNAP_{uid}      = '{snap_url_safe}';
+    var STABLE_{uid}    = {_json.dumps(img_fallbacks)};
     var wrap = document.getElementById('mwrap_{uid}');
     if (wrap) {{
         wrap.addEventListener('click', function() {{
+            var errEl = document.getElementById('merr_{uid}');
+            if (errEl && errEl.style.display !== 'none') return;
             openModalHQ(MAIN_IMGS_{uid}, IMGS_{uid}, SNAP_{uid});
         }});
     }}
     var _srcs_{uid} = STABLE_{uid};
-    var _idx_{uid} = 0;
+    var _idx_{uid}  = 0;
 }})();
-function imgFallback_{uid}(img){{
+function imgFallback_{uid}(img) {{
     _idx_{uid}++;
-    if(_idx_{uid} < _srcs_{uid}.length){{
+    if (_idx_{uid} < _srcs_{uid}.length) {{
         img.src = _srcs_{uid}[_idx_{uid}];
     }} else {{
         img.style.display = 'none';
         var e = document.getElementById('merr_{uid}');
-        if(e) e.style.display = 'flex';
+        if (e) e.style.display = 'flex';
         setTimeout(function(){{ syncHeight(); }}, 50);
     }}
 }}
@@ -5697,19 +5725,8 @@ function imgFallback_{uid}(img){{
                             f'</div>'
                         )
 
-                    cta_labels = {
-                        "LEARN_MORE":"Saiba Mais","SIGN_UP":"Cadastre-se","CONTACT_US":"Fale Conosco",
-                        "GET_QUOTE":"Solicitar Orçamento","BOOK_TRAVEL":"Reservar",
-                        "WHATSAPP_MESSAGE":"Enviar Mensagem","SEND_WHATSAPP_MESSAGE":"WhatsApp",
-                        "MESSAGE_PAGE":"Enviar Mensagem","SHOP_NOW":"Comprar Agora","DOWNLOAD":"Baixar",
-                        "WATCH_MORE":"Ver Mais","APPLY_NOW":"Candidatar-se","GET_OFFER":"Ver Oferta",
-                        "SUBSCRIBE":"Assinar","CALL_NOW":"Ligar Agora","SEND_MESSAGE":"Enviar Mensagem",
-                        "GET_DIRECTIONS":"Como Chegar","BUY_NOW":"Comprar","DONATE":"Doar",
-                        "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
-                    }
-
-                    cta_display = cta_labels.get(cta.upper() if cta else "", cta)
-                    is_ativo    = ad.get("ativo", True)
+                    cta_display  = cta_labels.get(cta.upper() if cta else "", cta)
+                    is_ativo     = ad.get("ativo", True)
                     card_opacity = "1" if is_ativo else "0.72"
 
                     status_dot_html = '<div class="status-dot">Ativo</div>' if is_ativo else '<div class="status-dot-inactive">Inativo</div>'
@@ -5946,40 +5963,31 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
-
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
     overlay.onclick = function(e) {{ if (e.target === overlay) closeModal(); }};
-
     var box = doc.createElement('div');
     box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;display:inline-flex;flex-direction:column;align-items:center;max-width:min(88vw,860px);max-height:90vh;';
-
     var closeBtn = doc.createElement('button');
     closeBtn.textContent = '✕';
     closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:#0e1e35;border:1px solid #1e395e;border-radius:50%;width:34px;height:34px;font-size:17px;color:#22c45e;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
-
     var content = doc.createElement('div');
     content.id = 'ads_modal_content';
-
     box.appendChild(closeBtn);
     box.appendChild(content);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
-
     window.parent.__adsModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
-
     if (isVideo) {{
         var isDirectVideo = mediaSrc && (mediaSrc.indexOf('.mp4') !== -1 || mediaSrc.indexOf('fbcdn') !== -1);
         if (isDirectVideo) {{
             var vid = doc.createElement('video');
             vid.id = 'ads_modal_video';
             vid.src = mediaSrc;
-            vid.controls = true;
-            vid.autoplay = true;
-            vid.playsInline = true;
+            vid.controls = true; vid.autoplay = true; vid.playsInline = true;
             vid.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(82vh,700px);width:auto;height:auto;border-radius:10px;background:#000;outline:none;';
             vid.onerror = function() {{
                 content.innerHTML = '';
@@ -6010,12 +6018,10 @@ function openModal(mediaSrc, snapUrl, isVideo) {{
     }} else {{
         if (!mediaSrc && snapUrl) {{ window.parent.open(snapUrl, '_blank'); closeModal(); return; }}
         if (!mediaSrc) {{ closeModal(); return; }}
-
         var loading = doc.createElement('div');
         loading.style.cssText = 'padding:40px;color:rgba(255,255,255,0.6);font-size:14px;text-align:center;font-family:DM Sans,sans-serif;';
         loading.textContent = 'Carregando…';
         content.appendChild(loading);
-
         var tmp = new window.parent.Image();
         tmp.onload = function() {{
             content.innerHTML = '';
@@ -6100,7 +6106,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight,
                     if chave_ind not in st.session_state:
                         st.session_state[chave_ind] = ""
 
-                # Ghost buttons para análise IA
                 ia_ghost_keys = (
                     [f"btn_subtab_{sk}_individuais", f"btn_subtab_{sk}_criativos", f"btn_subtab_{sk}_copys"]
                     + [f"btn_ia_ind_{sk}_{j}" for j in range(len(ads_f_ia))]
@@ -6274,16 +6279,16 @@ CTA: {ad.get("cta","")}
                         img_src = ad["images"][0]
                     resultado_html = resultado.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>") if resultado else ""
                     ind_cards_data.append({
-                        "j": j,
-                        "formato": ad.get("formato",""),
-                        "title": _truncar(ad.get("title",""), 80),
-                        "body": _truncar(ad.get("body",""), 120),
-                        "cta": ad.get("cta",""),
+                        "j":          j,
+                        "formato":    ad.get("formato",""),
+                        "title":      _truncar(ad.get("title",""), 80),
+                        "body":       _truncar(ad.get("body",""), 120),
+                        "cta":        ad.get("cta",""),
                         "data_inicio": ad.get("data_inicio",""),
                         "plataformas": ", ".join(ad.get("plataformas") or []),
-                        "img_src": img_src,
-                        "resultado": resultado_html,
-                        "ativo": ad.get("ativo", True),
+                        "img_src":    img_src,
+                        "resultado":  resultado_html,
+                        "ativo":      ad.get("ativo", True),
                     })
 
                 ind_cards_json = _json.dumps(ind_cards_data, ensure_ascii=False)
