@@ -6265,7 +6265,7 @@ function openModalImages(imgs, snapUrl) {
 }
 """
 
-                altura_estimada = max(800, len(ads_f) * 500)
+                altura_estimada = max(600, len(ads_f) * 80)
                 components.html(f"""
 <!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -6436,15 +6436,16 @@ function toggleDebug(uid) {{
     setTimeout(syncHeight, 50);
 }}
 function syncHeight() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    var grid = document.querySelector('.ads-grid');
+    var h = grid ? grid.getBoundingClientRect().bottom + 20 : document.body.scrollHeight;
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{
-            frames[i].style.height = (h + 8) + 'px';
+        try { if (frames[i].contentWindow === window) {{
+            frames[i].style.height = h + 'px';
             frames[i].style.minHeight = '0';
             break;
         }} }} catch(e) {{}}
-    }}
+    }
 }}
 document.querySelectorAll('img,video').forEach(function(el) {{
     el.addEventListener('load',    function() {{ setTimeout(syncHeight, 30); }});
