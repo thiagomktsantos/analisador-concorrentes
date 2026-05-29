@@ -3862,72 +3862,76 @@ elif st.session_state.pagina == "ads":
                 icone = "•"; cor_txt = "#9ca3af"; bg = "#1a2535"; brd = "#ffffff11"
 
             count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else ""
-            msg_safe  = msg.replace("<","&lt;").replace(">","&gt;")
+            msg_safe  = str(msg).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+            nome_safe = str(nome).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-            itens_html += f"""
-            <div style="display:flex;align-items:center;gap:12px;
-                        padding:11px 14px;border-radius:10px;
-                        background:{bg};border:1px solid {brd};
-                        margin-bottom:8px">
-                <span style="font-size:17px;flex-shrink:0">{icone}</span>
-                <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome}</div>
-                    <div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>
-                </div>
-                {count_str}
-            </div>"""
+            itens_html += (
+                f'<div style="display:flex;align-items:center;gap:12px;'
+                f'padding:11px 14px;border-radius:10px;'
+                f'background:{bg};border:1px solid {brd};'
+                f'margin-bottom:8px">'
+                f'<span style="font-size:17px;flex-shrink:0">{icone}</span>'
+                f'<div style="flex:1;min-width:0">'
+                f'<div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome_safe}</div>'
+                f'<div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>'
+                f'</div>'
+                f'{count_str}'
+                f'</div>'
+            )
 
         barra_cor = "#22c55e" if finalizado else "#3a9fd6"
         spinner   = '' if finalizado else '<div style="width:22px;height:22px;border:2.5px solid #1e3a5f;border-top-color:#3a9fd6;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>'
         check     = '<div style="width:28px;height:28px;border-radius:50%;background:#22c55e22;border:1.5px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✅</div>' if finalizado else ''
         fechar_js = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m){m.style.opacity='0';m.style.transition='opacity 0.4s';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);}},1500);" if finalizado else ""
 
+        html_content = (
+            "<link href='https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap' rel='stylesheet'>"
+            "<style>"
+            "@keyframes fadeIn {from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}"
+            "@keyframes spin   {to{transform:rotate(360deg)}}"
+            "#ads_loader_modal{"
+            "position:fixed;inset:0;"
+            "background:rgba(5,15,30,0.75);"
+            "backdrop-filter:blur(4px);"
+            "-webkit-backdrop-filter:blur(4px);"
+            "z-index:99999;"
+            "display:flex;align-items:center;justify-content:center;"
+            "animation:fadeIn 0.2s ease;"
+            "transition:opacity 0.4s;"
+            "font-family:'DM Sans',sans-serif;"
+            "}"
+            "#ads_loader_box{"
+            "background:#0e1e35;"
+            "border:1px solid #1e3a5f;"
+            "border-radius:18px;"
+            "padding:28px;"
+            "width:min(92vw,460px);"
+            "box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(58,159,214,0.1);"
+            "}"
+            "</style>"
+            "<div id='ads_loader_modal'>"
+            "<div id='ads_loader_box'>"
+            f"<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>"
+            f"{spinner}{check}"
+            f"<div>"
+            f"<div style='font-size:16px;font-weight:800;color:#f1f5f9;letter-spacing:-0.2px'>{texto_status}</div>"
+            f"<div style='font-size:12px;color:#64748b;margin-top:2px'>{subtexto}</div>"
+            f"</div>"
+            f"<div style='margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}'>{progresso_pct}%</div>"
+            f"</div>"
+            f"<div style='background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden'>"
+            f"<div style='height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}'></div>"
+            f"</div>"
+            f"<div>{itens_html}</div>"
+            f"{'<div style=\"text-align:center;margin-top:16px;font-size:12px;color:#475569;font-weight:600\">Fechando automaticamente...</div>' if finalizado else ''}"
+            "</div>"
+            "</div>"
+            f"<script>{fechar_js}</script>"
+        )
+
         placeholder.empty()
         with placeholder:
-            st.markdown(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-@keyframes fadeIn {{from{{opacity:0;transform:scale(0.96)}}to{{opacity:1;transform:scale(1)}}}}
-@keyframes spin   {{to{{transform:rotate(360deg)}}}}
-#ads_loader_modal{{
-    position:fixed;inset:0;
-    background:rgba(5,15,30,0.75);
-    backdrop-filter:blur(4px);
-    -webkit-backdrop-filter:blur(4px);
-    z-index:99999;
-    display:flex;align-items:center;justify-content:center;
-    animation:fadeIn 0.2s ease;
-    transition:opacity 0.4s;
-    font-family:'DM Sans',sans-serif;
-}}
-#ads_loader_box{{
-    background:#0e1e35;
-    border:1px solid #1e3a5f;
-    border-radius:18px;
-    padding:28px;
-    width:min(92vw,460px);
-    box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(58,159,214,0.1);
-}}
-</style>
-<div id="ads_loader_modal">
-<div id="ads_loader_box">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        {spinner}{check}
-        <div>
-            <div style="font-size:16px;font-weight:800;color:#f1f5f9;letter-spacing:-0.2px">{texto_status}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px">{subtexto}</div>
-        </div>
-        <div style="margin-left:auto;font-size:13px;font-weight:800;color:{'#22c55e' if finalizado else '#3a9fd6'}">{progresso_pct}%</div>
-    </div>
-    <div style="background:#07111f;border-radius:8px;height:5px;margin-bottom:20px;overflow:hidden">
-        <div style="height:100%;width:{progresso_pct}%;background:linear-gradient(90deg,#1d6fa8,{barra_cor});border-radius:8px;transition:width 0.4s ease;{'box-shadow:0 0 8px #22c55e66' if finalizado else ''}"></div>
-    </div>
-    <div>{itens_html}</div>
-    {'<div style="text-align:center;margin-top:16px;font-size:12px;color:#475569;font-weight:600">Fechando automaticamente...</div>' if finalizado else ''}
-</div>
-</div>
-<script>{fechar_js}</script>
-""", unsafe_allow_html=True)
+            st.markdown(html_content, unsafe_allow_html=True)
 
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
