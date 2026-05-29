@@ -6776,8 +6776,8 @@ function buildIndGrid() {{
             + '<div class="ind-title">' + (d.title || '\u2014') + '</div>'
             + '<div class="ind-body">' + (d.body || '\u2014') + '</div>'
             + '<div class="ind-meta">'
-            + (d.data_inicio ? '\u{1F552} ' + d.data_inicio + ' &nbsp;' : '')
-            + (d.plataformas ? '\u{1F4F1} ' + d.plataformas : '')
+            + (d.data_inicio ? '&#128338; ' + d.data_inicio + ' &nbsp;' : '')
+            + (d.plataformas ? '&#128241; ' + d.plataformas : '')
             + '</div></div></div>';
         if (d.resultado) {{
             var res = document.createElement('div');
@@ -6788,7 +6788,7 @@ function buildIndGrid() {{
         var btn = document.createElement('button');
         btn.className = 'ind-btn';
         btn.id = 'ind_btn_' + d.j;
-        btn.innerHTML = d.resultado ? '\u{1F504} Reanalisar' : '\u26A1 Analisar este anúncio';
+        btn.innerHTML = d.resultado ? '&#128260; Reanalisar' : '&#9889; Analisar este anúncio';
         btn.onclick = (function(idx) {{
             return function() {{
                 var b = document.getElementById('ind_btn_' + idx);
