@@ -7019,7 +7019,10 @@ function abrirModal() {{
                                 thumb    = ""
                                 if p.get("image_versions2"):
                                     cands = p["image_versions2"].get("candidates", [])
-                                    if cands: thumb = cands[-1].get("url", "")
+                                    if len(cands) > 1:
+                                        thumb = cands[1].get("url", "")  # resolução média, mais compatível
+                                    elif cands:
+                                        thumb = cands[0].get("url", "")
                                 elif p.get("thumbnail_url"):
                                     thumb = p["thumbnail_url"]
                                 caption  = ""
@@ -7055,31 +7058,19 @@ function abrirModal() {{
 
                                 carousel_imgs = []
                                 if media_type == 8:
-                                    carousel_items = p.get("carousel_media") or []
-                                    for slide in carousel_items:
-                                        # Tenta image_versions2 primeiro
+                                    for slide in (p.get("carousel_media") or []):
+                                        # Tenta cands[0] = maior resolução
                                         cands = slide.get("image_versions2", {}).get("candidates", [])
-                                        if cands:
-                                            # Pega a maior resolução (primeiro) em vez da menor (último)
-                                            carousel_imgs.append(cands[0].get("url", ""))
-                                            continue
-                                        # Fallback: thumbnail_url direto no slide
-                                        if slide.get("thumbnail_url"):
-                                            carousel_imgs.append(slide["thumbnail_url"])
-                                            continue
-                                        # Fallback 2: image_url ou display_url
-                                        for key in ("image_url", "display_url", "media_url"):
-                                            if slide.get(key):
-                                                carousel_imgs.append(slide[key])
-                                                break
-
-                                    # Se não veio nada do carousel_media, usa a thumb principal como primeiro slide
+                                        url_alta = cands[0].get("url", "") if cands else ""
+                                        url_media = cands[1].get("url", "") if len(cands) > 1 else ""
+                                        url_display = slide.get("display_uri", "")
+                                        # Prioridade: média res > display_uri > alta res (alta pode ter CORS)
+                                        url_escolhida = url_media or url_display or url_alta
+                                        if url_escolhida:
+                                            carousel_imgs.append(url_escolhida)
+                                    # fallback: usa thumb do post principal como primeiro slide
                                     if not carousel_imgs and thumb:
                                         carousel_imgs = [thumb]
-
-                                # Temporário — remova depois
-                                if media_type == 8:
-                                    st.write("carousel_media keys:", list((p.get("carousel_media") or [{}])[0].keys()) if p.get("carousel_media") else "VAZIO")
 
                                 posts_data.append({
                                     "likes":          likes,
