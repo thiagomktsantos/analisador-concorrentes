@@ -6200,7 +6200,7 @@ window.__PLATS_{uid}__ = {plat_js};
                 cards_joined = "\n".join(all_cards_html)
                 n_cols = st.session_state.get(col_key, 4)
 
-        _js_modal_hq = """
+                _js_modal_hq = """
 function openModalHQ(hqImgs, allImgs, snapUrl) {
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
