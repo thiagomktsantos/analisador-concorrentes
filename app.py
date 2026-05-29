@@ -4070,47 +4070,77 @@ elif st.session_state.pagina == "ads":
         novos  = {}
         cache_atual = dict(st.session_state.ads_cache or {})
 
-        with st.status("Buscando anúncios...", expanded=True) as status:
-            for e in empresas:
-                ck = e["nome"]
+        loader_placeholder = st.empty()
+        total = len(empresas)
+        progresso = []
 
-                entrada_cache = cache_atual.get(ck, {})
-                if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
-                    total = len(entrada_cache.get("data", []))
-                    ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
-                    inativos = total - ativos
-                    msg = f"✅ **{ck}** — cache válido ({entrada_cache.get('ts','')}, {ativos} ativos"
-                    if inativos:
-                        msg += f", {inativos} inativos no histórico"
-                    msg += ")"
-                    st.write(msg)
-                    continue
+        for idx_e, e in enumerate(empresas):
+            ck = e["nome"]
 
-                if e["tipo"] == "minha":
-                    ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
-                else:
-                    ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
+            entrada_cache = cache_atual.get(ck, {})
+            if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
+                total_ads = len(entrada_cache.get("data", []))
+                ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                inativos = total_ads - ativos
+                progresso.append({
+                    "nome": ck,
+                    "status": "cache",
+                    "msg": f"Cache válido ({entrada_cache.get('ts','')})",
+                    "count": ativos,
+                    "inativos": inativos,
+                })
+                _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+                continue
 
-                query = ads_id_salvo or query_values.get(ck, "").strip()
+            if e["tipo"] == "minha":
+                ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
+            else:
+                ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
 
-                if not query:
-                    continue
+            query = ads_id_salvo or query_values.get(ck, "").strip()
+            if not query:
+                continue
 
-                label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
-                st.write(f"Buscando **{ck}** ({label})...")
-                ads, raw, erro = buscar_ads_apify(query)
-                if erro:
-                    erros[ck] = erro
-                    st.write(f"❌ {erro}")
-                else:
-                    novos[ck] = {
-                        "data":  ads,
-                        "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "nome":  ck,
-                        "query": query,
-                    }
-                    st.write(f"✅ {len(ads)} anúncios encontrados")
-            status.update(label="✅ Busca concluída!", state="complete")
+            label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
+            progresso.append({
+                "nome": ck,
+                "status": "loading",
+                "msg": f"Buscando ({label})...",
+                "count": None,
+                "inativos": 0,
+            })
+            _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+
+            ads, raw, erro = buscar_ads_apify(query)
+
+            if erro:
+                erros[ck] = erro
+                progresso[-1] = {
+                    "nome": ck,
+                    "status": "error",
+                    "msg": erro[:80],
+                    "count": 0,
+                    "inativos": 0,
+                }
+            else:
+                novos[ck] = {
+                    "data":  ads,
+                    "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "nome":  ck,
+                    "query": query,
+                }
+                progresso[-1] = {
+                    "nome": ck,
+                    "status": "done",
+                    "msg": f"{len(ads)} anúncios encontrados",
+                    "count": len(ads),
+                    "inativos": 0,
+                }
+            _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+
+        _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
+        import time as _ttt; _ttt.sleep(1.2)
+        loader_placeholder.empty()
 
         cache_mergeado = merge_ads(cache_atual, novos)
         st.session_state.ads_cache = cache_mergeado
