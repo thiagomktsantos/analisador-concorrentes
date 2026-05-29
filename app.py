@@ -6582,7 +6582,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600); setTimeout(syncHeight, 1500);
 </script>
 </body></html>
-""", height=2400, scrolling=True)
+""", height=600, scrolling=True)
 
         # ── Renderiza empresa da aba ativa ───────────────────────────
 
@@ -7648,7 +7648,7 @@ window.addEventListener('load',syncHeight);
 setTimeout(syncHeight,300);setTimeout(syncHeight,800);
 </script>
 </body></html>
-""", height=600, scrolling=False)
+""", height=2400, scrolling=False)
  
     # ══════════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA — Comparativo geral
