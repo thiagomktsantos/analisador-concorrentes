@@ -4341,13 +4341,14 @@ html, body { background: transparent; overflow: hidden; }
             use_container_width=True,
             key="ads_buscar_header_btn",
         )
-        if st.session_state.ads_cache:
+       if st.session_state.ads_cache:
             _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
             if _tss:
                 _ultima_ts = min(_tss)
 
-                # Monta os dados brutos do cache para exibir no modal
                 import json as _json_modal
+                import base64 as _b64_modal
+
                 _cache_display = {}
                 for _ck, _entry in st.session_state.ads_cache.items():
                     _cache_display[_ck] = {
@@ -4360,11 +4361,10 @@ html, body { background: transparent; overflow: hidden; }
                         "data": _entry.get("data", []),
                     }
 
-                _djs = (
-                    _json_modal.dumps(_cache_display, ensure_ascii=False, indent=2)
-                    .replace("</", "<\\/")
-                    .replace("`", "\\`")
-                )
+                _djs_b64 = _b64_modal.b64encode(
+                    _json_modal.dumps(_cache_display, ensure_ascii=False, indent=2).encode("utf-8")
+                ).decode("ascii")
+
                 _fn = f'ads_cache_{_ultima_ts.replace("/","_").replace(" ","_").replace(":","")}.json'
 
                 components.html(f"""
@@ -4385,11 +4385,19 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     🕒 Última busca: <b>{_ultima_ts}</b>
 </button>
 <script>
-var DADOS_JSON = `{_djs}`;
-var FILENAME   = '{_fn}';
-var ULTIMA     = '{_ultima_ts}';
+var DADOS_B64 = "{_djs_b64}";
+var FILENAME  = "{_fn}";
+var ULTIMA    = "{_ultima_ts}";
 
-window.fechar = function() {{
+function getDadosStr() {{
+    try {{
+        return decodeURIComponent(escape(atob(DADOS_B64)));
+    }} catch(e) {{
+        return "Erro ao decodificar dados: " + e;
+    }}
+}}
+
+window.fecharAdsRaw = function() {{
     var o = window.parent.document.getElementById('ads_raw_modal_overlay');
     if (o) o.remove();
     if (window.parent.__adsRawEsc) {{
@@ -4403,14 +4411,12 @@ function abrirModal() {{
     var old = doc.getElementById('ads_raw_modal_overlay');
     if (old) old.remove();
 
-    var D;
-    try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = {{}}; }}
-    var Dstr = JSON.stringify(D, null, 2);
+    var Dstr = getDadosStr();
 
     var ov = doc.createElement('div');
     ov.id = 'ads_raw_modal_overlay';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
-    ov.onclick = function(e) {{ if(e.target===ov) window.fechar(); }};
+    ov.onclick = function(e) {{ if(e.target===ov) window.fecharAdsRaw(); }};
 
     var box = doc.createElement('div');
     box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #1e395e;';
@@ -4422,10 +4428,10 @@ function abrirModal() {{
         + '<div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos do cache de Ads</div>'
         + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última busca: ' + ULTIMA + '</div>'
         + '</div>'
-        + '<div style="display:flex;gap:10px;">'
+        + '<div style="display:flex;gap:10px;align-items:center;">'
         + '<button id="ads_raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">📋 Copiar</button>'
         + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">⬇️ Baixar JSON</button>'
-        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#22c45e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '<button onclick="window.fecharAdsRaw()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#22c45e;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'
         + '</div>';
 
     var pre = doc.createElement('pre');
@@ -4437,21 +4443,27 @@ function abrirModal() {{
     ov.appendChild(box);
     doc.body.appendChild(ov);
 
-    window.parent.__adsRawEsc = function(e) {{ if(e.key==='Escape') window.fechar(); }};
+    window.parent.__adsRawEsc = function(e) {{ if(e.key==='Escape') window.fecharAdsRaw(); }};
     doc.addEventListener('keydown', window.parent.__adsRawEsc);
 
     window.copiarDados = function() {{
         var b = doc.getElementById('ads_raw_copy_btn');
         navigator.clipboard.writeText(Dstr).then(function() {{
             if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
+        }}).catch(function() {{
+            if(b) {{ b.textContent = '❌ Erro'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
         }});
     }};
 
     window.baixarDados = function() {{
+        var blob = new Blob([Dstr], {{type:'application/json'}});
         var a = doc.createElement('a');
-        a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
+        a.href = URL.createObjectURL(blob);
         a.download = FILENAME;
+        doc.body.appendChild(a);
         a.click();
+        doc.body.removeChild(a);
+        setTimeout(function() {{ URL.revokeObjectURL(a.href); }}, 1000);
     }};
 }}
 
