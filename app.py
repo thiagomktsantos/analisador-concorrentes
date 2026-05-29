@@ -7017,24 +7017,24 @@ function abrirModal() {{
                                 likes    = int(p.get("like_count") or 0)
                                 comments = int(p.get("comment_count") or 0)
  
-                                # URL de alta resolução separada para o modal
                                 thumb = ""
                                 thumb_hd = ""
                                 if p.get("image_versions2"):
                                     cands = p["image_versions2"].get("candidates", [])
-                                    if len(cands) > 1:
-                                        thumb = cands[-2].get("url", "")   # resolução média para o grid
-                                    elif cands:
-                                        thumb = cands[0].get("url", "")
+                                    # thumb_hd = maior resolução disponível (cands[0])
                                     thumb_hd = cands[0].get("url", "") if cands else ""
+                                    # thumb = menor resolução disponível (último candidato) para o grid
+                                    thumb = cands[-1].get("url", "") if cands else ""
+                                    # se só há 1 candidato, ambos são iguais
+                                    if len(cands) == 1:
+                                        thumb = thumb_hd
                                 elif p.get("thumbnail_url"):
                                     thumb = p["thumbnail_url"]
                                     thumb_hd = thumb
  
-                                # fallback: se thumb_hd ficou vazio, usa o thumb
                                 if not thumb_hd:
                                     thumb_hd = thumb
-                                
+ 
                                 caption  = ""
                                 if p.get("caption"):
                                     caption = (
@@ -7049,15 +7049,12 @@ function abrirModal() {{
                                         date_str = datetime.datetime.fromtimestamp(taken_at).strftime("%d/%m/%Y")
                                     except Exception:
                                         pass
-                                # URL direta do post
                                 shortcode = p.get("code") or p.get("shortcode") or ""
                                 post_url  = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
  
-                                # Tipo de mídia: 1=foto, 2=vídeo/reel, 8=carrossel
                                 media_type = p.get("media_type", 1)
                                 is_reel = media_type == 2
  
-                                # URL do vídeo (Reel ou Vídeo normal)
                                 video_url = ""
                                 if is_reel:
                                     video_url = (
@@ -7073,7 +7070,7 @@ function abrirModal() {{
                                     for slide in (p.get("carousel_media") or []):
                                         cands = slide.get("image_versions2", {}).get("candidates", [])
                                         url_hd     = cands[0].get("url", "") if cands else ""
-                                        url_thumb  = cands[-2].get("url", "") if len(cands) > 1 else url_hd
+                                        url_thumb  = cands[-1].get("url", "") if cands else url_hd
                                         url_display = slide.get("display_uri", "")
         
                                         escolhida_hd    = url_hd or url_display
@@ -7705,7 +7702,6 @@ Como interpretar as métricas desta postagem?
                     post_url = f"https://www.instagram.com/p/{shortcode}/"
                 ig_post_url = post_url if post_url else ""
  
-                # Garante que carousel_imgs_hd nunca seja lista vazia quando há carousel_imgs
                 c_imgs    = p.get("carousel_imgs", []) or []
                 c_imgs_hd = p.get("carousel_imgs_hd", []) or []
                 if not c_imgs_hd and c_imgs:
@@ -7747,7 +7743,6 @@ Como interpretar as métricas desta postagem?
                 if n >= 1_000:     return f"{n/1_000:.1f}K"
                 return str(n)
  
-            # ── ÚNICO components.html: perfil + postagens ──────────────
             components.html(f"""
 <!DOCTYPE html><html>
 <head>
@@ -7757,7 +7752,6 @@ Como interpretar as métricas desta postagem?
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:visible;}}
 body{{padding-bottom:8px;}}
  
-/* ── PERFIL CARD ── */
 .perfil-card {{
     background:#fff;
     border:1px solid #e5e7eb;
@@ -7798,7 +7792,6 @@ body{{padding-bottom:8px;}}
 }}
 .btn-ig:hover {{ background:#1a3a5c; }}
  
-/* ── BIO ── */
 .bio-section {{
     display:grid; grid-template-columns:15% 50% 35%;
     border-bottom:1px solid #f3f4f6; min-height:80px;
@@ -7840,7 +7833,6 @@ body{{padding-bottom:8px;}}
     text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
 }}
  
-/* ── TABS ── */
 .tabs-bar {{ display:flex; background:#f9fafb; }}
 .tab-btn {{
     flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af;
@@ -7856,7 +7848,6 @@ body{{padding-bottom:8px;}}
 }}
 .tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
  
-/* ── POSTAGENS ── */
 .filters-bar {{
     display:flex; align-items:center; gap:10px;
     padding:16px 20px;
@@ -7967,7 +7958,6 @@ body{{padding-bottom:8px;}}
     margin-bottom:6px; display:flex; align-items:center; gap:5px;
 }}
  
-/* ── INDICADOR DE SLIDES (CARROSSEL) ── */
 .carousel-dots {{
     position:absolute; bottom:32px; left:50%; transform:translateX(-50%);
     display:flex; gap:4px; pointer-events:none;
@@ -7989,7 +7979,6 @@ body{{padding-bottom:8px;}}
 </head>
 <body>
  
-<!-- PERFIL CARD -->
 <div class="perfil-card">
     <div class="perfil-header">
         <div class="avatar">{avatar_letras}</div>
@@ -8049,7 +8038,6 @@ body{{padding-bottom:8px;}}
     </div>
 </div>
  
-<!-- POSTAGENS -->
 {"" if posts_list else '<div class="no-posts"><div style="font-size:28px;margin-bottom:10px">📸</div><div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px">Sem postagens disponíveis</div><div style="font-size:13px;color:#9ca3af">Colete os dados novamente para carregar as postagens.</div></div>'}
  
 {f"""
@@ -8093,7 +8081,6 @@ var ALL_POSTS = {posts_json_str if posts_list else "[]"};
 var N_COLS    = {n_cols_posts};
 var R_SEG     = {r_seg_val};
  
-// ── Store global: acesso por índice sem reempacotar URLs em atributos onclick ──
 var POST_STORE = {{}};
 ALL_POSTS.forEach(function(p) {{ POST_STORE[p.jp] = p; }});
  
@@ -8102,6 +8089,19 @@ function fmtNum(n) {{
     if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
     if (n >= 1000)    return (n/1000).toFixed(1) + 'K';
     return String(n);
+}}
+
+// ── Tenta fazer upgrade da URL do CDN do Instagram para maior resolução ──
+function upgradeCdnUrl(url) {{
+    if (!url) return url;
+    try {{
+        // Substitui dimensões pequenas por 1440x1440 no path
+        var upgraded = url
+            .replace(/\/s\d+x\d+\//g, '/s1440x1440/')
+            .replace(/\/p\d+x\d+\//g, '/p1440x1440/')
+            .replace(/\/c\d+\.\d+\.\d+\.\d+\//g, '/');
+        return upgraded;
+    }} catch(e) {{ return url; }}
 }}
  
 function updateStats(posts) {{
@@ -8120,13 +8120,9 @@ function updateStats(posts) {{
     document.getElementById('stat-best').textContent      = fmtNum(bE);
 }}
  
-// ══════════════════════════════════════════════════════════════
-// MODAL — abre pelo índice do post (evita escape de URLs longas)
-// ══════════════════════════════════════════════════════════════
 function openModalByIdx(idx) {{
     var p = POST_STORE[idx];
     if (!p) return;
-    // Para carrossel usa imagens HD; para foto usa thumb_hd; para vídeo usa video_url
     var imgs = [];
     if (p.media_type === 8) {{
         imgs = (p.carousel_imgs_hd && p.carousel_imgs_hd.length)
@@ -8217,11 +8213,38 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
  
     function renderSlide(i) {{
         content.innerHTML = '';
- 
+
+        // Spinner de carregamento enquanto a imagem HD carrega
+        var spinner = doc.createElement('div');
+        spinner.id = 'modal_spinner';
+        spinner.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);border-radius:10px;z-index:5;';
+        spinner.innerHTML = '<div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;"></div>';
+        content.appendChild(spinner);
+
         var img = doc.createElement('img');
-        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;';
-        img.src = imgs[i];
+        img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;opacity:0;transition:opacity 0.2s;';
+
+        // Tenta HD primeiro, fallback para original
+        var hdUrl = upgradeCdnUrl(imgs[i]);
+        var originalUrl = imgs[i];
+        var triedOriginal = (hdUrl === originalUrl);
+
+        img.onload = function() {{
+            var sp = doc.getElementById('modal_spinner');
+            if (sp) sp.remove();
+            img.style.opacity = '1';
+        }};
+
         img.onerror = function() {{
+            // Se tentou HD e falhou, tenta URL original
+            if (!triedOriginal) {{
+                triedOriginal = true;
+                img.src = originalUrl;
+                return;
+            }}
+            // Ambas falharam: mostra fallback com link pro Instagram
+            var sp = doc.getElementById('modal_spinner');
+            if (sp) sp.remove();
             img.style.display = 'none';
             var fb = doc.createElement('div');
             fb.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px 40px;font-family:DM Sans,sans-serif;';
@@ -8230,19 +8253,19 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
                 + '<a href="' + igUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E1306C;color:#fff;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;">↗ Ver no Instagram</a>';
             content.appendChild(fb);
         }};
+
+        img.src = hdUrl;
         content.appendChild(img);
  
         // Contador e navegação para carrossel
         if (imgs.length > 1) {{
-            // Contador
             var counter = doc.createElement('div');
-            counter.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;white-space:nowrap;';
+            counter.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;white-space:nowrap;z-index:6;';
             counter.textContent = (i + 1) + ' / ' + imgs.length;
             content.appendChild(counter);
  
-            // Dots indicadores
             var dotsWrap = doc.createElement('div');
-            dotsWrap.style.cssText = 'position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;pointer-events:none;';
+            dotsWrap.style.cssText = 'position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;pointer-events:none;z-index:6;';
             for (var d = 0; d < imgs.length; d++) {{
                 var dot = doc.createElement('div');
                 dot.style.cssText = 'width:' + (d === i ? '18px' : '6px') + ';height:6px;border-radius:3px;background:' + (d === i ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)') + ';transition:all 0.2s;';
@@ -8250,29 +8273,26 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
             }}
             content.appendChild(dotsWrap);
  
-            // Seta anterior
             if (i > 0) {{
                 var prev = doc.createElement('button');
                 prev.innerHTML = '&#8249;';
-                prev.style.cssText = 'position:absolute;left:-26px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;line-height:1;';
+                prev.style.cssText = 'position:absolute;left:-26px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;line-height:1;z-index:6;';
                 prev.onmouseover = function() {{ this.style.background = 'rgba(255,255,255,0.28)'; }};
                 prev.onmouseout  = function() {{ this.style.background = 'rgba(255,255,255,0.15)'; }};
                 prev.onclick = function(e) {{ e.stopPropagation(); curIdx--; renderSlide(curIdx); }};
                 content.appendChild(prev);
             }}
  
-            // Seta próxima
             if (i < imgs.length - 1) {{
                 var next = doc.createElement('button');
                 next.innerHTML = '&#8250;';
-                next.style.cssText = 'position:absolute;right:-26px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;line-height:1;';
+                next.style.cssText = 'position:absolute;right:-26px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;line-height:1;z-index:6;';
                 next.onmouseover = function() {{ this.style.background = 'rgba(255,255,255,0.28)'; }};
                 next.onmouseout  = function() {{ this.style.background = 'rgba(255,255,255,0.15)'; }};
                 next.onclick = function(e) {{ e.stopPropagation(); curIdx++; renderSlide(curIdx); }};
                 content.appendChild(next);
             }}
  
-            // Suporte a teclado (setas) dentro do modal
             var kbFn = function(e) {{
                 if (e.key === 'ArrowLeft'  && curIdx > 0)              {{ curIdx--; renderSlide(curIdx); }}
                 if (e.key === 'ArrowRight' && curIdx < imgs.length - 1) {{ curIdx++; renderSlide(curIdx); }}
@@ -8284,6 +8304,15 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
             }};
             doc.addEventListener('keydown', window.parent.__redesModalEscFn);
         }}
+    }}
+
+    // CSS para animação do spinner
+    var styleEl = doc.getElementById('redes_modal_spinner_style');
+    if (!styleEl) {{
+        styleEl = doc.createElement('style');
+        styleEl.id = 'redes_modal_spinner_style';
+        styleEl.textContent = '@keyframes spin {{ to {{ transform: rotate(360deg); }} }}';
+        doc.head.appendChild(styleEl);
     }}
  
     renderSlide(0);
@@ -8324,11 +8353,9 @@ function buildGrid(posts) {{
         var hasCaption = !!(p.caption && p.caption.trim());
         var mediaType  = p.media_type || 1;
  
-        // Rótulo e cor do badge
         var typeLbl    = mediaType === 8 ? 'Carrossel' : (mediaType === 2 ? 'Vídeo' : 'Foto');
         var badgeColor = mediaType === 8 ? '#7c3aed'   : (mediaType === 2 ? '#e1306c' : '#0ea5e9');
  
-        // Ícone SVG do badge
         var badgeIcon;
         if (mediaType === 2) {{
             badgeIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>';
@@ -8344,7 +8371,6 @@ function buildGrid(posts) {{
         var igUrl      = p.ig_url || '#';
         var iconFallback = mediaType === 2 ? '🎬' : (mediaType === 8 ? '🖼️' : '📷');
  
-        // Dots de carrossel no grid (prévia de quantas imagens há)
         var nSlides   = (p.carousel_imgs_hd && p.carousel_imgs_hd.length) || (p.carousel_imgs && p.carousel_imgs.length) || 0;
         var dotsHtml  = '';
         if (mediaType === 8 && nSlides > 1) {{
@@ -8357,7 +8383,6 @@ function buildGrid(posts) {{
             dotsHtml += '</div>';
         }}
  
-        // Overlay de play para vídeos
         var playOverlay = p.is_video
             ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
               + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">'
@@ -8409,7 +8434,6 @@ function buildGrid(posts) {{
             + '</button>'
             + '</div>';
  
-        // Fallback de imagem com erro
         if (thumbUrl) {{
             var imgEl = card.querySelector('#pimg_' + idx);
             if (imgEl) {{
