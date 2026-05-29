@@ -6994,17 +6994,17 @@ function abrirModal() {{
     ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
  
     var box = doc.createElement('div');
-    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
+    box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #1e395e;';
  
     var hdr = doc.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #1e395e;background:#0e1e35;flex-shrink:0;';
     hdr.innerHTML =
         '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
         + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
         + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#0e1e35;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#0e1e35;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #1e395e;border-radius:8px;background:#0e1e35;color:#22c45e;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#0e1e35;border:1px solid #1e395e;color:#22c45e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
         + '</div>';
  
     var pre = doc.createElement('pre');
