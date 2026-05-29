@@ -4451,10 +4451,21 @@ function abrirModal() {{
     doc.getElementById('raw_close_btn').addEventListener('click', window.fechar);
     doc.getElementById('raw_copy_btn').addEventListener('click', function() {{
         var b = doc.getElementById('raw_copy_btn');
-        navigator.clipboard.writeText(Dstr).then(function() {{
+        try {{
+            var ta = doc.createElement('textarea');
+            ta.value = Dstr;
+            ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+            doc.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            doc.execCommand('copy');
+            doc.body.removeChild(ta);
             b.textContent = '✅ Copiado!';
             setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000);
-        }});
+        }} catch(e) {{
+            b.textContent = '❌ Erro';
+            setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000);
+        }}
     }});
     doc.getElementById('raw_down_btn').addEventListener('click', function() {{
         var a = doc.createElement('a');
