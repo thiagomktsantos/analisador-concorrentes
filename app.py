@@ -7091,6 +7091,7 @@ function abrirModal() {{
                                     "comments":       comments,
                                     "thumb":          thumb,
                                     "thumb_hd":       thumb_hd,
+                                    "display_url":    p.get("display_url") or p.get("image_url") or thumb_hd,
                                     "caption":        caption,
                                     "date":           date_str,
                                     "is_video":       is_reel,
