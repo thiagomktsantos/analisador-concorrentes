@@ -4344,7 +4344,8 @@ html, body { background: transparent; overflow: hidden; }
             if _tss:
                 _ultima_ts = min(_tss)
                 _d = {k: v for k, v in st.session_state.ads_cache.items()}
-                _djs = json.dumps(list(_d.values()), ensure_ascii=False).replace("</", "<\\/").replace("`", "\\`")
+                import json as _json_ads
+                _djs = _json_ads.dumps(list(_d.values()), ensure_ascii=False).replace("</", "<\\/").replace("`", "\\`")
                 _fn = f'dados_ads_{_ultima_ts.replace("/","_").replace(" ","_").replace(":","")}.json'
 
                 if st.button("ads_limpar_cache", key="ads_limpar_cache_btn"):
