@@ -4069,54 +4069,365 @@ elif st.session_state.pagina == "ads":
         erros  = {}
         novos  = {}
         cache_atual = dict(st.session_state.ads_cache or {})
-
-        with st.status("Buscando anúncios...", expanded=True) as status:
-            for e in empresas:
-                ck = e["nome"]
-
-                entrada_cache = cache_atual.get(ck, {})
-                if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
-                    total = len(entrada_cache.get("data", []))
-                    ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
-                    inativos = total - ativos
-                    msg = f"✅ **{ck}** — cache válido ({entrada_cache.get('ts','')}, {ativos} ativos"
-                    if inativos:
-                        msg += f", {inativos} inativos no histórico"
-                    msg += ")"
-                    st.write(msg)
-                    continue
-
-                if e["tipo"] == "minha":
-                    ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
-                else:
-                    ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
-
-                query = ads_id_salvo or query_values.get(ck, "").strip()
-
-                if not query:
-                    continue
-
-                label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
-                st.write(f"Buscando **{ck}** ({label})...")
-                ads, raw, erro = buscar_ads_apify(query)
-                if erro:
-                    erros[ck] = erro
-                    st.write(f"❌ {erro}")
-                else:
-                    novos[ck] = {
-                        "data":  ads,
-                        "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "nome":  ck,
-                        "query": query,
-                    }
-                    st.write(f"✅ {len(ads)} anúncios encontrados")
-            status.update(label="✅ Busca concluída!", state="complete")
-
+     
+        # ── Ghost buttons e container de status para o loader customizado
+        loader_placeholder = st.empty()
+     
+        total = len(empresas)
+        progresso = []
+     
+        for idx_e, e in enumerate(empresas):
+            ck = e["nome"]
+     
+            entrada_cache = cache_atual.get(ck, {})
+            if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
+                total_ads = len(entrada_cache.get("data", []))
+                ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                inativos = total_ads - ativos
+                progresso.append({
+                    "nome": ck,
+                    "status": "cache",
+                    "msg": f"Cache válido ({entrada_cache.get('ts','')})",
+                    "count": ativos,
+                    "inativos": inativos,
+                })
+                _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+                continue
+     
+            if e["tipo"] == "minha":
+                ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
+            else:
+                ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
+     
+            query = ads_id_salvo or query_values.get(ck, "").strip()
+            if not query:
+                continue
+     
+            label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
+            progresso.append({
+                "nome": ck,
+                "status": "loading",
+                "msg": f"Buscando ({label})...",
+                "count": None,
+                "inativos": 0,
+            })
+            _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+     
+            ads, raw, erro = buscar_ads_apify(query)
+     
+            if erro:
+                erros[ck] = erro
+                progresso[-1] = {
+                    "nome": ck,
+                    "status": "error",
+                    "msg": erro[:80],
+                    "count": 0,
+                    "inativos": 0,
+                }
+            else:
+                novos[ck] = {
+                    "data":  ads,
+                    "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "nome":  ck,
+                    "query": query,
+                }
+                progresso[-1] = {
+                    "nome": ck,
+                    "status": "done",
+                    "msg": f"{len(ads)} anúncios encontrados",
+                    "count": len(ads),
+                    "inativos": 0,
+                }
+            _render_loader(loader_placeholder, progresso, total, idx_e + 1)
+     
+        # Finalizado
+        _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
+        import time as _ttt; _ttt.sleep(1.2)
+        loader_placeholder.empty()
+     
         cache_mergeado = merge_ads(cache_atual, novos)
         st.session_state.ads_cache = cache_mergeado
         st.session_state.ads_erro  = erros
         salvar_cache_ads(cache_mergeado)
         st.rerun()
+     
+     
+    def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
+        \"\"\"Renderiza o loader visual de busca de anúncios.\"\"\"
+        items_html = ""
+        for item in progresso:
+            status = item["status"]
+            nome   = item["nome"]
+            msg    = item["msg"]
+            count  = item["count"]
+     
+            if status == "loading":
+                icon_html = \"\"\"
+                <div class="spin-wrap">
+                    <div class="spinner"></div>
+                </div>\"\"\"
+                row_class = "row-loading"
+                count_html = ""
+            elif status == "done":
+                icon_html = \"\"\"<div class="icon-done">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>\"\"\"
+                row_class = "row-done"
+                count_html = f'<span class="count-badge">{count} ads</span>' if count is not None else ""
+            elif status == "cache":
+                icon_html = \"\"\"<div class="icon-cache">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>\"\"\"
+                row_class = "row-cache"
+                count_html = f'<span class="count-badge count-cache">{item.get("count",0)} ativos</span>'
+            elif status == "error":
+                icon_html = \"\"\"<div class="icon-error">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>\"\"\"
+                row_class = "row-error"
+                count_html = '<span class="count-badge count-error">Erro</span>'
+            else:
+                icon_html  = '<div class="icon-pending"></div>'
+                row_class  = "row-pending"
+                count_html = ""
+     
+            items_html += f\"\"\"
+            <div class="search-row {row_class}">
+                {icon_html}
+                <div class="row-info">
+                    <span class="row-nome">{nome}</span>
+                    <span class="row-msg">{msg}</span>
+                </div>
+                {count_html}
+            </div>
+            \"\"\"
+     
+        pct = int((atual / max(total, 1)) * 100)
+        if finalizado:
+            pct = 100
+            header_html = \"\"\"
+            <div class="loader-header done-header">
+                <div class="header-icon done-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="header-title">Busca concluída!</div>
+                    <div class="header-sub">Todos os anúncios foram carregados</div>
+                </div>
+            </div>
+            \"\"\"
+        else:
+            header_html = \"\"\"
+            <div class="loader-header">
+                <div class="header-spinner">
+                    <div class="header-spin"></div>
+                </div>
+                <div>
+                    <div class="header-title">Buscando anúncios...</div>
+                    <div class="header-sub">Conectando à Meta Ads Library</div>
+                </div>
+            </div>
+            \"\"\"
+     
+        html = f\"\"\"
+        <div style="font-family:'DM Sans',sans-serif;">
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+        .loader-wrap {{
+            background:#fff;
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 4px 24px rgba(0,0,0,0.08);
+        }}
+        .loader-header {{
+            display:flex;
+            align-items:center;
+            gap:14px;
+            padding:18px 22px;
+            background:linear-gradient(135deg,#0e2a47 0%,#1a4a7a 100%);
+            border-bottom:1px solid rgba(255,255,255,0.08);
+        }}
+        .done-header {{
+            background:linear-gradient(135deg,#065f46 0%,#059669 100%);
+        }}
+        .header-spinner {{
+            width:38px;height:38px;border-radius:50%;
+            background:rgba(255,255,255,0.12);
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .header-spin {{
+            width:22px;height:22px;border-radius:50%;
+            border:2.5px solid rgba(255,255,255,0.25);
+            border-top-color:#fff;
+            animation:spin 0.8s linear infinite;
+        }}
+        .done-icon {{
+            width:38px;height:38px;border-radius:50%;
+            background:rgba(255,255,255,0.2);
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        @keyframes spin {{ to {{ transform:rotate(360deg); }} }}
+        .header-title {{
+            font-size:15px;font-weight:800;color:#fff;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .header-sub {{
+            font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .progress-wrap {{
+            padding:0 22px;
+            background:#f8fafc;
+            border-bottom:1px solid #e5e7eb;
+        }}
+        .progress-inner {{
+            padding:12px 0;
+        }}
+        .progress-labels {{
+            display:flex;justify-content:space-between;align-items:center;
+            margin-bottom:8px;
+        }}
+        .progress-pct {{
+            font-size:13px;font-weight:800;color:#0e2a47;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .progress-count {{
+            font-size:12px;color:#9ca3af;font-family:'DM Sans',sans-serif;
+        }}
+        .progress-bar-bg {{
+            height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;
+        }}
+        .progress-bar-fill {{
+            height:100%;border-radius:99px;
+            background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+            transition:width 0.4s ease;
+        }}
+        .rows-wrap {{
+            padding:12px 16px;
+            display:flex;flex-direction:column;gap:6px;
+        }}
+        .search-row {{
+            display:flex;align-items:center;gap:10px;
+            padding:10px 12px;border-radius:10px;
+            border:1px solid transparent;
+            transition:all 0.2s;
+        }}
+        .row-loading {{
+            background:#eff6ff;border-color:#bfdbfe;
+        }}
+        .row-done {{
+            background:#f0fdf4;border-color:#bbf7d0;
+        }}
+        .row-cache {{
+            background:#fafafa;border-color:#e5e7eb;
+        }}
+        .row-error {{
+            background:#fef2f2;border-color:#fecaca;
+        }}
+        .row-pending {{
+            background:#fafafa;border-color:#e5e7eb;opacity:0.5;
+        }}
+        .spin-wrap {{
+            width:26px;height:26px;border-radius:50%;
+            background:#3b82f6;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .spinner {{
+            width:14px;height:14px;border-radius:50%;
+            border:2px solid rgba(255,255,255,0.3);
+            border-top-color:#fff;
+            animation:spin 0.8s linear infinite;
+        }}
+        .icon-done {{
+            width:26px;height:26px;border-radius:50%;
+            background:#22c55e;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .icon-cache {{
+            width:26px;height:26px;border-radius:50%;
+            background:#6b7280;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .icon-error {{
+            width:26px;height:26px;border-radius:50%;
+            background:#ef4444;
+            display:flex;align-items:center;justify-content:center;
+            flex-shrink:0;
+        }}
+        .icon-pending {{
+            width:26px;height:26px;border-radius:50%;
+            background:#e5e7eb;flex-shrink:0;
+        }}
+        .row-info {{
+            flex:1;min-width:0;
+        }}
+        .row-nome {{
+            font-size:13px;font-weight:700;color:#111827;
+            display:block;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .row-msg {{
+            font-size:11px;color:#6b7280;margin-top:1px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+            display:block;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .count-badge {{
+            background:#dcfce7;color:#15803d;
+            border:1px solid #bbf7d0;
+            padding:3px 10px;border-radius:20px;
+            font-size:11px;font-weight:700;
+            white-space:nowrap;flex-shrink:0;
+            font-family:'DM Sans',sans-serif;
+        }}
+        .count-cache {{
+            background:#f3f4f6;color:#6b7280;border-color:#e5e7eb;
+        }}
+        .count-error {{
+            background:#fef2f2;color:#dc2626;border-color:#fecaca;
+        }}
+        </style>
+        <div class="loader-wrap">
+            {header_html}
+            <div class="progress-wrap">
+                <div class="progress-inner">
+                    <div class="progress-labels">
+                        <span class="progress-pct">{pct}%</span>
+                        <span class="progress-count">{atual} de {total}</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width:{pct}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="rows-wrap">
+                {items_html}
+            </div>
+        </div>
+        </div>
+        \"\"\"
+        placeholder.markdown(html, unsafe_allow_html=True)
 
     if "ads_cache" not in st.session_state or not st.session_state.ads_cache:
         st.session_state.ads_cache = carregar_cache_ads()
@@ -5907,107 +6218,318 @@ window.__PLATS_{uid}__ = {plat_js};
                 cards_joined = "\n".join(all_cards_html)
                 n_cols = st.session_state.get(col_key, 4)
 
-                _js_modal_hq = """
+        _js_modal_hq = """
 function openModalHQ(hqImgs, allImgs, snapUrl) {
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
+ 
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.style.cssText = [
+        'position:fixed','inset:0','background:rgba(0,0,0,0.92)',
+        'z-index:999999','display:flex','align-items:center',
+        'justify-content:center','padding:20px','overflow-y:auto'
+    ].join(';') + ';';
     overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+ 
     var box = doc.createElement('div');
-    box.style.cssText = 'background:#111;border-radius:16px;overflow:hidden;position:relative;padding:40px 24px 24px;min-width:320px;max-width:min(92vw,900px);';
+    box.id = 'ads_modal_box';
+    box.style.cssText = [
+        'background:#111','border-radius:18px','overflow:hidden',
+        'position:relative','padding:52px 24px 24px',
+        'min-width:320px','max-width:min(94vw,960px)',
+        'width:100%'
+    ].join(';') + ';';
+ 
     var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.textContent = '\u2715';
+    closeBtn.style.cssText = [
+        'position:absolute','top:12px','right:14px',
+        'background:rgba(255,255,255,0.15)','border:none',
+        'border-radius:50%','width:36px','height:36px',
+        'font-size:16px','color:#fff','cursor:pointer',
+        'z-index:10','display:flex','align-items:center',
+        'justify-content:center','transition:background 0.15s'
+    ].join(';') + ';';
+    closeBtn.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.25)'; };
+    closeBtn.onmouseout  = function() { this.style.background = 'rgba(255,255,255,0.15)'; };
     closeBtn.onclick = closeModal;
-    var title = doc.createElement('div');
-    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = hqImgs.length > 1 ? 'Feed · Stories (alta qualidade)' : 'Feed (alta qualidade)';
-    var labels = ['Feed', 'Stories'];
-    var colors = ['#3a9fd6', '#2ecc71'];
+ 
+    var titleEl = doc.createElement('div');
+    titleEl.id = 'ads_modal_title';
+    titleEl.style.cssText = [
+        'color:rgba(255,255,255,0.5)','font-size:11px',
+        'font-weight:800','text-transform:uppercase',
+        'letter-spacing:1.2px','margin-bottom:16px',
+        "font-family:'DM Sans',sans-serif"
+    ].join(';') + ';';
+    titleEl.textContent = 'Carregando criativos\u2026';
+ 
     var grid = doc.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;';
-    hqImgs.forEach(function(src, i) {
-        var cell = doc.createElement('div');
-        cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
-        var lbl = doc.createElement('div');
-        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
-        var imgEl = doc.createElement('img');
-        imgEl.src = src || '';
-        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:70vh;';
-        imgEl.onerror = function() {
-            cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
-        };
-        cell.appendChild(lbl);
-        cell.appendChild(imgEl);
-        grid.appendChild(cell);
-    });
+    grid.id = 'ads_modal_grid';
+    grid.style.cssText = 'display:flex;gap:14px;justify-content:center;align-items:flex-start;flex-wrap:wrap;';
+ 
     var debugBtn = doc.createElement('button');
-    debugBtn.textContent = '🔍 Ver todas as 4 imagens (debug)';
-    debugBtn.style.cssText = 'margin-top:14px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;';
+    debugBtn.textContent = '\ud83d\udd0d Ver todas as 4 imagens (debug)';
+    debugBtn.style.cssText = [
+        'margin-top:16px','width:100%','padding:9px',
+        'background:rgba(255,255,255,0.06)',
+        'border:1px solid rgba(255,255,255,0.12)',
+        'border-radius:8px','color:rgba(255,255,255,0.4)',
+        'font-size:11px','font-weight:700','cursor:pointer',
+        "font-family:'DM Sans',sans-serif",'transition:background 0.15s'
+    ].join(';') + ';';
+    debugBtn.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.1)'; };
+    debugBtn.onmouseout  = function() { this.style.background = 'rgba(255,255,255,0.06)'; };
     debugBtn.onclick = function() {
         closeModal();
         setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
     };
+ 
     box.appendChild(closeBtn);
-    box.appendChild(title);
+    box.appendChild(titleEl);
     box.appendChild(grid);
     box.appendChild(debugBtn);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
+ 
     window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
+ 
+    var validImgs = hqImgs.filter(function(s) { return s && s.length > 0; });
+    if (validImgs.length === 0) {
+        titleEl.textContent = 'Sem criativos dispon\u00edveis';
+        return;
+    }
+ 
+    var loaded  = 0;
+    var imgData = new Array(validImgs.length).fill(null);
+ 
+    validImgs.forEach(function(src, i) {
+        var tmp = new window.parent.Image();
+        tmp.crossOrigin = 'anonymous';
+        tmp.onload = function() {
+            imgData[i] = { src: src, w: tmp.naturalWidth, h: tmp.naturalHeight };
+            loaded++;
+            if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
+        };
+        tmp.onerror = function() {
+            imgData[i] = { src: src, w: 0, h: 0, error: true };
+            loaded++;
+            if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
+        };
+        tmp.src = src;
+        setTimeout(function() {
+            if (imgData[i] === null) {
+                imgData[i] = { src: src, w: 0, h: 0, error: false };
+                loaded++;
+                if (loaded === validImgs.length) buildModalGrid(imgData, grid, titleEl);
+            }
+        }, 8000);
+    });
 }
-
+ 
+function buildModalGrid(imgData, grid, titleEl) {
+    var doc = window.parent.document;
+    grid.innerHTML = '';
+ 
+    var COLORS_BY_TYPE = {
+        'stories':   '#2ecc71',
+        'feed':      '#3a9fd6',
+        'landscape': '#f59e0b',
+        'unknown':   '#6b7280'
+    };
+    var LABELS_BY_TYPE = {
+        'stories':   'Stories / Reels',
+        'feed':      'Feed',
+        'landscape': 'Landscape',
+        'unknown':   'Criativo'
+    };
+ 
+    function classifyAspect(w, h) {
+        if (!w || !h) return 'unknown';
+        var ratio = w / h;
+        if (ratio < 0.75)  return 'stories';
+        if (ratio <= 1.35) return 'feed';
+        return 'landscape';
+    }
+ 
+    var classified = imgData.map(function(d) {
+        var type = classifyAspect(d.w, d.h);
+        return { src: d.src, w: d.w, h: d.h, error: d.error, type: type };
+    });
+ 
+    var seen   = {};
+    var deduped = [];
+    classified.forEach(function(c) {
+        if (!seen[c.type]) {
+            seen[c.type] = true;
+            deduped.push(c);
+        }
+    });
+    if (deduped.length === 0) deduped = classified;
+ 
+    var typeNames = deduped.map(function(c) { return LABELS_BY_TYPE[c.type] || c.type; });
+    titleEl.textContent = typeNames.join(' \u00b7 ');
+ 
+    var totalCards = deduped.length;
+    var maxCardW = totalCards === 1 ? 'min(72vw, 560px)'
+                 : totalCards === 2 ? 'min(44vw, 420px)'
+                 : 'min(30vw, 300px)';
+ 
+    deduped.forEach(function(item) {
+        var color = COLORS_BY_TYPE[item.type] || '#6b7280';
+        var label = LABELS_BY_TYPE[item.type] || 'Criativo';
+ 
+        var maxH;
+        if (item.type === 'stories')   maxH = 'min(75vh, 640px)';
+        else if (item.type === 'feed') maxH = 'min(65vh, 560px)';
+        else                           maxH = 'min(50vh, 420px)';
+ 
+        var wrapperStyle = 'width:' + maxCardW + ';max-height:' + maxH + ';';
+ 
+        var cell = doc.createElement('div');
+        cell.style.cssText = [
+            'background:#0d0d0d',
+            'border-radius:12px',
+            'overflow:hidden',
+            'border:2px solid ' + color,
+            'display:flex','flex-direction:column',
+            'flex-shrink:0',
+            wrapperStyle
+        ].join(';') + ';';
+ 
+        var lbl = doc.createElement('div');
+        lbl.style.cssText = [
+            'padding:7px 14px',
+            'font-size:11px','font-weight:800',
+            'color:' + color,
+            "font-family:'DM Sans',sans-serif",
+            'background:rgba(0,0,0,0.5)',
+            'border-bottom:1px solid ' + color,
+            'display:flex','align-items:center','gap:8px',
+            'letter-spacing:0.5px'
+        ].join(';') + ';';
+ 
+        var dot = doc.createElement('span');
+        dot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:' + color + ';display:inline-block;flex-shrink:0;';
+ 
+        var lblTxt = doc.createElement('span');
+        lblTxt.textContent = label;
+        lbl.appendChild(dot);
+        lbl.appendChild(lblTxt);
+ 
+        if (item.w && item.h) {
+            var ratio_str = doc.createElement('span');
+            ratio_str.style.cssText = 'opacity:0.55;font-weight:600;font-size:10px;margin-left:auto;';
+            ratio_str.textContent = item.w + '\u00d7' + item.h + ' (' + (item.w / item.h).toFixed(2) + ':1)';
+            lbl.appendChild(ratio_str);
+        }
+        cell.appendChild(lbl);
+ 
+        if (item.error) {
+            var errDiv = doc.createElement('div');
+            errDiv.style.cssText = "color:#555;font-size:12px;text-align:center;padding:40px 24px;font-family:'DM Sans',sans-serif;";
+            errDiv.textContent = 'Imagem n\u00e3o dispon\u00edvel';
+            cell.appendChild(errDiv);
+        } else {
+            var imgEl = doc.createElement('img');
+            imgEl.src = item.src;
+            imgEl.style.cssText = [
+                'display:block',
+                'width:100%',
+                'height:auto',
+                'object-fit:cover',
+                'max-height:' + maxH
+            ].join(';') + ';';
+            imgEl.onerror = function() {
+                cell.innerHTML = "<div style=\"color:#555;font-size:12px;font-family:'DM Sans',sans-serif;text-align:center;padding:32px;\">Imagem n\u00e3o dispon\u00edvel</div>";
+            };
+            cell.appendChild(imgEl);
+        }
+ 
+        grid.appendChild(cell);
+    });
+ 
+    if (deduped.length === 1 && deduped[0].type === 'stories') {
+        var modalBox = doc.getElementById('ads_modal_box');
+        if (modalBox) modalBox.style.maxWidth = 'min(60vw, 480px)';
+    }
+}
+ 
 function openModalImages(imgs, snapUrl) {
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
     if (old) old.remove();
+ 
     var overlay = doc.createElement('div');
     overlay.id = 'ads_modal_overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
     overlay.onclick = function(e) { if (e.target === overlay) closeModal(); };
+ 
     var box = doc.createElement('div');
-    box.style.cssText = 'background:#1a1a2e;border-radius:16px;overflow:hidden;position:relative;width:min(92vw,900px);padding:40px 28px 28px;';
+    box.style.cssText = 'background:#1a1a2e;border-radius:18px;overflow:hidden;position:relative;width:min(94vw,920px);padding:52px 24px 24px;';
+ 
     var closeBtn = doc.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;font-size:17px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+    closeBtn.textContent = '\u2715';
+    closeBtn.style.cssText = 'position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;font-size:16px;color:#fff;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
     closeBtn.onclick = closeModal;
+ 
     var title = doc.createElement('div');
-    title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = '4 imagens da API — índices e qualidades:';
-    var labels = ['Idx 0 — Feed Alta', 'Idx 1 — Feed Baixa (thumb)', 'Idx 2 — Stories Alta', 'Idx 3 — Stories Baixa'];
+    title.style.cssText = "color:rgba(255,255,255,0.5);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px;font-family:'DM Sans',sans-serif;";
+    title.textContent = '4 imagens da API \u2014 propor\u00e7\u00f5es detectadas:';
+ 
+    var labels = ['Idx 0', 'Idx 1', 'Idx 2', 'Idx 3'];
     var colors = ['#3a9fd6', '#e67e22', '#2ecc71', '#e74c3c'];
+ 
     var grid = doc.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
+ 
     imgs.forEach(function(src, i) {
         var cell = doc.createElement('div');
         cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
+ 
         var lbl = doc.createElement('div');
-        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Idx ' + i);
+        lbl.style.cssText = "padding:6px 12px;font-size:11px;font-weight:800;color:" + colors[i] + ";font-family:'DM Sans',sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid " + colors[i] + ";display:flex;align-items:center;justify-content:space-between;";
+ 
+        var lblName = doc.createElement('span');
+        lblName.textContent = labels[i] || ('Idx ' + i);
+        lbl.appendChild(lblName);
+ 
+        var dimLbl = doc.createElement('span');
+        dimLbl.style.cssText = 'font-size:10px;opacity:0.6;font-weight:600;';
+        dimLbl.textContent = '...';
+        lbl.appendChild(dimLbl);
+ 
+        var tmpI = new window.parent.Image();
+        tmpI.onload  = function() { dimLbl.textContent = tmpI.naturalWidth + '\u00d7' + tmpI.naturalHeight; };
+        tmpI.onerror = function() { dimLbl.textContent = 'erro'; };
+        tmpI.src = src || '';
+ 
         var imgEl = doc.createElement('img');
         imgEl.src = src || '';
-        imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:220px;';
+        imgEl.style.cssText = 'width:100%;height:auto;display:block;object-fit:contain;max-height:240px;';
         imgEl.onerror = function() {
-            cell.innerHTML = '<div style="color:#555;font-size:11px;font-family:DM Sans,sans-serif;text-align:center;padding:20px;">Sem imagem</div>';
+            cell.innerHTML = "<div style=\"color:#555;font-size:11px;font-family:'DM Sans',sans-serif;text-align:center;padding:24px;\">Sem imagem</div>";
         };
+ 
         var srcLbl = doc.createElement('div');
         srcLbl.style.cssText = 'padding:4px 8px;font-size:9px;color:#555;font-family:monospace;background:#0a0a0a;word-break:break-all;';
-        srcLbl.textContent = src ? src.substring(0,70) + '…' : 'vazio';
+        srcLbl.textContent = src ? src.substring(0, 80) + '\u2026' : 'vazio';
+ 
         cell.appendChild(lbl);
         cell.appendChild(imgEl);
         cell.appendChild(srcLbl);
         grid.appendChild(cell);
     });
+ 
     box.appendChild(closeBtn);
     box.appendChild(title);
     box.appendChild(grid);
     overlay.appendChild(box);
     doc.body.appendChild(overlay);
+ 
     window.parent.__adsModalEscFn = function(e) { if (e.key === 'Escape') closeModal(); };
     doc.addEventListener('keydown', window.parent.__adsModalEscFn);
 }
