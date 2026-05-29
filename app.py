@@ -4117,25 +4117,12 @@ elif st.session_state.pagina == "ads":
         else:
             formato = "Texto"
  
-        # URL estável permanente (página pública do Ad Library)
         snapshot_url_estavel = f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else snap
+        render_url           = f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else ""
  
-        # render_ad e adarchiveid — funcionam enquanto a sessão/cache do FB durar
-        render_url     = f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else ""
-        adarchive_url  = f"https://www.facebook.com/ads/image/?adarchiveid={ad_id}&ad_type=all" if ad_id else ""
- 
-        # Fallbacks de imagem em ordem de prioridade:
-        # 1º) URLs diretas da API (CDN fbcdn — frescas, duram horas)
-        # 2º) adarchiveid (thumb estável por mais tempo que CDN)
-        # 3º) render_ad (iframe/página renderizada)
-        # 4º) snapshot_url (Ad Library — abre página, não imagem direta)
-        images_stable = list(images)  # URLs frescas da API primeiro
-        if adarchive_url and adarchive_url not in images_stable:
-            images_stable.append(adarchive_url)
-        if render_url and render_url not in images_stable:
-            images_stable.append(render_url)
-        if snapshot_url_estavel and snapshot_url_estavel not in images_stable:
-            images_stable.append(snapshot_url_estavel)
+        # Só URLs frescas da API. Quando expirar, o usuário busca de novo
+        # e o merge traz URLs novas para todos os ads ativos.
+        images_stable = list(images)
  
         return {
             "id":                   ad_id,
