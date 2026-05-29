@@ -4066,7 +4066,16 @@ elif st.session_state.pagina == "ads":
         return _apify_run_sync(query.strip(), limit=limit)
 
     def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
-        linhas = []
+        progresso_pct = int((atual / total) * 100) if total else 100
+
+        if finalizado:
+            texto_status = "✅ Concluído!"
+            subtexto     = f"{atual}/{total} empresas processadas"
+        else:
+            texto_status = f"🔄 Buscando anúncios..."
+            subtexto     = f"{atual} de {total} empresas processadas"
+
+        itens_html = ""
         for item in progresso:
             status = item.get("status", "")
             nome   = item.get("nome", "")
@@ -4074,32 +4083,72 @@ elif st.session_state.pagina == "ads":
             count  = item.get("count")
 
             if status == "loading":
-                icone = "⏳"
+                icone = "⏳"; cor = "#f59e0b"; bg = "#fffbeb"; brd = "#fde68a"
             elif status == "done":
-                icone = "✅"
+                icone = "✅"; cor = "#15803d"; bg = "#f0fdf4"; brd = "#86efac"
             elif status == "error":
-                icone = "❌"
+                icone = "❌"; cor = "#dc2626"; bg = "#fef2f2"; brd = "#fca5a5"
             elif status == "cache":
-                icone = "🗂️"
+                icone = "🗂️"; cor = "#1d4ed8"; bg = "#eff6ff"; brd = "#bfdbfe"
             else:
-                icone = "•"
+                icone = "•"; cor = "#6b7280"; bg = "#f9fafb"; brd = "#e5e7eb"
 
-            count_str = f" — {count} anúncios" if count is not None else ""
-            linhas.append(f"{icone} **{nome}**: {msg}{count_str}")
+            count_str = f'<span style="font-weight:700;color:{cor}">{count} anúncios</span>' if count is not None else ""
+            msg_safe  = msg.replace("<","&lt;").replace(">","&gt;")
 
-        pendentes = total - atual
-        progresso_pct = int((atual / total) * 100) if total else 100
+            itens_html += f"""
+            <div style="display:flex;align-items:center;gap:12px;
+                        padding:10px 14px;border-radius:10px;
+                        background:{bg};border:1px solid {brd};margin-bottom:8px">
+                <span style="font-size:18px;flex-shrink:0">{icone}</span>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:700;color:#111827">{nome}</div>
+                    <div style="font-size:12px;color:#6b7280;margin-top:1px">{msg_safe}</div>
+                </div>
+                {count_str}
+            </div>"""
 
-        if finalizado:
-            texto_status = f"✅ Concluído! {atual}/{total} empresas processadas."
-        else:
-            texto_status = f"🔄 Processando {atual}/{total}..."
+        barra_cor   = "#22c55e" if finalizado else "#3a9fd6"
+        fechar_js   = "setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.style.opacity='0';setTimeout(function(){var m=document.getElementById('ads_loader_modal');if(m)m.remove();},400);},1500);" if finalizado else ""
 
-        conteudo = "\n".join(linhas)
-        placeholder.markdown(
-            f"**{texto_status}**\n\n{conteudo}\n\n"
-            f"Progresso: `{progresso_pct}%`"
-        )
+        placeholder.markdown(f"""
+<style>
+@keyframes fadeIn {{from{{opacity:0;transform:translateY(-16px)}}to{{opacity:1;transform:translateY(0)}}}}
+@keyframes spin {{to{{transform:rotate(360deg)}}}}
+#ads_loader_modal{{
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.45);
+    z-index:99999;
+    display:flex;align-items:center;justify-content:center;
+    animation:fadeIn 0.2s ease;
+    transition:opacity 0.4s;
+}}
+#ads_loader_box{{
+    background:#fff;border-radius:18px;
+    padding:28px 28px 22px;
+    width:min(92vw,480px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);
+    font-family:'DM Sans',sans-serif;
+}}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<div id="ads_loader_modal">
+<div id="ads_loader_box">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        {'<div style="width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:#3a9fd6;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>' if not finalizado else '<span style="font-size:26px">✅</span>'}
+        <div>
+            <div style="font-size:16px;font-weight:800;color:#111827">{texto_status}</div>
+            <div style="font-size:13px;color:#9ca3af;margin-top:1px">{subtexto}</div>
+        </div>
+    </div>
+    <div style="background:#f3f4f6;border-radius:8px;height:6px;margin-bottom:20px;overflow:hidden">
+        <div style="height:100%;width:{progresso_pct}%;background:{barra_cor};border-radius:8px;transition:width 0.4s ease"></div>
+    </div>
+    <div>{itens_html}</div>
+</div>
+</div>
+<script>{fechar_js}</script>
+""", unsafe_allow_html=True)
 
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
         erros  = {}
