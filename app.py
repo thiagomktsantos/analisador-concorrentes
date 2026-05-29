@@ -8120,15 +8120,18 @@ function updateStats(posts) {{
     document.getElementById('stat-best').textContent      = fmtNum(bE);
 }}
  
-function openModalByIdx(idx) {{
+function openModalByIdx(idx) {
     var p = POST_STORE[idx];
     if (!p) return;
     var imgs = [];
-    if (p.media_type === 8) {{
+    if (p.media_type === 8) {
         imgs = (p.carousel_imgs_hd && p.carousel_imgs_hd.length)
             ? p.carousel_imgs_hd
             : (p.carousel_imgs && p.carousel_imgs.length ? p.carousel_imgs : []);
-    }}
+    } else if (!p.is_video) {
+        // Foto única: força thumb_hd como único item do array
+        imgs = [p.thumb_hd || p.thumb || ''];
+    }
     openModal(
         p.thumb_hd || p.thumb || '',
         p.ig_url   || '#',
