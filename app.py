@@ -7020,11 +7020,15 @@ function abrirModal() {{
                                 if p.get("image_versions2"):
                                     cands = p["image_versions2"].get("candidates", [])
                                     if len(cands) > 1:
-                                        thumb = cands[1].get("url", "")  # resolução média, mais compatível
+                                        thumb = cands[-2].get("url", "")  # penúltima = resolução média para o grid
                                     elif cands:
                                         thumb = cands[0].get("url", "")
                                 elif p.get("thumbnail_url"):
                                     thumb = p["thumbnail_url"]
+
+                                # URL de alta resolução separada para o modal
+                                thumb_hd = cands[0].get("url", "") if p.get("image_versions2") and cands else thumb
+                                
                                 caption  = ""
                                 if p.get("caption"):
                                     caption = (
@@ -7056,26 +7060,34 @@ function abrirModal() {{
                                         or ""
                                     )
 
-                                carousel_imgs = []
+                                carousel_imgs = []      # thumbs para o grid (não usado ainda, mas organizado)
+                                carousel_imgs_hd = []   # alta resolução para o modal
+
                                 if media_type == 8:
                                     for slide in (p.get("carousel_media") or []):
-                                        # Tenta cands[0] = maior resolução
                                         cands = slide.get("image_versions2", {}).get("candidates", [])
-                                        url_alta = cands[0].get("url", "") if cands else ""
-                                        url_media = cands[1].get("url", "") if len(cands) > 1 else ""
+                                        url_hd     = cands[0].get("url", "") if cands else ""
+                                        url_thumb  = cands[-2].get("url", "") if len(cands) > 1 else url_hd
                                         url_display = slide.get("display_uri", "")
-                                        # Prioridade: média res > display_uri > alta res (alta pode ter CORS)
-                                        url_escolhida = url_media or url_display or url_alta
-                                        if url_escolhida:
-                                            carousel_imgs.append(url_escolhida)
-                                    # fallback: usa thumb do post principal como primeiro slide
+        
+                                        escolhida_hd    = url_hd or url_display
+                                        escolhida_thumb = url_thumb or url_display or url_hd
+        
+                                        if escolhida_hd:
+                                            carousel_imgs_hd.append(escolhida_hd)
+                                        if escolhida_thumb:
+                                            carousel_imgs.append(escolhida_thumb)
+    
                                     if not carousel_imgs and thumb:
                                         carousel_imgs = [thumb]
+                                    if not carousel_imgs_hd and thumb_hd:
+                                        carousel_imgs_hd = [thumb_hd]
 
                                 posts_data.append({
                                     "likes":          likes,
                                     "comments":       comments,
                                     "thumb":          thumb,
+                                    "thumb_hd":      thumb_hd,
                                     "caption":        caption,
                                     "date":           date_str,
                                     "is_video":       is_reel,
@@ -7084,6 +7096,7 @@ function abrirModal() {{
                                     "post_url":       post_url,
                                     "shortcode":      shortcode,
                                     "carousel_imgs":  carousel_imgs,
+                                    "carousel_imgs_hd": carousel_imgs_hd,
                                 })
                             break
                     except Exception:
@@ -7689,6 +7702,7 @@ Como interpretar as métricas desta postagem?
                 posts_json_data.append({
                     "jp":             jp,
                     "thumb":          p.get("thumb", ""),
+                    "thumb_hd":      p.get("thumb_hd", "") or p.get("thumb", ""),
                     "caption":        p.get("caption", ""),
                     "date":           p.get("date", ""),
                     "likes":          p.get("likes", 0),
@@ -7701,6 +7715,7 @@ Como interpretar as métricas desta postagem?
                     "tem_ia":         bool(resultado_ia),
                     "media_type":     p.get("media_type", 1),
                     "carousel_imgs":  p.get("carousel_imgs", []),
+                    "carousel_imgs_hd": p.get("carousel_imgs_hd", []) or p.get("carousel_imgs", []),
                 })
 
             posts_json_str = _json_posts.dumps(posts_json_data, ensure_ascii=True)
@@ -8211,10 +8226,14 @@ function buildGrid(posts) {{
         var igUrl      = p.ig_url || '#';
         var videoUrl   = (p.video_url || '').trim();
         var carouselImgs = p.carousel_imgs || [];
+        var carouselImgsHd = p.carousel_imgs_hd || carouselImgs;
         var card = document.createElement('div');
         card.className = 'post-card';
         card.id = 'pcard_' + idx;
-        var thumbClickAttr = 'onclick="openModal(\\''+thumbUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\',' + (p.is_video ? 'true' : 'false') + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgs))+'\\')))"';
+        var thumbHdUrl = (p.thumb_hd || '').trim() || thumbUrl;
+        var thumbClickAttr = 'onclick="openModal(\\''+thumbHdUrl+'\\',\\''+igUrl+'\\',\\''+videoUrl+'\\','
+            + (p.is_video ? 'true' : 'false')
+            + ',JSON.parse(decodeURIComponent(\\''+encodeURIComponent(JSON.stringify(carouselImgsHd))+'\\')))"';
         var playOverlay = p.is_video
             ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
               + '<div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">'
