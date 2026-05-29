@@ -4342,23 +4342,15 @@ html, body { background: transparent; overflow: hidden; }
         if st.session_state.ads_cache:
             _tss = [v.get("ts", "") for v in st.session_state.ads_cache.values() if v.get("ts")]
             if _tss:
-                col_ts, col_clear = st.columns([3, 1])
-                with col_ts:
-                    st.markdown(
-                        f"<div style='font-size:13px;color:#6b7280;text-align:center;margin-top:-8px'>"
-                        f"🕒 Última busca: <b>{min(_tss)}</b></div>",
-                        unsafe_allow_html=True,
-                    )
-                with col_clear:
-                    if st.button("🗑️ Limpar cache", key="ads_limpar_cache_btn", use_container_width=True):
-                        st.session_state.ads_cache = {}
-                        st.session_state.ads_erro = {}
-                        try:
-                            supabase.table("ci_dados").update({"ads_cache": {}}).eq("user_id", st.session_state.user.id).execute()
-                        except Exception:
-                            pass
-                        st.toast("Cache limpo!", icon="🗑️")
-                        st.rerun()
+                if st.button(f"🕒 Última busca: {min(_tss)} | 🗑️ Limpar cache", key="ads_limpar_cache_btn", use_container_width=True):
+                    st.session_state.ads_cache = {}
+                    st.session_state.ads_erro = {}
+                    try:
+                        supabase.table("ci_dados").update({"ads_cache": {}}).eq("user_id", st.session_state.user.id).execute()
+                    except Exception:
+                        pass
+                    st.toast("Cache limpo!", icon="🗑️")
+                    st.rerun()
 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
 
