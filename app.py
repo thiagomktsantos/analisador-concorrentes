@@ -7077,6 +7077,10 @@ function abrirModal() {{
                                     if not carousel_imgs and thumb:
                                         carousel_imgs = [thumb]
 
+                                # Temporário — remova depois
+                                if media_type == 8:
+                                    st.write("carousel_media keys:", list((p.get("carousel_media") or [{}])[0].keys()) if p.get("carousel_media") else "VAZIO")
+
                                 posts_data.append({
                                     "likes":          likes,
                                     "comments":       comments,
