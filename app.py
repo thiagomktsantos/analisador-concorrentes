@@ -7054,11 +7054,28 @@ function abrirModal() {{
                                     )
 
                                 carousel_imgs = []
-                                if media_type == 8 and p.get("carousel_media"):
-                                    for slide in p["carousel_media"]:
+                                if media_type == 8:
+                                    carousel_items = p.get("carousel_media") or []
+                                    for slide in carousel_items:
+                                        # Tenta image_versions2 primeiro
                                         cands = slide.get("image_versions2", {}).get("candidates", [])
                                         if cands:
-                                            carousel_imgs.append(cands[-1].get("url", ""))
+                                            # Pega a maior resolução (primeiro) em vez da menor (último)
+                                            carousel_imgs.append(cands[0].get("url", ""))
+                                            continue
+                                        # Fallback: thumbnail_url direto no slide
+                                        if slide.get("thumbnail_url"):
+                                            carousel_imgs.append(slide["thumbnail_url"])
+                                            continue
+                                        # Fallback 2: image_url ou display_url
+                                        for key in ("image_url", "display_url", "media_url"):
+                                            if slide.get(key):
+                                                carousel_imgs.append(slide[key])
+                                                break
+
+                                    # Se não veio nada do carousel_media, usa a thumb principal como primeiro slide
+                                    if not carousel_imgs and thumb:
+                                        carousel_imgs = [thumb]
 
                                 posts_data.append({
                                     "likes":          likes,
