@@ -7114,11 +7114,12 @@ function abrirModal() {{
                                         carousel_imgs_hd = [thumb_hd]
  
                                 posts_data.append({
+                                posts_data.append({
                                     "likes":          likes,
                                     "comments":       comments,
                                     "thumb":          thumb,
                                     "thumb_hd":       thumb_hd,
-                                    "display_url":    p.get("display_url") or p.get("image_url") or thumb_hd,
+                                    "display_url":    p.get("display_url") or p.get("thumbnail_src") or p.get("image_url") or thumb_hd,
                                     "caption":        caption,
                                     "date":           date_str,
                                     "is_video":       is_reel,
@@ -7128,7 +7129,17 @@ function abrirModal() {{
                                     "shortcode":      shortcode,
                                     "carousel_imgs":  carousel_imgs,
                                     "carousel_imgs_hd": carousel_imgs_hd,
-                                    "_raw":           p,
+                                    "_raw": {
+                                        k: v for k, v in p.items()
+                                        if k not in ("carousel_media", "video_versions", "image_versions2")
+                                    },
+                                    "_raw_image_versions2": {
+                                        "candidates": [
+                                            {"width": c.get("width"), "height": c.get("height"), "url": c.get("url", "")[:80] + "..."}
+                                            for c in (p.get("image_versions2") or {}).get("candidates", [])
+                                        ]
+                                    },
+                                    "_raw_display_resources": p.get("display_resources", []),
                                 })
                             break
                     except Exception:
