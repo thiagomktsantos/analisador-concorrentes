@@ -6440,7 +6440,7 @@ function syncHeight() {{
     var h = grid ? grid.getBoundingClientRect().bottom + 20 : document.body.scrollHeight;
     var frames = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < frames.length; i++) {{
-        try { if (frames[i].contentWindow === window) {{
+        try {{ if (frames[i].contentWindow === window) {{
             frames[i].style.height = h + 'px';
             frames[i].style.minHeight = '0';
             break;
