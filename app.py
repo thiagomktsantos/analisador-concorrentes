@@ -4436,31 +4436,29 @@ function abrirModal() {{
         '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Cache de Anúncios</div>'
         + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última busca: ' + ULTIMA + '</div></div>'
         + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '<button id="raw_copy_btn" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        + '<button id="raw_down_btn" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        + '<button id="raw_close_btn" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
         + '</div>';
-    var pre = doc.createElement('pre');
-    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
-    pre.textContent = Dstr;
     box.appendChild(hdr);
     box.appendChild(pre);
     ov.appendChild(box);
     doc.body.appendChild(ov);
-    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') window.fechar(); }};
-    doc.addEventListener('keydown', window.parent.__rawEsc);
-    window.copiarDados = function() {{
+
+    doc.getElementById('raw_close_btn').addEventListener('click', window.fechar);
+    doc.getElementById('raw_copy_btn').addEventListener('click', function() {{
         var b = doc.getElementById('raw_copy_btn');
         navigator.clipboard.writeText(Dstr).then(function() {{
-            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
+            b.textContent = '✅ Copiado!';
+            setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000);
         }});
-    }};
-    window.baixarDados = function() {{
+    }});
+    doc.getElementById('raw_down_btn').addEventListener('click', function() {{
         var a = doc.createElement('a');
         a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
         a.download = FILENAME;
         a.click();
-    }};
+    }});
 }}
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
