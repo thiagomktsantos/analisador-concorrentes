@@ -4345,7 +4345,7 @@ html, body { background: transparent; overflow: hidden; }
                 _ultima_ts = min(_tss)
                 _d = {k: v for k, v in st.session_state.ads_cache.items()}
                 import json as _json_ads
-                _djs = _json_ads.dumps(list(_d.values()), ensure_ascii=False).replace("</", "<\\/").replace("`", "\\`")
+                _djs = _json_ads.dumps(list(_d.values()), ensure_ascii=False).replace("</", "<\\/").replace("\\", "\\\\").replace("'", "\\'")
                 _fn = f'dados_ads_{_ultima_ts.replace("/","_").replace(" ","_").replace(":","")}.json'
 
                 if st.button("ads_limpar_cache", key="ads_limpar_cache_btn"):
@@ -4397,7 +4397,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     <button class="link-btn danger" onclick="triggerLimpar()">🗑️ Limpar cache</button>
 </div>
 <script>
-var DADOS_JSON = `{_djs}`;
+var DADOS_JSON = '{_djs}';
 var FILENAME   = '{_fn}';
 var ULTIMA     = '{_ultima_ts}';
 
