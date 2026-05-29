@@ -4060,6 +4060,53 @@ elif st.session_state.pagina == "ads":
                 st.session_state.dados["concorrentes"][e["idx"]]["ads_page_pic"] = page_pic
         salvar_dados_usuario(st.session_state.user.id)
 
+def _normalizar_item_apify(item: dict) -> dict:
+        images  = item.get("images") or []
+        videos  = item.get("videos") or []
+        plats   = item.get("publisher_platforms") or []
+        snap    = item.get("snapshot_url") or item.get("ad_snapshot_url") or ""
+        ad_id   = str(item.get("id") or item.get("ad_archive_id") or "")
+
+        if videos:
+            formato = "Vídeo"
+        elif len(images) > 1:
+            formato = "Carrossel"
+        elif images:
+            formato = "Imagem"
+        else:
+            formato = "Texto"
+
+        return {
+            "id":                   ad_id,
+            "page_id":              str(item.get("page_id") or ""),
+            "page_name":            item.get("page_name") or "",
+            "page_profile_picture": item.get("page_profile_picture_url") or item.get("page_profile_picture") or "",
+            "body":                 item.get("ad_creative_body") or item.get("body") or "",
+            "body_raw":             item.get("ad_creative_body") or item.get("body") or "",
+            "title":                item.get("ad_creative_link_title") or item.get("title") or "",
+            "description":          item.get("ad_creative_link_description") or item.get("description") or "",
+            "cta":                  item.get("ad_creative_link_button_call_to_action_type") or item.get("cta_type") or item.get("cta") or "",
+            "caption":              item.get("ad_creative_link_caption") or item.get("caption") or "",
+            "formato":              formato,
+            "plataformas":          [p.lower() for p in plats],
+            "images":               images,
+            "images_b64":           [],
+            "images_stable":        [
+                f"https://www.facebook.com/ads/image/?adarchiveid={ad_id}&ad_type=all" if ad_id else "",
+                f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else "",
+            ],
+            "videos":               videos,
+            "snapshot_url":         snap or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""),
+            "preview_url":          item.get("ad_preview_url") or (f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else ""),
+            "data_inicio":          item.get("ad_delivery_start_time") or item.get("start_date") or "",
+            "data_raw":             item.get("ad_delivery_start_time") or item.get("start_date") or "",
+            "impressoes":           str(item.get("impressions") or item.get("reach_estimate") or ""),
+            "is_dynamic":           bool(item.get("is_aaa_eligible")),
+            "baixo_volume":         bool(item.get("bylines")),
+            "ativo":                True,
+            "status_change":        "",
+        }
+
     def buscar_paginas_facebook(termo: str) -> list:
         ads, _, erro = _apify_run_sync(termo, limit=20)
         if erro or not ads:
