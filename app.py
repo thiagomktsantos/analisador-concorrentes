@@ -4060,7 +4060,7 @@ elif st.session_state.pagina == "ads":
                 st.session_state.dados["concorrentes"][e["idx"]]["ads_page_pic"] = page_pic
         salvar_dados_usuario(st.session_state.user.id)
 
-def _normalizar_item_apify(item: dict) -> dict:
+    def _normalizar_item_apify(item: dict) -> dict:
         images  = item.get("images") or []
         videos  = item.get("videos") or []
         plats   = item.get("publisher_platforms") or []
