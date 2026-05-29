@@ -3668,60 +3668,93 @@ elif st.session_state.pagina == "ads":
             pass
         return {}
 
-    def merge_ads(cache_existente: dict, novos: dict) -> dict:
+    def merge_ads(cache_existente: dict, novos: dict, query_limit: int = 100) -> dict:
         """
-        Novos dados sempre substituem os antigos (URLs frescas).
-        Faz diff para marcar status: novo, reativado, pausado.
+        Mescla cache existente com novos dados da API.
+ 
+        Regras:
+        - Ads presentes na nova busca → usam objeto NOVO (URLs frescas).
+          Campos de histórico (data_inicio original) são preservados do
+          objeto antigo quando o novo não tiver.
+        - Ads ausentes na nova busca → marcados como 'pausado' SOMENTE
+          se a nova busca retornou menos itens que query_limit.
+          Se retornou exatamente o limite (API truncada), mantém status
+          anterior — o ad pode só estar fora do top-N.
+        - Ads reativados (estavam inativos, voltaram) → 'reativado'.
+        - Ads novos (nunca vistos antes)              → 'novo'.
+        - Ads continuamente ativos                    → '' (sem mudança).
         """
         resultado = dict(cache_existente)
-
+ 
         for nome_empresa, novo_entry in novos.items():
-            novos_ads  = novo_entry.get("data", [])
-            entry_ant  = resultado.get(nome_empresa, {})
-            ads_ant    = entry_ant.get("data", [])
-
+            novos_ads = novo_entry.get("data", [])
+            entry_ant = resultado.get(nome_empresa, {})
+            ads_ant   = entry_ant.get("data", [])
+ 
             # Índice dos ads anteriores por ID
             ant_por_id = {str(a.get("id", "")): a for a in ads_ant if a.get("id")}
-            # IDs que estão ativos agora
+            # IDs que chegaram nesta busca
             ids_novos  = {str(a.get("id", "")) for a in novos_ads if a.get("id")}
-
+ 
+            # Se a API retornou exatamente o limite, pode ter truncado.
+            # Nesse caso NÃO marcamos ausentes como pausados.
+            api_pode_ter_truncado = len(novos_ads) >= query_limit
+ 
             ads_finais = []
-
-            # 1. Processa todos os anúncios novos (URLs frescas)
+ 
+            # ── 1. Ads que vieram da nova busca (URLs frescas) ──────
             for ad in novos_ads:
-                ad_id = str(ad.get("id", ""))
+                ad_id  = str(ad.get("id", ""))
+                ad_ant = ant_por_id.get(ad_id) if ad_id else None
+ 
                 ad["ativo"] = True
-
-                if ad_id and ad_id in ant_por_id:
-                    ad_ant = ant_por_id[ad_id]
+ 
+                if ad_ant:
+                    # Ad já conhecido — define status_change
                     if not ad_ant.get("ativo", True):
-                        # Estava pausado, voltou
                         ad["status_change"] = "reativado"
                     else:
                         ad["status_change"] = ""
+ 
+                    # Preserva a data de início ORIGINAL (mais antiga)
+                    data_original = ad_ant.get("data_raw") or ad_ant.get("data_inicio")
+                    data_novo     = ad.get("data_raw") or ad.get("data_inicio")
+                    if data_original and not data_novo:
+                        ad["data_raw"]    = data_original
+                        ad["data_inicio"] = data_original
                 else:
-                    # É novo
                     ad["status_change"] = "novo" if ads_ant else ""
-
+ 
                 ads_finais.append(ad)
-
-            # 2. Ads que existiam antes mas não vieram agora = pausados
+ 
+            # ── 2. Ads do cache que NÃO vieram agora ───────────────
             for ad_ant in ads_ant:
                 ad_id = str(ad_ant.get("id", ""))
-                if ad_id and ad_id not in ids_novos:
-                    ad_ant = dict(ad_ant)
-                    ad_ant["ativo"] = False
-                    if ad_ant.get("status_change") != "pausado":
-                        ad_ant["status_change"] = "pausado"
-                    ads_finais.append(ad_ant)
-
+                if ad_id and ad_id in ids_novos:
+                    continue  # já processado acima
+ 
+                ad_pausado = dict(ad_ant)  # cópia do objeto antigo
+ 
+                if api_pode_ter_truncado:
+                    # Não sabemos se pausou ou só ficou fora do top-N.
+                    # Mantém o status anterior sem alterar.
+                    pass
+                else:
+                    # API retornou tudo (abaixo do limite): ausência = pausado.
+                    ad_pausado["ativo"] = False
+                    if ad_pausado.get("status_change") != "pausado":
+                        ad_pausado["status_change"] = "pausado"
+ 
+                ads_finais.append(ad_pausado)
+ 
             resultado[nome_empresa] = {
                 **novo_entry,
-                "data": ads_finais,
-                "ts": novo_entry.get("ts", entry_ant.get("ts", "")),
+                "data":        ads_finais,
+                "ts":          novo_entry.get("ts", entry_ant.get("ts", "")),
                 "ts_anterior": entry_ant.get("ts", ""),
+                "query_limit": query_limit,
             }
-
+ 
         return resultado
 
     def cache_esta_fresco(ts_str: str) -> bool:
@@ -3934,62 +3967,63 @@ elif st.session_state.pagina == "ads":
         with placeholder:
             st.markdown(html_content, unsafe_allow_html=True)
 
+    ADS_QUERY_LIMIT = 100  # mesma constante usada em _apify_run_sync
+ 
     def executar_busca(empresas: list, query_values: dict, forcar: bool = False):
-        erros  = {}
-        novos  = {}
+        erros       = {}
+        novos       = {}
         cache_atual = dict(st.session_state.ads_cache or {})
-
+ 
         loader_placeholder = st.empty()
-
-        total = len(empresas)
+        total     = len(empresas)
         progresso = []
-
+ 
         for idx_e, e in enumerate(empresas):
-            ck = e["nome"]
-
+            ck            = e["nome"]
             entrada_cache = cache_atual.get(ck, {})
+ 
             if not forcar and entrada_cache and cache_esta_fresco(entrada_cache.get("ts", "")):
                 total_ads = len(entrada_cache.get("data", []))
-                ativos = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
-                inativos = total_ads - ativos
+                ativos    = sum(1 for a in entrada_cache.get("data", []) if a.get("ativo", True))
+                inativos  = total_ads - ativos
                 progresso.append({
-                    "nome": ck,
-                    "status": "cache",
-                    "msg": f"Cache válido ({entrada_cache.get('ts','')})",
-                    "count": ativos,
+                    "nome":     ck,
+                    "status":   "cache",
+                    "msg":      f"Cache válido ({entrada_cache.get('ts', '')})",
+                    "count":    ativos,
                     "inativos": inativos,
                 })
                 _render_loader(loader_placeholder, progresso, total, idx_e + 1)
                 continue
-
+ 
             if e["tipo"] == "minha":
                 ads_id_salvo = st.session_state.dados["minha_empresa"].get("ads_id", "").strip()
             else:
                 ads_id_salvo = st.session_state.dados["concorrentes"][e["idx"]].get("ads_id", "").strip()
-
+ 
             query = ads_id_salvo or query_values.get(ck, "").strip()
             if not query:
                 continue
-
+ 
             label = f"page_id: {query}" if query.isdigit() else f"keyword: {query}"
             progresso.append({
-                "nome": ck,
-                "status": "loading",
-                "msg": f"Buscando ({label})...",
-                "count": None,
+                "nome":     ck,
+                "status":   "loading",
+                "msg":      f"Buscando ({label})...",
+                "count":    None,
                 "inativos": 0,
             })
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
-
-            ads, raw, erro = buscar_ads_apify(query)
-
+ 
+            ads, raw, erro = buscar_ads_apify(query, limit=ADS_QUERY_LIMIT)
+ 
             if erro:
                 erros[ck] = erro
                 progresso[-1] = {
-                    "nome": ck,
-                    "status": "error",
-                    "msg": erro[:80],
-                    "count": 0,
+                    "nome":     ck,
+                    "status":   "error",
+                    "msg":      erro[:80],
+                    "count":    0,
                     "inativos": 0,
                 }
             else:
@@ -4000,19 +4034,21 @@ elif st.session_state.pagina == "ads":
                     "query": query,
                 }
                 progresso[-1] = {
-                    "nome": ck,
-                    "status": "done",
-                    "msg": f"{len(ads)} anúncios encontrados",
-                    "count": len(ads),
+                    "nome":     ck,
+                    "status":   "done",
+                    "msg":      f"{len(ads)} anúncios encontrados",
+                    "count":    len(ads),
                     "inativos": 0,
                 }
+ 
             _render_loader(loader_placeholder, progresso, total, idx_e + 1)
-
+ 
         _render_loader(loader_placeholder, progresso, total, total, finalizado=True)
         import time as _ttt; _ttt.sleep(1.2)
         loader_placeholder.empty()
-
-        cache_mergeado = merge_ads(cache_atual, novos)
+ 
+        cache_mergeado = merge_ads(cache_atual, novos, query_limit=ADS_QUERY_LIMIT)
+ 
         st.session_state.ads_cache = cache_mergeado
         st.session_state.ads_erro  = erros
         salvar_cache_ads(cache_mergeado)
@@ -4071,7 +4107,7 @@ elif st.session_state.pagina == "ads":
         plats   = item.get("publisher_platforms") or []
         snap    = item.get("snapshot_url") or item.get("ad_snapshot_url") or ""
         ad_id   = str(item.get("id") or item.get("ad_archive_id") or "")
-
+ 
         if videos:
             formato = "Vídeo"
         elif len(images) > 1:
@@ -4080,7 +4116,21 @@ elif st.session_state.pagina == "ads":
             formato = "Imagem"
         else:
             formato = "Texto"
-
+ 
+        # URL estável permanente (página pública do Ad Library)
+        snapshot_url_estavel = f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else snap
+ 
+        # Fallbacks de imagem em ordem de prioridade:
+        # 1º) URLs diretas da API (frescas, duram horas)
+        # 2º) render_ad (funciona durante a sessão)
+        # 3º) Snapshot do Ad Library (fallback sempre funcional)
+        images_stable = list(images)
+        render_url = f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else ""
+        if render_url and render_url not in images_stable:
+            images_stable.append(render_url)
+        if snapshot_url_estavel and snapshot_url_estavel not in images_stable:
+            images_stable.append(snapshot_url_estavel)
+ 
         return {
             "id":                   ad_id,
             "page_id":              str(item.get("page_id") or ""),
@@ -4096,13 +4146,10 @@ elif st.session_state.pagina == "ads":
             "plataformas":          [p.lower() for p in plats],
             "images":               images,
             "images_b64":           [],
-            "images_stable":        [
-                f"https://www.facebook.com/ads/image/?adarchiveid={ad_id}&ad_type=all" if ad_id else "",
-                f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else "",
-            ],
+            "images_stable":        images_stable,
             "videos":               videos,
-            "snapshot_url":         snap or (f"https://www.facebook.com/ads/library/?id={ad_id}" if ad_id else ""),
-            "preview_url":          item.get("ad_preview_url") or (f"https://www.facebook.com/ads/archive/render_ad/?id={ad_id}" if ad_id else ""),
+            "snapshot_url":         snapshot_url_estavel,
+            "preview_url":          render_url or snapshot_url_estavel,
             "data_inicio":          item.get("ad_delivery_start_time") or item.get("start_date") or "",
             "data_raw":             item.get("ad_delivery_start_time") or item.get("start_date") or "",
             "impressoes":           str(item.get("impressions") or item.get("reach_estimate") or ""),
