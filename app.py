@@ -6913,7 +6913,7 @@ function abrirModal() {{
     for (var i = 0; i < iframes.length; i++) {{
         try {{ if (iframes[i].contentWindow === window) {{
             iframes[i].style.height = '{"22px" if ultima_coleta else "0px"}';
-            iframes[i].style.marginTop = '-19px';
+            iframes[i].style.marginTop = '-8px';
             break;
         }} }} catch(e) {{}}
     }}
@@ -7470,7 +7470,7 @@ function syncHeight() {{
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
             frames[i].style.height = (h + 2) + 'px';
-            frames[i].style.marginTop = '-8px';
+            frames[i].style.marginTop = '-19px';
             break;
         }} }} catch(e) {{}}
     }}
