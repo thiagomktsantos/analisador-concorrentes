@@ -4152,7 +4152,7 @@ elif st.session_state.pagina == "ads":
         st.rerun()
      
      
-def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
+    def _render_loader(placeholder, progresso: list, total: int, atual: int, finalizado: bool = False):
         # Renderiza o loader visual de busca de anúncios.
         items_html = ""
         for item in progresso:
