@@ -3827,6 +3827,7 @@ elif st.session_state.pagina == "ads":
         if not raw_items:
             return [], [], None
 
+        st.session_state["apify_raw_debug"] = raw_items[:3] if isinstance(raw_items, list) else []
         ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
         return ads_normalizados, raw_items[:3], None
 
@@ -4180,6 +4181,8 @@ html, body { background: transparent; overflow: hidden; }
                         "inativos": sum(1 for a in _entry.get("data", []) if not a.get("ativo", True)),
                         "data": _entry.get("data", []),
                     }
+
+                _cache_display["__RAW_APIFY_SAMPLE__"] = st.session_state.get("apify_raw_debug", [])
 
                 _djs_b64 = _b64_modal.b64encode(
                     _json_modal.dumps(_cache_display, ensure_ascii=False, indent=2).encode("utf-8")
