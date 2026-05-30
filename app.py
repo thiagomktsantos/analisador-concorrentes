@@ -4511,7 +4511,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 <div class="info-bar">
     <button class="link-btn" onclick="abrirModal()">🕒 Última busca: <b>{_ultima_ts}</b></button>
     <span class="sep">|</span>
-    <button class="link-btn danger" onclick="triggerLimpar()">🗑️ Limpar cache</button>
+    <button class="link-btn danger" onclick="triggerLimpar()">Limpar cache</button>
 </div>
 <script>
 var DADOS_JSON = '{_djs}';
