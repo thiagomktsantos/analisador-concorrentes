@@ -7607,14 +7607,14 @@ if st.session_state.get("redes_confirmar_limpar"):
             <hr style='border:none;border-top:1px solid #e5e7eb;margin:0'/>
         </div>
     """, unsafe_allow_html=True)
- 
+
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
         n = int(n or 0)
         if n >= 1_000_000: return f"{n/1_000_000:.1f}M"
         if n >= 1_000:     return f"{n/1_000:.1f}K"
         return str(n)
- 
+
     def salvar_cache_redes(dados: list):
         try:
             payload = {
@@ -7629,7 +7629,7 @@ if st.session_state.get("redes_confirmar_limpar"):
             supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
         except Exception as e:
             st.toast(f"⚠️ Erro ao salvar cache: {e}", icon="⚠️")
- 
+
     def carregar_cache_redes() -> dict:
         try:
             res = (
@@ -7643,7 +7643,7 @@ if st.session_state.get("redes_confirmar_limpar"):
         except Exception:
             pass
         return {}
- 
+
     @st.cache_data(ttl=1800, show_spinner=False)
     def coletar_rapidapi(handle: str) -> dict:
         handle_limpo = handle.lstrip("@").strip()
@@ -7653,12 +7653,12 @@ if st.session_state.get("redes_confirmar_limpar"):
             rapidapi_key = st.secrets.get("RAPIDAPI_KEY", "")
             if not rapidapi_key:
                 return {"erro": "RAPIDAPI_KEY não configurada"}
- 
+
             headers = {
                 "x-rapidapi-key": rapidapi_key,
                 "x-rapidapi-host": "instagram-looter2.p.rapidapi.com",
             }
- 
+
             r = requests.get(
                 f"https://instagram-looter2.p.rapidapi.com/profile?username={handle_limpo}",
                 headers=headers,
@@ -7669,14 +7669,14 @@ if st.session_state.get("redes_confirmar_limpar"):
             if isinstance(data, dict):
                 if "data" in data:   user_data = data["data"]
                 elif "user" in data: user_data = data["user"]
- 
+
             if not user_data or "message" in user_data:
                 return {"erro": user_data.get("message", "Perfil não encontrado")}
- 
+
             seg         = int(user_data.get("follower_count") or user_data.get("edge_followed_by", {}).get("count") or 0)
             total_posts = int(user_data.get("media_count") or user_data.get("edge_owner_to_timeline_media", {}).get("count") or 0)
             pk          = str(user_data.get("pk") or user_data.get("id") or "").strip()
- 
+
             posts_data = []
             if pk:
                 for endpoint in [
@@ -7691,7 +7691,7 @@ if st.session_state.get("redes_confirmar_limpar"):
                             for p in items[:12]:
                                 likes    = int(p.get("like_count") or 0)
                                 comments = int(p.get("comment_count") or 0)
- 
+
                                 thumb = ""
                                 thumb_hd = ""
                                 if p.get("image_versions2"):
@@ -7706,7 +7706,6 @@ if st.session_state.get("redes_confirmar_limpar"):
                                         thumb_hd = ""
                                         thumb = ""
 
-                                # Tenta sobrescrever thumb_hd com URLs de maior qualidade se disponíveis
                                 if not thumb_hd:
                                     thumb_hd = (
                                         p.get("display_url")
@@ -7715,7 +7714,6 @@ if st.session_state.get("redes_confirmar_limpar"):
                                         or ""
                                     )
 
-                                # display_resources: pega o de maior largura
                                 if p.get("display_resources"):
                                     resources = sorted(
                                         p["display_resources"],
@@ -7725,7 +7723,6 @@ if st.session_state.get("redes_confirmar_limpar"):
                                     if resources:
                                         thumb_hd = resources[0].get("src", "") or thumb_hd
 
-                                # fallback final
                                 if not thumb_hd:
                                     thumb_hd = thumb
 
@@ -7736,7 +7733,7 @@ if st.session_state.get("redes_confirmar_limpar"):
                                     thumb = p["thumbnail_url"]
                                     if not thumb_hd:
                                         thumb_hd = thumb
- 
+
                                 caption  = ""
                                 if p.get("caption"):
                                     caption = (
@@ -7753,10 +7750,10 @@ if st.session_state.get("redes_confirmar_limpar"):
                                         pass
                                 shortcode = p.get("code") or p.get("shortcode") or ""
                                 post_url  = f"https://www.instagram.com/p/{shortcode}/" if shortcode else ""
- 
+
                                 media_type = p.get("media_type", 1)
                                 is_reel = media_type == 2
- 
+
                                 video_url = ""
                                 if is_reel:
                                     video_url = (
@@ -7764,30 +7761,30 @@ if st.session_state.get("redes_confirmar_limpar"):
                                         or (p.get("video_versions") or [{}])[0].get("url", "")
                                         or ""
                                     )
- 
+
                                 carousel_imgs = []
                                 carousel_imgs_hd = []
- 
+
                                 if media_type == 8:
                                     for slide in (p.get("carousel_media") or []):
                                         cands = slide.get("image_versions2", {}).get("candidates", [])
                                         url_hd     = cands[0].get("url", "") if cands else ""
                                         url_thumb  = cands[-1].get("url", "") if cands else url_hd
                                         url_display = slide.get("display_uri", "")
-        
+
                                         escolhida_hd    = url_hd or url_display
                                         escolhida_thumb = url_thumb or url_display or url_hd
-        
+
                                         if escolhida_hd:
                                             carousel_imgs_hd.append(escolhida_hd)
                                         if escolhida_thumb:
                                             carousel_imgs.append(escolhida_thumb)
-    
+
                                     if not carousel_imgs and thumb:
                                         carousel_imgs = [thumb]
                                     if not carousel_imgs_hd and thumb_hd:
                                         carousel_imgs_hd = [thumb_hd]
- 
+
                                 posts_data.append({
                                     "likes":          likes,
                                     "comments":       comments,
@@ -7818,26 +7815,19 @@ if st.session_state.get("redes_confirmar_limpar"):
                             break
                     except Exception:
                         continue
- 
+
             if posts_data:
                 eng_medio = sum(p["likes"] + p["comments"] for p in posts_data) / len(posts_data)
                 eng_pct   = round(eng_medio / seg * 100, 2) if seg > 0 else 0.0
             else:
                 eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
- 
-            # Extrai profile_pic dos posts coletados
-            profile_pic = ""
-            if posts_data:
-                for p_raw in (item.get("_raw", {}) for item in []):
-                    pass
-            # Busca direto no user_data ou nos posts brutos
+
             profile_pic = (
                 user_data.get("profile_pic_url_hd")
                 or user_data.get("profile_pic_url")
                 or ""
             )
-            # Se não veio no user_data, tenta pegar do primeiro post
             if not profile_pic and posts_data:
                 try:
                     first_raw = posts_data[0].get("_raw", {})
@@ -7866,7 +7856,7 @@ if st.session_state.get("redes_confirmar_limpar"):
             }
         except Exception as e:
             return {"erro": str(e)}
- 
+
     # ── Lista de perfis ─────────────────────────────────────────────
     todas = []
     if emp.get("nome") and emp.get("instagram") and emp["instagram"] not in ("@", ""):
@@ -7874,16 +7864,16 @@ if st.session_state.get("redes_confirmar_limpar"):
     for i, c in enumerate(concorrentes):
         if c.get("instagram") and c["instagram"] not in ("@", ""):
             todas.append({"key": f"conc_{i}", "nome": c["nome"], "instagram": c["instagram"], "tipo": "concorrente"})
- 
+
     if not todas:
         st.info("Cadastre pelo menos um Instagram (sua empresa ou concorrente) para usar esta página.")
         st.stop()
- 
+
     if not st.secrets.get("RAPIDAPI_KEY", ""):
         st.warning("Configure `RAPIDAPI_KEY` no secrets.toml para coletar dados.")
- 
+
     cache = carregar_cache_redes()
- 
+
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
@@ -7979,20 +7969,20 @@ if st.session_state.get("redes_confirmar_limpar"):
         }
         st.session_state.metricas_redes = cache
         st.toast("✅ Dados coletados e salvos!", icon="✅")
- 
+
     ok = []
     if cache.get("dados"):
         ok    = [r for r in cache["dados"] if not r.get("erro")]
         erros = [r for r in cache["dados"] if r.get("erro")]
         for r in erros:
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
- 
+
     # ── Estado de navegação ─────────────────────────────────────────
     if "redes_main_tab" not in st.session_state:
         st.session_state.redes_main_tab = "perfis"
     if "redes_aba_ativa" not in st.session_state:
         st.session_state.redes_aba_ativa = 0
- 
+
     # ── Ghost buttons — abas principais ────────────────────────────
     st.markdown("""
     <style>
@@ -8009,14 +7999,14 @@ if st.session_state.get("redes_confirmar_limpar"):
     }
     </style>
     """, unsafe_allow_html=True)
- 
+
     if st.button("perfis_tab", key="_redes_ghost_tab_perfis_"):
         st.session_state.redes_main_tab = "perfis"
         st.rerun()
     if st.button("analise_tab", key="_redes_ghost_tab_analise_"):
         st.session_state.redes_main_tab = "analise"
         st.rerun()
- 
+
     # ── Ghost buttons — abas de empresa ────────────────────────────
     aba_empresa_ghost_css = []
     for i in range(len(ok)):
@@ -8034,18 +8024,18 @@ if st.session_state.get("redes_confirmar_limpar"):
         """)
     if aba_empresa_ghost_css:
         st.markdown(f"<style>{''.join(aba_empresa_ghost_css)}</style>", unsafe_allow_html=True)
- 
+
     for i in range(len(ok)):
         if st.button(f"redes_aba_{i}", key=f"btn_redes_aba_{i}"):
             st.session_state.redes_aba_ativa = i
             st.rerun()
- 
+
     main_tab = st.session_state.redes_main_tab
- 
+
     # ══════════════════════════════════════════════════════════════════
     # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
     # ══════════════════════════════════════════════════════════════════
- 
+
     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -8158,13 +8148,13 @@ function triggerTab(label) {{
 }})();
 </script>
 """, height=90, scrolling=False)
- 
+
     # ══════════════════════════════════════════════════════════════════
     # ABA: PERFIS CONFIGURADOS
     # ══════════════════════════════════════════════════════════════════
- 
+
     if main_tab == "perfis":
- 
+
         if not ok:
             st.markdown("""
             <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
@@ -8175,9 +8165,9 @@ function triggerTab(label) {{
             </div>
             """, unsafe_allow_html=True)
             st.stop()
- 
+
         aba_ativa = min(st.session_state.get("redes_aba_ativa", 0), len(ok) - 1)
- 
+
         # ── Cards de empresa no topo ─────────────────────────────────
         empresas_redes_json = []
         for i, r in enumerate(ok):
@@ -8192,9 +8182,9 @@ function triggerTab(label) {{
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
                 "cor": cor,
             })
- 
+
         empresas_redes_str = json.dumps(empresas_redes_json, ensure_ascii=False)
- 
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -8330,7 +8320,7 @@ window.addEventListener('load', syncHeight);
 setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 </script>
 """, height=100, scrolling=False)
- 
+
         # ── Dados do perfil ativo ────────────────────────────────────
         r = ok[aba_ativa]
         is_minha  = r.get("tipo") == "minha"
@@ -8341,21 +8331,21 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         cor = get_avatar_color(aba_ativa)
         bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ").replace('"', "&quot;").replace("'", "&#39;")
         posts_list = r.get("posts", [])
- 
+
         seg_fmt   = fmt_num(r.get("seguidores", 0))
         posts_fmt = fmt_num(r.get("total_posts", 0))
         handle_clean = (r.get("handle") or "").lstrip("@")
         ig_url = f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#"
         avatar_letras = gerar_avatar(r["nome"])
         profile_pic_url = r.get("profile_pic", "")
- 
+
         # ── Estado de subtab ────────────────────────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
         if redes_subtab_key not in st.session_state:
             st.session_state[redes_subtab_key] = "postagens"
- 
+
         subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
- 
+
         # ── Ghost buttons subtabs ───────────────────────────────────
         for sub in ["postagens", "ia"]:
             ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
@@ -8375,12 +8365,12 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
             if st.button(f"redes_sub_{aba_ativa}_{sub}", key=ghost_k):
                 st.session_state[redes_subtab_key] = sub
                 st.rerun()
- 
+
         # ── Ghost button bio IA ─────────────────────────────────────
         chave_bio_ia = f"ia_bio_{r.get('handle','').replace('@','')}"
         if chave_bio_ia not in st.session_state:
             st.session_state[chave_bio_ia] = ""
- 
+
         st.markdown(f"""
         <style>
         .st-key-btn_bio_ia_{aba_ativa} {{
@@ -8390,7 +8380,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         }}
         </style>
         """, unsafe_allow_html=True)
- 
+
         analisar_bio = st.button(
             f"__bio_{aba_ativa}__",
             key=f"btn_bio_ia_{aba_ativa}",
@@ -8403,21 +8393,21 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
                     try:
                         prompt_bio = f"""
 Analise a bio do Instagram abaixo e responda em português de forma direta e objetiva:
- 
+
 Bio: "{bio_txt}"
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Seguidores: {r.get('seguidores',0)} | Engajamento: {r.get('eng_pct',0):.2f}%
- 
+
 Responda com:
 ### Posicionamento
 Qual é o posicionamento transmitido pela bio?
- 
+
 ### Pontos Fortes
 (2 pontos positivos da bio)
- 
+
 ### O que melhorar
 (2 sugestões concretas de melhoria)
- 
+
 ### Bio sugerida
 Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
@@ -8427,7 +8417,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
                     except Exception as e:
                         st.session_state[chave_bio_ia] = f"Erro: {e}"
                         st.rerun()
- 
+
         bio_resultado = st.session_state.get(chave_bio_ia, "")
         bio_resultado_html = bio_resultado.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>") if bio_resultado else ""
  
