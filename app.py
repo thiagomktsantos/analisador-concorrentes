@@ -3970,7 +3970,7 @@ elif st.session_state.pagina == "ads":
         if not plats:
             plats = ["facebook", "instagram"]
 
-         raw_media_type = (
+        raw_media_type = (
             item.get("mediaType")
             or item.get("media_type")
             or snapshot.get("display_format")
