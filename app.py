@@ -9050,6 +9050,7 @@ body{{padding-bottom:8px;}}
     <div class="stat-card"><div class="stat-num2" id="stat-carrossel">{n_carrossel}</div><div class="stat-lbl2">Carrossel</div></div>
     <div class="stat-card"><div class="stat-num2" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl2">Curtidas</div></div>
     <div class="stat-card"><div class="stat-num2" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl2">Comentários</div></div>
+    <div class="stat-card"><div class="stat-num2" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl2">Melhor Engaj.</div></div>
 </div>
 
 <div class="posts-grid" id="posts-grid"></div>
