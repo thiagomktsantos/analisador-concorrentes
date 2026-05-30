@@ -8804,7 +8804,7 @@ body{{padding-bottom:8px;}}
     text-align:center; line-height:1;
 }}
 .btn-ia:hover {{ background:#dbeafe; }}
-.ia-hint {{ font-size:11px; color:#9ca3af; text-align:center; line-height:1.4; }}
+.ia-hint {{ font-size:14px; color:#9ca3af; text-align:center; line-height:1.4; }}
 .bio-resultado {{
     background:#f0fdf4; border-top:1px solid #bbf7d0;
     padding:14px 20px; font-size:13px; color:#374151; line-height:1.75;
