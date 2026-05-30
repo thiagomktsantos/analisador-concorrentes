@@ -4060,7 +4060,7 @@ elif st.session_state.pagina == "ads":
             return [], [], None
 
         ads_normalizados = [_normalizar_item_apify(item) for item in raw_items]
-        return ads_normalizados, raw_items[:3], None
+        return ads_normalizados, raw_items[:100], None
 
     def buscar_ads_apify(query: str, limit: int = 100) -> tuple:
         return _apify_run_sync(query.strip(), limit=limit)
@@ -4222,6 +4222,7 @@ elif st.session_state.pagina == "ads":
                     "ts":    _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
                     "nome":  ck,
                     "query": query,
+                    "_raw":  raw,
                 }
                 progresso[-1] = {
                     "nome": ck,
