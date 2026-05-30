@@ -8628,13 +8628,15 @@ Como interpretar as métricas desta postagem?
 
             if profile_pic_url:
                 avatar_html = (
-                    f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden">'
+                    f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:transparent">'
                     f'<img src="{profile_pic_url}" id="avatar-img" '
-                    f'style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
+                    f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" '
+                    f'onerror="this.parentElement.style.background=\'{cor}\';this.parentElement.style.display=\'flex\';this.parentElement.style.alignItems=\'center\';this.parentElement.style.justifyContent=\'center\';this.parentElement.innerHTML=\'{avatar_letras}\';this.parentElement.style.fontSize=\'18px\';this.parentElement.style.fontWeight=\'700\';this.parentElement.style.color=\'#fff\';" />'
                     f'</div>'
                 )
             else:
                 avatar_html = f'<div class="avatar">{avatar_letras}</div>'
+
 
             components.html(f"""
 <!DOCTYPE html><html>
@@ -8976,27 +8978,6 @@ var R_SEG     = {r_seg_val};
 
 var POST_STORE = {{}};
 ALL_POSTS.forEach(function(p) {{ POST_STORE[p.jp] = p; }});
-
-// Fix avatar fallback
-(function() {{
-    var img = document.getElementById('avatar-img');
-    if (!img) return;
-    img.onerror = function() {{
-        var wrap = document.getElementById('avatar-wrap');
-        if (!wrap) return;
-        wrap.style.background = '{cor}';
-        wrap.style.padding = '';
-        wrap.style.overflow = '';
-        wrap.innerHTML = '{avatar_letras}';
-        wrap.style.display = 'flex';
-        wrap.style.alignItems = 'center';
-        wrap.style.justifyContent = 'center';
-        wrap.style.fontSize = '18px';
-        wrap.style.fontWeight = '700';
-        wrap.style.color = '#fff';
-        wrap.style.borderRadius = '50%';
-    }};
-}})();
 
 function fmtNum(n) {{
     n = Math.round(n || 0);
