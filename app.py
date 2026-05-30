@@ -8997,7 +8997,7 @@ body{{padding-bottom:8px;}}
         <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
         <div class="bio-left">
             {('<div class="bio-text">&ldquo;' + bio_txt + '&rdquo;</div>') if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
-            {('<a href="' + ext_url + '" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:13px;font-weight:600;color:#3a9fd6;text-decoration:none;word-break:break-all;">🔗 ' + ext_url_display + '</a>') if ext_url else ''}
+            {('<br><a href="' + ext_url + '" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:13px;font-weight:600;color:#3a9fd6;text-decoration:none;word-break:break-all;">🔗 ' + ext_url_display + '</a>') if ext_url else ''}
         </div>
         <div class="bio-right">
             <button class="btn-ia" onclick="triggerBio()">🤖 Analisar Bio</button>
