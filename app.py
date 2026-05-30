@@ -8435,7 +8435,7 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
         # IFRAME UNIFICADO: header + bio + tabs + conteúdo
         # ══════════════════════════════════════════════════════════════
  
-         if subtab_atual == "postagens":
+        if subtab_atual == "postagens":
             posts_col_key = f"posts_cols_{aba_ativa}"
             if posts_col_key not in st.session_state:
                 st.session_state[posts_col_key] = 4
