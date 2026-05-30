@@ -4186,7 +4186,7 @@ elif st.session_state.pagina == "ads":
                 icone = "•"; cor_txt = "#9ca3af"; bg = "#1a2535"; brd = "#ffffff11"
 
             count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else ""
-            msg_safe  = msg.replace("<","&lt;").replace(">","&gt;")
+            msg_safe = str(msg or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"','&quot;')
 
             itens_html += f"""
             <div style="display:flex;align-items:center;gap:12px;
