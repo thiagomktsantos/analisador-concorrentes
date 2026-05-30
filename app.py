@@ -3877,13 +3877,22 @@ elif st.session_state.pagina == "ads":
         caption = (first_str(snapshot.get("caption"))
                    or first_str(ad.get("caption")))
 
-        if not body and cards:
+        # Se body é template dinâmico, busca nos cards primeiro
+        if (not body or _is_dynamic(body)) and cards:
             for card in cards:
                 if isinstance(card, dict):
-                    v = first_str(card.get("body") or card.get("message") or card.get("title") or "")
-                    if v:
+                    v = first_str(card.get("body") or card.get("message") or "")
+                    if v and not _is_dynamic(v):
                         body = v
                         break
+            # title do card também
+            if not title or _is_dynamic(title):
+                for card in cards:
+                    if isinstance(card, dict):
+                        v = first_str(card.get("title") or "")
+                        if v and not _is_dynamic(v):
+                            title = v
+                            break
 
         # Limpa title se estiver contido no body ou for prefixo dele
         if title and body and (title in body or body.startswith(title)):
