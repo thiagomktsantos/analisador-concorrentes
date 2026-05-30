@@ -5787,7 +5787,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.tabs-bar {{ display:flex; background:#f9fafb; border:1px solid #e5e7eb; border-top:none; border-bottom:none; }}
+.tabs-bar {{ display:flex; background:#dfe1e2; border:1px solid #e5e7eb; border-top:none; border-bottom:none; }}
 .tab-btn {{ flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#374151; background:#f3f4f6; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:8px; }}
 .tab-btn:hover {{ color:#1d4ed8; background:#f3f4f6; }}
 .tab-btn.active {{ color:#1a2e4a; border-bottom:4px solid #3a9fd6; background:#fff; font-weight:800; border-top:1px solid #d8d9da; }}
