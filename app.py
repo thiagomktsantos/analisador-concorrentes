@@ -6178,7 +6178,15 @@ function buildCell(src, pos, grid, doc, colors, labelMap) {
 
     var lbl = doc.createElement('div');
     lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + color + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + color + ';flex-shrink:0;';
-    lbl.textContent = labelMap[pos] || ('Imagem ' + (pos+1));
+        // Se ambas forem landscape/quadradas (ratio < 1.1), são ambas Feed
+        var allFeed = imgs.length > 1 && imgs._ratios && imgs._ratios[0] < 1.1 && imgs._ratios[1] < 1.1;
+        var allStories = imgs.length > 1 && imgs._ratios && imgs._ratios[0] >= 1.1 && imgs._ratios[1] >= 1.1;
+        var dynamicLabels = allFeed
+            ? ['Feed', 'Feed (variação)']
+            : allStories
+                ? ['Stories', 'Stories (variação)']
+                : labelMap;
+        lbl.textContent = dynamicLabels[pos] || ('Imagem ' + (pos+1));
 
     var imgEl = doc.createElement('img');
     imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:65vh;';
@@ -6248,7 +6256,9 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
                 done++;
                 if (done === hqImgs.slice(0,2).length) {
                     results.sort(function(a, b) { return a.ratio - b.ratio; });
-                    renderGrid(results.map(function(r) { return r.src; }));
+                    var srcs = results.map(function(r) { return r.src; });
+                    srcs._ratios = results.map(function(r) { return r.ratio; });
+                    renderGrid(srcs);
                 }
             };
             tmp.src = src || '';
