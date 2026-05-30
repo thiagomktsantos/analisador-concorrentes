@@ -5936,7 +5936,7 @@ setTimeout(ajustarAltura,100);
                     title_safe = title_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
                     desc_safe  = _truncar(desc_clean, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
-_raw_item = next(
+                    _raw_item = next(
                         (r for r in cache_entry.get("_raw", []) if str(r.get("adArchiveID") or r.get("ad_archive_id") or r.get("id") or "") == str(ad.get("id",""))),
                         {}
                     )
