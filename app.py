@@ -5459,7 +5459,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .tab-btn {{
     padding:12px 20px;
     font-size:13px; font-weight:700;
-    color:#9ca3af; background:transparent;
+    color:#9ca3af;
     border:none; border-bottom:3px solid transparent;
     cursor:pointer; font-family:'DM Sans',sans-serif;
     transition:all 0.15s; white-space:nowrap;
