@@ -3885,6 +3885,14 @@ elif st.session_state.pagina == "ads":
                         body = v
                         break
 
+        # Limpa title se estiver contido no body ou for prefixo dele
+        if title and body and (title in body or body.startswith(title)):
+            title = ""
+
+        # Limpa desc se for igual ao body
+        if desc and body and desc.strip() == body.strip():
+            desc = ""
+
         return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
 
     def _extract_videos(ad: dict) -> list:
@@ -5986,7 +5994,7 @@ setTimeout(ajustarAltura,100);
                     "WATCH_MORE":"Ver Mais","APPLY_NOW":"Candidatar-se","GET_OFFER":"Ver Oferta",
                     "SUBSCRIBE":"Assinar","CALL_NOW":"Ligar Agora","SEND_MESSAGE":"Enviar Mensagem",
                     "GET_DIRECTIONS":"Como Chegar","BUY_NOW":"Comprar","DONATE":"Doar",
-                    "OPEN_LINK":"Abrir Link","NO_BUTTON":"",
+                    "OPEN_LINK":"Abrir Link","SEE_DETAILS":"Ver Detalhes","NO_BUTTON":"",
                 }
 
                 all_cards_html = []
@@ -6300,7 +6308,8 @@ function imgFallback_{uid}(img){{
         {'<div class="dyn-float">Dinâmico</div>' if is_dyn else ''}
         <div class="page-header">{page_avatar_html}<div style="flex:1;min-width:0"><div class="page-name">{ad.get("page_name") or nome}</div><div class="page-sponsored">Patrocinado</div></div></div>
         {body_display}
-        {'<div class="copy-title">' + title_safe + '</div>' if title_safe else ''}
+        title_safe_clean = title_safe if (title_safe and title_safe != body_safe[:len(title_safe)]) else ""
+        {'<div class="copy-title">' + title_safe_clean + '</div>' if title_safe_clean else ''}
         {'<div class="copy-desc">' + desc_safe + '</div>' if desc_safe else ''}
         {'<div class="no-copy">Sem copy disponível.</div>' if not body_safe and not title_safe and not desc_safe else ''}
     </div>
