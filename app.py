@@ -8564,15 +8564,15 @@ Como interpretar as métricas desta postagem?
                 if n >= 1_000:     return f"{n/1_000:.1f}K"
                 return str(n)
  
-if profile_pic_url:
-            avatar_html = (
-                f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden">'
-                f'<img src="{profile_pic_url}" id="avatar-img" '
-                f'style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
-                f'</div>'
-            )
-        else:
-            avatar_html = f'<div class="avatar">{avatar_letras}</div>'
+            if profile_pic_url:
+                avatar_html = (
+                    f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden">'
+                    f'<img src="{profile_pic_url}" id="avatar-img" '
+                    f'style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
+                    f'</div>'
+                )
+            else:
+                avatar_html = f'<div class="avatar">{avatar_letras}</div>'
 
         components.html(f"""
 <!DOCTYPE html><html>
