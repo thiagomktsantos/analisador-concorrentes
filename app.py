@@ -7411,11 +7411,11 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .link-btn:hover {{ text-decoration:underline; color:#374151; }}
 .sep {{ color:#d1d5db; font-size:13px; }}
 .clear-btn {{
-    font-size:13px; color:#ef4444;
+    font-size:13px; color:#6b7280;
     cursor:pointer; background:none; border:none; padding:0;
     font-family:'DM Sans',sans-serif; text-underline-offset:3px;
 }}
-.clear-btn:hover {{ text-decoration:underline; }}
+.clear-btn:hover {{ text-decoration:underline; color:#374151;  }}
 </style>
 <div class="row-coleta">
     <button class="link-btn" onclick="abrirModal()">🕒 Última coleta: <b>{ultima_coleta}</b></button>
