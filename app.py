@@ -8473,7 +8473,6 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
 
         # ── Dados do perfil ativo ────────────────────────────────────
         r = ok[aba_ativa]
-        st.write("DEBUG profile_pic:", r.get("profile_pic", "VAZIO"))
         is_minha  = r.get("tipo") == "minha"
         badge_bg  = "#eff6ff" if is_minha else "#f3f4f6"
         badge_txt = "#1d4ed8" if is_minha else "#6b7280"
