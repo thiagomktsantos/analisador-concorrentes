@@ -7388,7 +7388,7 @@ html, body { background: transparent; overflow: hidden; }
 
         import json as _jr
         d = st.session_state.metricas_redes.get("dados", [])
-        djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\") if ultima_coleta else "[]"
+        _djs = _jr.dumps(d, ensure_ascii=False).replace("</", "<\\/").replace("\\", "\\\\").replace("'", "\\'") if ultima_coleta else "[]"
         fn = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json' if ultima_coleta else ""
 
         components.html(f"""
@@ -7423,7 +7423,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     <button class="clear-btn" onclick="triggerLimpar()">Limpar cache</button>
 </div>
 <script>
-var DADOS_JSON = '{djs}';
+var DADOS_JSON = '{_djs}';
 var FILENAME   = '{fn}';
 var ULTIMA     = '{ultima_coleta}';
 
