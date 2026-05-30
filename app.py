@@ -7991,20 +7991,18 @@ function triggerBtn(label) {
         coletar_rapidapi.clear()
         resultados_lista = []
 
-        progresso_placeholder = st.empty()
+        modal_placeholder = st.empty()
 
-        def render_progresso(processados, total, itens):
+        def render_modal_coleta(processados, total, itens):
             linhas_html = []
             for item in itens:
                 icone = "✅" if item.get("done") else ("⏳" if item.get("atual") else "⬜")
-                cache_txt = ""
-                anuncios_txt = ""
+                detalhe = ""
                 if item.get("done"):
-                    anuncios_txt = f'<span style="color:#3a9fd6;font-weight:700">{item["n"]} posts</span>'
-                    cache_txt = '<span style="color:#9ca3af;font-size:12px">Concluído</span>'
+                    detalhe = f'<span style="color:#3a9fd6;font-weight:700">{item["n"]} posts</span>'
                 elif item.get("atual"):
-                    cache_txt = '<span style="color:#9ca3af;font-size:12px">Coletando...</span>'
- 
+                    detalhe = '<span style="color:#9ca3af;font-size:12px">Coletando...</span>'
+
                 linhas_html.append(
                     '<div style="background:#1e3a5f;border-radius:10px;padding:14px 18px;'
                     'display:flex;align-items:center;justify-content:space-between;gap:12px;">'
@@ -8012,66 +8010,104 @@ function triggerBtn(label) {
                     f'<span style="font-size:20px">{icone}</span>'
                     '<div>'
                     f'<div style="font-size:14px;font-weight:700;color:#e2e8f0">{item["nome"]}</div>'
-                    f'{cache_txt}'
                     '</div></div>'
-                    f'{anuncios_txt}'
+                    f'{detalhe}'
                     '</div>'
                 )
- 
+
             linhas_itens = "".join(linhas_html)
             pct = int((processados / total) * 100) if total > 0 else 0
             is_done = processados == total
-            cor_pct   = "#22c55e" if is_done else "#3a9fd6"
+            cor_pct = "#22c55e" if is_done else "#3a9fd6"
             icone_hdr = "✅" if is_done else "⏳"
-            titulo    = "Busca concluída" if is_done else "Coletando perfis..."
+            titulo = "Busca concluída!" if is_done else "Coletando perfis..."
+            plural = "s" if total > 1 else ""
             qtd_label = "empresas" if total > 1 else "empresa"
-            plural    = "s" if total > 1 else ""
-            rodape    = '<div style="text-align:center;margin-top:18px;font-size:13px;color:#64748b;">Fechando automaticamente...</div>' if is_done else ""
- 
-            html = "".join([
-                '<div style="background:#0e2a47;border-radius:20px;padding:32px;',
-                'box-shadow:0 20px 60px rgba(0,0,0,0.5);border:1px solid #1e3a5f;margin:8px 0;">',
- 
-                '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">',
-                f'<div style="width:42px;height:42px;border-radius:50%;background:{cor_pct};',
-                'display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">',
-                f'{icone_hdr}</div>',
-                '<div>',
-                f'<div style="font-size:17px;font-weight:800;color:#f1f5f9;">{titulo}</div>',
-                f'<div style="font-size:13px;color:#94a3b8;">{processados}/{total} {qtd_label} processada{plural}</div>',
-                '</div>',
-                f'<div style="margin-left:auto;font-size:22px;font-weight:900;color:{cor_pct};">{pct}%</div>',
-                '</div>',
- 
-                '<div style="background:#1e3a5f;border-radius:8px;height:8px;margin-bottom:20px;overflow:hidden;">',
-                f'<div style="background:linear-gradient(90deg,#3a9fd6,#22c55e);height:100%;width:{pct}%;border-radius:8px;"></div>',
-                '</div>',
- 
-                f'<div style="display:flex;flex-direction:column;gap:10px;">{linhas_itens}</div>',
-                rodape,
-                '</div>',
-            ])
- 
-            progresso_placeholder.markdown(html, unsafe_allow_html=True)
+            rodape = (
+                '<div style="text-align:center;margin-top:18px;font-size:13px;color:#64748b;">'
+                'Fechando automaticamente...</div>'
+            ) if is_done else ""
+
+            html_modal = f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.overlay {{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.72);
+    z-index:999999;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+}}
+.card {{
+    background:#0e2a47;
+    border-radius:20px;
+    padding:32px;
+    width:min(95vw,500px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    border:1px solid #1e3a5f;
+}}
+</style>
+<div class="overlay">
+<div class="card">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        <div style="width:42px;height:42px;border-radius:50%;background:{cor_pct};
+            display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+            {icone_hdr}
+        </div>
+        <div>
+            <div style="font-size:17px;font-weight:800;color:#f1f5f9;">{titulo}</div>
+            <div style="font-size:13px;color:#94a3b8;">{processados}/{total} {qtd_label} processada{plural}</div>
+        </div>
+        <div style="margin-left:auto;font-size:22px;font-weight:900;color:{cor_pct};">{pct}%</div>
+    </div>
+    <div style="background:#1e3a5f;border-radius:8px;height:8px;margin-bottom:20px;overflow:hidden;">
+        <div style="background:linear-gradient(90deg,#3a9fd6,#22c55e);height:100%;width:{pct}%;border-radius:8px;"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">{linhas_itens}</div>
+    {rodape}
+</div>
+</div>
+<script>
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.position = 'fixed';
+                iframes[i].style.inset = '0';
+                iframes[i].style.width = '100vw';
+                iframes[i].style.height = '100vh';
+                iframes[i].style.zIndex = '999998';
+                iframes[i].style.border = 'none';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
+}})();
+</script>
+"""
+            with modal_placeholder:
+                components.html(html_modal, height=600, scrolling=False)
 
         itens_status = [{"nome": e["nome"], "done": False, "atual": False, "n": 0} for e in todas]
 
         for idx_e, e in enumerate(todas):
             itens_status[idx_e]["atual"] = True
-            render_progresso(idx_e, len(todas), itens_status)
+            render_modal_coleta(idx_e, len(todas), itens_status)
 
-            r = coletar_rapidapi(e["instagram"])
-            n_posts = len(r.get("posts", [])) if r and not r.get("erro") else 0
+            r_col = coletar_rapidapi(e["instagram"])
+            n_posts = len(r_col.get("posts", [])) if r_col and not r_col.get("erro") else 0
 
             itens_status[idx_e]["done"] = True
             itens_status[idx_e]["atual"] = False
             itens_status[idx_e]["n"] = n_posts
-            resultados_lista.append({**e, **(r or {"erro": "Sem resposta"})})
+            resultados_lista.append({**e, **(r_col or {"erro": "Sem resposta"})})
 
-        render_progresso(len(todas), len(todas), itens_status)
+        render_modal_coleta(len(todas), len(todas), itens_status)
         import time; time.sleep(2)
-        progresso_placeholder.empty()
-        st.session_state.metricas_redes = cache
+        modal_placeholder.empty()
 
         salvar_cache_redes(resultados_lista)
         cache = {
@@ -8292,6 +8328,7 @@ function triggerTab(label) {{
                 "is_minha": is_minha,
                 "badge_lbl": "Minha empresa" if is_minha else "Concorrente",
                 "cor": cor,
+                "profile_pic": r.get("profile_pic", ""),
             })
 
         empresas_redes_str = json.dumps(empresas_redes_json, ensure_ascii=False)
@@ -8665,18 +8702,25 @@ Como interpretar as métricas desta postagem?
                 if n >= 1_000:     return f"{n/1_000:.1f}K"
                 return str(n)
 
-            if profile_pic_url:
-                # Proxy via images.weserv.nl para contornar CORS do Instagram
-                proxied_url = f"https://images.weserv.nl/?url={profile_pic_url}&w=52&h=52&fit=cover&mask=circle"
+            _raw_pic = r.get("profile_pic", "")
+            if _raw_pic:
+                proxied_url = f"https://images.weserv.nl/?url={_raw_pic}&w=52&h=52&fit=cover&mask=circle"
                 avatar_html = (
                     f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:transparent">'
                     f'<img src="{proxied_url}" id="avatar-img" '
                     f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" '
-                    f'onerror="this.parentElement.style.background=\'{cor}\';this.parentElement.style.overflow=\'hidden\';this.parentElement.innerHTML=\'{avatar_letras}\';this.parentElement.style.display=\'flex\';this.parentElement.style.alignItems=\'center\';this.parentElement.style.justifyContent=\'center\';this.parentElement.style.fontSize=\'18px\';this.parentElement.style.fontWeight=\'700\';this.parentElement.style.color=\'#fff\';" />'
+                    f'onerror="this.parentElement.style.background=\'{cor}\';'
+                    f'this.parentElement.style.display=\'flex\';'
+                    f'this.parentElement.style.alignItems=\'center\';'
+                    f'this.parentElement.style.justifyContent=\'center\';'
+                    f'this.parentElement.style.fontSize=\'18px\';'
+                    f'this.parentElement.style.fontWeight=\'700\';'
+                    f'this.parentElement.style.color=\'#fff\';'
+                    f'this.parentElement.innerHTML=\'{avatar_letras}\';" />'
                     f'</div>'
                 )
             else:
-                avatar_html = f'<div class="avatar">{avatar_letras}</div>'
+                avatar_html = f'<div class="avatar" style="background:{cor}">{avatar_letras}</div>'
 
             components.html(f"""
 <!DOCTYPE html><html>
