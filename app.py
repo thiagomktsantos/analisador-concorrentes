@@ -3892,19 +3892,39 @@ elif st.session_state.pagina == "ads":
         seen = set()
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
+
         def add(url):
             url = (url or "").strip()
             if url and url not in seen and url.startswith("http"):
                 seen.add(url); vids.append(url)
-        for k in ("video_hd_url","video_sd_url","video_url"):
-            add(ad.get(k)); add(snapshot.get(k))
+
+        # 1. Vídeos diretos no ad e snapshot
+        for k in ("video_hd_url", "video_sd_url", "video_url"):
+            add(ad.get(k))
+            add(snapshot.get(k))
+
+        # 2. snapshot.videos[] — lista de objetos ← ERA ISSO QUE FALTAVA
+        for obj in (snapshot.get("videos") or []):
+            if isinstance(obj, dict):
+                add(obj.get("video_sd_url"))   # sd primeiro (menor, mais rápido)
+                add(obj.get("video_hd_url"))
+                add(obj.get("video_url"))
+
+        # 3. Cards
         for card in cards:
             if isinstance(card, dict):
-                for k in ("video_hd_url","video_sd_url","video_url"):
+                for k in ("video_hd_url", "video_sd_url", "video_url"):
                     add(card.get(k))
+
+        # 4. videos[] no nível raiz
         for v in (ad.get("videos") or []):
-            add(v)
-        sd = [u for u in vids if any(x in u.lower() for x in ("sd","360","480","_sd"))]
+            if isinstance(v, str):
+                add(v)
+            elif isinstance(v, dict):
+                add(v.get("video_sd_url"))
+                add(v.get("video_hd_url"))
+
+        sd = [u for u in vids if any(x in u.lower() for x in ("sd", "360", "480", "_sd", "m412"))]
         hd = [u for u in vids if u not in sd]
         return sd + hd
 
@@ -3950,8 +3970,14 @@ elif st.session_state.pagina == "ads":
         if not plats:
             plats = ["facebook", "instagram"]
 
-        raw_media_type = (item.get("mediaType") or item.get("media_type") or "").upper()
-        has_video   = bool(videos) or raw_media_type == "VIDEO"
+         raw_media_type = (
+            item.get("mediaType")
+            or item.get("media_type")
+            or snapshot.get("display_format")  # ← ADICIONE ISSO
+            or ""
+        ).upper()
+
+        has_video   = bool(videos) or raw_media_type in ("VIDEO", "REELS")
         has_cards   = len(cards) > 1 and not has_video
         has_image   = bool(images) and not has_video
 
