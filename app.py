@@ -6181,13 +6181,20 @@ function buildCell(src, pos, grid, doc, colors, labelMap) {
         // Se ambas forem landscape/quadradas (ratio < 1.1), são ambas Feed
         var _r0 = imgs._ratios ? imgs._ratios[0] : 0;
         var _r1 = imgs._ratios ? (imgs._ratios[1] !== undefined ? imgs._ratios[1] : _r0) : 0;
-        var _allFeed    = imgs.length > 1 && _r0 < 1.1 && _r1 < 1.1;
-        var _allStories = imgs.length > 1 && _r0 >= 1.1 && _r1 >= 1.1;
-        var dynamicLabels = _allFeed
-            ? ['Feed 1', 'Feed 2']
-            : _allStories
-                ? ['Stories 1', 'Stories 2']
-                : labelMap;
+        // Considera "iguais" se diferença < 15% do maior ratio
+        var _diff = Math.abs(_r0 - _r1);
+        var _maxR = Math.max(_r0, _r1) || 1;
+        var _similar = (_diff / _maxR) < 0.15;
+        var dynamicLabels;
+        if (imgs.length <= 1) {
+            dynamicLabels = [_r0 >= 1.2 ? 'Stories' : 'Feed'];
+        } else if (_similar) {
+            // Proporções parecidas — usa threshold absoluto
+            dynamicLabels = _r0 >= 1.2 ? ['Stories 1', 'Stories 2'] : ['Feed 1', 'Feed 2'];
+        } else {
+            // Proporções diferentes — menor = Feed, maior = Stories (já ordenado pelo sort)
+            dynamicLabels = ['Feed', 'Stories'];
+        }
         lbl.textContent = dynamicLabels[pos] || ('Imagem ' + (pos+1));
 
     var imgEl = doc.createElement('img');
