@@ -8841,7 +8841,7 @@ body{{padding-bottom:8px;}}
     background:#fafafa; outline:none; transition:border-color 0.15s;
 }}
 .filter-input:focus {{ border-color:#3a9fd6; background:#fff; }}
-.filter-input::placeholder {{ color:#9ca3af; }}
+.filter-input::placeholder {{ color:#6b7280; }}
 .filter-select {{
     height:40px; padding:0 32px 0 12px;
     border:2px solid #e5e7eb; border-radius:8px;
