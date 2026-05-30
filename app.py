@@ -6257,7 +6257,7 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
 
     function renderGrid(imgs) {
         var grid = doc.createElement('div');
-        grid.style.cssText = 'display:grid;grid-template-columns:' + (imgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;align-items:start;';
+        grid.style.cssText = 'display:grid;grid-template-columns:' + (imgs.length > 1 ? '1.4fr 1fr' : '1fr') + ';gap:14px;align-items:start;';
         imgs.forEach(function(src, pos) {
             var color = colors[pos] || '#9ca3af';
             var cell  = doc.createElement('div');
@@ -6275,9 +6275,17 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
             cell.appendChild(imgEl);
             grid.appendChild(cell);
         });
+        var debugBtn = doc.createElement('button');
+        debugBtn.textContent = '🔍 Ver todas as 4 imagens (debug)';
+        debugBtn.style.cssText = 'margin-top:14px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;';
+        debugBtn.onclick = function() {
+            closeModal();
+            setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
+        };
         box.appendChild(closeBtn);
         box.appendChild(title);
         box.appendChild(grid);
+        box.appendChild(debugBtn);
         overlay.appendChild(box);
         doc.body.appendChild(overlay);
     }
