@@ -8715,11 +8715,7 @@ Como interpretar as métricas desta postagem?
 
             _raw_pic = r.get("profile_pic", "")
             if _raw_pic:
-                # Se já é URL pública do Supabase, usa direto; senão tenta weserv
-                if "supabase" in _raw_pic:
-                    img_src = _raw_pic
-                else:
-                    img_src = f"https://images.weserv.nl/?url={_raw_pic}&w=104&h=104&fit=cover&output=jpg"
+                img_src = _raw_pic
                 avatar_html = (
                     f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:{cor};">'
                     f'<img src="{img_src}" id="avatar-img" '
