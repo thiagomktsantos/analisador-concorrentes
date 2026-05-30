@@ -7581,7 +7581,7 @@ function abrirModal() {{
             st.session_state.redes_confirmar_limpar = False
             st.rerun()
 
-        if st.button("Sim, limpar", key="btn_confirmar_limpar_redes"):
+        if st.button("Sim, apagar dados", key="btn_confirmar_limpar_redes"):
             st.session_state.redes_confirmar_limpar = False
             st.session_state.metricas_redes = {}
             try:
@@ -7690,7 +7690,7 @@ function triggerBtn(label) {
     st.markdown("""
         <style>
         #redes-hr-wrapper {
-            margin-top: -1rem !important;
+            margin-top: -15px !important;
         }
         </style>
         <div id="redes-hr-wrapper">
