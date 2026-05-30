@@ -7938,19 +7938,13 @@ function triggerBtn(label) {
             if profile_pic:
                 try:
                     import requests as _req
+                    import base64 as _b64
                     _r = _req.get(profile_pic, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
                     if _r.status_code == 200:
-                        _fname = f"profile_pics/{handle_limpo}.jpg"
-                        supabase.storage.from_("redes-assets").upload(
-                            _fname,
-                            _r.content,
-                            {"content-type": "image/jpeg", "upsert": "true"},
-                        )
-                        _public_url = supabase.storage.from_("redes-assets").get_public_url(_fname)
-                        if _public_url:
-                            profile_pic = _public_url
-                except Exception as _e_pic:
-                    profile_pic = f"ERRO_UPLOAD:{_e_pic}"
+                        _mime = _r.headers.get("content-type", "image/jpeg").split(";")[0]
+                        profile_pic = f"data:{_mime};base64,{_b64.b64encode(_r.content).decode()}"
+                except Exception:
+                    pass
 
             _bio_links = user_data.get("bio_links") or []
             _external_url = (
