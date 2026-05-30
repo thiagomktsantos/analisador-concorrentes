@@ -7333,6 +7333,25 @@ elif st.session_state.pagina == "insights":
 # ---------------------------------------------------
 
 elif st.session_state.pagina == "redes":
+
+    st.markdown("""
+    <style>
+    [data-testid="stEmpty"] > div {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(0,0,0,0.7) !important;
+        z-index: 999999 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 24px !important;
+    }
+    [data-testid="stEmpty"] > div > div {
+        width: min(95vw, 560px) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
  
     import datetime
     import json
@@ -7894,7 +7913,28 @@ function triggerBtn(label) {
                 eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
 
-            # Salva foto de perfil no Supabase Storage para evitar bloqueio CORS
+            _profile_pic_raw = (
+                user_data.get("profile_pic_url_hd")
+                or user_data.get("profile_pic_url")
+                or user_data.get("hd_profile_pic_url_info", {}).get("url", "")
+                or ""
+            )
+
+            if not _profile_pic_raw and posts_data:
+                try:
+                    raw = posts_data[0].get("_raw", {})
+                    _profile_pic_raw = (
+                        raw.get("user", {}).get("profile_pic_url_hd", "")
+                        or raw.get("user", {}).get("profile_pic_url", "")
+                        or raw.get("caption", {}).get("user", {}).get("profile_pic_url_hd", "")
+                        or raw.get("caption", {}).get("user", {}).get("profile_pic_url", "")
+                        or ""
+                    )
+                except Exception:
+                    pass
+
+            profile_pic = _profile_pic_raw
+
             if profile_pic:
                 try:
                     import requests as _req
