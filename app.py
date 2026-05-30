@@ -8627,16 +8627,17 @@ Como interpretar as métricas desta postagem?
                 return str(n)
 
             if profile_pic_url:
+                # Proxy via images.weserv.nl para contornar CORS do Instagram
+                proxied_url = f"https://images.weserv.nl/?url={profile_pic_url}&w=52&h=52&fit=cover&mask=circle"
                 avatar_html = (
                     f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:transparent">'
-                    f'<img src="{profile_pic_url}" id="avatar-img" '
+                    f'<img src="{proxied_url}" id="avatar-img" '
                     f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" '
-                    f'onerror="this.parentElement.style.background=\'{cor}\';this.parentElement.style.display=\'flex\';this.parentElement.style.alignItems=\'center\';this.parentElement.style.justifyContent=\'center\';this.parentElement.innerHTML=\'{avatar_letras}\';this.parentElement.style.fontSize=\'18px\';this.parentElement.style.fontWeight=\'700\';this.parentElement.style.color=\'#fff\';" />'
+                    f'onerror="this.parentElement.style.background=\'{cor}\';this.parentElement.style.overflow=\'hidden\';this.parentElement.innerHTML=\'{avatar_letras}\';this.parentElement.style.display=\'flex\';this.parentElement.style.alignItems=\'center\';this.parentElement.style.justifyContent=\'center\';this.parentElement.style.fontSize=\'18px\';this.parentElement.style.fontWeight=\'700\';this.parentElement.style.color=\'#fff\';" />'
                     f'</div>'
                 )
             else:
                 avatar_html = f'<div class="avatar">{avatar_letras}</div>'
-
 
             components.html(f"""
 <!DOCTYPE html><html>
