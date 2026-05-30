@@ -193,7 +193,7 @@ def carregar_dados_usuario(user_id: str) -> dict:
         res = supabase.table("ci_dados").select("*").eq("user_id", user_id).execute()
         if res.data:
             row = res.data[0]
-            
+            return {
                 "minha_empresa": row.get("minha_empresa", {}),
                 "concorrentes": row.get("concorrentes", []),
                 "metricas_redes": row.get("metricas_redes", {}),
