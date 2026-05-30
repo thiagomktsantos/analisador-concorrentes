@@ -6187,9 +6187,20 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
     closeBtn.onclick = closeModal;
     var title = doc.createElement('div');
     title.style.cssText = 'color:#fff;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;font-family:DM Sans,sans-serif;opacity:0.6;';
-    title.textContent = hqImgs.length > 1 ? 'Criativos' : 'Feed (alta qualidade)';
-    var labels = ['Feed', 'Stories'];
+    title.textContent = hqImgs.length > 1 ? 'Feed · Stories (alta qualidade)' : 'Feed (alta qualidade)';
     var colors = ['#3a9fd6', '#2ecc71'];
+
+    // Detecta Feed vs Stories pela proporção (Stories = portrait > 1.2 ratio h/w)
+    function detectLabel(src, idx, cb) {
+        if (!src) { cb(idx === 0 ? 'Feed' : 'Stories'); return; }
+        var img = new window.parent.Image();
+        img.onload = function() {
+            var ratio = this.naturalHeight / this.naturalWidth;
+            cb(ratio > 1.2 ? 'Stories' : 'Feed');
+        };
+        img.onerror = function() { cb(idx === 0 ? 'Feed' : 'Stories'); };
+        img.src = src;
+    }
     var grid = doc.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;';
     hqImgs.forEach(function(src, i) {
@@ -6197,7 +6208,8 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
         cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
         var lbl = doc.createElement('div');
         lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = labels[i] || ('Imagem ' + (i+1));
+        lbl.textContent = 'Carregando...';
+        detectLabel(src, i, function(detectedLabel) { lbl.textContent = detectedLabel; });
         var imgEl = doc.createElement('img');
         imgEl.src = src || '';
         imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:70vh;';
