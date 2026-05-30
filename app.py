@@ -8458,7 +8458,7 @@ function syncHeight() {{
     for (var i = 0; i < frames.length; i++) {{
         try {{ if (frames[i].contentWindow === window) {{
             frames[i].style.height = (h + 2) + 'px';
-            frames[i].style.marginTop = '-19px';
+            frames[i].style.marginTop = '-42px';
             break;
         }} }} catch(e) {{}}
     }}
@@ -9385,7 +9385,7 @@ function syncHeight() {{
         try {{
             if (frames[i].contentWindow === window) {{
                 frames[i].style.height = (h + 12) + 'px';
-                frames[i].style.marginTop = '-250px';
+                frames[i].style.marginTop = '-277px';
                 break;
             }}
         }} catch(e) {{}}
