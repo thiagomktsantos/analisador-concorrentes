@@ -6179,12 +6179,14 @@ function buildCell(src, pos, grid, doc, colors, labelMap) {
     var lbl = doc.createElement('div');
     lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + color + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + color + ';flex-shrink:0;';
         // Se ambas forem landscape/quadradas (ratio < 1.1), são ambas Feed
-        var allFeed = imgs.length > 1 && imgs._ratios && imgs._ratios[0] < 1.1 && imgs._ratios[1] < 1.1;
-        var allStories = imgs.length > 1 && imgs._ratios && imgs._ratios[0] >= 1.1 && imgs._ratios[1] >= 1.1;
-        var dynamicLabels = allFeed
-            ? ['Feed', 'Feed (variação)']
-            : allStories
-                ? ['Stories', 'Stories (variação)']
+        var _r0 = imgs._ratios ? imgs._ratios[0] : 0;
+        var _r1 = imgs._ratios ? (imgs._ratios[1] !== undefined ? imgs._ratios[1] : _r0) : 0;
+        var _allFeed    = imgs.length > 1 && _r0 < 1.1 && _r1 < 1.1;
+        var _allStories = imgs.length > 1 && _r0 >= 1.1 && _r1 >= 1.1;
+        var dynamicLabels = _allFeed
+            ? ['Feed 1', 'Feed 2']
+            : _allStories
+                ? ['Stories 1', 'Stories 2']
                 : labelMap;
         lbl.textContent = dynamicLabels[pos] || ('Imagem ' + (pos+1));
 
@@ -6292,6 +6294,16 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
             closeModal();
             setTimeout(function() { openModalImages(allImgs, snapUrl); }, 100);
         };
+        // Atualiza título conforme o tipo detectado
+        if (imgs._ratios) {
+            var r0 = imgs._ratios[0];
+            var r1 = imgs._ratios[1] !== undefined ? imgs._ratios[1] : r0;
+            var allFeed2    = r0 < 1.1 && r1 < 1.1;
+            var allStories2 = r0 >= 1.1 && r1 >= 1.1;
+            if (allFeed2)    title.textContent = 'Feed (variações)';
+            else if (allStories2) title.textContent = 'Stories (variações)';
+            else             title.textContent = 'Feed · Stories (alta qualidade)';
+        }
         box.appendChild(closeBtn);
         box.appendChild(title);
         box.appendChild(grid);
