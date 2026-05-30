@@ -7949,8 +7949,8 @@ function triggerBtn(label) {
                         _public_url = supabase.storage.from_("redes-assets").get_public_url(_fname)
                         if _public_url:
                             profile_pic = _public_url
-                except Exception:
-                    pass
+                except Exception as _e_pic:
+                    profile_pic = f"ERRO_UPLOAD:{_e_pic}"
 
             _bio_links = user_data.get("bio_links") or []
             _external_url = (
@@ -8796,7 +8796,7 @@ body{{padding-bottom:8px;}}
 }}
 .bio-left {{
     padding:18px 20px; border-right:1px solid #f3f4f6;
-    display:flex; align-items:center;
+    display:flex; flex-direction:column; justify-content:center; gap:8px;
 }}
 .bio-text {{ font-size:15px; color:#374151; line-height:1.75; }}
 .bio-empty {{ font-size:14px; color:#d1d5db; font-style:italic; }}
@@ -8997,7 +8997,7 @@ body{{padding-bottom:8px;}}
         <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
         <div class="bio-left">
             {('<div class="bio-text">&ldquo;' + bio_txt + '&rdquo;</div>') if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
-            {('<br><a href="' + ext_url + '" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:13px;font-weight:600;color:#3a9fd6;text-decoration:none;word-break:break-all;">🔗 ' + ext_url_display + '</a>') if ext_url else ''}
+            {('<div><a href="' + ext_url + '" target="_blank" style="font-size:13px;font-weight:600;color:#3a9fd6;text-decoration:none;word-break:break-all;">🔗 ' + ext_url_display + '</a></div>') if ext_url else ''}
         </div>
         <div class="bio-right">
             <button class="btn-ia" onclick="triggerBio()">🤖 Analisar Bio</button>
