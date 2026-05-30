@@ -7385,34 +7385,56 @@ html, body { background: transparent; overflow: hidden; }
             use_container_width=True,
         )
         ultima_coleta = st.session_state.metricas_redes.get("ultima_coleta", "")
- 
+
         import json as _jr
         d = st.session_state.metricas_redes.get("dados", [])
         djs = _jr.dumps(d, ensure_ascii=False, indent=2).replace("</", "<\\/").replace("`", "\\`").replace("\\", "\\\\") if ultima_coleta else "[]"
         fn = f'dados_redes_{ultima_coleta.replace("/","_").replace(" ","_").replace(":","")}.json' if ultima_coleta else ""
- 
+
         components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.link-btn {{
-    font-size:13px; color:#6b7280; text-align:center;
-    display:{'block' if ultima_coleta else 'none'};
-    cursor:pointer;
-    text-underline-offset:3px; background:none; border:none;
-    width:100%; padding:0;font-family:'DM Sans',sans-serif;
+.row-coleta {{
+    display:{'flex' if ultima_coleta else 'none'};
+    align-items:center; justify-content:center; gap:6px;
+    font-size:13px; color:#6b7280; font-family:'DM Sans',sans-serif;
+    flex-wrap:nowrap; white-space:nowrap;
 }}
-.link-btn:hover {{text-decoration:underline; }}
+.link-btn {{
+    font-size:13px; color:#6b7280;
+    cursor:pointer; text-underline-offset:3px;
+    background:none; border:none; padding:0;
+    font-family:'DM Sans',sans-serif;
+}}
+.link-btn:hover {{ text-decoration:underline; color:#374151; }}
+.sep {{ color:#d1d5db; font-size:13px; }}
+.clear-btn {{
+    font-size:13px; color:#ef4444;
+    cursor:pointer; background:none; border:none; padding:0;
+    font-family:'DM Sans',sans-serif; text-underline-offset:3px;
+}}
+.clear-btn:hover {{ text-decoration:underline; }}
 </style>
-<button class="link-btn" onclick="abrirModal()">
-    🕒 Última coleta: <b>{ultima_coleta}</b>
-</button>
+<div class="row-coleta">
+    <button class="link-btn" onclick="abrirModal()">🕒 Última coleta: <b>{ultima_coleta}</b></button>
+    <span class="sep">|</span>
+    <button class="clear-btn" onclick="triggerLimpar()">Limpar cache</button>
+</div>
 <script>
-var DADOS_JSON = `{djs}`;
+var DADOS_JSON = '{djs}';
 var FILENAME   = '{fn}';
 var ULTIMA     = '{ultima_coleta}';
- 
+
+function triggerLimpar() {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === 'limpar_cache_redes') {{ b.click(); return; }}
+    }}
+}}
+
 function abrirModal() {{
     window.fechar = function() {{
         var o = window.parent.document.getElementById('raw_modal_overlay');
@@ -7422,73 +7444,102 @@ function abrirModal() {{
             window.parent.__rawEsc = null;
         }}
     }};
-    
     var doc = window.parent.document;
     var old = doc.getElementById('raw_modal_overlay');
     if (old) old.remove();
- 
     var D;
     try {{ D = JSON.parse(DADOS_JSON); }} catch(e) {{ D = []; }}
     var Dstr = JSON.stringify(D, null, 2);
- 
     var ov = doc.createElement('div');
     ov.id = 'raw_modal_overlay';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;';
     ov.onclick = function(e) {{ if(e.target===ov) fechar(); }};
- 
     var box = doc.createElement('div');
     box.style.cssText = 'background:#0d1117;border-radius:16px;overflow:hidden;position:relative;width:min(95vw,1100px);max-height:88vh;display:flex;flex-direction:column;border:1px solid #30363d;';
- 
     var hdr = doc.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #21262d;background:#161b22;flex-shrink:0;';
     hdr.innerHTML =
-        '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos da API</div>'
+        '<div><div style="font-size:15px;font-weight:700;color:#e6edf3;font-family:DM Sans,sans-serif;">📦 Dados brutos das Redes</div>'
         + '<div style="font-size:12px;color:#8b949e;margin-top:2px;">Última coleta: ' + ULTIMA + '</div></div>'
         + '<div style="display:flex;gap:10px;">'
-        + '<button id="raw_copy_btn" onclick="copiarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
-        + '<button onclick="baixarDados()" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
-        + '<button onclick="window.fechar()" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
+        + '<button id="raw_copy_btn" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">📋 Copiar</button>'
+        + '<button id="raw_down_btn" style="padding:7px 16px;border:1px solid #30363d;border-radius:8px;background:#21262d;color:#e6edf3;font-size:13px;font-weight:600;cursor:pointer;">⬇️ Baixar JSON</button>'
+        + '<button id="raw_close_btn" style="width:34px;height:34px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>'
         + '</div>';
- 
     var pre = doc.createElement('pre');
-    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;';
+    pre.style.cssText = 'flex:1;overflow-y:auto;overflow-x:auto;padding:20px 24px;font-size:12.5px;line-height:1.7;color:#e6edf3;font-family:monospace;background:#0d1117;margin:0;white-space:pre;max-height:calc(88vh - 80px);';
     pre.textContent = Dstr;
- 
     box.appendChild(hdr);
     box.appendChild(pre);
     ov.appendChild(box);
     doc.body.appendChild(ov);
- 
-    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') window.fechar(); }};
-    doc.addEventListener('keydown', window.parent.__rawEsc);
- 
-    window.copiarDados = function() {{
+
+    doc.getElementById('raw_close_btn').addEventListener('click', window.fechar);
+    doc.getElementById('raw_copy_btn').addEventListener('click', function() {{
         var b = doc.getElementById('raw_copy_btn');
-        navigator.clipboard.writeText(Dstr).then(function() {{
-            if(b) {{ b.textContent = '✅ Copiado!'; setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000); }}
-        }});
-    }};
- 
-    window.baixarDados = function() {{
+        try {{
+            var ta = doc.createElement('textarea');
+            ta.value = Dstr;
+            ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+            doc.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            doc.execCommand('copy');
+            doc.body.removeChild(ta);
+            b.textContent = '✅ Copiado!';
+            setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000);
+        }} catch(e) {{
+            b.textContent = '❌ Erro';
+            setTimeout(function() {{ b.textContent = '📋 Copiar'; }}, 2000);
+        }}
+    }});
+    doc.getElementById('raw_down_btn').addEventListener('click', function() {{
         var a = doc.createElement('a');
         a.href = URL.createObjectURL(new Blob([Dstr], {{type:'application/json'}}));
         a.download = FILENAME;
         a.click();
-    }};
+    }});
+
+    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') window.fechar(); }};
+    doc.addEventListener('keydown', window.parent.__rawEsc);
 }}
- 
+
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = '{"22px" if ultima_coleta else "0px"}';
+            iframes[i].style.height = '{"28px" if ultima_coleta else "0px"}';
             iframes[i].style.marginTop = '-8px';
             break;
         }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=22, scrolling=False)
+""", height=28, scrolling=False)
+
+    # ── Ghost button limpar cache — FORA do with col3 ──────────────
+    ghost_limpar_key = "btn_limpar_cache_redes"
+    st.markdown(f"""
+    <style>
+    .st-key-{ghost_limpar_key} {{
+        position:fixed !important; top:-9999px !important; left:-9999px !important;
+        width:0 !important; height:0 !important; overflow:hidden !important;
+        opacity:0 !important; pointer-events:none !important; display:none !important;
+    }}
+    .stElementContainer:has(.st-key-{ghost_limpar_key}) {{
+        display:none !important; height:0 !important; min-height:0 !important;
+        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    if st.button("limpar_cache_redes", key=ghost_limpar_key):
+        st.session_state.metricas_redes = {}
+        try:
+            supabase.table("ci_dados").update({"metricas_redes": {}}).eq("user_id", st.session_state.user.id).execute()
+        except Exception:
+            pass
+        st.rerun()
  
     # ── HR separador — fora das colunas, com correção de espaço ────
     st.markdown("""
