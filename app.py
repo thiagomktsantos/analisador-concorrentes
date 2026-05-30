@@ -6212,7 +6212,18 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
         detectLabel(src, i, function(detectedLabel) { lbl.textContent = detectedLabel; });
         var imgEl = doc.createElement('img');
         imgEl.src = src || '';
-        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:70vh;';
+        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;';
+        // Ajusta altura da caixa após detectar o tipo
+        detectLabel(src, i, function(detectedLabel) {
+            lbl.textContent = detectedLabel;
+            if (detectedLabel === 'Stories') {
+                cell.style.maxWidth = '340px';
+                imgEl.style.maxHeight = '600px';
+            } else {
+                cell.style.maxWidth = '100%';
+                imgEl.style.maxHeight = '400px';
+            }
+        });
         imgEl.onerror = function() {
             cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
         };
@@ -6257,7 +6268,7 @@ function openModalImages(imgs, snapUrl) {
     var labels = ['Idx 0 — Feed Alta', 'Idx 1 — Feed Baixa (thumb)', 'Idx 2 — Stories Alta', 'Idx 3 — Stories Baixa'];
     var colors = ['#3a9fd6', '#e67e22', '#2ecc71', '#e74c3c'];
     var grid = doc.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:14px;';
+    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;align-items:start;';
     imgs.forEach(function(src, i) {
         var cell = doc.createElement('div');
         cell.style.cssText = 'background:#111;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
