@@ -3909,11 +3909,11 @@ elif st.session_state.pagina == "ads":
 
         # Pega de todos os campos possíveis
         plats_raw = (
-            item.get("publisherPlatform")
-            or item.get("publisher_platform")
+            item.get("publisher_platform")
+            or item.get("publisherPlatform")
             or item.get("publisher_platforms")
-            or snapshot.get("publisher_platforms")
             or snapshot.get("publisher_platform")
+            or snapshot.get("publisher_platforms")
             or []
         )
 
@@ -3926,7 +3926,7 @@ elif st.session_state.pagina == "ads":
                 val = p.get("name") or p.get("value") or str(p)
                 plats.append(val.lower())
             elif isinstance(p, str):
-                plats.append(p.lower())  # FACEBOOK → facebook
+                plats.append(p.lower())  # "FACEBOOK" → "facebook"
 
         if not plats:
             plats = ["facebook", "instagram"]
