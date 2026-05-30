@@ -8834,7 +8834,7 @@ body{{padding-bottom:8px;}}
     background:#fff; flex-wrap:wrap;
 }}
 .filter-input {{
-    flex:1; min-width:160px; max-width:260px; height:40px;
+    flex:1; min-width:160px;height:40px;
     padding:0 14px; border:1px solid #f0f4f8; border-radius:8px;
     font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
     background:#fafafa; outline:none; transition:border-color 0.15s;
@@ -9023,7 +9023,7 @@ body{{padding-bottom:8px;}}
 <div class="filters-bar">
     <input class="filter-input" id="filter-text" type="text" placeholder="Pesquisar no copy..." oninput="applyFilters()" />
     <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
-        <option value="todos">Tipo (todos)</option>
+        <option value="todos">Tipo de Postagem (todos)</option>
         <option value="foto">Fotos</option>
         <option value="video">Vídeos</option>
         <option value="carrossel">Carrossel</option>
