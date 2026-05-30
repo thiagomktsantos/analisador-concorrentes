@@ -7771,6 +7771,29 @@ function abrirModal() {{
                 eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
  
+            # Extrai profile_pic dos posts coletados
+            profile_pic = ""
+            if posts_data:
+                for p_raw in (item.get("_raw", {}) for item in []):
+                    pass
+            # Busca direto no user_data ou nos posts brutos
+            profile_pic = (
+                user_data.get("profile_pic_url_hd")
+                or user_data.get("profile_pic_url")
+                or ""
+            )
+            # Se não veio no user_data, tenta pegar do primeiro post
+            if not profile_pic and posts_data:
+                try:
+                    first_raw = posts_data[0].get("_raw", {})
+                    profile_pic = (
+                        first_raw.get("user", {}).get("profile_pic_url", "")
+                        or first_raw.get("caption", {}).get("user", {}).get("profile_pic_url", "")
+                        or ""
+                    )
+                except Exception:
+                    pass
+
             return {
                 "handle":       "@" + handle_limpo,
                 "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
@@ -7784,12 +7807,7 @@ function abrirModal() {{
                 "posts":        posts_data,
                 "fonte":        "rapidapi",
                 "erro":         None,
-                "profile_pic":  (
-                    user_data.get("profile_pic_url_hd")
-                    or user_data.get("profile_pic_url")
-                    or user_data.get("hd_profile_pic_url_info", {}).get("url", "")
-                    or ""
-                ),
+                "profile_pic":  profile_pic,
             }
         except Exception as e:
             return {"erro": str(e)}
