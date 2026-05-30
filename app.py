@@ -6305,10 +6305,8 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
         if (imgs._ratios) {
             var r0 = imgs._ratios[0];
             var r1 = imgs._ratios[1] !== undefined ? imgs._ratios[1] : r0;
-            var _d = Math.abs(r0 - r1) / (Math.max(r0, r1) || 1);
-            var _sim = _d < 0.15;
-            var allFeed2    = _sim && r0 < 1.2;
-            var allStories2 = _sim && r0 >= 1.2;
+            var allFeed2    = r0 < 1.1 && r1 < 1.1;
+            var allStories2 = r0 >= 1.1 && r1 >= 1.1;
             if (allFeed2)    title.textContent = 'Feed (variações)';
             else if (allStories2) title.textContent = 'Stories (variações)';
             else             title.textContent = 'Feed · Stories (alta qualidade)';
