@@ -4202,8 +4202,9 @@ elif st.session_state.pagina == "ads":
             else:
                 icone = "•"; cor_txt = "#9ca3af"; bg = "#1a2535"; brd = "#ffffff11"
 
-            count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else ""
-            msg_safe = str(msg or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"','&quot;')
+            count_str = f'<span style="font-size:13px;font-weight:800;color:{cor_txt}">{count} anúncios</span>' if count is not None else "<span></span>"
+            nome_safe = str(nome or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            msg_safe  = str(msg or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"','&quot;')
 
             itens_html += f"""
             <div style="display:flex;align-items:center;gap:12px;
@@ -4212,7 +4213,7 @@ elif st.session_state.pagina == "ads":
                         margin-bottom:8px">
                 <span style="font-size:17px;flex-shrink:0">{icone}</span>
                 <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome}</div>
+                    <div style="font-size:13px;font-weight:700;color:#f1f5f9">{nome_safe}</div>
                     <div style="font-size:11px;color:#64748b;margin-top:2px">{msg_safe}</div>
                 </div>
                 {count_str}
