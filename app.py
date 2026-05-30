@@ -7545,43 +7545,101 @@ function abrirModal() {{
         <style>
         .confirmar-overlay {
             position: fixed; inset: 0;
-            background: rgba(0,0,0,0.55);
+            background: rgba(0,0,0,0.70);
             z-index: 9998;
             display: flex; align-items: center; justify-content: center;
             padding: 24px;
         }
         .confirmar-card {
-            background: #fff;
-            border-radius: 18px;
-            padding: 36px 32px 28px;
-            width: min(95vw, 400px);
-            box-shadow: 0 12px 48px rgba(0,0,0,0.2);
-            border: 1px solid #e5e7eb;
-            text-align: center;
+            background: #0e2a47;
+            border-radius: 20px;
+            padding: 32px;
+            width: min(95vw, 560px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid #1e3a5f;
+            text-align: left;
         }
-        .confirmar-icon { font-size: 40px; margin-bottom: 14px; }
+        .confirmar-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .confirmar-header-icon {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: #e55; display: flex; align-items: center;
+            justify-content: center; font-size: 20px; flex-shrink: 0;
+        }
         .confirmar-titulo {
-            font-size: 17px; font-weight: 800; color: #1a2e4a;
-            margin-bottom: 8px; font-family: 'DM Sans', sans-serif;
+            font-size: 17px; font-weight: 800; color: #f1f5f9;
+            font-family: 'DM Sans', sans-serif; margin-bottom: 2px;
         }
         .confirmar-sub {
-            font-size: 13px; color: #6b7280; line-height: 1.65;
-            margin-bottom: 28px; font-family: 'DM Sans', sans-serif;
+            font-size: 13px; color: #94a3b8;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .confirmar-items {
+            display: flex; flex-direction: column; gap: 10px; margin-bottom: 0px;
+        }
+        .confirmar-item {
+            background: #1e3a5f; border-radius: 10px;
+            padding: 14px 18px; display: flex;
+            align-items: center; justify-content: space-between; gap: 12px;
+        }
+        .confirmar-item-left {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .confirmar-item-icon { font-size: 20px; }
+        .confirmar-item-titulo {
+            font-size: 14px; font-weight: 700; color: #e2e8f0;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .confirmar-item-sub {
+            font-size: 12px; color: #64748b;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .confirmar-aviso {
+            text-align: center; margin-top: 18px;
+            font-size: 13px; color: #94a3b8;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .confirmar-btns-wrap {
+            position: relative; z-index: 99999;
         }
         </style>
         <div class="confirmar-overlay">
             <div class="confirmar-card">
-                <div class="confirmar-icon">🗑️</div>
-                <div class="confirmar-titulo">Limpar cache de redes?</div>
-                <div class="confirmar-sub">
-                    Todos os dados coletados serão apagados.<br>
-                    Será necessário coletar novamente.
+                <div class="confirmar-header">
+                    <div class="confirmar-header-icon">🗑️</div>
+                    <div>
+                        <div class="confirmar-titulo">Limpar cache de redes?</div>
+                        <div class="confirmar-sub">Os dados abaixo serão apagados permanentemente.</div>
+                    </div>
                 </div>
+                <div class="confirmar-items">
+                    <div class="confirmar-item">
+                        <div class="confirmar-item-left">
+                            <span class="confirmar-item-icon">📱</span>
+                            <div>
+                                <div class="confirmar-item-titulo">Dados do Instagram</div>
+                                <div class="confirmar-item-sub">Perfis, postagens e métricas coletadas</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="confirmar-item">
+                        <div class="confirmar-item-left">
+                            <span class="confirmar-item-icon">📊</span>
+                            <div>
+                                <div class="confirmar-item-titulo">Análises de IA</div>
+                                <div class="confirmar-item-sub">Todos os relatórios gerados serão perdidos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="confirmar-aviso">Será necessário coletar os dados novamente após limpar.</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
         col_cancelar, col_confirmar = st.columns(2)
+        st.markdown('<div class="confirmar-btns-wrap">', unsafe_allow_html=True)
         with col_cancelar:
             if st.button("Cancelar", use_container_width=True, key="btn_cancelar_limpar_redes"):
                 st.session_state.redes_confirmar_limpar = False
@@ -7595,6 +7653,7 @@ function abrirModal() {{
                 except Exception:
                     pass
                 st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── HR separador — fora das colunas, com correção de espaço ────
     st.markdown("""
