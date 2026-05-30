@@ -3921,7 +3921,7 @@ elif st.session_state.pagina == "ads":
                 if isinstance(p, dict):
                     normalized.append(p.get("name") or p.get("value") or str(p))
                 elif isinstance(p, str):
-                    normalized.append(p)
+                    normalized.append(p.lower())  # ← converte FACEBOOK → facebook
             plats = normalized
 
         if not plats:
