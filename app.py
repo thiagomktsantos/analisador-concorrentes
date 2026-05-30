@@ -3771,29 +3771,63 @@ elif st.session_state.pagina == "ads":
             url = (url or "").strip()
             if url and url not in seen and url.startswith("http"):
                 seen.add(url); imgs.append(url)
+        
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
-        for k in ("image_url","original_image_url","resized_image_url",
-                  "thumbnail_url","preview_image_url","full_picture"):
+        
+        # 1. Imagens diretas no ad
+        for k in ("image_url", "original_image_url", "resized_image_url",
+                  "thumbnail_url", "preview_image_url", "full_picture"):
             add(ad.get(k))
-        for k in ("image_url","original_image_url","resized_image_url",
-                  "thumbnail_url","background_image"):
+        
+        # 2. Imagens diretas no snapshot
+        for k in ("image_url", "original_image_url", "resized_image_url",
+                  "thumbnail_url", "background_image"):
             add(snapshot.get(k))
+        
+        # 3. snapshot.images[] — lista de objetos com resized/original
+        for obj in (snapshot.get("images") or []):
+            if isinstance(obj, dict):
+                add(obj.get("resized_image_url"))
+                add(obj.get("original_image_url"))
+                add(obj.get("watermarked_resized_image_url"))
+                add(obj.get("image_url"))
+                add(obj.get("url"))
+                add(obj.get("src"))
+            elif isinstance(obj, str):
+                add(obj)
+        
+        # 4. snapshot.videos[] — preview image dos vídeos (thumb)
+        for obj in (snapshot.get("videos") or []):
+            if isinstance(obj, dict):
+                add(obj.get("video_preview_image_url"))
+        
+        # 5. Cards do snapshot (carrossel)
         for card in cards:
             if not isinstance(card, dict): continue
-            for k in ("original_image_url","image_url","resized_image_url",
-                      "thumbnail_url","picture"):
-                add(card.get(k))
+            add(card.get("original_image_url"))
+            add(card.get("resized_image_url"))
+            add(card.get("image_url"))
+            add(card.get("thumbnail_url"))
+            add(card.get("picture"))
+            add(card.get("video_preview_image_url"))
+        
+        # 6. creative_images[]
         for obj in (ad.get("creative_images") or []):
             if isinstance(obj, dict):
-                for k in ("original_image_url","image_url","url"):
+                for k in ("original_image_url", "image_url", "url"):
                     add(obj.get(k))
-            elif isinstance(obj, str): add(obj)
+            elif isinstance(obj, str):
+                add(obj)
+        
+        # 7. images[] no nível raiz
         for obj in (ad.get("images") or []):
             if isinstance(obj, dict):
-                for k in ("original_image_url","image_url","url","src"):
+                for k in ("original_image_url", "resized_image_url", "image_url", "url", "src"):
                     add(obj.get(k))
-            elif isinstance(obj, str): add(obj)
+            elif isinstance(obj, str):
+                add(obj)
+        
         return imgs
 
     def _extract_copy(ad: dict) -> dict:
