@@ -7690,7 +7690,7 @@ function triggerBtn(label) {
     st.markdown("""
         <style>
         #redes-hr-wrapper {
-            margin-top: -15px !important;
+            margin-top: -30px !important;
         }
         </style>
         <div id="redes-hr-wrapper">
