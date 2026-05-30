@@ -3898,8 +3898,14 @@ elif st.session_state.pagina == "ads":
         if title and body and (title in body or body.startswith(title)):
             title = ""
 
-        # Limpa desc se for igual ao body ou estiver contido nele
-        if desc and body and (desc.strip() == body.strip() or desc.strip() in body.strip()):
+        # Limpa desc se for igual ao body, contido nele, ou se body está contido no desc
+        if desc and body and (
+            desc.strip() == body.strip()
+            or desc.strip() in body.strip()
+            or body.strip() in desc.strip()
+            or desc.strip()[:80] in body.strip()
+            or body.strip()[:80] in desc.strip()
+        ):
             desc = ""
 
         # Limpa desc se for igual ao title
