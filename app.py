@@ -7894,24 +7894,19 @@ function triggerBtn(label) {
                 eng_pct   = 3.0 if seg <= 10_000 else (2.0 if seg <= 50_000 else (1.5 if seg <= 100_000 else 1.0))
                 eng_medio = round(seg * eng_pct / 100, 1)
 
-            profile_pic = (
-                user_data.get("profile_pic_url_hd")
-                or user_data.get("profile_pic_url")
-                or user_data.get("hd_profile_pic_url_info", {}).get("url", "")
-                or ""
-            )
-
-            # Tenta pegar do primeiro post se ainda vazio
-            if not profile_pic and posts_data:
+            # Salva foto de perfil no Supabase Storage para evitar bloqueio CORS
+            if profile_pic:
                 try:
-                    raw = posts_data[0].get("_raw", {})
-                    profile_pic = (
-                        raw.get("user", {}).get("profile_pic_url_hd", "")
-                        or raw.get("user", {}).get("profile_pic_url", "")
-                        or raw.get("caption", {}).get("user", {}).get("profile_pic_url_hd", "")
-                        or raw.get("caption", {}).get("user", {}).get("profile_pic_url", "")
-                        or ""
-                    )
+                    import requests as _req
+                    _r = _req.get(profile_pic, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
+                    if _r.status_code == 200:
+                        _fname = f"profile_pics/{handle_limpo}.jpg"
+                        supabase.storage.from_("redes-assets").upload(
+                            _fname,
+                            _r.content,
+                            {"content-type": "image/jpeg", "upsert": "true"},
+                        )
+                        profile_pic = supabase.storage.from_("redes-assets").get_public_url(_fname)
                 except Exception:
                     pass
 
