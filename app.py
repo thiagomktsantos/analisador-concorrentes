@@ -6309,7 +6309,7 @@ function imgFallback_{uid}(img){{
         <div class="page-header">{page_avatar_html}<div style="flex:1;min-width:0"><div class="page-name">{ad.get("page_name") or nome}</div><div class="page-sponsored">Patrocinado</div></div></div>
         {body_display}
         title_safe_clean = title_safe if (title_safe and title_safe != body_safe[:len(title_safe)]) else ""
-        {'<div class="copy-title">' + title_safe_clean + '</div>' if title_safe_clean else ''}
+        {'<div class="copy-title">' + title_safe + '</div>' if title_safe else ''}
         {'<div class="copy-desc">' + desc_safe + '</div>' if desc_safe else ''}
         {'<div class="no-copy">Sem copy disponível.</div>' if not body_safe and not title_safe and not desc_safe else ''}
     </div>
