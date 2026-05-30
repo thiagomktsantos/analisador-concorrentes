@@ -3908,6 +3908,7 @@ elif st.session_state.pagina == "ads":
         copy = _extract_copy(item)
 
         plats = (item.get("publisherPlatform")
+                 or item.get("publisher_platform")
                  or item.get("publisher_platforms")
                  or snapshot.get("publisher_platforms")
                  or [])
