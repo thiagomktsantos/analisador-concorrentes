@@ -3833,6 +3833,7 @@ elif st.session_state.pagina == "ads":
     def _extract_copy(ad: dict) -> dict:
         snapshot = ad.get("snapshot") or {}
         cards    = snapshot.get("cards") or []
+
         def first_str(val):
             if isinstance(val, list):
                 for v in val:
@@ -3840,25 +3841,42 @@ elif st.session_state.pagina == "ads":
                         return v.strip()
             if isinstance(val, str) and val.strip():
                 return val.strip()
+            # ← NOVO: se for dict com chave "text"
+            if isinstance(val, dict) and val.get("text"):
+                return val["text"].strip()
             return ""
+
+        # ← NOVO: extrai corretamente snapshot.body.text
+        snapshot_body_raw = snapshot.get("body") or {}
+        snapshot_body_text = (
+            snapshot_body_raw.get("text")
+            if isinstance(snapshot_body_raw, dict)
+            else snapshot_body_raw
+        ) or ""
+
         body  = (first_str(ad.get("ad_creative_bodies"))
-                 or first_str(snapshot.get("body"))
+                 or snapshot_body_text                       
                  or first_str(ad.get("body"))
                  or first_str(ad.get("message"))
                  or first_str(snapshot.get("message")))
+
         title = (first_str(ad.get("ad_creative_link_titles"))
                  or first_str(snapshot.get("title"))
                  or first_str(ad.get("title"))
                  or first_str(snapshot.get("link_title")))
+
         desc  = (first_str(ad.get("ad_creative_link_descriptions"))
                  or first_str(snapshot.get("link_description"))
                  or first_str(ad.get("description"))
                  or first_str(snapshot.get("description")))
+
         cta   = (first_str(ad.get("cta_type"))
                  or first_str(snapshot.get("cta_type"))
                  or first_str(ad.get("call_to_action_type")))
+
         caption = (first_str(snapshot.get("caption"))
                    or first_str(ad.get("caption")))
+
         if not body and cards:
             for card in cards:
                 if isinstance(card, dict):
@@ -3866,6 +3884,7 @@ elif st.session_state.pagina == "ads":
                     if v:
                         body = v
                         break
+
         return {"body": body, "title": title, "desc": desc, "cta": cta, "caption": caption}
 
     def _extract_videos(ad: dict) -> list:
