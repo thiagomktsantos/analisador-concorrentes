@@ -8020,6 +8020,7 @@ function triggerBtn(label) {
         render_progresso(len(todas), len(todas), itens_status)
         import time; time.sleep(2)
         progresso_placeholder.empty()
+        st.session_state.metricas_redes = cache
 
         salvar_cache_redes(resultados_lista)
         cache = {
