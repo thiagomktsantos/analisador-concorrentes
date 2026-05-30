@@ -7517,85 +7517,85 @@ function abrirModal() {{
 </script>
 """, height=28, scrolling=False)
 
-# ── Ghost button limpar cache — FORA do with col3 ──────────────
-if "redes_confirmar_limpar" not in st.session_state:
-    st.session_state.redes_confirmar_limpar = False
+    # ── Ghost button limpar cache — FORA do with col3 ──────────────
+    if "redes_confirmar_limpar" not in st.session_state:
+        st.session_state.redes_confirmar_limpar = False
 
-ghost_limpar_key = "btn_limpar_cache_redes"
-st.markdown(f"""
-<style>
-.st-key-{ghost_limpar_key} {{
-    position:fixed !important; top:-9999px !important; left:-9999px !important;
-    width:0 !important; height:0 !important; overflow:hidden !important;
-    opacity:0 !important; pointer-events:none !important; display:none !important;
-}}
-.stElementContainer:has(.st-key-{ghost_limpar_key}) {{
-    display:none !important; height:0 !important; min-height:0 !important;
-    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-}}
-</style>
-""", unsafe_allow_html=True)
-
-if st.button("limpar_cache_redes", key=ghost_limpar_key):
-    st.session_state.redes_confirmar_limpar = True
-    st.rerun()
-
-if st.session_state.get("redes_confirmar_limpar"):
-    st.markdown("""
+    ghost_limpar_key = "btn_limpar_cache_redes"
+    st.markdown(f"""
     <style>
-    .confirmar-overlay {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,0.55);
-        z-index: 9998;
-        display: flex; align-items: center; justify-content: center;
-        padding: 24px;
-    }
-    .confirmar-card {
-        background: #fff;
-        border-radius: 18px;
-        padding: 36px 32px 28px;
-        width: min(95vw, 400px);
-        box-shadow: 0 12px 48px rgba(0,0,0,0.2);
-        border: 1px solid #e5e7eb;
-        text-align: center;
-    }
-    .confirmar-icon { font-size: 40px; margin-bottom: 14px; }
-    .confirmar-titulo {
-        font-size: 17px; font-weight: 800; color: #1a2e4a;
-        margin-bottom: 8px; font-family: 'DM Sans', sans-serif;
-    }
-    .confirmar-sub {
-        font-size: 13px; color: #6b7280; line-height: 1.65;
-        margin-bottom: 28px; font-family: 'DM Sans', sans-serif;
-    }
+    .st-key-{ghost_limpar_key} {{
+        position:fixed !important; top:-9999px !important; left:-9999px !important;
+        width:0 !important; height:0 !important; overflow:hidden !important;
+        opacity:0 !important; pointer-events:none !important; display:none !important;
+    }}
+    .stElementContainer:has(.st-key-{ghost_limpar_key}) {{
+        display:none !important; height:0 !important; min-height:0 !important;
+        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+    }}
     </style>
-    <div class="confirmar-overlay">
-        <div class="confirmar-card">
-            <div class="confirmar-icon">🗑️</div>
-            <div class="confirmar-titulo">Limpar cache de redes?</div>
-            <div class="confirmar-sub">
-                Todos os dados coletados serão apagados.<br>
-                Será necessário coletar novamente.
-            </div>
-        </div>
-    </div>
     """, unsafe_allow_html=True)
 
-    col_cancelar, col_confirmar = st.columns(2)
-    with col_cancelar:
-        if st.button("Cancelar", use_container_width=True, key="btn_cancelar_limpar_redes"):
-            st.session_state.redes_confirmar_limpar = False
-            st.rerun()
-    with col_confirmar:
-        if st.button("Sim, limpar", type="primary", use_container_width=True, key="btn_confirmar_limpar_redes"):
-            st.session_state.redes_confirmar_limpar = False
-            st.session_state.metricas_redes = {}
-            try:
-                supabase.table("ci_dados").update({"metricas_redes": {}}).eq("user_id", st.session_state.user.id).execute()
-            except Exception:
-                pass
-            st.rerun()
- 
+    if st.button("limpar_cache_redes", key=ghost_limpar_key):
+        st.session_state.redes_confirmar_limpar = True
+        st.rerun()
+
+    if st.session_state.get("redes_confirmar_limpar"):
+        st.markdown("""
+        <style>
+        .confirmar-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 9998;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .confirmar-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 36px 32px 28px;
+            width: min(95vw, 400px);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .confirmar-icon { font-size: 40px; margin-bottom: 14px; }
+        .confirmar-titulo {
+            font-size: 17px; font-weight: 800; color: #1a2e4a;
+            margin-bottom: 8px; font-family: 'DM Sans', sans-serif;
+        }
+        .confirmar-sub {
+            font-size: 13px; color: #6b7280; line-height: 1.65;
+            margin-bottom: 28px; font-family: 'DM Sans', sans-serif;
+        }
+        </style>
+        <div class="confirmar-overlay">
+            <div class="confirmar-card">
+                <div class="confirmar-icon">🗑️</div>
+                <div class="confirmar-titulo">Limpar cache de redes?</div>
+                <div class="confirmar-sub">
+                    Todos os dados coletados serão apagados.<br>
+                    Será necessário coletar novamente.
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_cancelar, col_confirmar = st.columns(2)
+        with col_cancelar:
+            if st.button("Cancelar", use_container_width=True, key="btn_cancelar_limpar_redes"):
+                st.session_state.redes_confirmar_limpar = False
+                st.rerun()
+        with col_confirmar:
+            if st.button("Sim, limpar", type="primary", use_container_width=True, key="btn_confirmar_limpar_redes"):
+                st.session_state.redes_confirmar_limpar = False
+                st.session_state.metricas_redes = {}
+                try:
+                    supabase.table("ci_dados").update({"metricas_redes": {}}).eq("user_id", st.session_state.user.id).execute()
+                except Exception:
+                    pass
+                st.rerun()
+
     # ── HR separador — fora das colunas, com correção de espaço ────
     st.markdown("""
         <style>
