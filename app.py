@@ -5936,23 +5936,97 @@ setTimeout(ajustarAltura,100);
                     title_safe = title_clean.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
                     desc_safe  = _truncar(desc_clean, 120).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
+_raw_item = next(
+                        (r for r in cache_entry.get("_raw", []) if str(r.get("adArchiveID") or r.get("ad_archive_id") or r.get("id") or "") == str(ad.get("id",""))),
+                        {}
+                    )
+                    _snapshot_raw = _raw_item.get("snapshot") or {}
+                    _cards_raw    = _snapshot_raw.get("cards") or []
+
+                    def _safe_url(v):
+                        if not v: return None
+                        if isinstance(v, str) and v.startswith("http"): return v
+                        return None
+
                     debug_keys = {
-                       "id": ad.get("id", ""),
-                       "page_name": ad.get("page_name", ""),
-                       "formato": ad.get("formato", ""),
-                       "plataformas": ad.get("plataformas", []),
-                       "data_raw": ad.get("data_raw", ""),
-                       "impressoes": ad.get("impressoes", ""),
-                       "is_dynamic": ad.get("is_dynamic", False),
-                       "ativo": ad.get("ativo", True),
-                       "n_imagens": len(ad.get("images", [])),
-                       "tem_video": bool(videos),
-                       "n_videos": len(videos),
-                       "snapshot_url": (snap_url or "")[:80],
-                       "body_len": len(body),
-                       "title_len": len(title),
-                       "cta": cta,
+                        # ── Identificação
+                        "id":                            ad.get("id", ""),
+                        "page_id":                       ad.get("page_id", ""),
+                        "page_name":                     ad.get("page_name", ""),
+                        "formato":                       ad.get("formato", ""),
+                        "plataformas":                   ad.get("plataformas", []),
+                        "data_raw":                      ad.get("data_raw", ""),
+                        "impressoes":                    ad.get("impressoes", ""),
+                        "is_dynamic":                    ad.get("is_dynamic", False),
+                        "ativo":                         ad.get("ativo", True),
+                        "cta":                           cta,
+
+                        # ── URLs de destino / página
+                        "snapshot_url":                  _safe_url(snap_url),
+                        "ad_snapshot_url":               _safe_url(_raw_item.get("adSnapshotURL") or _raw_item.get("ad_snapshot_url")),
+                        "link_url":                      _safe_url(_raw_item.get("link_url") or _snapshot_raw.get("link_url")),
+                        "website_url":                   _safe_url(_raw_item.get("website_url") or _snapshot_raw.get("website_url")),
+                        "destination_url":               _safe_url(_raw_item.get("destination_url") or _snapshot_raw.get("destination_url")),
+                        "caption":                       ad.get("caption") or _snapshot_raw.get("caption"),
+
+                        # ── Imagens diretas no ad
+                        "image_url":                     _safe_url(_raw_item.get("image_url")),
+                        "original_image_url":            _safe_url(_raw_item.get("original_image_url")),
+                        "resized_image_url":             _safe_url(_raw_item.get("resized_image_url")),
+                        "thumbnail_url":                 _safe_url(_raw_item.get("thumbnail_url")),
+                        "preview_image_url":             _safe_url(_raw_item.get("preview_image_url")),
+                        "full_picture":                  _safe_url(_raw_item.get("full_picture")),
+
+                        # ── Imagens no snapshot
+                        "snapshot.image_url":            _safe_url(_snapshot_raw.get("image_url")),
+                        "snapshot.original_image_url":   _safe_url(_snapshot_raw.get("original_image_url")),
+                        "snapshot.resized_image_url":    _safe_url(_snapshot_raw.get("resized_image_url")),
+                        "snapshot.thumbnail_url":        _safe_url(_snapshot_raw.get("thumbnail_url")),
+                        "snapshot.background_image":     _safe_url(_snapshot_raw.get("background_image")),
+
+                        # ── Vídeos
+                        "video_hd_url":                  _safe_url(_raw_item.get("video_hd_url") or _snapshot_raw.get("video_hd_url")),
+                        "video_sd_url":                  _safe_url(_raw_item.get("video_sd_url") or _snapshot_raw.get("video_sd_url")),
+                        "video_url":                     _safe_url(_raw_item.get("video_url")    or _snapshot_raw.get("video_url")),
+                        "videos_normalizados [0..3]":    videos[:4] if videos else [],
+
+                        # ── Imagens normalizadas (resultado final pipeline)
+                        "images_normalizadas [0..3]":    images[:4] if images else [],
+
+                        # ── Cards (carrossel)
+                        "cards_count":                   len(_cards_raw),
+                        "cards[0].link_url":             _safe_url(_cards_raw[0].get("link_url"))            if _cards_raw else None,
+                        "cards[0].image_url":            _safe_url(_cards_raw[0].get("image_url"))           if _cards_raw else None,
+                        "cards[0].original_image_url":   _safe_url(_cards_raw[0].get("original_image_url")) if _cards_raw else None,
+                        "cards[0].video_hd_url":         _safe_url(_cards_raw[0].get("video_hd_url"))       if _cards_raw else None,
+                        "cards[0].video_sd_url":         _safe_url(_cards_raw[0].get("video_sd_url"))       if _cards_raw else None,
+                        "cards[0].thumbnail_url":        _safe_url(_cards_raw[0].get("thumbnail_url"))      if _cards_raw else None,
+                        "cards[0].body":                 _cards_raw[0].get("body")                          if _cards_raw else None,
+                        "cards[0].title":                _cards_raw[0].get("title")                         if _cards_raw else None,
+                        "cards[0].cta_type":             _cards_raw[0].get("cta_type")                      if _cards_raw else None,
+                        "cards[1].image_url":            _safe_url(_cards_raw[1].get("image_url"))          if len(_cards_raw) > 1 else None,
+                        "cards[1].original_image_url":   _safe_url(_cards_raw[1].get("original_image_url")) if len(_cards_raw) > 1 else None,
+                        "cards[1].video_hd_url":         _safe_url(_cards_raw[1].get("video_hd_url"))       if len(_cards_raw) > 1 else None,
+
+                        # ── Copy raw
+                        "body_len":                      len(body),
+                        "title_len":                     len(title),
+                        "ad_creative_bodies":            _raw_item.get("ad_creative_bodies"),
+                        "ad_creative_link_titles":       _raw_item.get("ad_creative_link_titles"),
+                        "ad_creative_link_descriptions": _raw_item.get("ad_creative_link_descriptions"),
+                        "snapshot.body":                 _snapshot_raw.get("body"),
+                        "snapshot.title":                _snapshot_raw.get("title"),
+                        "snapshot.link_description":     _snapshot_raw.get("link_description"),
+
+                        # ── Metadados extras
+                        "n_imagens_raw":                 len(images),
+                        "n_videos_raw":                  len(videos),
+                        "page_profile_picture":          _safe_url(ad.get("page_profile_picture")),
+                        "snapshot.page_profile_picture_url": _safe_url(_snapshot_raw.get("page_profile_picture_url")),
                     }
+
+                    # Remove None, listas vazias e strings vazias para deixar o debug limpo
+                    debug_keys = {k: v for k, v in debug_keys.items() if v is not None and v != [] and v != ""}
                     debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
