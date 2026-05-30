@@ -8714,28 +8714,28 @@ Como interpretar as métricas desta postagem?
                 return str(n)
 
             _raw_pic = r.get("profile_pic", "")
-        if _raw_pic:
-            # Se já é URL pública do Supabase, usa direto; senão tenta weserv
-            if "supabase" in _raw_pic:
-                img_src = _raw_pic
+            if _raw_pic:
+                # Se já é URL pública do Supabase, usa direto; senão tenta weserv
+                if "supabase" in _raw_pic:
+                    img_src = _raw_pic
+                else:
+                    img_src = f"https://images.weserv.nl/?url={_raw_pic}&w=104&h=104&fit=cover&output=jpg"
+                avatar_html = (
+                    f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:{cor};">'
+                    f'<img src="{img_src}" id="avatar-img" '
+                    f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" '
+                    f'onerror="this.style.display=\'none\';'
+                    f'this.parentElement.style.display=\'flex\';'
+                    f'this.parentElement.style.alignItems=\'center\';'
+                    f'this.parentElement.style.justifyContent=\'center\';'
+                    f'this.parentElement.style.fontSize=\'18px\';'
+                    f'this.parentElement.style.fontWeight=\'700\';'
+                    f'this.parentElement.style.color=\'#fff\';'
+                    f'this.parentElement.innerHTML=\'{avatar_letras}\';" />'
+                    f'</div>'
+                )
             else:
-                img_src = f"https://images.weserv.nl/?url={_raw_pic}&w=104&h=104&fit=cover&output=jpg"
-            avatar_html = (
-                f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:{cor};">'
-                f'<img src="{img_src}" id="avatar-img" '
-                f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" '
-                f'onerror="this.style.display=\'none\';'
-                f'this.parentElement.style.display=\'flex\';'
-                f'this.parentElement.style.alignItems=\'center\';'
-                f'this.parentElement.style.justifyContent=\'center\';'
-                f'this.parentElement.style.fontSize=\'18px\';'
-                f'this.parentElement.style.fontWeight=\'700\';'
-                f'this.parentElement.style.color=\'#fff\';'
-                f'this.parentElement.innerHTML=\'{avatar_letras}\';" />'
-                f'</div>'
-            )
-        else:
-            avatar_html = f'<div class="avatar" style="background:{cor}">{avatar_letras}</div>'
+                avatar_html = f'<div class="avatar" style="background:{cor}">{avatar_letras}</div>'
 
             components.html(f"""
 <!DOCTYPE html><html>
