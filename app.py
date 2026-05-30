@@ -7517,29 +7517,84 @@ function abrirModal() {{
 </script>
 """, height=28, scrolling=False)
 
-    # ── Ghost button limpar cache — FORA do with col3 ──────────────
-    ghost_limpar_key = "btn_limpar_cache_redes"
-    st.markdown(f"""
+# ── Ghost button limpar cache — FORA do with col3 ──────────────
+if "redes_confirmar_limpar" not in st.session_state:
+    st.session_state.redes_confirmar_limpar = False
+
+ghost_limpar_key = "btn_limpar_cache_redes"
+st.markdown(f"""
+<style>
+.st-key-{ghost_limpar_key} {{
+    position:fixed !important; top:-9999px !important; left:-9999px !important;
+    width:0 !important; height:0 !important; overflow:hidden !important;
+    opacity:0 !important; pointer-events:none !important; display:none !important;
+}}
+.stElementContainer:has(.st-key-{ghost_limpar_key}) {{
+    display:none !important; height:0 !important; min-height:0 !important;
+    max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+if st.button("limpar_cache_redes", key=ghost_limpar_key):
+    st.session_state.redes_confirmar_limpar = True
+    st.rerun()
+
+if st.session_state.get("redes_confirmar_limpar"):
+    st.markdown("""
     <style>
-    .st-key-{ghost_limpar_key} {{
-        position:fixed !important; top:-9999px !important; left:-9999px !important;
-        width:0 !important; height:0 !important; overflow:hidden !important;
-        opacity:0 !important; pointer-events:none !important; display:none !important;
-    }}
-    .stElementContainer:has(.st-key-{ghost_limpar_key}) {{
-        display:none !important; height:0 !important; min-height:0 !important;
-        max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-    }}
+    .confirmar-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 9998;
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+    }
+    .confirmar-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 36px 32px 28px;
+        width: min(95vw, 400px);
+        box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+        border: 1px solid #e5e7eb;
+        text-align: center;
+    }
+    .confirmar-icon { font-size: 40px; margin-bottom: 14px; }
+    .confirmar-titulo {
+        font-size: 17px; font-weight: 800; color: #1a2e4a;
+        margin-bottom: 8px; font-family: 'DM Sans', sans-serif;
+    }
+    .confirmar-sub {
+        font-size: 13px; color: #6b7280; line-height: 1.65;
+        margin-bottom: 28px; font-family: 'DM Sans', sans-serif;
+    }
     </style>
+    <div class="confirmar-overlay">
+        <div class="confirmar-card">
+            <div class="confirmar-icon">🗑️</div>
+            <div class="confirmar-titulo">Limpar cache de redes?</div>
+            <div class="confirmar-sub">
+                Todos os dados coletados serão apagados.<br>
+                Será necessário coletar novamente.
+            </div>
+        </div>
+    </div>
     """, unsafe_allow_html=True)
 
-    if st.button("limpar_cache_redes", key=ghost_limpar_key):
-        st.session_state.metricas_redes = {}
-        try:
-            supabase.table("ci_dados").update({"metricas_redes": {}}).eq("user_id", st.session_state.user.id).execute()
-        except Exception:
-            pass
-        st.rerun()
+    col_cancelar, col_confirmar = st.columns(2)
+    with col_cancelar:
+        if st.button("Cancelar", use_container_width=True, key="btn_cancelar_limpar_redes"):
+            st.session_state.redes_confirmar_limpar = False
+            st.rerun()
+    with col_confirmar:
+        if st.button("Sim, limpar", type="primary", use_container_width=True, key="btn_confirmar_limpar_redes"):
+            st.session_state.redes_confirmar_limpar = False
+            st.session_state.metricas_redes = {}
+            try:
+                supabase.table("ci_dados").update({"metricas_redes": {}}).eq("user_id", st.session_state.user.id).execute()
+            except Exception:
+                pass
+            st.rerun()
  
     # ── HR separador — fora das colunas, com correção de espaço ────
     st.markdown("""
@@ -7832,15 +7887,97 @@ function abrirModal() {{
     if coletar:
         coletar_rapidapi.clear()
         resultados_lista = []
-        with st.spinner("Coletando perfis…"):
-            for e in todas:
-                r = coletar_rapidapi(e["instagram"])
-                resultados_lista.append({**e, **(r or {"erro": "Sem resposta"})})
+
+        progresso_placeholder = st.empty()
+
+        def render_progresso(processados, total, itens):
+            linhas_itens = ""
+            for item in itens:
+                icone = "✅" if item.get("done") else ("⏳" if item.get("atual") else "⬜")
+                anuncios_txt = f'<span style="color:#3a9fd6;font-weight:700">{item["n"]} posts</span>' if item.get("done") else ""
+                cache_txt = f'<span style="color:#9ca3af;font-size:12px">Coletando...</span>' if item.get("atual") else ""
+                if item.get("done"):
+                    cache_txt = f'<span style="color:#9ca3af;font-size:12px">Concluído</span>'
+                linhas_itens += f"""
+                <div style="background:#1e3a5f;border-radius:10px;padding:14px 18px;display:flex;
+                            align-items:center;justify-content:space-between;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="font-size:20px">{icone}</span>
+                        <div>
+                            <div style="font-size:14px;font-weight:700;color:#e2e8f0">{item['nome']}</div>
+                            {cache_txt}
+                        </div>
+                    </div>
+                    {anuncios_txt}
+                </div>"""
+
+            pct = int((processados / total) * 100) if total > 0 else 0
+            is_done = processados == total
+
+            progresso_placeholder.markdown(f"""
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;
+                        display:flex;align-items:center;justify-content:center;padding:24px;">
+                <div style="background:#0e2a47;border-radius:20px;padding:32px;
+                            width:min(95vw,560px);box-shadow:0 20px 60px rgba(0,0,0,0.5);
+                            border:1px solid #1e3a5f;">
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+                        <div style="width:42px;height:42px;border-radius:50%;
+                                    background:{'#22c55e' if is_done else '#3a9fd6'};
+                                    display:flex;align-items:center;justify-content:center;font-size:20px;">
+                            {'✅' if is_done else '⏳'}
+                        </div>
+                        <div>
+                            <div style="font-size:17px;font-weight:800;color:#f1f5f9">
+                                {'Busca concluída' if is_done else 'Coletando perfis...'}
+                            </div>
+                            <div style="font-size:13px;color:#94a3b8">
+                                {processados}/{total} {'empresas' if total > 1 else 'empresa'} processada{'s' if total > 1 else ''}
+                            </div>
+                        </div>
+                        <div style="margin-left:auto;font-size:22px;font-weight:900;
+                                    color:{'#22c55e' if is_done else '#3a9fd6'}">
+                            {pct}%
+                        </div>
+                    </div>
+
+                    <div style="background:#1e3a5f;border-radius:8px;height:8px;margin-bottom:20px;overflow:hidden;">
+                        <div style="background:linear-gradient(90deg,#3a9fd6,#22c55e);
+                                    height:100%;width:{pct}%;border-radius:8px;
+                                    transition:width 0.4s ease;"></div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        {linhas_itens}
+                    </div>
+                    {'<div style="text-align:center;margin-top:18px;font-size:13px;color:#64748b">Fechando automaticamente...</div>' if is_done else ''}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        itens_status = [{"nome": e["nome"], "done": False, "atual": False, "n": 0} for e in todas]
+
+        for idx_e, e in enumerate(todas):
+            itens_status[idx_e]["atual"] = True
+            render_progresso(idx_e, len(todas), itens_status)
+
+            r = coletar_rapidapi(e["instagram"])
+            n_posts = len(r.get("posts", [])) if r and not r.get("erro") else 0
+
+            itens_status[idx_e]["done"] = True
+            itens_status[idx_e]["atual"] = False
+            itens_status[idx_e]["n"] = n_posts
+            resultados_lista.append({**e, **(r or {"erro": "Sem resposta"})})
+
+        render_progresso(len(todas), len(todas), itens_status)
+        import time; time.sleep(2)
+        progresso_placeholder.empty()
+
         salvar_cache_redes(resultados_lista)
         cache = {
             "ultima_coleta": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
             "dados": resultados_lista,
         }
+        st.session_state.metricas_redes = cache
         st.toast("✅ Dados coletados e salvos!", icon="✅")
  
     ok = []
@@ -8427,7 +8564,17 @@ Como interpretar as métricas desta postagem?
                 if n >= 1_000:     return f"{n/1_000:.1f}K"
                 return str(n)
  
-            components.html(f"""
+if profile_pic_url:
+            avatar_html = (
+                f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden">'
+                f'<img src="{profile_pic_url}" id="avatar-img" '
+                f'style="width:100%;height:100%;object-fit:cover;border-radius:50%" />'
+                f'</div>'
+            )
+        else:
+            avatar_html = f'<div class="avatar">{avatar_letras}</div>'
+
+        components.html(f"""
 <!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -8665,7 +8812,7 @@ body{{padding-bottom:8px;}}
  
 <div class="perfil-card">
     <div class="perfil-header">
-        {'<div class="avatar" style="padding:0;overflow:hidden"><img src="' + profile_pic_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.style.background=\'' + cor + '\';this.parentElement.innerHTML=\'' + avatar_letras + '\'" /></div>' if profile_pic_url else '<div class="avatar">' + avatar_letras + '</div>'}
+        {avatar_html}
         <div class="info">
             <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
             <div class="badge">{badge_lbl}</div>
@@ -8767,6 +8914,27 @@ var R_SEG     = {r_seg_val};
  
 var POST_STORE = {{}};
 ALL_POSTS.forEach(function(p) {{ POST_STORE[p.jp] = p; }});
+
+// Fix avatar fallback
+(function() {{
+    var img = document.getElementById('avatar-img');
+    if (!img) return;
+    img.onerror = function() {{
+        var wrap = document.getElementById('avatar-wrap');
+        if (!wrap) return;
+        wrap.style.background = '{cor}';
+        wrap.style.padding = '';
+        wrap.style.overflow = '';
+        wrap.innerHTML = '{avatar_letras}';
+        wrap.style.display = 'flex';
+        wrap.style.alignItems = 'center';
+        wrap.style.justifyContent = 'center';
+        wrap.style.fontSize = '18px';
+        wrap.style.fontWeight = '700';
+        wrap.style.color = '#fff';
+        wrap.style.borderRadius = '50%';
+    }};
+}})();
  
 function fmtNum(n) {{
     n = Math.round(n || 0);
@@ -8779,7 +8947,6 @@ function fmtNum(n) {{
 function upgradeCdnUrl(url) {{
     if (!url) return url;
     try {{
-        // Substitui dimensões pequenas por 1440x1440 no path
         var upgraded = url
             .replace(/\/s\d+x\d+\//g, '/s1440x1440/')
             .replace(/\/p\d+x\d+\//g, '/p1440x1440/')
@@ -8876,7 +9043,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
     window.parent.__redesModalEscFn = function(e) {{ if (e.key === 'Escape') closeModal(); }};
     doc.addEventListener('keydown', window.parent.__redesModalEscFn);
  
-    // ── Vídeo ──
     if (isVideo) {{
         if (videoUrl) {{
             var vid = doc.createElement('video');
@@ -8891,7 +9057,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
         return;
     }}
  
-    // ── Foto ou Carrossel ──
     var imgs = (carouselImgs && carouselImgs.length > 0) ? carouselImgs : (thumbUrl ? [thumbUrl] : []);
     if (!imgs.length) {{ window.parent.open(igUrl, '_blank'); closeModal(); return; }}
  
@@ -8900,7 +9065,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
     function renderSlide(i) {{
         content.innerHTML = '';
 
-        // Spinner de carregamento enquanto a imagem HD carrega
         var spinner = doc.createElement('div');
         spinner.id = 'modal_spinner';
         spinner.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);border-radius:10px;z-index:5;';
@@ -8910,7 +9074,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
         var img = doc.createElement('img');
         img.style.cssText = 'display:block;max-width:min(84vw,820px);max-height:min(76vh,820px);width:auto;height:auto;object-fit:contain;border-radius:10px;opacity:0;transition:opacity 0.2s;';
 
-        // Tenta HD primeiro, fallback para original
         var hdUrl = upgradeCdnUrl(imgs[i]);
         var originalUrl = imgs[i];
         var triedOriginal = (hdUrl === originalUrl);
@@ -8922,13 +9085,11 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
         }};
 
         img.onerror = function() {{
-            // Se tentou HD e falhou, tenta URL original
             if (!triedOriginal) {{
                 triedOriginal = true;
                 img.src = originalUrl;
                 return;
             }}
-            // Ambas falharam: mostra fallback com link pro Instagram
             var sp = doc.getElementById('modal_spinner');
             if (sp) sp.remove();
             img.style.display = 'none';
@@ -8943,7 +9104,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
         img.src = hdUrl;
         content.appendChild(img);
  
-        // Contador e navegação para carrossel
         if (imgs.length > 1) {{
             var counter = doc.createElement('div');
             counter.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;font-family:DM Sans,sans-serif;pointer-events:none;white-space:nowrap;z-index:6;';
@@ -8992,7 +9152,6 @@ function openModal(thumbUrl, igUrl, videoUrl, isVideo, carouselImgs) {{
         }}
     }}
 
-    // CSS para animação do spinner
     var styleEl = doc.getElementById('redes_modal_spinner_style');
     if (!styleEl) {{
         styleEl = doc.createElement('style');
