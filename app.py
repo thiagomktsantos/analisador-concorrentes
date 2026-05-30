@@ -8814,7 +8814,7 @@ body{{padding-bottom:8px;}}
 
 .tabs-bar {{ display:flex; background:#f9fafb; }}
 .tab-btn {{
-    flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#9ca3af;
+    flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#374151;
     background:transparent; border:none; cursor:pointer;
     font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent;
     transition:all 0.15s;
