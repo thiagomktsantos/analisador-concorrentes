@@ -6615,9 +6615,9 @@ body{{padding-bottom:4px;min-height:0;}}
 .no-copy{{font-size:12px;color:#bcc0c4;font-style:italic;min-height:40px;padding-top:10px;border-top:2px solid #f3f4f6;}}
 .dyn-float{{position:absolute;top:10px;right:10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}}
 .media-block{{width:100%;position:relative;overflow:hidden;background:#000;height:180px;}}
-.img-block{{height:180px;background:#f0f2f5;}}
-.video-thumb-block{{height:180px;}}
-.no-media-block{{height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#7592cc;gap:6px;}}
+.img-block{{height:230px;background:#f0f2f5;}}
+.video-thumb-block{{height:230px;}}
+.no-media-block{{height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#7592cc;gap:6px;}}
 .cta-footer{{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#ffffff;border-top:1px solid #e4e6ea;gap:8px;min-height:44px;}}
 .cta-domain{{font-size:10px;color:#65676b;text-transform:uppercase;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .cta-btn{{background:#e4e6eb;color:#050505;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;flex-shrink:0;}}
