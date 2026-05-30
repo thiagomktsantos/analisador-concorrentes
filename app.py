@@ -8837,7 +8837,7 @@ body{{padding-bottom:8px;}}
 .filter-input {{
     flex:1; min-width:160px;height:40px;
     padding:0 14px; border:1px solid #f0f4f8; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
+    font-size:14px; font-family:'DM Sans',sans-serif; color:#374151;
     background:#fafafa; outline:none; transition:border-color 0.15s;
 }}
 .filter-input:focus {{ border-color:#3a9fd6; background:#fff; }}
@@ -8845,7 +8845,7 @@ body{{padding-bottom:8px;}}
 .filter-select {{
     height:40px; padding:0 32px 0 12px;
     border:2px solid #e5e7eb; border-radius:8px;
-    font-size:13px; font-family:'DM Sans',sans-serif; color:#374151;
+    font-size:14px; font-family:'DM Sans',sans-serif; color:#374151;
     background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
     -webkit-appearance:none; appearance:none; cursor:pointer; outline:none;
 }}
