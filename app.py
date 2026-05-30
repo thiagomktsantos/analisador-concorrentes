@@ -7541,131 +7541,131 @@ function abrirModal() {{
         st.rerun()
 
     if st.session_state.get("redes_confirmar_limpar"):
+
+        # Ghost buttons escondidos que o modal HTML vai acionar
         st.markdown("""
         <style>
-        .confirmar-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.70);
-            z-index: 9998;
-            display: flex; align-items: center; justify-content: center;
-            padding: 24px;
+        .st-key-btn_cancelar_limpar_redes,
+        .st-key-btn_confirmar_limpar_redes {
+            position: fixed !important; top: -9999px !important; left: -9999px !important;
+            width: 0 !important; height: 0 !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important; display: none !important;
         }
-        .confirmar-card {
-            background: #0e2a47;
-            border-radius: 20px;
-            padding: 32px;
-            width: min(95vw, 560px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            border: 1px solid #1e3a5f;
-            text-align: left;
-        }
-        .confirmar-header {
-            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
-        }
-        .confirmar-header-icon {
-            width: 42px; height: 42px; border-radius: 50%;
-            background: #e55; display: flex; align-items: center;
-            justify-content: center; font-size: 20px; flex-shrink: 0;
-        }
-        .confirmar-titulo {
-            font-size: 17px; font-weight: 800; color: #f1f5f9;
-            font-family: 'DM Sans', sans-serif; margin-bottom: 2px;
-        }
-        .confirmar-sub {
-            font-size: 13px; color: #94a3b8;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .confirmar-items {
-            display: flex; flex-direction: column; gap: 10px; margin-bottom: 0px;
-        }
-        .confirmar-item {
-            background: #1e3a5f; border-radius: 10px;
-            padding: 14px 18px; display: flex;
-            align-items: center; justify-content: space-between; gap: 12px;
-        }
-        .confirmar-item-left {
-            display: flex; align-items: center; gap: 12px;
-        }
-        .confirmar-item-icon { font-size: 20px; }
-        .confirmar-item-titulo {
-            font-size: 14px; font-weight: 700; color: #e2e8f0;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .confirmar-item-sub {
-            font-size: 12px; color: #64748b;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .confirmar-aviso {
-            text-align: center; margin-top: 18px;
-            font-size: 13px; color: #94a3b8;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .confirmar-btns-wrap {
-            position: relative; z-index: 99999;
+        .stElementContainer:has(.st-key-btn_cancelar_limpar_redes),
+        .stElementContainer:has(.st-key-btn_confirmar_limpar_redes) {
+            display: none !important;
         }
         </style>
-        <div class="confirmar-overlay">
-            <div class="confirmar-card">
-                <div class="confirmar-header">
-                    <div class="confirmar-header-icon">🗑️</div>
-                    <div>
-                        <div class="confirmar-titulo">Limpar cache de redes?</div>
-                        <div class="confirmar-sub">Os dados abaixo serão apagados permanentemente.</div>
-                    </div>
-                </div>
-                <div class="confirmar-items">
-                    <div class="confirmar-item">
-                        <div class="confirmar-item-left">
-                            <span class="confirmar-item-icon">📱</span>
-                            <div>
-                                <div class="confirmar-item-titulo">Dados do Instagram</div>
-                                <div class="confirmar-item-sub">Perfis, postagens e métricas coletadas</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="confirmar-item">
-                        <div class="confirmar-item-left">
-                            <span class="confirmar-item-icon">📊</span>
-                            <div>
-                                <div class="confirmar-item-titulo">Análises de IA</div>
-                                <div class="confirmar-item-sub">Todos os relatórios gerados serão perdidos</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="confirmar-aviso">Será necessário coletar os dados novamente após limpar.</div>
-            </div>
-        </div>
         """, unsafe_allow_html=True)
 
-        col_cancelar, col_confirmar = st.columns(2)
-        st.markdown('<div class="confirmar-btns-wrap">', unsafe_allow_html=True)
-        with col_cancelar:
-            if st.button("Cancelar", use_container_width=True, key="btn_cancelar_limpar_redes"):
-                st.session_state.redes_confirmar_limpar = False
-                st.rerun()
-        with col_confirmar:
-            if st.button("Sim, limpar", type="primary", use_container_width=True, key="btn_confirmar_limpar_redes"):
-                st.session_state.redes_confirmar_limpar = False
-                st.session_state.metricas_redes = {}
-                try:
-                    supabase.table("ci_dados").update({"metricas_redes": {}}).eq("user_id", st.session_state.user.id).execute()
-                except Exception:
-                    pass
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("Cancelar", key="btn_cancelar_limpar_redes"):
+            st.session_state.redes_confirmar_limpar = False
+            st.rerun()
 
-    # ── HR separador — fora das colunas, com correção de espaço ────
-    st.markdown("""
-        <style>
-        #redes-hr-wrapper {
-            margin-top: -1rem !important;
-        }
-        </style>
-        <div id="redes-hr-wrapper">
-            <hr style='border:none;border-top:1px solid #e5e7eb;margin:0'/>
+        if st.button("Sim, limpar", key="btn_confirmar_limpar_redes"):
+            st.session_state.redes_confirmar_limpar = False
+            st.session_state.metricas_redes = {}
+            try:
+                supabase.table("ci_dados").update({"metricas_redes": {}}).eq("user_id", st.session_state.user.id).execute()
+            except Exception:
+                pass
+            st.rerun()
+
+        components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }
+.overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 999999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+}
+.card {
+    background: #0e2a47;
+    border-radius: 20px;
+    padding: 32px;
+    width: min(95vw, 460px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid #1e3a5f;
+}
+.hdr { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+.hdr-icon {
+    width:46px; height:46px; border-radius:50%;
+    background:#ef4444;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; flex-shrink:0;
+}
+.hdr-title { font-size:18px; font-weight:800; color:#f1f5f9; margin-bottom:3px; }
+.hdr-sub { font-size:13px; color:#94a3b8; }
+.msg {
+    background:#1e3a5f; border-radius:12px;
+    padding:18px 20px; margin-bottom:24px;
+    font-size:14px; color:#cbd5e1; line-height:1.65; text-align:center;
+}
+.btns { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.btn {
+    padding:13px 0; border-radius:10px;
+    font-size:15px; font-weight:700;
+    cursor:pointer; border:none;
+    font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;
+}
+.btn-cancel {
+    background:#1e3a5f; color:#94a3b8;
+    border:1px solid #2d4f6e;
+}
+.btn-cancel:hover { background:#2d4f6e; color:#e2e8f0; }
+.btn-confirm {
+    background:#ef4444; color:#fff;
+}
+.btn-confirm:hover { background:#dc2626; }
+</style>
+<div class="overlay">
+    <div class="card">
+        <div class="hdr">
+            <div class="hdr-icon">🗑️</div>
+            <div>
+                <div class="hdr-title">Limpar cache de redes?</div>
+                <div class="hdr-sub">Esta ação não pode ser desfeita.</div>
+            </div>
         </div>
-    """, unsafe_allow_html=True)
+        <div class="msg">
+            Todos os dados coletados do Instagram serão apagados.<br>
+            Será necessário coletar novamente.
+        </div>
+        <div class="btns">
+            <button class="btn btn-cancel" onclick="triggerBtn('Cancelar')">Cancelar</button>
+            <button class="btn btn-confirm" onclick="triggerBtn('Sim, limpar')">Sim, limpar</button>
+        </div>
+    </div>
+</div>
+<script>
+function triggerBtn(label) {
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) { b.click(); return; }
+    }
+}
+(function() {
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {
+        try { if (iframes[i].contentWindow === window) {
+            iframes[i].style.position = 'fixed';
+            iframes[i].style.inset = '0';
+            iframes[i].style.width = '100vw';
+            iframes[i].style.height = '100vh';
+            iframes[i].style.zIndex = '999998';
+            iframes[i].style.border = 'none';
+            break;
+        }} catch(e) {}
+    }
+})();
+</script>
+""", height=600, scrolling=False)
 
     # ── Helpers ────────────────────────────────────────────────────
     def fmt_num(n):
