@@ -6163,17 +6163,22 @@ setTimeout(ajustarAltura,100);
                     if videos:
                         vid_sd = next((v for v in videos if any(x in v.lower() for x in ("sd","360","480","_sd"))), "")
                         vid_hd = next((v for v in videos if v != vid_sd), "")
-                        vid_primary = vid_sd or vid_hd or videos[0]
-                        vid_fallback = vid_hd if vid_hd and vid_hd != vid_primary else ""
-                        vid_primary_esc  = vid_primary.replace("'","").replace('"',"")
-                        vid_fallback_esc = vid_fallback.replace("'","").replace('"',"") if vid_fallback else ""
-                        snap_url_safe_vid = snap_url_safe
+                        vid_thumb      = vid_sd or vid_hd or videos[0]          # SD para thumb (leve)
+                        vid_modal      = vid_hd or vid_sd or videos[0]          # HD para modal
+                        vid_fallback_modal = vid_sd if vid_sd and vid_sd != vid_modal else ""
+
+                        vid_thumb_esc          = vid_thumb.replace("'","").replace('"',"")
+                        vid_modal_esc          = vid_modal.replace("'","").replace('"',"")
+                        vid_fallback_modal_esc = vid_fallback_modal.replace("'","").replace('"',"") if vid_fallback_modal else ""
+                        snap_url_safe_vid      = snap_url_safe
 
                         media_block = f"""
 <div class="media-block video-thumb-block" style="position:relative;background:#000;cursor:pointer"
-     id="vwrap_{uid}">
+     id="vwrap_{uid}"
+     data-modal-src="{vid_modal_esc}"
+     data-modal-fallback="{vid_fallback_modal_esc}">
     <video id="vid_{uid}"
-        src="{vid_primary_esc}"
+        src="{vid_thumb_esc}"
         style="width:100%;height:100%;object-fit:cover;display:block"
         preload="metadata"
         muted
@@ -6197,16 +6202,14 @@ setTimeout(ajustarAltura,100);
 </div>
 <script>
 (function(){{
-    var vidEl   = document.getElementById('vid_{uid}');
     var wrapEl  = document.getElementById('vwrap_{uid}');
-    var fallback = '{vid_fallback_esc}';
-    var snapUrl  = '{snap_url_safe_vid}';
-    var _tried   = false;
+    var thumbEl = document.getElementById('vid_{uid}');
+    var _tried  = false;
+    var snapUrl = '{snap_url_safe_vid}';
 
     function vidFallback_{uid}(v) {{
-        if (!_tried && fallback) {{
+        if (!_tried) {{
             _tried = true;
-            v.src = fallback;
         }} else if (snapUrl && wrapEl) {{
             wrapEl.innerHTML =
                 '<div style="position:absolute;inset:0;background:linear-gradient(135deg,#0f1f35,#1a3a5c);'
@@ -6225,7 +6228,9 @@ setTimeout(ajustarAltura,100);
 
     if (wrapEl) {{
         wrapEl.addEventListener('click', function() {{
-            openModal('{vid_primary_esc}', snapUrl, true);
+            var modalSrc = wrapEl.getAttribute('data-modal-src');
+            var fallback = wrapEl.getAttribute('data-modal-fallback');
+            openModal(modalSrc || fallback, snapUrl, true);
         }});
     }}
 }})();
