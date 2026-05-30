@@ -8634,7 +8634,6 @@ Como interpretar as métricas desta postagem?
             if profile_pic_url:
                 # Proxy via images.weserv.nl para contornar CORS do Instagram
                 proxied_url = f"https://images.weserv.nl/?url={profile_pic_url}&w=52&h=52&fit=cover&mask=circle"
-                st.write("DEBUG profile_pic:", profile_pic_url[:80] if profile_pic_url else "VAZIA")
                 avatar_html = (
                     f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:transparent">'
                     f'<img src="{proxied_url}" id="avatar-img" '
