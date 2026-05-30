@@ -6171,6 +6171,26 @@ window.__PLATS_{uid}__ = {plat_js};
                 n_cols = st.session_state.get(col_key, 4)
 
                 _js_modal_hq = """
+function buildCell(src, pos, grid, doc, colors, labelMap) {
+    var color = colors[pos] || '#9ca3af';
+    var cell = doc.createElement('div');
+    cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + color + ';display:flex;flex-direction:column;';
+
+    var lbl = doc.createElement('div');
+    lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + color + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + color + ';flex-shrink:0;';
+    lbl.textContent = labelMap[pos] || ('Imagem ' + (pos+1));
+
+    var imgEl = doc.createElement('img');
+    imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:65vh;';
+    imgEl.onerror = function() {
+        cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
+    };
+    imgEl.src = src || '';
+
+    cell.appendChild(lbl);
+    cell.appendChild(imgEl);
+    grid.appendChild(cell);
+}
 function openModalHQ(hqImgs, allImgs, snapUrl) {
     var doc = window.parent.document;
     var old = doc.getElementById('ads_modal_overlay');
@@ -6202,35 +6222,65 @@ function openModalHQ(hqImgs, allImgs, snapUrl) {
         img.src = src;
     }
     var grid = doc.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;';
-    hqImgs.forEach(function(src, i) {
-        var cell = doc.createElement('div');
-        cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + colors[i] + ';';
-        var lbl = doc.createElement('div');
-        lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + colors[i] + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + colors[i] + ';';
-        lbl.textContent = 'Carregando...';
-        detectLabel(src, i, function(detectedLabel) { lbl.textContent = detectedLabel; });
-        var imgEl = doc.createElement('img');
-        imgEl.src = src || '';
-        imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;';
-        // Ajusta altura da caixa após detectar o tipo
-        detectLabel(src, i, function(detectedLabel) {
-            lbl.textContent = detectedLabel;
-            if (detectedLabel === 'Stories') {
-                cell.style.maxWidth = '340px';
-                imgEl.style.maxHeight = '600px';
-            } else {
-                cell.style.maxWidth = '100%';
-                imgEl.style.maxHeight = '400px';
-            }
+    grid.style.cssText = 'display:grid;grid-template-columns:' + (hqImgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;align-items:start;';
+
+    var colors   = ['#3a9fd6', '#2ecc71'];
+    var labelMap = ['Feed', 'Stories'];
+
+    if (hqImgs.length <= 1) {
+        renderGrid(hqImgs);
+    } else {
+        // Carrega as imagens, mede proporção e ordena: menor ratio h/w = Feed primeiro
+        var results = [];
+        var done    = 0;
+        hqImgs.slice(0, 2).forEach(function(src, i) {
+            var tmp = new window.parent.Image();
+            tmp.onload = function() {
+                results.push({ src: src, ratio: this.naturalHeight / (this.naturalWidth || 1) });
+                done++;
+                if (done === hqImgs.slice(0,2).length) {
+                    results.sort(function(a, b) { return a.ratio - b.ratio; }); // menor ratio = Feed
+                    renderGrid(results.map(function(r) { return r.src; }));
+                }
+            };
+            tmp.onerror = function() {
+                results.push({ src: src, ratio: i === 0 ? 0 : 999 });
+                done++;
+                if (done === hqImgs.slice(0,2).length) {
+                    results.sort(function(a, b) { return a.ratio - b.ratio; });
+                    renderGrid(results.map(function(r) { return r.src; }));
+                }
+            };
+            tmp.src = src || '';
         });
-        imgEl.onerror = function() {
-            cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
-        };
-        cell.appendChild(lbl);
-        cell.appendChild(imgEl);
-        grid.appendChild(cell);
-    });
+    }
+
+    function renderGrid(imgs) {
+        var grid = doc.createElement('div');
+        grid.style.cssText = 'display:grid;grid-template-columns:' + (imgs.length > 1 ? '1fr 1fr' : '1fr') + ';gap:14px;align-items:start;';
+        imgs.forEach(function(src, pos) {
+            var color = colors[pos] || '#9ca3af';
+            var cell  = doc.createElement('div');
+            cell.style.cssText = 'background:#0a0a0a;border-radius:10px;overflow:hidden;border:2px solid ' + color + ';display:flex;flex-direction:column;';
+            var lbl   = doc.createElement('div');
+            lbl.style.cssText = 'padding:6px 12px;font-size:12px;font-weight:800;color:' + color + ';font-family:DM Sans,sans-serif;background:rgba(0,0,0,0.4);border-bottom:1px solid ' + color + ';flex-shrink:0;';
+            lbl.textContent = labelMap[pos] || ('Imagem ' + (pos+1));
+            var imgEl = doc.createElement('img');
+            imgEl.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;max-height:65vh;';
+            imgEl.onerror = function() {
+                cell.innerHTML = '<div style="color:#555;font-size:12px;font-family:DM Sans,sans-serif;text-align:center;padding:32px;">Imagem não disponível</div>';
+            };
+            imgEl.src = src || '';
+            cell.appendChild(lbl);
+            cell.appendChild(imgEl);
+            grid.appendChild(cell);
+        });
+        box.appendChild(closeBtn);
+        box.appendChild(title);
+        box.appendChild(grid);
+        overlay.appendChild(box);
+        doc.body.appendChild(overlay);
+    }
     var debugBtn = doc.createElement('button');
     debugBtn.textContent = '🔍 Ver todas as 4 imagens (debug)';
     debugBtn.style.cssText = 'margin-top:14px;width:100%;padding:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;';
