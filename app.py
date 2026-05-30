@@ -7952,6 +7952,13 @@ function triggerBtn(label) {
                 except Exception:
                     pass
 
+            _bio_links = user_data.get("bio_links") or []
+            _external_url = (
+                user_data.get("external_url")
+                or (_bio_links[0].get("url", "") if _bio_links else "")
+                or ""
+            )
+
             return {
                 "handle":       "@" + handle_limpo,
                 "nome_exibido": user_data.get("full_name") or user_data.get("username", handle_limpo),
@@ -7959,6 +7966,7 @@ function triggerBtn(label) {
                 "seguindo":     int(user_data.get("following_count") or 0),
                 "total_posts":  total_posts,
                 "bio":          (user_data.get("biography") or "")[:120],
+                "external_url": _external_url,
                 "is_verified":  user_data.get("is_verified", False),
                 "eng_medio":    round(eng_medio, 1),
                 "eng_pct":      eng_pct,
@@ -8479,6 +8487,8 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         badge_lbl = "Minha Empresa" if is_minha else "Concorrente"
         cor = get_avatar_color(aba_ativa)
         bio_txt   = (r.get("bio") or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ").replace('"', "&quot;").replace("'", "&#39;")
+        ext_url   = (r.get("external_url") or "").strip()
+        ext_url_display = ext_url.replace("https://", "").replace("http://", "").rstrip("/")
         posts_list = r.get("posts", [])
 
         seg_fmt   = fmt_num(r.get("seguidores", 0))
@@ -8704,24 +8714,28 @@ Como interpretar as métricas desta postagem?
                 return str(n)
 
             _raw_pic = r.get("profile_pic", "")
-            if _raw_pic:
-                proxied_url = f"https://images.weserv.nl/?url={_raw_pic}&w=52&h=52&fit=cover&mask=circle"
-                avatar_html = (
-                    f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:transparent">'
-                    f'<img src="{proxied_url}" id="avatar-img" '
-                    f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" '
-                    f'onerror="this.parentElement.style.background=\'{cor}\';'
-                    f'this.parentElement.style.display=\'flex\';'
-                    f'this.parentElement.style.alignItems=\'center\';'
-                    f'this.parentElement.style.justifyContent=\'center\';'
-                    f'this.parentElement.style.fontSize=\'18px\';'
-                    f'this.parentElement.style.fontWeight=\'700\';'
-                    f'this.parentElement.style.color=\'#fff\';'
-                    f'this.parentElement.innerHTML=\'{avatar_letras}\';" />'
-                    f'</div>'
-                )
+        if _raw_pic:
+            # Se já é URL pública do Supabase, usa direto; senão tenta weserv
+            if "supabase" in _raw_pic:
+                img_src = _raw_pic
             else:
-                avatar_html = f'<div class="avatar" style="background:{cor}">{avatar_letras}</div>'
+                img_src = f"https://images.weserv.nl/?url={_raw_pic}&w=104&h=104&fit=cover&output=jpg"
+            avatar_html = (
+                f'<div class="avatar" id="avatar-wrap" style="padding:0;overflow:hidden;background:{cor};">'
+                f'<img src="{img_src}" id="avatar-img" '
+                f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" '
+                f'onerror="this.style.display=\'none\';'
+                f'this.parentElement.style.display=\'flex\';'
+                f'this.parentElement.style.alignItems=\'center\';'
+                f'this.parentElement.style.justifyContent=\'center\';'
+                f'this.parentElement.style.fontSize=\'18px\';'
+                f'this.parentElement.style.fontWeight=\'700\';'
+                f'this.parentElement.style.color=\'#fff\';'
+                f'this.parentElement.innerHTML=\'{avatar_letras}\';" />'
+                f'</div>'
+            )
+        else:
+            avatar_html = f'<div class="avatar" style="background:{cor}">{avatar_letras}</div>'
 
             components.html(f"""
 <!DOCTYPE html><html>
@@ -8987,6 +9001,7 @@ body{{padding-bottom:8px;}}
         <div class="bio-label-col"><span class="bio-label-txt">Bio do Perfil</span></div>
         <div class="bio-left">
             {f'<div class="bio-text">&ldquo;{bio_txt}&rdquo;</div>' if bio_txt else '<div class="bio-empty">Sem bio cadastrada neste perfil.</div>'}
+            {f'<a href="{ext_url}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:13px;font-weight:600;color:#3a9fd6;text-decoration:none;word-break:break-all;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">🔗 {ext_url_display}</a>' if ext_url else ''}
         </div>
         <div class="bio-right">
             <button class="btn-ia" onclick="triggerBio()">🤖 Analisar Bio</button>
