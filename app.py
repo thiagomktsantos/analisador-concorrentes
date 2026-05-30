@@ -8832,6 +8832,7 @@ body{{padding-bottom:8px;}}
     padding:16px 20px;
     border:1px solid #e5e7eb; border-top:none;
     background:#fff; flex-wrap:wrap;
+    border-radius: 0 0 12px 12px !important;
 }}
 .filter-input {{
     flex:1; min-width:160px;height:40px;
