@@ -3973,7 +3973,7 @@ elif st.session_state.pagina == "ads":
          raw_media_type = (
             item.get("mediaType")
             or item.get("media_type")
-            or snapshot.get("display_format")  # ← ADICIONE ISSO
+            or snapshot.get("display_format")
             or ""
         ).upper()
 
