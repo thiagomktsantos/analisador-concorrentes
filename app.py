@@ -7906,7 +7906,9 @@ function triggerBtn(label) {
                             _r.content,
                             {"content-type": "image/jpeg", "upsert": "true"},
                         )
-                        profile_pic = supabase.storage.from_("redes-assets").get_public_url(_fname)
+                        _public_url = supabase.storage.from_("redes-assets").get_public_url(_fname)
+                        if _public_url:
+                            profile_pic = _public_url
                 except Exception:
                     pass
 
@@ -7962,7 +7964,7 @@ function triggerBtn(label) {
                     cache_txt = '<span style="color:#9ca3af;font-size:12px">Concluído</span>'
                 elif item.get("atual"):
                     cache_txt = '<span style="color:#9ca3af;font-size:12px">Coletando...</span>'
-        
+
                 linhas_itens += f"""
                 <div style="background:#1e3a5f;border-radius:10px;padding:14px 18px;display:flex;
                             align-items:center;justify-content:space-between;gap:12px;">
@@ -7975,50 +7977,43 @@ function triggerBtn(label) {
                     </div>
                     {anuncios_txt}
                 </div>"""
-        
+
             pct = int((processados / total) * 100) if total > 0 else 0
             is_done = processados == total
-        
-            with progresso_placeholder.container():
-                components.html(f"""
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700;800&display=swap" rel="stylesheet">
-        <style>
-        * {{ margin:0; padding:0; box-sizing:border-box; }}
-        html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-        </style>
-        <div style="background:#0e2a47;border-radius:20px;padding:32px;
-                    width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);
-                    border:1px solid #1e3a5f;">
-            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-                <div style="width:42px;height:42px;border-radius:50%;
-                            background:{'#22c55e' if is_done else '#3a9fd6'};
-                            display:flex;align-items:center;justify-content:center;font-size:20px;">
-                    {'✅' if is_done else '⏳'}
-                </div>
-                <div>
-                    <div style="font-size:17px;font-weight:800;color:#f1f5f9">
-                        {'Busca concluída' if is_done else 'Coletando perfis...'}
-                    </div>
-                    <div style="font-size:13px;color:#94a3b8">
-                        {processados}/{total} {'empresas' if total > 1 else 'empresa'} processada{'s' if total > 1 else ''}
-                    </div>
-                </div>
-                <div style="margin-left:auto;font-size:22px;font-weight:900;
-                            color:{'#22c55e' if is_done else '#3a9fd6'}">
-                    {pct}%
-                </div>
-            </div>
-            <div style="background:#1e3a5f;border-radius:8px;height:8px;margin-bottom:20px;overflow:hidden;">
-                <div style="background:linear-gradient(90deg,#3a9fd6,#22c55e);
-                            height:100%;width:{pct}%;border-radius:8px;
-                            transition:width 0.4s ease;"></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-                {linhas_itens}
-            </div>
-            {'<div style="text-align:center;margin-top:18px;font-size:13px;color:#64748b">Fechando automaticamente...</div>' if is_done else ''}
+
+            progresso_placeholder.markdown(f"""
+<div style="background:#0e2a47;border-radius:20px;padding:32px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.5);
+            border:1px solid #1e3a5f;margin:8px 0;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        <div style="width:42px;height:42px;border-radius:50%;
+                    background:{'#22c55e' if is_done else '#3a9fd6'};
+                    display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+            {'✅' if is_done else '⏳'}
         </div>
-        """, height=300 + len(itens) * 70, scrolling=False)
+        <div>
+            <div style="font-size:17px;font-weight:800;color:#f1f5f9;">
+                {'Busca concluída' if is_done else 'Coletando perfis...'}
+            </div>
+            <div style="font-size:13px;color:#94a3b8;">
+                {processados}/{total} {'empresas' if total > 1 else 'empresa'} processada{'s' if total > 1 else ''}
+            </div>
+        </div>
+        <div style="margin-left:auto;font-size:22px;font-weight:900;
+                    color:{'#22c55e' if is_done else '#3a9fd6'};">
+            {pct}%
+        </div>
+    </div>
+    <div style="background:#1e3a5f;border-radius:8px;height:8px;margin-bottom:20px;overflow:hidden;">
+        <div style="background:linear-gradient(90deg,#3a9fd6,#22c55e);
+                    height:100%;width:{pct}%;border-radius:8px;"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+        {linhas_itens}
+    </div>
+    {'<div style="text-align:center;margin-top:18px;font-size:13px;color:#64748b;">Fechando automaticamente...</div>' if is_done else ''}
+</div>
+""", unsafe_allow_html=True)
 
         itens_status = [{"nome": e["nome"], "done": False, "atual": False, "n": 0} for e in todas]
 
