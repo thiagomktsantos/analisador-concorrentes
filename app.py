@@ -6026,8 +6026,8 @@ setTimeout(ajustarAltura,100);
                         "snapshot.page_profile_picture_url": _safe_url(_snapshot_raw.get("page_profile_picture_url")),
                     }
 
-                    # Remove None, listas vazias e strings vazias para deixar o debug limpo
-                    debug_keys = {k: v for k, v in debug_keys.items() if v is not None and v != [] and v != ""}
+                    # Adiciona dump completo do raw para diagnóstico
+                    debug_keys["__RAW_COMPLETO__"] = _raw_item if _raw_item else "NÃO ENCONTRADO NO _raw"
                     debug_json_str = _json.dumps(debug_keys, ensure_ascii=False, indent=2)
                     debug_json_html = debug_json_str.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
 
