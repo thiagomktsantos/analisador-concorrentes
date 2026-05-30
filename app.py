@@ -8698,7 +8698,6 @@ Como interpretar as métricas desta postagem?
             n_carrossel = sum(1 for p in posts_list if p.get("media_type") == 8)
             total_likes = sum(p.get("likes", 0) for p in posts_list)
             total_coms  = sum(p.get("comments", 0) for p in posts_list)
-            best_eng    = max((p.get("likes", 0) + p.get("comments", 0) for p in posts_list), default=0)
 
             def _fmt(n):
                 n = int(n or 0)
@@ -9055,7 +9054,6 @@ body{{padding-bottom:8px;}}
     <div class="stat-card"><div class="stat-num2" id="stat-carrossel">{n_carrossel}</div><div class="stat-lbl2">Carrossel</div></div>
     <div class="stat-card"><div class="stat-num2" id="stat-likes">{_fmt(total_likes)}</div><div class="stat-lbl2">Curtidas</div></div>
     <div class="stat-card"><div class="stat-num2" id="stat-coms">{_fmt(total_coms)}</div><div class="stat-lbl2">Comentários</div></div>
-    <div class="stat-card"><div class="stat-num2" id="stat-best">{_fmt(best_eng)}</div><div class="stat-lbl2">Melhor Engaj.</div></div>
 </div>
 
 <div class="posts-grid" id="posts-grid"></div>
@@ -9093,14 +9091,12 @@ function updateStats(posts) {{
     var nC = posts.filter(function(p){{ return  p.media_type === 8; }}).length;
     var tL = posts.reduce(function(s,p){{ return s+(p.likes||0); }}, 0);
     var tC = posts.reduce(function(s,p){{ return s+(p.comments||0); }}, 0);
-    var bE = posts.reduce(function(mx,p){{ return Math.max(mx,(p.likes||0)+(p.comments||0)); }}, 0);
     document.getElementById('stat-total').textContent     = posts.length;
     document.getElementById('stat-fotos').textContent     = nF;
     document.getElementById('stat-videos').textContent    = nV;
     document.getElementById('stat-carrossel').textContent = nC;
     document.getElementById('stat-likes').textContent     = fmtNum(tL);
     document.getElementById('stat-coms').textContent      = fmtNum(tC);
-    document.getElementById('stat-best').textContent      = fmtNum(bE);
 }}
 
 function openModalByIdx(idx) {{
