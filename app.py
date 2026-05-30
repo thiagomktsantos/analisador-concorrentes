@@ -3907,22 +3907,26 @@ elif st.session_state.pagina == "ads":
         videos = _extract_videos(item)
         copy = _extract_copy(item)
 
-        plats = (item.get("publisherPlatform")
-                 or item.get("publisher_platform")
-                 or item.get("publisher_platforms")
-                 or snapshot.get("publisher_platforms")
-                 or [])
+        # Pega de todos os campos possíveis
+        plats_raw = (
+            item.get("publisherPlatform")
+            or item.get("publisher_platform")
+            or item.get("publisher_platforms")
+            or snapshot.get("publisher_platforms")
+            or snapshot.get("publisher_platform")
+            or []
+        )
 
-        if isinstance(plats, str):
-            plats = [plats]
-        elif isinstance(plats, list):
-            normalized = []
-            for p in plats:
-                if isinstance(p, dict):
-                    normalized.append(p.get("name") or p.get("value") or str(p))
-                elif isinstance(p, str):
-                    normalized.append(p.lower())  # ← converte FACEBOOK → facebook
-            plats = normalized
+        if isinstance(plats_raw, str):
+            plats_raw = [plats_raw]
+
+        plats = []
+        for p in plats_raw:
+            if isinstance(p, dict):
+                val = p.get("name") or p.get("value") or str(p)
+                plats.append(val.lower())
+            elif isinstance(p, str):
+                plats.append(p.lower())  # FACEBOOK → facebook
 
         if not plats:
             plats = ["facebook", "instagram"]
