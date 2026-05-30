@@ -193,7 +193,7 @@ def carregar_dados_usuario(user_id: str) -> dict:
         res = supabase.table("ci_dados").select("*").eq("user_id", user_id).execute()
         if res.data:
             row = res.data[0]
-            return {
+            
                 "minha_empresa": row.get("minha_empresa", {}),
                 "concorrentes": row.get("concorrentes", []),
                 "metricas_redes": row.get("metricas_redes", {}),
@@ -7784,6 +7784,12 @@ function abrirModal() {{
                 "posts":        posts_data,
                 "fonte":        "rapidapi",
                 "erro":         None,
+                "profile_pic":  (
+                    user_data.get("profile_pic_url_hd")
+                    or user_data.get("profile_pic_url")
+                    or user_data.get("hd_profile_pic_url_info", {}).get("url", "")
+                    or ""
+                ),
             }
         except Exception as e:
             return {"erro": str(e)}
@@ -8186,6 +8192,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         handle_clean = (r.get("handle") or "").lstrip("@")
         ig_url = f"https://www.instagram.com/{handle_clean}/" if handle_clean else "#"
         avatar_letras = gerar_avatar(r["nome"])
+        profile_pic_url = r.get("profile_pic", "")
  
         # ── Estado de subtab ────────────────────────────────────────
         redes_subtab_key = f"redes_subtab_{aba_ativa}"
@@ -8640,7 +8647,7 @@ body{{padding-bottom:8px;}}
  
 <div class="perfil-card">
     <div class="perfil-header">
-        <div class="avatar">{avatar_letras}</div>
+        {'<div class="avatar" style="padding:0;overflow:hidden"><img src="' + profile_pic_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.style.background=\'' + cor + '\';this.parentElement.innerHTML=\'' + avatar_letras + '\'" /></div>' if profile_pic_url else '<div class="avatar">' + avatar_letras + '</div>'}
         <div class="info">
             <div class="nome">{r["nome"]}<span class="handle">{r.get("handle","")}</span></div>
             <div class="badge">{badge_lbl}</div>
