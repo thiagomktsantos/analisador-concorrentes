@@ -3039,7 +3039,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 Você é um especialista em marketing digital e posicionamento de marca.
 Analise o conteúdo extraído do site abaixo e gere uma análise individual detalhada em português.
 
-Empresa: {s['nome']}
+Empresa: {s['nome']} ({s['url']})
 URL: {s['url']}
 Tipo: {"Minha Empresa" if is_minha else "Concorrente"}
 
@@ -3047,6 +3047,8 @@ Conteúdo extraído do site:
 {conteudo_site[:4000] if conteudo_site else "Não foi possível extrair conteúdo."}
 
 ---
+
+IMPORTANTE: Sempre que mencionar o nome da empresa ao longo do relatório, inclua o endereço do site entre parênteses. Exemplo: "{s['nome']} ({s['url']})".
 
 Responda com as seguintes seções:
 
@@ -3082,14 +3084,14 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                         a for a in st.session_state.analises_salvas
                         if not (a.get("tipo") == "individual" and s["nome"] in a.get("sites", []))
                     ]
-                    titulo_auto = f"Análise Individual — {s['nome']} ({_dt.datetime.now().strftime('%d/%m/%Y %H:%M')})"
+                    titulo_auto = f"Análise Individual — {s['nome']} ({s['url']}) — {_dt.datetime.now().strftime('%d/%m/%Y %H:%M')}"
                     st.session_state.analises_salvas.append({
                         "titulo": titulo_auto,
                         "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
                         "relatorio": resp.text,
-                        "sites": [s["nome"]],
+                        "sites": [f"{s['nome']} ({s['url']})"],
                         "tipo": "individual",
-                        "empresa": s["nome"],
+                        "empresa": f"{s['nome']} ({s['url']})",
                         "url": s["url"],
                     })
 
@@ -3106,60 +3108,160 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     st.rerun()
 
     # ══════════════════════════════════════════════════════════════
-    # PROCESSAR — Relatório geral
+    # PROCESSAR — Relatório geral com modal de loading
     # ══════════════════════════════════════════════════════════════
     if gerar_btn:
         st.session_state.relatorio_gemini = ""
         st.session_state.relatorio_sites = {}
 
-        with st.status("📡 Lendo os sites...", expanded=True) as status:
-            for s in sites_disponiveis:
-                st.write(f"Acessando **{s['nome']}** ({s['url']})…")
-                conteudo = extrair_conteudo_site(s["url"])
-                st.session_state.relatorio_sites[s["url"]] = conteudo
-                if conteudo and not conteudo.startswith("[Erro"):
-                    palavras = len(conteudo.split())
-                    st.write(f"✅ {palavras} palavras extraídas")
-                else:
-                    st.write(f"⚠️ Não foi possível extrair conteúdo")
+        modal_geral_placeholder = st.empty()
 
-            status.update(label="✅ Sites lidos! Gerando análise com IA…", state="running")
+        def _render_modal_geral(fase: str, descricao: str, pct: int, _ph=modal_geral_placeholder):
+            fases = {
+                "lendo":     ("Acessando os sites…",       "Lendo conteúdo das páginas…"),
+                "enviando":  ("Enviando para o Gemini…",   "Processando com IA…"),
+                "gerando":   ("Gerando relatório geral…",  "Comparando posicionamentos…"),
+                "concluido": ("Relatório concluído!",       "Redirecionando…"),
+            }
+            sub1, sub2 = fases.get(fase, ("Processando…", "Aguarde…"))
+            is_done  = fase == "concluido"
+            cor_pct  = "#22c55e" if is_done else "#3a9fd6"
+            icone    = "✅" if is_done else "⏳"
+            rodape   = (
+                '<div style="text-align:center;margin-top:18px;font-size:13px;color:#64748b;">'
+                'Fechando automaticamente…</div>'
+            ) if is_done else ""
 
-            empresa_principal = None
-            concorrentes_data = []
-            for s in sites_disponiveis:
-                item = {
-                    "nome": s["nome"],
-                    "url":  s["url"],
-                    "conteudo": st.session_state.relatorio_sites.get(s["url"], ""),
-                }
-                if s["tipo"] == "minha":
-                    empresa_principal = item
-                else:
-                    concorrentes_data.append(item)
+            desc_safe = (descricao or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&#39;").replace('"',"&quot;")
 
-            if empresa_principal is None and sites_disponiveis:
-                empresa_principal = {
-                    "nome": sites_disponiveis[0]["nome"],
-                    "url":  sites_disponiveis[0]["url"],
-                    "conteudo": st.session_state.relatorio_sites.get(sites_disponiveis[0]["url"], ""),
-                }
+            html_modal = f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
+.overlay {{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.72);
+    z-index:999999;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+}}
+.card {{
+    background:#0e2a47;
+    border-radius:20px;
+    padding:32px;
+    width:min(95vw,480px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    border:1px solid #1e3a5f;
+}}
+.spin-wrap {{
+    width:44px; height:44px; border-radius:50%;
+    border:3px solid #1e3a5f;
+    border-top-color:#3a9fd6;
+    flex-shrink:0;
+    animation: spin 0.85s linear infinite;
+}}
+@keyframes spin {{ to {{ transform:rotate(360deg); }} }}
+</style>
+<div class="overlay">
+<div class="card">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        {'<div style="width:44px;height:44px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">✅</div>' if is_done else '<div class="spin-wrap"></div>'}
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:17px;font-weight:800;color:#f1f5f9;">{sub1}</div>
+            <div style="font-size:13px;color:#94a3b8;margin-top:3px;">{sub2}</div>
+        </div>
+        <div style="font-size:22px;font-weight:900;color:{cor_pct};flex-shrink:0;">{pct}%</div>
+    </div>
+    <div style="background:#1e3a5f;border-radius:8px;height:8px;margin-bottom:20px;overflow:hidden;">
+        <div style="background:linear-gradient(90deg,#3a9fd6,#22c55e);height:100%;width:{pct}%;border-radius:8px;transition:width 0.3s;"></div>
+    </div>
+    <div style="background:#071929;border-radius:12px;padding:14px 18px;
+                display:flex;align-items:center;justify-content:space-between;gap:12px;
+                border:1px solid #1a3a5a;margin-bottom:4px;">
+        <div>
+            <div style="font-size:14px;font-weight:700;color:#e2e8f0;">{desc_safe}</div>
+            <div style="font-size:12px;color:#4a7099;margin-top:3px;">Relatório comparativo geral…</div>
+        </div>
+        <div style="font-size:18px;">{icone}</div>
+    </div>
+    {rodape}
+</div>
+</div>
+<script>
+(function() {{
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.position = 'fixed';
+                iframes[i].style.inset    = '0';
+                iframes[i].style.width    = '100vw';
+                iframes[i].style.height   = '100vh';
+                iframes[i].style.zIndex   = '999998';
+                iframes[i].style.border   = 'none';
+                break;
+            }}
+        }} catch(e) {{}}
+    }}
+}})();
+</script>
+"""
+            with _ph:
+                components.html(html_modal, height=600, scrolling=False)
 
-            relatorio = gerar_relatorio_posicionamento(empresa_principal, concorrentes_data)
-            st.session_state.relatorio_gemini = relatorio
-            st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
+        # ── Lendo os sites com modal ──
+        total_sites = len(sites_disponiveis)
+        for i_s, s in enumerate(sites_disponiveis):
+            pct_leitura = int(10 + (i_s / total_sites) * 35)
+            _render_modal_geral("lendo", f"Lendo {s['nome']} ({s['url']}) — {i_s + 1}/{total_sites}", pct_leitura)
+            conteudo = extrair_conteudo_site(s["url"])
+            st.session_state.relatorio_sites[s["url"]] = conteudo
 
-            titulo_auto = f"Relatório Geral — {_dt.datetime.now().strftime('%d/%m/%Y %H:%M')}"
-            st.session_state.analises_salvas.append({
-                "titulo": titulo_auto,
-                "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                "relatorio": relatorio,
-                "sites": [s["nome"] for s in sites_disponiveis],
-                "tipo": "geral",
-            })
+        _render_modal_geral("enviando", f"{total_sites} site{'s' if total_sites != 1 else ''} lido{'s' if total_sites != 1 else ''} — enviando para IA…", 55)
 
-            st.session_state.sites_main_tab = "analise"
-            status.update(label="✅ Relatório gerado!", state="complete")
+        empresa_principal = None
+        concorrentes_data = []
+        for s in sites_disponiveis:
+            item = {
+                "nome": s["nome"],
+                "url":  s["url"],
+                "conteudo": st.session_state.relatorio_sites.get(s["url"], ""),
+            }
+            if s["tipo"] == "minha":
+                empresa_principal = item
+            else:
+                concorrentes_data.append(item)
+
+        if empresa_principal is None and sites_disponiveis:
+            empresa_principal = {
+                "nome": sites_disponiveis[0]["nome"],
+                "url":  sites_disponiveis[0]["url"],
+                "conteudo": st.session_state.relatorio_sites.get(sites_disponiveis[0]["url"], ""),
+            }
+
+        _render_modal_geral("gerando", "Comparando posicionamentos…", 80)
+
+        relatorio = gerar_relatorio_posicionamento(empresa_principal, concorrentes_data)
+        st.session_state.relatorio_gemini = relatorio
+        st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
+
+        # ── Título com nomes + URLs de todos os sites ──
+        nomes_com_url = [f"{s['nome']} ({s['url']})" for s in sites_disponiveis]
+        titulo_auto = f"Relatório Geral — {' vs. '.join(nomes_com_url)} — {_dt.datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        st.session_state.analises_salvas.append({
+            "titulo": titulo_auto,
+            "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "relatorio": relatorio,
+            "sites": nomes_com_url,
+            "tipo": "geral",
+        })
+
+        _render_modal_geral("concluido", "Relatório geral pronto!", 100)
+        import time as _time; _time.sleep(1.5)
+        modal_geral_placeholder.empty()
+
+        st.session_state.sites_main_tab = "analise"
         st.rerun()
 
     # ══════════════════════════════════════════════════════════════
@@ -3311,22 +3413,20 @@ function triggerTab(label) {{
                     break
 
             cards_data.append({
-                "idx":           idx_s,
-                "nome":          s["nome"],
-                "url":           s["url"],
-                "tipo":          s["tipo"],
-                "cor":           cor_avatar,
-                "badge_bg":      badge_bg,
-                "badge_txt":     badge_txt,
-                "badge_brd":     badge_brd,
-                "badge_lbl":     badge_lbl,
-                "avatar":        avatar_letras,
-                "tem_analise":   tem_analise,
+                "idx":            idx_s,
+                "nome":           s["nome"],
+                "url":            s["url"],
+                "tipo":           s["tipo"],
+                "cor":            cor_avatar,
+                "badge_bg":       badge_bg,
+                "badge_txt":      badge_txt,
+                "badge_brd":      badge_brd,
+                "badge_lbl":      badge_lbl,
+                "avatar":         avatar_letras,
+                "tem_analise":    tem_analise,
                 "ultima_analise": ultima_analise,
             })
 
-        # CORREÇÃO DO BUG: usar json.dumps direto na tag <script> em vez de
-        # html.escape no atributo data-, evitando corrupção do JSON no JS.
         cards_json_str = _json_sites.dumps(cards_data, ensure_ascii=True)
 
         _html_cards = f"""<!DOCTYPE html><html>
@@ -3428,7 +3528,6 @@ function buildCards() {{
         var card = document.createElement('div');
         card.className = 'site-card';
 
-        // header
         var hdr = document.createElement('div');
         hdr.className = 'card-header';
         hdr.innerHTML =
@@ -3439,7 +3538,6 @@ function buildCards() {{
             + '</div>';
         card.appendChild(hdr);
 
-        // url
         var urlRow = document.createElement('div');
         urlRow.className = 'url-row';
         urlRow.innerHTML =
@@ -3450,7 +3548,6 @@ function buildCards() {{
             + '<span>' + c.url + '</span>';
         card.appendChild(urlRow);
 
-        // preview
         var prevWrap = document.createElement('div');
         prevWrap.className = 'preview-wrap';
         var img = document.createElement('img');
@@ -3468,7 +3565,6 @@ function buildCards() {{
         prevWrap.appendChild(img);
         card.appendChild(prevWrap);
 
-        // badge última análise
         if (c.tem_analise && c.ultima_analise) {{
             var abadge = document.createElement('div');
             abadge.className = 'analise-badge';
@@ -3483,7 +3579,6 @@ function buildCards() {{
             card.appendChild(abadge);
         }}
 
-        // botão analisar
         var btnWrap = document.createElement('div');
         btnWrap.className = 'btn-wrap';
         var btn = document.createElement('button');
@@ -3555,7 +3650,7 @@ setTimeout(syncHeight, 3000);
         components.html(_html_cards, height=1200, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════
-    # ABA: ANÁLISE DE IA — Redesign com cards individuais e gerais
+    # ABA: ANÁLISE DE IA
     # ══════════════════════════════════════════════════════════════
     elif main_tab == "analise":
 
@@ -3563,56 +3658,10 @@ setTimeout(syncHeight, 3000);
         analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
         analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "geral"]
 
-        # ── Relatório geral atual (se existir e ainda não foi salvo) ──
-        if st.session_state.relatorio_gemini:
-            st.markdown(
-                "<div style='font-size:20px;font-weight:700;color:#111827;"
-                "font-family:DM Sans,sans-serif;margin-bottom:12px'>"
-                "📋 Último Relatório Geral Gerado</div>",
-                unsafe_allow_html=True,
-            )
-            col_titulo_salvar, col_btn_salvar = st.columns([5, 2])
-            with col_titulo_salvar:
-                nome_analise = st.text_input(
-                    "Nome para salvar",
-                    placeholder="Ex: Análise maio/2025",
-                    label_visibility="collapsed",
-                    key="nome_analise_input",
-                )
-            with col_btn_salvar:
-                if st.button("💾 Salvar com nome", use_container_width=True):
-                    titulo_salvo = nome_analise.strip() or _dt.datetime.now().strftime("Análise %d/%m/%Y %H:%M")
-                    st.session_state.analises_salvas.append({
-                        "titulo": titulo_salvo,
-                        "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                        "relatorio": st.session_state.relatorio_gemini,
-                        "sites": [s["nome"] for s in sites_disponiveis],
-                        "tipo": "geral",
-                    })
-                    st.toast(f"✅ «{titulo_salvo}» salva!", icon="✅")
-                    st.rerun()
+        # Limpa estado temporário — relatório já foi salvo em analises_salvas
+        st.session_state.relatorio_gemini = ""
 
-            st.markdown(st.session_state.relatorio_gemini)
-
-            with st.expander("🔎 Ver conteúdo extraído dos sites"):
-                for s in sites_disponiveis:
-                    conteudo = st.session_state.relatorio_sites.get(s["url"], "")
-                    st.markdown(f"**{s['nome']}** — `{s['url']}`")
-                    if conteudo:
-                        st.text_area(
-                            label="",
-                            value=conteudo[:2000] + ("…" if len(conteudo) > 2000 else ""),
-                            height=180,
-                            key=f"txt_{s['url']}",
-                            disabled=True,
-                        )
-                    else:
-                        st.warning("Nenhum conteúdo extraído.")
-                    st.markdown("---")
-
-            st.markdown("<hr style='border:none;border-top:2px solid #e5e7eb;margin:28px 0'/>", unsafe_allow_html=True)
-
-        # ── Renderiza seções em cards visuais (redesign) ──
+        # ── Renderiza seções em cards visuais ──
         def _build_analises_html(lista_individuais, lista_gerais):
 
             relatorios_js = {}
@@ -3621,21 +3670,10 @@ setTimeout(syncHeight, 3000);
             relatorios_json = _json_sites.dumps(relatorios_js, ensure_ascii=False)
 
             def card_item(idx_real, analise):
-                titulo    = analise.get("titulo", "—")
-                data      = analise.get("data", "—")
-                empresa   = analise.get("empresa", "")
-                sites_str = ", ".join(analise.get("sites", []))
-                tipo      = analise.get("tipo", "geral")
-                icon      = "🏢" if tipo == "individual" else "📋"
-                tag_bg    = "#eff6ff" if tipo == "individual" else "#f0fdf4"
-                tag_col   = "#1d4ed8" if tipo == "individual" else "#15803d"
-                tag_brd   = "#bfdbfe" if tipo == "individual" else "#86efac"
-                tag_txt   = "Individual" if tipo == "individual" else "Relatório Geral"
-                meta      = empresa if empresa else sites_str
-
-                # Escapa o título para uso seguro no JS (template literal)
-                titulo_js = titulo.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${").replace("'", "\\'")
-                nome_arquivo_js = titulo.replace(" ", "_").replace("/", "_")
+                titulo          = analise.get("titulo", "—")
+                tipo            = analise.get("tipo", "geral")
+                icon            = "🏢" if tipo == "individual" else "📋"
+                nome_arquivo_js = titulo.replace(" ", "_").replace("/", "_").replace("(", "").replace(")", "").replace(".", "")
 
                 return f"""
 <div class="analise-card" id="card_{idx_real}">
@@ -3663,16 +3701,13 @@ setTimeout(syncHeight, 3000);
     </div>
 </div>"""
 
-            # Seção individuais
             if lista_individuais:
                 items_ind = "".join(card_item(i, a) for i, a in reversed(lista_individuais))
                 html_ind = f"""
 <div class="secao">
     <div class="secao-header">
         <div class="secao-icon ind">🏢</div>
-        <div>
-            <div class="secao-titulo">Análises Individuais</div>
-        </div>
+        <div><div class="secao-titulo">Análises Individuais</div></div>
         <div class="secao-count">{len(lista_individuais)}</div>
     </div>
     <div class="secao-cards">{items_ind}</div>
@@ -3682,10 +3717,7 @@ setTimeout(syncHeight, 3000);
 <div class="secao">
     <div class="secao-header">
         <div class="secao-icon ind">🏢</div>
-        <div>
-            <div class="secao-titulo">Análises Individuais</div>
-            <div class="secao-sub">Análise por site específico</div>
-        </div>
+        <div><div class="secao-titulo">Análises Individuais</div></div>
         <div class="secao-count">0</div>
     </div>
     <div class="empty-state">
@@ -3694,16 +3726,13 @@ setTimeout(syncHeight, 3000);
     </div>
 </div>"""
 
-            # Seção gerais
             if lista_gerais:
                 items_ger = "".join(card_item(i, a) for i, a in reversed(lista_gerais))
                 html_ger = f"""
 <div class="secao">
     <div class="secao-header">
         <div class="secao-icon ger">📋</div>
-        <div>
-            <div class="secao-titulo">Relatórios Gerais</div>
-        </div>
+        <div><div class="secao-titulo">Relatórios Gerais</div></div>
         <div class="secao-count">{len(lista_gerais)}</div>
     </div>
     <div class="secao-cards">{items_ger}</div>
@@ -3713,10 +3742,7 @@ setTimeout(syncHeight, 3000);
 <div class="secao">
     <div class="secao-header">
         <div class="secao-icon ger">📋</div>
-        <div>
-            <div class="secao-titulo">Relatórios Gerais</div>
-            <div class="secao-sub">Comparativo entre todos os sites</div>
-        </div>
+        <div><div class="secao-titulo">Relatórios Gerais</div></div>
         <div class="secao-count">0</div>
     </div>
     <div class="empty-state">
@@ -3731,21 +3757,13 @@ setTimeout(syncHeight, 3000);
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
 body {{ background:transparent; overflow:visible; padding-bottom:16px; }}
-
-/* ── Seção: título plano sem card ── */
 .secao {{ margin-bottom:24px; }}
-
 .secao-header {{
     display:flex; align-items:center; gap:10px;
     padding:0 4px 10px;
     border-bottom:2px solid #e5e7eb;
     margin-bottom:10px;
 }}
-.secao-dot {{
-    width:8px; height:8px; border-radius:50%; flex-shrink:0;
-}}
-.secao-dot.ind {{ background:#3b82f6; }}
-.secao-dot.ger {{ background:#22c55e; }}
 .secao-titulo {{
     font-size:13px; font-weight:800; color:#6b7280;
     text-transform:uppercase; letter-spacing:0.8px;
@@ -3756,63 +3774,34 @@ body {{ background:transparent; overflow:visible; padding-bottom:16px; }}
     font-size:12px; font-weight:700;
     padding:2px 10px; border-radius:20px;
 }}
-.secao-count.has {{ background:#dbeafe; color:#1d4ed8; }}
-.secao-count.has-green {{ background:#dcfce7; color:#15803d; }}
-
-/* ── Lista de itens ── */
 .secao-cards {{
     display:flex; flex-direction:column;
     border:1px solid #e5e7eb; border-radius:12px;
-    overflow:hidden;
-    background:#fff;
+    overflow:hidden; background:#fff;
 }}
-
-/* ── Item individual ── */
-.analise-card {{
-    border-bottom:1px solid #f3f4f6;
-}}
+.analise-card {{ border-bottom:1px solid #f3f4f6; }}
 .analise-card:last-child {{ border-bottom:none; }}
-
 .card-top {{
     display:flex; align-items:center; gap:12px;
-    padding:14px 16px;
-    cursor:pointer;
-    transition:background 0.12s;
-    user-select:none;
+    padding:14px 16px; cursor:pointer;
+    transition:background 0.12s; user-select:none;
 }}
 .card-top:hover {{ background:#f9fafb; }}
-
-.card-type-dot {{
-    width:10px; height:10px; border-radius:50%; flex-shrink:0;
-}}
-.card-type-dot.ind {{ background:#3b82f6; }}
-.card-type-dot.ger {{ background:#22c55e; }}
-
+.card-icon-wrap {{ font-size:18px; flex-shrink:0; }}
 .card-info {{ flex:1; min-width:0; }}
 .card-titulo {{
     font-size:14px; font-weight:600; color:#111827;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:3px;
 }}
-.card-meta {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
-.card-data {{ font-size:12px; color:#9ca3af; }}
-.card-emp {{ font-size:12px; color:#9ca3af; }}
-
 .card-chevron {{
     color:#d1d5db; flex-shrink:0;
     transition:transform 0.2s, color 0.15s;
     display:flex; align-items:center;
 }}
-.card-chevron.open {{
-    transform:rotate(180deg);
-    color:#3a9fd6;
-}}
+.card-chevron.open {{ transform:rotate(180deg); color:#3a9fd6; }}
 .card-top:hover .card-chevron {{ color:#9ca3af; }}
-
-/* ── Conteúdo expandido ── */
 .card-body {{
-    padding:16px;
-    background:#fafbfc;
+    padding:16px; background:#fafbfc;
     border-top:1px solid #f3f4f6;
 }}
 .card-relatorio {{
@@ -3842,8 +3831,6 @@ body {{ background:transparent; overflow:visible; padding-bottom:16px; }}
     display:flex; align-items:center; justify-content:center; gap:6px;
 }}
 .btn-rm:hover {{ background:#fef2f2; border-color:#fca5a5; color:#dc2626; }}
-
-/* ── Estado vazio ── */
 .empty-state {{
     border:1px dashed #e5e7eb; border-radius:12px;
     padding:32px 24px; text-align:center;
@@ -3867,10 +3854,8 @@ function toggleCard(idx) {{
     var aberto = body.style.display !== 'none';
     body.style.display = aberto ? 'none' : 'block';
     chev.classList.toggle('open', !aberto);
-
     if (!aberto && rel && !rel.dataset.loaded) {{
-        var txt = RELATORIOS[String(idx)] || '';
-        rel.textContent = txt;
+        rel.textContent = RELATORIOS[String(idx)] || '';
         rel.dataset.loaded = '1';
     }}
     setTimeout(ajustarAltura, 60);
@@ -3914,7 +3899,7 @@ setTimeout(ajustarAltura, 1200);
 </script>"""
 
         # ── Renderiza ──
-        if not analises and not st.session_state.relatorio_gemini:
+        if not analises:
             components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
