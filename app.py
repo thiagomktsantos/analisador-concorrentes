@@ -2783,13 +2783,13 @@ setTimeout(syncHeight, 300); setTimeout(syncHeight, 800);
 # ---------------------------------------------------
  
 elif st.session_state.pagina == "sites":
- 
+
     import datetime as _dt
     import json as _json_sites
- 
+
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
- 
+
     # ── Inicializar estados ────────────────────────────────────────
     if "sites_main_tab" not in st.session_state:
         st.session_state.sites_main_tab = "sites"
@@ -2799,7 +2799,9 @@ elif st.session_state.pagina == "sites":
         st.session_state.relatorio_gemini = ""
     if "analises_salvas" not in st.session_state:
         st.session_state.analises_salvas = []
- 
+    if "sites_analise_vistas" not in st.session_state:
+        st.session_state.sites_analise_vistas = 0
+
     # ── Montar lista de sites ──────────────────────────────────────
     sites_disponiveis = []
     if emp.get("site"):
@@ -2813,17 +2815,17 @@ elif st.session_state.pagina == "sites":
                 "nome": c["nome"], "url": c["url"],
                 "tipo": "concorrente", "instagram": c.get("instagram", "")
             })
- 
+
     if not sites_disponiveis:
         st.info("Cadastre o site da sua empresa e de pelo menos um concorrente para usar esta funcionalidade.")
         st.stop()
- 
+
     # ── Estado das análises individuais ───────────────────────────
     for idx_s, s in enumerate(sites_disponiveis):
         chave = f"sites_analise_{idx_s}"
         if chave not in st.session_state:
             st.session_state[chave] = ""
- 
+
     # ── Cabeçalho ──────────────────────────────────────────────────
     h1, h2 = st.columns([7, 3])
     with h1:
@@ -2846,7 +2848,7 @@ html, body { background: transparent; overflow: hidden; }
 <div class="titulo">Confronto de Sites</div>
 <div class="sub">Análise comparativa de posicionamento via IA.</div>
 """, height=65)
- 
+
     with h2:
         gerar_btn = st.button("Gerar Relatório Geral", type="primary", use_container_width=True)
         ultimo_relatorio = st.session_state.get("sites_ultima_geracao", "")
@@ -2856,9 +2858,9 @@ html, body { background: transparent; overflow: hidden; }
                 f"🕒 Última análise: <b>{ultimo_relatorio}</b></div>",
                 unsafe_allow_html=True,
             )
- 
+
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:8px 0 8px 0'/>", unsafe_allow_html=True)
- 
+
     # ══════════════════════════════════════════════════════════════
     # GHOST BUTTONS — Navegação de abas
     # ══════════════════════════════════════════════════════════════
@@ -2877,14 +2879,14 @@ html, body { background: transparent; overflow: hidden; }
     }
     </style>
     """, unsafe_allow_html=True)
- 
+
     if st.button("sites_tab", key="_sites_ghost_tab_sites_"):
         st.session_state.sites_main_tab = "sites"
         st.rerun()
     if st.button("analise_tab", key="_sites_ghost_tab_analise_"):
         st.session_state.sites_main_tab = "analise"
         st.rerun()
- 
+
     # ══════════════════════════════════════════════════════════════
     # GHOST BUTTONS — Análise individual por site
     # ══════════════════════════════════════════════════════════════
@@ -2894,7 +2896,7 @@ html, body { background: transparent; overflow: hidden; }
         for i in range(len(sites_disponiveis))
     ])
     st.markdown(f"<style>{ghost_css_ia}</style>", unsafe_allow_html=True)
- 
+
     site_ia_triggers = {}
     for idx_s in range(len(sites_disponiveis)):
         triggered = st.button(
@@ -2902,7 +2904,7 @@ html, body { background: transparent; overflow: hidden; }
             key=f"btn_site_ia_{idx_s}",
         )
         site_ia_triggers[idx_s] = triggered
- 
+
     # ══════════════════════════════════════════════════════════════
     # PROCESSAR — Análise individual
     # ══════════════════════════════════════════════════════════════
@@ -2918,44 +2920,44 @@ html, body { background: transparent; overflow: hidden; }
                         prompt_individual = f"""
 Você é um especialista em marketing digital e posicionamento de marca.
 Analise o conteúdo extraído do site abaixo e gere uma análise individual detalhada em português.
- 
+
 Empresa: {s['nome']}
 URL: {s['url']}
 Tipo: {"Minha Empresa" if is_minha else "Concorrente"}
- 
+
 Conteúdo extraído do site:
 {conteudo_site[:4000] if conteudo_site else "Não foi possível extrair conteúdo."}
- 
+
 ---
- 
+
 Responda com as seguintes seções:
- 
+
 ### 📌 Proposta de Valor
 Qual é a proposta central comunicada no site?
- 
+
 ### 🎯 Posicionamento
 Como esta empresa se posiciona no mercado? (premium, popular, nicho, generalista etc.)
- 
+
 ### 🔑 Mensagens Principais
 Quais são os termos, promessas e mensagens mais repetidos?
- 
+
 ### 🛠️ Serviços / Produtos Destacados
 Liste os principais serviços ou produtos apresentados no site.
- 
+
 ### ✅ Pontos Fortes
 3 pontos positivos observados na comunicação do site.
- 
+
 ### ⚠️ Pontos de Atenção
 2 pontos que poderiam ser melhorados.
- 
+
 ### 💡 Recomendação
 1 ação concreta de alto impacto para melhorar o posicionamento.
- 
+
 Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
 """
                         resp = gemini_model.generate_content(prompt_individual)
                         st.session_state[f"sites_analise_{idx_s}"] = resp.text
- 
+
                         # ── Salva análise individual automaticamente ──
                         titulo_auto = f"Análise Individual — {s['nome']} ({_dt.datetime.now().strftime('%d/%m/%Y %H:%M')})"
                         if "analises_salvas" not in st.session_state:
@@ -2974,14 +2976,14 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     except Exception as e:
                         st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
                         st.rerun()
- 
+
     # ══════════════════════════════════════════════════════════════
     # PROCESSAR — Relatório geral
     # ══════════════════════════════════════════════════════════════
     if gerar_btn:
         st.session_state.relatorio_gemini = ""
         st.session_state.relatorio_sites = {}
- 
+
         with st.status("📡 Lendo os sites...", expanded=True) as status:
             for s in sites_disponiveis:
                 st.write(f"Acessando **{s['nome']}** ({s['url']})…")
@@ -2992,9 +2994,9 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     st.write(f"✅ {palavras} palavras extraídas")
                 else:
                     st.write(f"⚠️ Não foi possível extrair conteúdo")
- 
+
             status.update(label="✅ Sites lidos! Gerando análise com IA…", state="running")
- 
+
             empresa_principal = None
             concorrentes_data = []
             for s in sites_disponiveis:
@@ -3007,18 +3009,18 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                     empresa_principal = item
                 else:
                     concorrentes_data.append(item)
- 
+
             if empresa_principal is None and sites_disponiveis:
                 empresa_principal = {
                     "nome": sites_disponiveis[0]["nome"],
                     "url":  sites_disponiveis[0]["url"],
                     "conteudo": st.session_state.relatorio_sites.get(sites_disponiveis[0]["url"], ""),
                 }
- 
+
             relatorio = gerar_relatorio_posicionamento(empresa_principal, concorrentes_data)
             st.session_state.relatorio_gemini = relatorio
             st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
- 
+
             # ── Salva relatório geral automaticamente ──
             titulo_auto = f"Relatório Geral — {_dt.datetime.now().strftime('%d/%m/%Y %H:%M')}"
             if "analises_salvas" not in st.session_state:
@@ -3030,16 +3032,24 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                 "sites": [s["nome"] for s in sites_disponiveis],
                 "tipo": "geral",
             })
- 
+
             st.session_state.sites_main_tab = "analise"
             status.update(label="✅ Relatório gerado!", state="complete")
         st.rerun()
- 
+
     # ══════════════════════════════════════════════════════════════
     # BARRA DE NAVEGAÇÃO PRINCIPAL
     # ══════════════════════════════════════════════════════════════
     main_tab = st.session_state.sites_main_tab
- 
+    analises_nav = st.session_state.get("analises_salvas", [])
+    qtd_total_analise = len(analises_nav)
+
+    # Controle badge NOVA
+    nao_lidas = max(0, qtd_total_analise - st.session_state.sites_analise_vistas)
+    if main_tab == "analise":
+        st.session_state.sites_analise_vistas = qtd_total_analise
+        nao_lidas = 0
+
     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3073,8 +3083,30 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .nav-item.active .nav-title {{ color:#ffffff; }}
 .nav-sub {{ font-size:12px;color:#9ca3af; }}
 .nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
+.nav-right {{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }}
+.count-badge {{
+    min-width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; padding:0 5px;
+    background:#e5e7eb; color:#6b7280;
+}}
+.count-badge.has {{ background:#3a9fd6; color:#fff; }}
+.nav-item.active .count-badge {{ background:rgba(255,255,255,0.18); color:#fff; }}
+.nav-item.active .count-badge.has {{ background:rgba(58,159,214,0.5); color:#fff; }}
+.new-badge {{
+    background:#ef4444; color:#fff;
+    font-size:10px; font-weight:800;
+    padding:2px 7px; border-radius:20px;
+    letter-spacing:0.3px; text-transform:uppercase;
+    animation: pulse 1.5s infinite;
+}}
+@keyframes pulse {{
+    0%,100% {{ opacity:1; transform:scale(1); }}
+    50%      {{ opacity:0.75; transform:scale(0.95); }}
+}}
 </style>
 <div class="nav-bar">
+
     <div class="nav-item {'active' if main_tab == 'sites' else ''}" onclick="triggerTab('sites_tab')">
         <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'sites' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3085,9 +3117,13 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
         </div>
         <div class="nav-content">
             <span class="nav-title">Sites configurados</span>
-            <span class="nav-sub">Visualize e analise cada site individualmente</span>
+            <span class="nav-sub">Visualize e analise individualmente</span>
+        </div>
+        <div class="nav-right">
+            <div class="count-badge {'has' if len(sites_disponiveis) > 0 else ''}">{len(sites_disponiveis)}</div>
         </div>
     </div>
+
     <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('analise_tab')">
         <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3098,7 +3134,12 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <span class="nav-title">Análise de IA</span>
             <span class="nav-sub">Relatórios individuais e comparativos</span>
         </div>
+        <div class="nav-right">
+            <div class="count-badge {'has' if qtd_total_analise > 0 else ''}">{qtd_total_analise}</div>
+            {'<div class="new-badge">NOVA</div>' if nao_lidas > 0 else ''}
+        </div>
     </div>
+
 </div>
 <script>
 function triggerTab(label) {{
@@ -3122,12 +3163,12 @@ function triggerTab(label) {{
 }})();
 </script>
 """, height=90, scrolling=False)
- 
+
     # ══════════════════════════════════════════════════════════════
     # ABA: SITES CONFIGURADOS
     # ══════════════════════════════════════════════════════════════
     if main_tab == "sites":
- 
+
         cards_data = []
         for idx_s, s in enumerate(sites_disponiveis):
             is_minha   = s["tipo"] == "minha"
@@ -3138,7 +3179,14 @@ function triggerTab(label) {{
             badge_lbl  = "Minha Empresa" if is_minha else "Concorrente"
             avatar_letras = gerar_avatar(s["nome"])
             tem_analise = bool(st.session_state.get(f"sites_analise_{idx_s}", ""))
- 
+
+            # Busca data da última análise individual salva para este site
+            ultima_analise = ""
+            for a in reversed(st.session_state.get("analises_salvas", [])):
+                if a.get("tipo") == "individual" and s["nome"] in a.get("sites", []):
+                    ultima_analise = a.get("data", "")
+                    break
+
             cards_data.append({
                 "idx": idx_s,
                 "nome": s["nome"],
@@ -3151,10 +3199,11 @@ function triggerTab(label) {{
                 "badge_lbl": badge_lbl,
                 "avatar": avatar_letras,
                 "tem_analise": tem_analise,
+                "ultima_analise": ultima_analise,
             })
- 
+
         cards_json = _json_sites.dumps(cards_data, ensure_ascii=False)
- 
+
         components.html(f"""
 <!DOCTYPE html><html>
 <head>
@@ -3206,10 +3255,10 @@ body {{ padding-bottom:8px; }}
 }}
 .analise-badge {{
     margin: 0 14px 10px;
-    padding: 8px 14px;
+    padding: 7px 14px;
     background:#f0fdf4; border:1px solid #86efac; border-radius:8px;
-    font-size:12px; font-weight:700; color:#15803d;
-    display:flex; align-items:center; gap:6px;
+    font-size:12px; font-weight:600; color:#15803d;
+    display:flex; align-items:center; gap:7px;
 }}
 .btn-wrap {{ padding:0 14px 16px; }}
 .btn-analisar {{
@@ -3221,24 +3270,99 @@ body {{ padding-bottom:8px; }}
     display:flex;align-items:center;justify-content:center;gap:7px;
 }}
 .btn-analisar:hover {{ background:#dbeafe; }}
-.btn-analisar.tem {{ border-color:#16a34a; background:#f0fdf4; color:#15803d; }}
-.btn-analisar.tem:hover {{ background:#dcfce7; }}
+
+/* ── OVERLAY de progresso ── */
+#overlay {{
+    display:none; position:fixed; inset:0;
+    background:rgba(10,20,40,0.75);
+    backdrop-filter:blur(4px);
+    z-index:9999; align-items:center; justify-content:center;
+}}
+.ov-box {{
+    background:#0e2a47; border-radius:18px; padding:32px 28px;
+    width:340px; box-shadow:0 24px 60px rgba(0,0,0,0.5);
+    border:1px solid #1e3a5f;
+}}
+.ov-header {{ display:flex; align-items:center; gap:14px; margin-bottom:6px; }}
+.ov-icon {{
+    width:44px;height:44px;border-radius:50%;
+    background:#1a4a2e;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}}
+.ov-titles {{ flex:1; min-width:0; }}
+.ov-nome {{ font-size:17px;font-weight:800;color:#fff; }}
+.ov-sub {{ font-size:13px;color:#7a9bbf;margin-top:2px; }}
+.ov-percent {{ margin-left:auto;font-size:16px;font-weight:800;color:#2ecc71;flex-shrink:0; }}
+.ov-bar-wrap {{
+    background:#1a3a5a; border-radius:99px; height:6px;
+    margin:16px 0 20px; overflow:hidden;
+}}
+.ov-bar {{
+    height:100%;width:0%;border-radius:99px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    transition:width 0.4s ease;
+}}
+.ov-empresa {{
+    background:#0a1f38; border-radius:10px;
+    padding:12px 16px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px;
+    border:1px solid #1e3a5f;
+}}
+.ov-emp-nome {{ font-size:14px;font-weight:700;color:#e2eaf5; }}
+.ov-emp-sub {{ font-size:11px;color:#5a7a9a;margin-top:2px; }}
+.ov-emp-count {{ font-size:13px;font-weight:800;color:#3a9fd6;flex-shrink:0; }}
+.ov-footer {{ text-align:center;font-size:12px;color:#3a5a7a;margin-top:18px; }}
 </style>
 </head>
 <body>
+
+<!-- OVERLAY -->
+<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(10,20,40,0.75);
+     backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;">
+    <div class="ov-box">
+        <div class="ov-header">
+            <div class="ov-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                     stroke="#2ecc71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83
+                             M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                </svg>
+            </div>
+            <div class="ov-titles">
+                <div id="o-nome" class="ov-nome">Analisando site…</div>
+                <div id="o-sub" class="ov-sub">Aguarde…</div>
+            </div>
+            <div id="o-percent" class="ov-percent">0%</div>
+        </div>
+        <div class="ov-bar-wrap">
+            <div id="o-bar" class="ov-bar"></div>
+        </div>
+        <div id="o-empresa" class="ov-empresa" style="display:none">
+            <div>
+                <div id="o-emp-nome" class="ov-emp-nome"></div>
+                <div id="o-emp-sub" class="ov-emp-sub"></div>
+            </div>
+            <div id="o-emp-count" class="ov-emp-count"></div>
+        </div>
+        <div class="ov-footer">Você será redirecionado automaticamente…</div>
+    </div>
+</div>
+
 <div class="outer-wrap">
     <div class="cards-grid" id="cards-grid"></div>
 </div>
+
 <script>
 var CARDS = {cards_json};
- 
+
 function buildCards() {{
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
     CARDS.forEach(function(c) {{
         var card = document.createElement('div');
         card.className = 'site-card';
- 
+
         // header
         var hdr = document.createElement('div');
         hdr.className = 'card-header';
@@ -3249,7 +3373,7 @@ function buildCards() {{
             + '<span class="badge" style="background:' + c.badge_bg + ';color:' + c.badge_txt + ';border:1px solid ' + c.badge_brd + '">' + c.badge_lbl + '</span>'
             + '</div>';
         card.appendChild(hdr);
- 
+
         // url
         var urlRow = document.createElement('div');
         urlRow.className = 'url-row';
@@ -3260,7 +3384,7 @@ function buildCards() {{
             + '</svg>'
             + '<span>' + c.url + '</span>';
         card.appendChild(urlRow);
- 
+
         // preview
         var prevWrap = document.createElement('div');
         prevWrap.className = 'preview-wrap';
@@ -3278,44 +3402,82 @@ function buildCards() {{
         img.addEventListener('load', function() {{ setTimeout(syncHeight, 100); }});
         prevWrap.appendChild(img);
         card.appendChild(prevWrap);
- 
-        // badge de análise existente
-        if (c.tem_analise) {{
-            var badge = document.createElement('div');
-            badge.className = 'analise-badge';
-            badge.innerHTML = '✅ Análise disponível na aba <b style="margin-left:4px">Análise de IA</b>';
-            card.appendChild(badge);
+
+        // badge última análise
+        if (c.tem_analise && c.ultima_analise) {{
+            var abadge = document.createElement('div');
+            abadge.className = 'analise-badge';
+            abadge.innerHTML =
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+                + 'Última análise: <b>' + c.ultima_analise + '</b>';
+            card.appendChild(abadge);
         }}
- 
+
         // botão analisar
         var btnWrap = document.createElement('div');
         btnWrap.className = 'btn-wrap';
         var btn = document.createElement('button');
-        btn.className = 'btn-analisar' + (c.tem_analise ? ' tem' : '');
+        btn.className = 'btn-analisar';
         btn.id = 'btn_analisar_' + c.idx;
-        btn.innerHTML = c.tem_analise
-            ? '🔄 Reanalisar com IA'
-            : '✨ Analisar este site com IA';
-        btn.onclick = (function(idx) {{
+        btn.innerHTML = c.tem_analise ? '🔁 Fazer nova análise' : '✨ Analisar este site com IA';
+        btn.onclick = (function(idx, nome) {{
             return function() {{
-                var b = document.getElementById('btn_analisar_' + idx);
-                if (b) {{
-                    b.innerHTML = '⏳ Analisando…';
-                    b.style.opacity = '0.6';
-                    b.style.pointerEvents = 'none';
-                }}
-                triggerAnalise(idx);
+                triggerAnalise(idx, nome);
             }};
-        }})(c.idx);
+        }})(c.idx, c.nome);
         btnWrap.appendChild(btn);
         card.appendChild(btnWrap);
- 
+
         grid.appendChild(card);
     }});
     syncHeight();
 }}
- 
-function triggerAnalise(idx) {{
+
+function triggerAnalise(idx, nome) {{
+    // Monta overlay
+    var overlay = document.getElementById('overlay');
+    var oNome    = document.getElementById('o-nome');
+    var oSub     = document.getElementById('o-sub');
+    var oBar     = document.getElementById('o-bar');
+    var oPercent = document.getElementById('o-percent');
+    var oEmp     = document.getElementById('o-empresa');
+    var oEmpNome = document.getElementById('o-emp-nome');
+    var oEmpSub  = document.getElementById('o-emp-sub');
+    var oEmpCount= document.getElementById('o-emp-count');
+
+    oNome.textContent    = 'Analisando site…';
+    oSub.textContent     = 'Acessando ' + nome + '…';
+    oBar.style.width     = '0%';
+    oPercent.textContent = '0%';
+    oEmp.style.display   = 'none';
+    overlay.style.display = 'flex';
+
+    var prog = 0;
+    var interval = setInterval(function() {{
+        if (prog < 88) {{
+            prog += Math.random() * 7 + 2;
+            if (prog > 88) prog = 88;
+            oBar.style.width     = prog.toFixed(0) + '%';
+            oPercent.textContent = prog.toFixed(0) + '%';
+
+            if (prog > 20 && prog < 45) {{
+                oSub.textContent = 'Extraindo conteúdo do site…';
+            }} else if (prog >= 45 && prog < 70) {{
+                oSub.textContent = 'Enviando para o Gemini…';
+                oEmp.style.display = 'flex';
+                oEmpNome.textContent = nome;
+                oEmpSub.textContent  = 'Processando com IA…';
+                oEmpCount.textContent = '⏳';
+            }} else if (prog >= 70) {{
+                oSub.textContent = 'Gerando relatório…';
+                oEmpCount.textContent = '✅';
+            }}
+        }}
+    }}, 380);
+
+    window._analiseInterval = interval;
+
+    // Dispara ghost button
     var targetText = 'SITE_IA_' + idx;
     var btns = window.parent.document.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {{
@@ -3323,7 +3485,7 @@ function triggerAnalise(idx) {{
         if (txt === targetText) {{ btns[i].click(); return; }}
     }}
 }}
- 
+
 function syncHeight() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -3336,7 +3498,7 @@ function syncHeight() {{
         }} catch(e) {{}}
     }}
 }}
- 
+
 buildCards();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 window.addEventListener('load', syncHeight);
@@ -3346,33 +3508,33 @@ setTimeout(syncHeight, 1500);
 </script>
 </body></html>
 """, height=500, scrolling=False)
- 
+
     # ══════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA
     # ══════════════════════════════════════════════════════════════
     elif main_tab == "analise":
- 
+
         analises = st.session_state.get("analises_salvas", [])
         analises_individuais = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "individual"]
         analises_gerais      = [(i, a) for i, a in enumerate(analises) if a.get("tipo") == "geral"]
- 
+
         # ── Ghost buttons para remover análises ──
         acoes_salvas = {}
         for i, a in enumerate(analises):
             acoes_salvas[f"rm_{i}"] = st.button(f"_rm_analise_{i}_", key=f"btn_rm_analise_{i}")
- 
+
         rm_css = "\n".join([
             f".st-key-btn_rm_analise_{i} {{ display: none !important; }}"
             f".stElementContainer:has(.st-key-btn_rm_analise_{i}) {{ display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; }}"
             for i in range(len(analises))
         ])
         st.markdown(f"<style>{rm_css}</style>", unsafe_allow_html=True)
- 
+
         for i in range(len(analises) - 1, -1, -1):
             if acoes_salvas.get(f"rm_{i}"):
                 st.session_state.analises_salvas.pop(i)
                 st.rerun()
- 
+
         # ── Relatório geral atual (se existir) ──
         if st.session_state.relatorio_gemini:
             st.markdown(
@@ -3401,9 +3563,9 @@ setTimeout(syncHeight, 1500);
                     })
                     st.toast(f"✅ «{titulo_salvo}» salva!", icon="✅")
                     st.rerun()
- 
+
             st.markdown(st.session_state.relatorio_gemini)
- 
+
             with st.expander("🔎 Ver conteúdo extraído dos sites"):
                 for s in sites_disponiveis:
                     conteudo = st.session_state.relatorio_sites.get(s["url"], "")
@@ -3419,29 +3581,29 @@ setTimeout(syncHeight, 1500);
                     else:
                         st.warning("Nenhum conteúdo extraído.")
                     st.markdown("---")
- 
+
             st.markdown("<hr style='border:none;border-top:2px solid #e5e7eb;margin:28px 0'/>", unsafe_allow_html=True)
- 
-        # ── Helper: card de análise salva ──
+
+        # ── Helper: renderiza seção de análises ──
         def _render_analises_html(lista_analises, tipo):
             icon = "🏢" if tipo == "individual" else "📋"
             titulo_secao = "Análises Individuais por Site" if tipo == "individual" else "Relatórios Gerais Comparativos"
- 
+
             itens_html = ""
             for idx_real, analise in reversed(lista_analises):
-                titulo   = analise.get("titulo", "—")
-                data     = analise.get("data", "—")
-                empresa  = analise.get("empresa", "")
+                titulo    = analise.get("titulo", "—")
+                data      = analise.get("data", "—")
+                empresa   = analise.get("empresa", "")
                 sites_str = ", ".join(analise.get("sites", []))
-                meta_str = data
+                meta_str  = data
                 if empresa:
                     meta_str += f" · {empresa}"
                 elif sites_str:
                     meta_str += f" · {sites_str}"
- 
+
                 relatorio_escaped = (analise.get("relatorio") or "").replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
                 relatorio_html    = (analise.get("relatorio") or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>")
- 
+
                 itens_html += f"""
 <div class="item" id="item_{idx_real}">
     <div class="item-header" onclick="toggleItem({idx_real})">
@@ -3462,30 +3624,29 @@ setTimeout(syncHeight, 1500);
         </div>
     </div>
 </div>"""
- 
+
             if not lista_analises:
                 itens_html = f"""
 <div style='padding:28px 24px;text-align:center;color:#9ca3af;font-size:14px;
             border:1px dashed #d1d5db;border-radius:10px;margin:8px 0'>
     Nenhuma {"análise individual" if tipo == "individual" else "relatório geral"} salvo ainda.
 </div>"""
- 
+
             return f"""
 <div class="secao">
     <div class="secao-titulo">{titulo_secao}</div>
     {itens_html}
 </div>"""
- 
+
         html_individuais = _render_analises_html(analises_individuais, "individual")
         html_gerais      = _render_analises_html(analises_gerais,      "geral")
- 
+
         analises_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
 body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
- 
 .secao {{ margin-bottom:24px; }}
 .secao-titulo {{
     font-size:13px; font-weight:800; color:#1a2e4a;
@@ -3494,7 +3655,6 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
     border-bottom:2px solid #e5e7eb;
     display:flex; align-items:center; gap:8px;
 }}
- 
 .item {{ border:1px solid #e5e7eb; border-radius:10px; margin-bottom:10px; overflow:hidden; background:#fff; }}
 .item-header {{
     display:flex; align-items:center; justify-content:space-between;
@@ -3528,10 +3688,10 @@ body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
 }}
 .btn-rm:hover {{ background:#fee2e2; }}
 </style>
- 
+
 {html_individuais}
 {html_gerais}
- 
+
 <script>
 function toggleItem(idx) {{
     var body = document.getElementById('body_' + idx);
@@ -3573,7 +3733,7 @@ setTimeout(ajustarAltura, 200);
 setTimeout(ajustarAltura, 600);
 </script>
 """
-        # Sem relatório e sem análises salvas: empty state
+        # Empty state
         if not st.session_state.relatorio_gemini and not analises:
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
