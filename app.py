@@ -3247,7 +3247,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 function triggerTab(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        var txt = (b.textContent || b.innerText || '').split(' ').filter(Boolean).join(' ').trim();
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
@@ -3305,58 +3305,58 @@ function triggerTab(label) {{
 
         cards_json = _json_sites.dumps(cards_data, ensure_ascii=False)
 
-        components.html(f"""
-<!DOCTYPE html><html>
+        # ── HTML dos cards de sites ──
+        # Nota: este bloco NÃO é f-string — o JSON é injetado via .replace()
+        # para evitar conflito entre chaves do CSS/JS e as chaves do Python.
+        _html_cards_template = """<!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
     background:transparent; font-family:'DM Sans',sans-serif;
     -webkit-font-smoothing:antialiased; overflow:visible;
-}}
-body {{ padding-bottom:8px; }}
-.outer-wrap {{ background:#d2dde9; border-radius:16px; padding:20px; }}
-.cards-grid {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:20px; }}
-.site-card {{
+}
+body { padding-bottom:8px; }
+.outer-wrap { background:#d2dde9; border-radius:16px; padding:20px; }
+.cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:20px; }
+.site-card {
     background:#fff; border:1px solid #fff; border-radius:14px;
     overflow:hidden; display:flex; flex-direction:column;
     transition:box-shadow 0.15s; box-shadow:0 4px 20px rgba(0,0,0,0.10);
-}}
-.site-card:hover {{ border:1px solid #6fd1f3!important; }}
-.card-header {{
+}
+.site-card:hover { border:1px solid #6fd1f3!important; }
+.card-header {
     display:flex; align-items:center; gap:12px;
     padding:16px 18px 14px; border-bottom:1px solid #f3f4f6;
-}}
-.avatar {{
+}
+.avatar {
     width:40px;height:40px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     font-size:14px;font-weight:700;color:#fff;flex-shrink:0;
-}}
-.card-name {{ font-size:16px;font-weight:700;color:#111827; white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }}
-.badge {{ display:inline-block; padding:2px 10px;border-radius:20px; font-size:11px;font-weight:700; }}
-.url-row {{
+}
+.card-name { font-size:16px;font-weight:700;color:#111827; white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.badge { display:inline-block; padding:2px 10px;border-radius:20px; font-size:11px;font-weight:700; }
+.url-row {
     display:flex;align-items:center;gap:6px; padding:9px 18px;
     font-size:13px;font-weight:600;color:#374151;
     border-bottom:1px solid #f3f4f6; background:#fafbfc;
     overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
-}}
-.preview-wrap {{
+}
+.preview-wrap {
     margin:14px; border-radius:10px; overflow:hidden;
     border:1px solid #e5e7eb; background:#f9fafb;
     aspect-ratio:16/9; position:relative; flex-shrink:0;
-}}
-.preview-wrap img {{
+}
+.preview-wrap img {
     width:100%;height:100%; display:block;
     object-fit:cover; object-position:top; border-radius:10px;
-}}
-.preview-fallback {{
+}
+.preview-fallback {
     width:100%;height:100%; display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:8px; background:#f3f4f6;border-radius:10px;
-}}
-
-/* ── Badge última análise como link ── */
-.analise-badge {{
+}
+.analise-badge {
     margin: 0 14px 10px;
     padding: 9px 14px;
     background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
@@ -3372,33 +3372,32 @@ body {{ padding-bottom:8px; }}
     cursor: pointer;
     text-decoration: none;
     transition: all 0.15s;
-}}
-.analise-badge:hover {{
+}
+.analise-badge:hover {
     background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
     border-color: #4ade80;
     box-shadow: 0 2px 8px rgba(34,197,94,0.15);
     transform: translateY(-1px);
-}}
-.analise-badge-left {{
+}
+.analise-badge-left {
     display: flex; align-items: center; gap: 7px;
-}}
-.analise-badge-arrow {{
+}
+.analise-badge-arrow {
     font-size: 14px; opacity: 0.7;
-}}
-
-.btn-wrap {{ padding:0 14px 16px; }}
-.btn-analisar {{
+}
+.btn-wrap { padding:0 14px 16px; }
+.btn-analisar {
     width:100%;padding:11px 0;
     border:1px solid #3a9fd6;border-radius:8px;
     background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
     cursor:pointer;font-family:'DM Sans',sans-serif;
     transition:background 0.15s;
     display:flex;align-items:center;justify-content:center;gap:7px;
-}}
-.btn-analisar:hover {{ background:#dbeafe; }}
-.btn-analisar:disabled {{
+}
+.btn-analisar:hover { background:#dbeafe; }
+.btn-analisar:disabled {
     opacity:0.6; cursor:not-allowed;
-}}
+}
 </style>
 </head>
 <body>
@@ -3408,12 +3407,12 @@ body {{ padding-bottom:8px; }}
 </div>
 
 <script>
-var CARDS = {cards_json};
+var CARDS = __CARDS_JSON__;
 
-function buildCards() {{
+function buildCards() {
     var grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
-    CARDS.forEach(function(c) {{
+    CARDS.forEach(function(c) {
         var card = document.createElement('div');
         card.className = 'site-card';
 
@@ -3446,19 +3445,19 @@ function buildCards() {{
         img.src = 'https://api.microlink.io/?url=https://' + c.url + '&screenshot=true&meta=false&embed=screenshot.url';
         img.loading = 'lazy';
         img.alt = 'Preview ' + c.nome;
-        img.onerror = function() {{
+        img.onerror = function() {
             prevWrap.innerHTML =
                 '<div class="preview-fallback">'
                 + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
                 + '<span style="font-size:12px;color:#9ca3af">Prévia indisponível</span>'
                 + '</div>';
-        }};
-        img.addEventListener('load', function() {{ setTimeout(syncHeight, 100); }});
+        };
+        img.addEventListener('load', function() { setTimeout(syncHeight, 100); });
         prevWrap.appendChild(img);
         card.appendChild(prevWrap);
 
-        // badge última análise — agora como link clicável para aba de análise
-        if (c.tem_analise && c.ultima_analise) {{
+        // badge última análise
+        if (c.tem_analise && c.ultima_analise) {
             var abadge = document.createElement('div');
             abadge.className = 'analise-badge';
             abadge.title = 'Ver análise na aba Análise de IA';
@@ -3468,9 +3467,9 @@ function buildCards() {{
                 + '<span>Última análise: <b>' + c.ultima_analise + '</b></span>'
                 + '</div>'
                 + '<span class="analise-badge-arrow">→ Ver análise</span>';
-            abadge.onclick = function() {{ triggerAnaliseTab(); }};
+            abadge.onclick = function() { triggerAnaliseTab(); };
             card.appendChild(abadge);
-        }}
+        }
 
         // botão analisar
         var btnWrap = document.createElement('div');
@@ -3479,39 +3478,36 @@ function buildCards() {{
         btn.className = 'btn-analisar';
         btn.id = 'btn_analisar_' + c.idx;
         btn.innerHTML = c.tem_analise ? '🔁 Fazer nova análise' : '✨ Analisar este site com IA';
-        btn.onclick = (function(idx, nome) {{
-            return function() {{
+        btn.onclick = (function(idx, nome) {
+            return function() {
                 triggerAnalise(idx, nome, this);
-            }};
-        }})(c.idx, c.nome);
+            };
+        })(c.idx, c.nome);
         btnWrap.appendChild(btn);
         card.appendChild(btnWrap);
 
         grid.appendChild(card);
-    }});
+    });
     syncHeight();
-}}
+}
 
-function triggerAnaliseTab() {{
+function triggerAnaliseTab() {
     var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-        var txt = (btns[i].innerText || btns[i].textContent || '').replace(/\s+/g,' ').trim();
-        if (txt === 'analise_tab') {{ btns[i].click(); return; }}
-    }}
-}}
+    for (var i = 0; i < btns.length; i++) {
+        var txt = (btns[i].innerText || btns[i].textContent || '').replace(/ +/g,' ').trim();
+        if (txt === 'analise_tab') { btns[i].click(); return; }
+    }
+}
 
-function triggerAnalise(idx, nome, btnEl) {{
-    // Desabilita o botão para evitar duplo clique
-    if (btnEl) {{
+function triggerAnalise(idx, nome, btnEl) {
+    if (btnEl) {
         btnEl.disabled = true;
         btnEl.innerHTML = '⏳ Analisando…';
-    }}
+    }
 
-    // Remove overlay anterior se existir
     var existing = window.parent.document.getElementById('mkt_overlay_sites');
     if (existing) existing.remove();
 
-    // Cria overlay no parent para cobrir a página inteira
     var overlay = window.parent.document.createElement('div');
     overlay.id = 'mkt_overlay_sites';
     overlay.style.cssText = [
@@ -3521,164 +3517,155 @@ function triggerAnalise(idx, nome, btnEl) {{
         'font-family:DM Sans,sans-serif'
     ].join(';');
 
-    overlay.innerHTML = `
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap');
-#mkt_overlay_sites * { box-sizing:border-box; margin:0; padding:0; }
-.ov-box {
-    background:#0e2a47; border-radius:20px; padding:36px 32px;
-    width:360px; box-shadow:0 24px 80px rgba(0,0,0,0.6);
-    border:1px solid #1e3a5f;
-}
-.ov-header { display:flex; align-items:center; gap:16px; margin-bottom:8px; }
-.ov-icon {
-    width:48px;height:48px;border-radius:50%;
-    background:rgba(46,204,113,0.15);
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    animation: spin 2s linear infinite;
-}
-@keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-.ov-titles { flex:1; min-width:0; }
-.ov-nome { font-size:18px;font-weight:800;color:#fff; }
-.ov-sub { font-size:13px;color:#7a9bbf;margin-top:3px; }
-.ov-percent { margin-left:auto;font-size:18px;font-weight:800;color:#2ecc71;flex-shrink:0; }
-.ov-bar-wrap {
-    background:#1a3a5a; border-radius:99px; height:7px;
-    margin:18px 0 22px; overflow:hidden;
-}
-.ov-bar {
-    height:100%;width:0%;border-radius:99px;
-    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
-    transition:width 0.4s ease;
-}
-.ov-empresa {
-    background:#0a1f38; border-radius:12px;
-    padding:14px 18px; display:flex; align-items:center;
-    justify-content:space-between; gap:10px;
-    border:1px solid #1e3a5f;
-}
-.ov-emp-nome { font-size:14px;font-weight:700;color:#e2eaf5; }
-.ov-emp-sub { font-size:11px;color:#5a7a9a;margin-top:3px; }
-.ov-emp-count { font-size:16px;font-weight:800;color:#3a9fd6;flex-shrink:0; }
-.ov-footer { text-align:center;font-size:12px;color:#3a5a7a;margin-top:20px;letter-spacing:0.2px; }
-</style>
-<div class="ov-box">
-    <div class="ov-header">
-        <div class="ov-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                 stroke="#2ecc71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83
-                         M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-            </svg>
-        </div>
-        <div class="ov-titles">
-            <div id="o-nome" class="ov-nome">Analisando site…</div>
-            <div id="o-sub" class="ov-sub">Acessando ${nome}…</div>
-        </div>
-        <div id="o-percent" class="ov-percent">0%</div>
-    </div>
-    <div class="ov-bar-wrap">
-        <div id="o-bar" class="ov-bar"></div>
-    </div>
-    <div id="o-empresa" class="ov-empresa">
-        <div>
-            <div id="o-emp-nome" class="ov-emp-nome">${nome}</div>
-            <div id="o-emp-sub" class="ov-emp-sub">Processando com IA…</div>
-        </div>
-        <div id="o-emp-count" class="ov-emp-count">⏳</div>
-    </div>
-    <div class="ov-footer">Você será redirecionado automaticamente…</div>
-</div>`;
+    overlay.innerHTML = [
+        '<style>',
+        '@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap");',
+        '#mkt_overlay_sites * { box-sizing:border-box; margin:0; padding:0; }',
+        '.ov-box {',
+        '    background:#0e2a47; border-radius:20px; padding:36px 32px;',
+        '    width:360px; box-shadow:0 24px 80px rgba(0,0,0,0.6);',
+        '    border:1px solid #1e3a5f;',
+        '}',
+        '.ov-header { display:flex; align-items:center; gap:16px; margin-bottom:8px; }',
+        '.ov-icon {',
+        '    width:48px;height:48px;border-radius:50%;',
+        '    background:rgba(46,204,113,0.15);',
+        '    display:flex;align-items:center;justify-content:center;flex-shrink:0;',
+        '    animation: spin 2s linear infinite;',
+        '}',
+        '@keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }',
+        '.ov-titles { flex:1; min-width:0; }',
+        '.ov-nome { font-size:18px;font-weight:800;color:#fff; }',
+        '.ov-sub { font-size:13px;color:#7a9bbf;margin-top:3px; }',
+        '.ov-percent { margin-left:auto;font-size:18px;font-weight:800;color:#2ecc71;flex-shrink:0; }',
+        '.ov-bar-wrap {',
+        '    background:#1a3a5a; border-radius:99px; height:7px;',
+        '    margin:18px 0 22px; overflow:hidden;',
+        '}',
+        '.ov-bar {',
+        '    height:100%;width:0%;border-radius:99px;',
+        '    background:linear-gradient(90deg,#3a9fd6,#2ecc71);',
+        '    transition:width 0.4s ease;',
+        '}',
+        '.ov-empresa {',
+        '    background:#0a1f38; border-radius:12px;',
+        '    padding:14px 18px; display:flex; align-items:center;',
+        '    justify-content:space-between; gap:10px;',
+        '    border:1px solid #1e3a5f;',
+        '}',
+        '.ov-emp-nome { font-size:14px;font-weight:700;color:#e2eaf5; }',
+        '.ov-emp-sub { font-size:11px;color:#5a7a9a;margin-top:3px; }',
+        '.ov-emp-count { font-size:16px;font-weight:800;color:#3a9fd6;flex-shrink:0; }',
+        '.ov-footer { text-align:center;font-size:12px;color:#3a5a7a;margin-top:20px;letter-spacing:0.2px; }',
+        '</style>',
+        '<div class="ov-box">',
+        '    <div class="ov-header">',
+        '        <div class="ov-icon">',
+        '            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"',
+        '                 stroke="#2ecc71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">',
+        '                <circle cx="12" cy="12" r="3"/>',
+        '                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>',
+        '            </svg>',
+        '        </div>',
+        '        <div class="ov-titles">',
+        '            <div id="o-nome" class="ov-nome">Analisando site…</div>',
+        '            <div id="o-sub" class="ov-sub">Acessando ' + nome + '…</div>',
+        '        </div>',
+        '        <div id="o-percent" class="ov-percent">0%</div>',
+        '    </div>',
+        '    <div class="ov-bar-wrap">',
+        '        <div id="o-bar" class="ov-bar"></div>',
+        '    </div>',
+        '    <div id="o-empresa" class="ov-empresa">',
+        '        <div>',
+        '            <div id="o-emp-nome" class="ov-emp-nome">' + nome + '</div>',
+        '            <div id="o-emp-sub" class="ov-emp-sub">Processando com IA…</div>',
+        '        </div>',
+        '        <div id="o-emp-count" class="ov-emp-count">⏳</div>',
+        '    </div>',
+        '    <div class="ov-footer">Você será redirecionado automaticamente…</div>',
+        '</div>'
+    ].join('\n');
 
     window.parent.document.body.appendChild(overlay);
 
-    // Anima a barra de progresso (para em 85% — o rerun fecha o overlay)
     var prog = 0;
     var oBar     = overlay.querySelector('#o-bar');
     var oPercent = overlay.querySelector('#o-percent');
     var oSub     = overlay.querySelector('#o-sub');
     var oEmpCount= overlay.querySelector('#o-emp-count');
 
-    var interval = setInterval(function() {{
-        if (prog < 85) {{
+    var interval = setInterval(function() {
+        if (prog < 85) {
             prog += Math.random() * 7 + 2;
             if (prog > 85) prog = 85;
             oBar.style.width     = prog.toFixed(0) + '%';
             oPercent.textContent = prog.toFixed(0) + '%';
 
-            if (prog > 20 && prog < 45) {{
+            if (prog > 20 && prog < 45) {
                 oSub.textContent = 'Extraindo conteúdo do site…';
-            }} else if (prog >= 45 && prog < 70) {{
+            } else if (prog >= 45 && prog < 70) {
                 oSub.textContent = 'Enviando para o Gemini…';
                 oEmpCount.textContent = '⏳';
-            }} else if (prog >= 70) {{
+            } else if (prog >= 70) {
                 oSub.textContent = 'Gerando relatório…';
                 oEmpCount.textContent = '✅';
-            }}
-        }}
-        // Para de incrementar em 85 — aguarda o rerun fechar
-    }}, 380);
+            }
+        }
+    }, 380);
 
     window._mktOvInterval = interval;
 
-    // ── MutationObserver: fecha o overlay quando o Streamlit fizer rerun ──
-    // O rerun reconstrói os iframes; quando o iframe atual sumir do DOM,
-    // sabemos que a página foi recarregada e podemos remover o overlay.
-    var observer = new MutationObserver(function() {{
+    var observer = new MutationObserver(function() {
         var stillHere = window.parent.document.getElementById('mkt_overlay_sites');
-        if (!stillHere) {{ observer.disconnect(); return; }}
+        if (!stillHere) { observer.disconnect(); return; }
 
-        // Verifica se o iframe atual ainda existe no parent
         var iframes = window.parent.document.querySelectorAll('iframe');
         var found = false;
-        for (var i = 0; i < iframes.length; i++) {{
-            try {{
-                if (iframes[i].contentWindow === window) {{ found = true; break; }}
-            }} catch(e) {{}}
-        }}
+        for (var i = 0; i < iframes.length; i++) {
+            try {
+                if (iframes[i].contentWindow === window) { found = true; break; }
+            } catch(e) {}
+        }
 
-        // Se o iframe sumiu, o rerun aconteceu → fecha o overlay
-        if (!found) {{
+        if (!found) {
             clearInterval(window._mktOvInterval);
             stillHere.remove();
             observer.disconnect();
-        }}
-    }});
+        }
+    });
 
-    observer.observe(window.parent.document.body, {{ childList: true, subtree: true }});
+    observer.observe(window.parent.document.body, { childList: true, subtree: true });
 
-    // Fallback de segurança: remove após 45s para não travar para sempre
-    setTimeout(function() {{
+    setTimeout(function() {
         var ov = window.parent.document.getElementById('mkt_overlay_sites');
-        if (ov) {{
+        if (ov) {
             clearInterval(window._mktOvInterval);
             ov.remove();
-        }}
+        }
         observer.disconnect();
-    }}, 45000);
+    }, 45000);
 
-    // Dispara o ghost button correspondente ao site
     var targetText = 'SITE_IA_' + idx;
     var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-        var txt = (btns[i].innerText || btns[i].textContent || '').replace(/\s+/g, ' ').trim();
-        if (txt === targetText) {{ btns[i].click(); return; }}
-    }}
-}}
+    for (var i = 0; i < btns.length; i++) {
+        var txt = (btns[i].innerText || btns[i].textContent || '').replace(/ +/g, ' ').trim();
+        if (txt === targetText) { btns[i].click(); return; }
+    }
+}
 
-function syncHeight() {{
+function syncHeight() {
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{
-            if (iframes[i].contentWindow === window) {{
+    for (var i = 0; i < iframes.length; i++) {
+        try {
+            if (iframes[i].contentWindow === window) {
                 iframes[i].style.height = (h + 12) + 'px';
                 break;
-            }}
-        }} catch(e) {{}}
-    }}
-}}
+            }
+        } catch(e) {}
+    }
+}
 
 buildCards();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
@@ -3687,8 +3674,10 @@ setTimeout(syncHeight, 300);
 setTimeout(syncHeight, 800);
 setTimeout(syncHeight, 1500);
 </script>
-</body></html>
-""", height=500, scrolling=False)
+</body></html>"""
+
+        _html_cards_final = _html_cards_template.replace("__CARDS_JSON__", cards_json)
+        components.html(_html_cards_final, height=500, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA  — visual em cards
@@ -3887,125 +3876,126 @@ setTimeout(syncHeight, 1500);
 
             relatorios_json = _json_sites.dumps(relatorios_js, ensure_ascii=False)
 
-            return f"""
+            # Nota: este bloco NÃO é f-string — injetamos os valores via .replace()
+            _html_analises_template = """
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
-body {{ background:transparent; overflow:visible; padding-bottom:16px; }}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }
+body { background:transparent; overflow:visible; padding-bottom:16px; }
 
-.secao {{ margin-bottom:28px; }}
+.secao { margin-bottom:28px; }
 
-.secao-header {{
+.secao-header {
     display:flex; align-items:center; gap:14px;
     background:#fff; border:1px solid #e5e7eb; border-radius:14px;
     padding:18px 20px; margin-bottom:12px;
     box-shadow:0 2px 8px rgba(0,0,0,0.04);
-}}
-.secao-icon {{
+}
+.secao-icon {
     width:44px;height:44px;border-radius:12px;
     display:flex;align-items:center;justify-content:center;
     font-size:20px;flex-shrink:0;
-}}
-.secao-icon.ind {{ background:#eff6ff; }}
-.secao-icon.ger {{ background:#f0fdf4; }}
-.secao-titulo {{ font-size:16px;font-weight:800;color:#111827; }}
-.secao-sub {{ font-size:12px;color:#9ca3af;margin-top:2px; }}
-.secao-count {{
+}
+.secao-icon.ind { background:#eff6ff; }
+.secao-icon.ger { background:#f0fdf4; }
+.secao-titulo { font-size:16px;font-weight:800;color:#111827; }
+.secao-sub { font-size:12px;color:#9ca3af;margin-top:2px; }
+.secao-count {
     margin-left:auto; min-width:32px;height:32px;
     border-radius:50%; background:#f3f4f6;
     display:flex;align-items:center;justify-content:center;
     font-size:14px;font-weight:800;color:#6b7280;flex-shrink:0;
-}}
+}
 
-.secao-cards {{ display:flex;flex-direction:column;gap:10px; }}
+.secao-cards { display:flex;flex-direction:column;gap:10px; }
 
-.analise-card {{
+.analise-card {
     background:#fff; border:1px solid #e5e7eb; border-radius:12px;
     overflow:hidden; transition:box-shadow 0.15s, border-color 0.15s;
     box-shadow:0 1px 4px rgba(0,0,0,0.05);
-}}
-.analise-card:hover {{ border-color:#3a9fd6; box-shadow:0 4px 16px rgba(58,159,214,0.10); }}
+}
+.analise-card:hover { border-color:#3a9fd6; box-shadow:0 4px 16px rgba(58,159,214,0.10); }
 
-.card-top {{
+.card-top {
     display:flex; align-items:center; gap:14px;
     padding:16px 18px; cursor:pointer; background:#fafbfc;
     transition:background 0.12s;
-}}
-.card-top:hover {{ background:#f3f4f6; }}
+}
+.card-top:hover { background:#f3f4f6; }
 
-.card-icon-wrap {{
+.card-icon-wrap {
     font-size:22px; flex-shrink:0;
     width:40px;height:40px;border-radius:10px;
     background:#f3f4f6;display:flex;align-items:center;justify-content:center;
-}}
-.card-info {{ flex:1;min-width:0; }}
-.card-titulo {{
+}
+.card-info { flex:1;min-width:0; }
+.card-titulo {
     font-size:14px;font-weight:700;color:#111827;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     margin-bottom:5px;
-}}
-.card-meta {{ display:flex;align-items:center;gap:8px;flex-wrap:wrap; }}
-.card-tag {{
+}
+.card-meta { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+.card-tag {
     font-size:11px;font-weight:700;padding:2px 8px;
     border-radius:20px;white-space:nowrap;
-}}
-.card-data {{ font-size:12px;color:#9ca3af;white-space:nowrap; }}
-.card-emp {{ font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px; }}
+}
+.card-data { font-size:12px;color:#9ca3af;white-space:nowrap; }
+.card-emp { font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px; }
 
-.card-chevron {{
+.card-chevron {
     color:#9ca3af;flex-shrink:0;transition:transform 0.2s;
-}}
-.card-chevron.open {{ transform:rotate(180deg); }}
+}
+.card-chevron.open { transform:rotate(180deg); }
 
-.card-body {{
+.card-body {
     padding:20px 18px 16px;
     border-top:1px solid #f3f4f6;
-}}
-.card-relatorio {{
+}
+.card-relatorio {
     font-size:13px;color:#374151;line-height:1.8;
     max-height:420px;overflow-y:auto;
     padding:16px;border-radius:8px;
     background:#f9fafb;border:1px solid #f3f4f6;
     margin-bottom:14px;
     white-space:pre-wrap;word-break:break-word;
-}}
-.card-acoes {{ display:flex;gap:10px; }}
-.btn-dl {{
+}
+.card-acoes { display:flex;gap:10px; }
+.btn-dl {
     flex:1; padding:10px 16px; border-radius:8px;
     border:1px solid #3a9fd6; background:#eff6ff;
     font-size:13px; font-weight:700; color:#1d4ed8;
     cursor:pointer; font-family:'DM Sans',sans-serif;
     transition:background 0.15s;
     display:flex;align-items:center;justify-content:center;gap:7px;
-}}
-.btn-dl:hover {{ background:#dbeafe; }}
-.btn-rm {{
+}
+.btn-dl:hover { background:#dbeafe; }
+.btn-rm {
     padding:10px 16px; border-radius:8px;
     border:1px solid #fca5a5; background:#fef2f2;
     font-size:13px; font-weight:700; color:#dc2626;
     cursor:pointer; font-family:'DM Sans',sans-serif;
     transition:background 0.15s;white-space:nowrap;
     display:flex;align-items:center;justify-content:center;gap:7px;
-}}
-.btn-rm:hover {{ background:#fee2e2; }}
+}
+.btn-rm:hover { background:#fee2e2; }
 
-.empty-state {{
+.empty-state {
     background:#fff;border:1px dashed #d1d5db;border-radius:12px;
     padding:36px 24px;text-align:center;
     display:flex;flex-direction:column;align-items:center;gap:10px;
-}}
-.empty-icon {{ font-size:32px; }}
-.empty-txt {{ font-size:13px;color:#9ca3af;line-height:1.7; }}
+}
+.empty-icon { font-size:32px; }
+.empty-txt { font-size:13px;color:#9ca3af;line-height:1.7; }
 </style>
 
-{html_ind}
-{html_ger}
+__HTML_IND__
+__HTML_GER__
 
 <script>
-var RELATORIOS = {relatorios_json};
+var RELATORIOS = __RELATORIOS_JSON__;
 
-function toggleCard(idx) {{
+function toggleCard(idx) {
     var body = document.getElementById('body_' + idx);
     var chev = document.getElementById('chev_' + idx);
     var rel  = document.getElementById('rel_' + idx);
@@ -4013,42 +4003,41 @@ function toggleCard(idx) {{
     body.style.display = aberto ? 'none' : 'block';
     chev.classList.toggle('open', !aberto);
 
-    // Injeta conteúdo apenas na primeira abertura
-    if (!aberto && rel && !rel.dataset.loaded) {{
+    if (!aberto && rel && !rel.dataset.loaded) {
         var txt = RELATORIOS[String(idx)] || '';
         rel.textContent = txt;
         rel.dataset.loaded = '1';
-    }}
+    }
     setTimeout(ajustarAltura, 60);
-}}
+}
 
-function remover(idx) {{
+function remover(idx) {
     var targetText = '_rm_analise_' + idx + '_';
     var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {{
-        if ((btns[i].innerText || '').trim() === targetText) {{ btns[i].click(); return; }}
-    }}
-}}
+    for (var i = 0; i < btns.length; i++) {
+        if ((btns[i].innerText || '').trim() === targetText) { btns[i].click(); return; }
+    }
+}
 
-function baixar(idx, conteudo, nome) {{
-    var blob = new Blob([conteudo], {{type: 'text/plain;charset=utf-8'}});
+function baixar(idx, conteudo, nome) {
+    var blob = new Blob([conteudo], {type: 'text/plain;charset=utf-8'});
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = nome + '.txt';
     a.click();
-}}
+}
 
-function ajustarAltura() {{
+function ajustarAltura() {
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{
-            if (iframes[i].contentWindow === window) {{
+    for (var i = 0; i < iframes.length; i++) {
+        try {
+            if (iframes[i].contentWindow === window) {
                 iframes[i].style.height = (h + 8) + 'px'; break;
-            }}
-        }} catch(e) {{}}
-    }}
-}}
+            }
+        } catch(e) {}
+    }
+}
 
 var ro = new ResizeObserver(ajustarAltura);
 ro.observe(document.body);
@@ -4058,21 +4047,28 @@ setTimeout(ajustarAltura, 600);
 setTimeout(ajustarAltura, 1200);
 </script>"""
 
+            return (
+                _html_analises_template
+                .replace("__HTML_IND__", html_ind)
+                .replace("__HTML_GER__", html_ger)
+                .replace("__RELATORIOS_JSON__", relatorios_json)
+            )
+
         # ── Renderiza ──
         if not analises and not st.session_state.relatorio_gemini:
-            components.html(f"""
+            components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.empty {{
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }
+.empty {
     background:#fff; border:1px dashed #d1d5db; border-radius:14px;
     padding:64px 48px; text-align:center;
     display:flex; flex-direction:column; align-items:center; gap:14px;
-}}
-.empty-icon {{ font-size:40px; }}
-.empty-title {{ font-size:18px; font-weight:700; color:#374151; }}
-.empty-sub {{ font-size:14px; color:#9ca3af; line-height:1.7; max-width:400px; }}
+}
+.empty-icon { font-size:40px; }
+.empty-title { font-size:18px; font-weight:700; color:#374151; }
+.empty-sub { font-size:14px; color:#9ca3af; line-height:1.7; max-width:400px; }
 </style>
 <div class="empty">
     <div class="empty-icon">📋</div>
@@ -4083,14 +4079,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     </div>
 </div>
 <script>
-(function() {{
+(function() {
     var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{
+    for (var i = 0; i < iframes.length; i++) {
+        try { if (iframes[i].contentWindow === window) {
             iframes[i].style.height = '300px'; break;
-        }} }} catch(e) {{}}
-    }}
-}})();
+        } } catch(e) {}
+    }
+})();
 </script>
 """, height=300, scrolling=False)
         else:
