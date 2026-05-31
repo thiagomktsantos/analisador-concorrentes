@@ -4470,10 +4470,10 @@ html, body { background: transparent; overflow: hidden; }
         st.markdown("""
         <style>
         .st-key-ads_buscar_header_btn {
-            margin-bottom: 0 !important;
+            margin-bottom: -12px !important;
         }
-        .st-key-ads_buscar_header_btn + div {
-            margin-top: 0 !important;
+        .stElementContainer:has(.st-key-ads_buscar_header_btn) {
+            margin-bottom: -12px !important;
         }
         </style>
         """, unsafe_allow_html=True)
