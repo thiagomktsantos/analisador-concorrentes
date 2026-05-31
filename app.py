@@ -3739,109 +3739,126 @@ setTimeout(syncHeight, 3000);
 html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
 body {{ background:transparent; overflow:visible; padding-bottom:16px; }}
 
-.secao {{ margin-bottom:28px; }}
+/* ── Seção: título plano sem card ── */
+.secao {{ margin-bottom:24px; }}
 
 .secao-header {{
-    display:flex; align-items:center; gap:14px;
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
-    padding:18px 20px; margin-bottom:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.04);
+    display:flex; align-items:center; gap:10px;
+    padding:0 4px 10px;
+    border-bottom:2px solid #e5e7eb;
+    margin-bottom:10px;
 }}
-.secao-icon {{
-    width:44px;height:44px;border-radius:12px;
-    display:flex;align-items:center;justify-content:center;
-    font-size:20px;flex-shrink:0;
+.secao-dot {{
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
 }}
-.secao-icon.ind {{ background:#eff6ff; }}
-.secao-icon.ger {{ background:#f0fdf4; }}
-.secao-titulo {{ font-size:16px;font-weight:800;color:#111827; }}
-.secao-sub {{ font-size:12px;color:#9ca3af;margin-top:2px; }}
+.secao-dot.ind {{ background:#3b82f6; }}
+.secao-dot.ger {{ background:#22c55e; }}
+.secao-titulo {{
+    font-size:13px; font-weight:800; color:#6b7280;
+    text-transform:uppercase; letter-spacing:0.8px;
+}}
 .secao-count {{
-    margin-left:auto; min-width:32px;height:32px;
-    border-radius:50%; background:#f3f4f6;
-    display:flex;align-items:center;justify-content:center;
-    font-size:14px;font-weight:800;color:#6b7280;flex-shrink:0;
+    margin-left:auto;
+    background:#f3f4f6; color:#6b7280;
+    font-size:12px; font-weight:700;
+    padding:2px 10px; border-radius:20px;
+}}
+.secao-count.has {{ background:#dbeafe; color:#1d4ed8; }}
+.secao-count.has-green {{ background:#dcfce7; color:#15803d; }}
+
+/* ── Lista de itens ── */
+.secao-cards {{
+    display:flex; flex-direction:column;
+    border:1px solid #e5e7eb; border-radius:12px;
+    overflow:hidden;
+    background:#fff;
 }}
 
-.secao-cards {{ display:flex;flex-direction:column;gap:10px; }}
-
+/* ── Item individual ── */
 .analise-card {{
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-    overflow:hidden; transition:box-shadow 0.15s, border-color 0.15s;
-    box-shadow:0 1px 4px rgba(0,0,0,0.05);
+    border-bottom:1px solid #f3f4f6;
 }}
-.analise-card:hover {{ border-color:#3a9fd6; box-shadow:0 4px 16px rgba(58,159,214,0.10); }}
+.analise-card:last-child {{ border-bottom:none; }}
 
 .card-top {{
-    display:flex; align-items:center; gap:14px;
-    padding:16px 18px; cursor:pointer; background:#fafbfc;
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px;
+    cursor:pointer;
     transition:background 0.12s;
+    user-select:none;
 }}
-.card-top:hover {{ background:#f3f4f6; }}
+.card-top:hover {{ background:#f9fafb; }}
 
-.card-icon-wrap {{
-    font-size:22px; flex-shrink:0;
-    width:40px;height:40px;border-radius:10px;
-    background:#f3f4f6;display:flex;align-items:center;justify-content:center;
+.card-type-dot {{
+    width:10px; height:10px; border-radius:50%; flex-shrink:0;
 }}
-.card-info {{ flex:1;min-width:0; }}
+.card-type-dot.ind {{ background:#3b82f6; }}
+.card-type-dot.ger {{ background:#22c55e; }}
+
+.card-info {{ flex:1; min-width:0; }}
 .card-titulo {{
-    font-size:14px;font-weight:700;color:#111827;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    margin-bottom:5px;
+    font-size:14px; font-weight:600; color:#111827;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-bottom:3px;
 }}
-.card-meta {{ display:flex;align-items:center;gap:8px;flex-wrap:wrap; }}
-.card-tag {{
-    font-size:11px;font-weight:700;padding:2px 8px;
-    border-radius:20px;white-space:nowrap;
-}}
-.card-data {{ font-size:12px;color:#9ca3af;white-space:nowrap; }}
-.card-emp {{ font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px; }}
+.card-meta {{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
+.card-data {{ font-size:12px; color:#9ca3af; }}
+.card-emp {{ font-size:12px; color:#9ca3af; }}
 
 .card-chevron {{
-    color:#9ca3af;flex-shrink:0;transition:transform 0.2s;
+    color:#d1d5db; flex-shrink:0;
+    transition:transform 0.2s, color 0.15s;
+    display:flex; align-items:center;
 }}
-.card-chevron.open {{ transform:rotate(180deg); }}
+.card-chevron.open {{
+    transform:rotate(180deg);
+    color:#3a9fd6;
+}}
+.card-top:hover .card-chevron {{ color:#9ca3af; }}
 
+/* ── Conteúdo expandido ── */
 .card-body {{
-    padding:20px 18px 16px;
+    padding:16px;
+    background:#fafbfc;
     border-top:1px solid #f3f4f6;
 }}
 .card-relatorio {{
-    font-size:13px;color:#374151;line-height:1.8;
-    max-height:420px;overflow-y:auto;
-    padding:16px;border-radius:8px;
-    background:#f9fafb;border:1px solid #f3f4f6;
-    margin-bottom:14px;
-    white-space:pre-wrap;word-break:break-word;
+    font-size:13px; color:#374151; line-height:1.8;
+    max-height:400px; overflow-y:auto;
+    padding:14px 16px; border-radius:8px;
+    background:#fff; border:1px solid #e5e7eb;
+    margin-bottom:12px;
+    white-space:pre-wrap; word-break:break-word;
 }}
-.card-acoes {{ display:flex;gap:10px; }}
+.card-acoes {{ display:flex; gap:8px; }}
 .btn-dl {{
-    flex:1; padding:10px 16px; border-radius:8px;
-    border:1px solid #3a9fd6; background:#eff6ff;
-    font-size:13px; font-weight:700; color:#1d4ed8;
+    flex:1; padding:9px 14px; border-radius:8px;
+    border:1px solid #e5e7eb; background:#fff;
+    font-size:13px; font-weight:600; color:#374151;
     cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s;
-    display:flex;align-items:center;justify-content:center;gap:7px;
+    transition:all 0.15s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
 }}
-.btn-dl:hover {{ background:#dbeafe; }}
+.btn-dl:hover {{ background:#eff6ff; border-color:#3a9fd6; color:#1d4ed8; }}
 .btn-rm {{
-    padding:10px 16px; border-radius:8px;
-    border:1px solid #fca5a5; background:#fef2f2;
-    font-size:13px; font-weight:700; color:#dc2626;
+    padding:9px 14px; border-radius:8px;
+    border:1px solid #e5e7eb; background:#fff;
+    font-size:13px; font-weight:600; color:#9ca3af;
     cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s;white-space:nowrap;
-    display:flex;align-items:center;justify-content:center;gap:7px;
+    transition:all 0.15s; white-space:nowrap;
+    display:flex; align-items:center; justify-content:center; gap:6px;
 }}
-.btn-rm:hover {{ background:#fee2e2; }}
+.btn-rm:hover {{ background:#fef2f2; border-color:#fca5a5; color:#dc2626; }}
 
+/* ── Estado vazio ── */
 .empty-state {{
-    background:#fff;border:1px dashed #d1d5db;border-radius:12px;
-    padding:36px 24px;text-align:center;
-    display:flex;flex-direction:column;align-items:center;gap:10px;
+    border:1px dashed #e5e7eb; border-radius:12px;
+    padding:32px 24px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:#fff;
 }}
-.empty-icon {{ font-size:32px; }}
-.empty-txt {{ font-size:13px;color:#9ca3af;line-height:1.7; }}
+.empty-icon {{ font-size:28px; opacity:0.5; }}
+.empty-txt {{ font-size:13px; color:#9ca3af; line-height:1.6; }}
 </style>
 
 {html_ind}
