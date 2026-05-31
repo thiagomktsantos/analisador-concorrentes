@@ -3405,9 +3405,11 @@ body { padding-bottom:8px; }
 <div class="outer-wrap">
     <div class="cards-grid" id="cards-grid"></div>
 </div>
+<div id="cards-data" style="display:none" data-json="__CARDS_JSON_ESCAPED__"></div>
 
 <script>
-var CARDS = __CARDS_JSON__;
+var _raw = document.getElementById('cards-data').getAttribute('data-json');
+var CARDS = JSON.parse(_raw);
 
 function buildCards() {
     var grid = document.getElementById('cards-grid');
@@ -3667,7 +3669,12 @@ function syncHeight() {
     }
 }
 
-buildCards();
+try {
+    buildCards();
+} catch(err) {
+    document.getElementById('cards-grid').innerHTML =
+        '<div style="padding:20px;color:red;font-size:13px">Erro ao renderizar cards: ' + err.message + '</div>';
+}
 syncHeight();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 window.addEventListener('load', syncHeight);
@@ -3679,7 +3686,9 @@ setTimeout(syncHeight, 3000);
 </script>
 </body></html>"""
 
-        _html_cards_final = _html_cards_template.replace("__CARDS_JSON__", cards_json)
+        import html as _html_mod
+        _cards_json_escaped = _html_mod.escape(cards_json, quote=True)
+        _html_cards_final = _html_cards_template.replace("__CARDS_JSON_ESCAPED__", _cards_json_escaped)
         components.html(_html_cards_final, height=1200, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════
