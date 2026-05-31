@@ -4427,7 +4427,8 @@ elif st.session_state.pagina == "ads":
     # CABEÇALHO DA PÁGINA
     # ══════════════════════════════════════════════════════════════════
 
-    h1_col, h2_col = st.columns([7, 3])
+    h1_col, h2_col, h3_col = st.columns([6, 2, 3])
+
     with h1_col:
         components.html("""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -4450,6 +4451,22 @@ html, body { background: transparent; overflow: hidden; }
 """, height=65)
 
     with h2_col:
+        st.markdown("""
+        <style>
+        .st-key-_ads_ghost_tab_configuracao_,
+        .st-key-_ads_ghost_tab_empresas_,
+        .st-key-_ads_ghost_tab_analise_ {
+            display: none !important;
+        }
+        .stElementContainer:has(.st-key-_ads_ghost_tab_configuracao_),
+        .stElementContainer:has(.st-key-_ads_ghost_tab_empresas_),
+        .stElementContainer:has(.st-key-_ads_ghost_tab_analise_) {
+            display: none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+    with h3_col:
         gerar_btn_ads_header = st.button(
             "Buscar / Atualizar Anúncios",
             type="primary",
@@ -4494,24 +4511,31 @@ html, body { background: transparent; overflow: hidden; }
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }}
-.info-bar {{
-    display:flex; align-items:center; justify-content:center; gap:0;
-    font-size:13px; color:#6b7280;
+.row-coleta {{
+    display:flex;
+    align-items:center; justify-content:center; gap:6px;
+    font-size:13px; color:#6b7280; font-family:'DM Sans',sans-serif;
+    flex-wrap:nowrap; white-space:nowrap;
 }}
 .link-btn {{
-    background:none; border:none; padding:0;
     font-size:13px; color:#6b7280;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    text-underline-offset:3px;
+    cursor:pointer; text-underline-offset:3px;
+    background:none; border:none; padding:0;
+    font-family:'DM Sans',sans-serif;
 }}
 .link-btn:hover {{ text-decoration:underline; color:#374151; }}
-.link-btn.danger:hover {{ color:#dc2626; text-decoration:underline; }}
-.sep {{ margin:0 8px; color:#d1d5db; }}
+.sep {{ color:#d1d5db; font-size:13px; }}
+.clear-btn {{
+    font-size:13px; color:#6b7280;
+    cursor:pointer; background:none; border:none; padding:0;
+    font-family:'DM Sans',sans-serif; text-underline-offset:3px;
+}}
+.clear-btn:hover {{ text-decoration:underline; color:#374151; }}
 </style>
-<div class="info-bar">
+<div class="row-coleta">
     <button class="link-btn" onclick="abrirModal()">🕒 Última busca: <b>{_ultima_ts}</b></button>
     <span class="sep">|</span>
-    <button class="link-btn danger" onclick="triggerLimpar()">Limpar cache</button>
+    <button class="clear-btn" onclick="triggerLimpar()">Limpar cache</button>
 </div>
 <script>
 var DADOS_JSON = '{_djs}';
@@ -4590,19 +4614,22 @@ function abrirModal() {{
         a.download = FILENAME;
         a.click();
     }});
+
+    window.parent.__rawEsc = function(e) {{ if(e.key==='Escape') window.fechar(); }};
+    doc.addEventListener('keydown', window.parent.__rawEsc);
 }}
 (function() {{
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{ if (iframes[i].contentWindow === window) {{
-            iframes[i].style.height = '22px';
+            iframes[i].style.height = '28px';
             iframes[i].style.marginTop = '-8px';
             break;
         }} }} catch(e) {{}}
     }}
 }})();
 </script>
-""", height=22, scrolling=False)
+""", height=28, scrolling=False)
 
     st.markdown("<hr style='border:none;border-top:1px solid #e5e7eb;margin:4px 0 8px 0'/>", unsafe_allow_html=True)
 
