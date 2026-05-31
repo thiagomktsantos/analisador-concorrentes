@@ -3283,7 +3283,6 @@ function triggerTab(label) {{
             tem_analise = bool(st.session_state.get(f"sites_analise_{idx_s}", ""))
 
             ultima_analise = ""
-            ultima_analise_url = ""
             for a in reversed(st.session_state.get("analises_salvas", [])):
                 if a.get("tipo") == "individual" and s["nome"] in a.get("sites", []):
                     ultima_analise = a.get("data", "")
@@ -3397,6 +3396,9 @@ body {{ padding-bottom:8px; }}
     display:flex;align-items:center;justify-content:center;gap:7px;
 }}
 .btn-analisar:hover {{ background:#dbeafe; }}
+.btn-analisar:disabled {{
+    opacity:0.6; cursor:not-allowed;
+}}
 </style>
 </head>
 <body>
@@ -3479,7 +3481,7 @@ function buildCards() {{
         btn.innerHTML = c.tem_analise ? '🔁 Fazer nova análise' : '✨ Analisar este site com IA';
         btn.onclick = (function(idx, nome) {{
             return function() {{
-                triggerAnalise(idx, nome);
+                triggerAnalise(idx, nome, this);
             }};
         }})(c.idx, c.nome);
         btnWrap.appendChild(btn);
@@ -3498,11 +3500,18 @@ function triggerAnaliseTab() {{
     }}
 }}
 
-function triggerAnalise(idx, nome) {{
-    // Monta overlay no parent para ocupar a página toda
+function triggerAnalise(idx, nome, btnEl) {{
+    // Desabilita o botão para evitar duplo clique
+    if (btnEl) {{
+        btnEl.disabled = true;
+        btnEl.innerHTML = '⏳ Analisando…';
+    }}
+
+    // Remove overlay anterior se existir
     var existing = window.parent.document.getElementById('mkt_overlay_sites');
     if (existing) existing.remove();
 
+    // Cria overlay no parent para cobrir a página inteira
     var overlay = window.parent.document.createElement('div');
     overlay.id = 'mkt_overlay_sites';
     overlay.style.cssText = [
@@ -3515,43 +3524,43 @@ function triggerAnalise(idx, nome) {{
     overlay.innerHTML = `
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap');
-#mkt_overlay_sites * {{ box-sizing:border-box; margin:0; padding:0; }}
-.ov-box {{
+#mkt_overlay_sites * { box-sizing:border-box; margin:0; padding:0; }
+.ov-box {
     background:#0e2a47; border-radius:20px; padding:36px 32px;
     width:360px; box-shadow:0 24px 80px rgba(0,0,0,0.6);
     border:1px solid #1e3a5f;
-}}
-.ov-header {{ display:flex; align-items:center; gap:16px; margin-bottom:8px; }}
-.ov-icon {{
+}
+.ov-header { display:flex; align-items:center; gap:16px; margin-bottom:8px; }
+.ov-icon {
     width:48px;height:48px;border-radius:50%;
     background:rgba(46,204,113,0.15);
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
     animation: spin 2s linear infinite;
-}}
-@keyframes spin {{ 0%{{transform:rotate(0deg)}} 100%{{transform:rotate(360deg)}} }}
-.ov-titles {{ flex:1; min-width:0; }}
-.ov-nome {{ font-size:18px;font-weight:800;color:#fff; }}
-.ov-sub {{ font-size:13px;color:#7a9bbf;margin-top:3px; }}
-.ov-percent {{ margin-left:auto;font-size:18px;font-weight:800;color:#2ecc71;flex-shrink:0; }}
-.ov-bar-wrap {{
+}
+@keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+.ov-titles { flex:1; min-width:0; }
+.ov-nome { font-size:18px;font-weight:800;color:#fff; }
+.ov-sub { font-size:13px;color:#7a9bbf;margin-top:3px; }
+.ov-percent { margin-left:auto;font-size:18px;font-weight:800;color:#2ecc71;flex-shrink:0; }
+.ov-bar-wrap {
     background:#1a3a5a; border-radius:99px; height:7px;
     margin:18px 0 22px; overflow:hidden;
-}}
-.ov-bar {{
+}
+.ov-bar {
     height:100%;width:0%;border-radius:99px;
     background:linear-gradient(90deg,#3a9fd6,#2ecc71);
     transition:width 0.4s ease;
-}}
-.ov-empresa {{
+}
+.ov-empresa {
     background:#0a1f38; border-radius:12px;
     padding:14px 18px; display:flex; align-items:center;
     justify-content:space-between; gap:10px;
     border:1px solid #1e3a5f;
-}}
-.ov-emp-nome {{ font-size:14px;font-weight:700;color:#e2eaf5; }}
-.ov-emp-sub {{ font-size:11px;color:#5a7a9a;margin-top:3px; }}
-.ov-emp-count {{ font-size:16px;font-weight:800;color:#3a9fd6;flex-shrink:0; }}
-.ov-footer {{ text-align:center;font-size:12px;color:#3a5a7a;margin-top:20px;letter-spacing:0.2px; }}
+}
+.ov-emp-nome { font-size:14px;font-weight:700;color:#e2eaf5; }
+.ov-emp-sub { font-size:11px;color:#5a7a9a;margin-top:3px; }
+.ov-emp-count { font-size:16px;font-weight:800;color:#3a9fd6;flex-shrink:0; }
+.ov-footer { text-align:center;font-size:12px;color:#3a5a7a;margin-top:20px;letter-spacing:0.2px; }
 </style>
 <div class="ov-box">
     <div class="ov-header">
@@ -3565,16 +3574,16 @@ function triggerAnalise(idx, nome) {{
         </div>
         <div class="ov-titles">
             <div id="o-nome" class="ov-nome">Analisando site…</div>
-            <div id="o-sub" class="ov-sub">Acessando ${{nome}}…</div>
+            <div id="o-sub" class="ov-sub">Acessando ${nome}…</div>
         </div>
         <div id="o-percent" class="ov-percent">0%</div>
     </div>
     <div class="ov-bar-wrap">
         <div id="o-bar" class="ov-bar"></div>
     </div>
-    <div id="o-empresa" class="ov-empresa" style="display:none">
+    <div id="o-empresa" class="ov-empresa">
         <div>
-            <div id="o-emp-nome" class="ov-emp-nome">${{nome}}</div>
+            <div id="o-emp-nome" class="ov-emp-nome">${nome}</div>
             <div id="o-emp-sub" class="ov-emp-sub">Processando com IA…</div>
         </div>
         <div id="o-emp-count" class="ov-emp-count">⏳</div>
@@ -3584,17 +3593,17 @@ function triggerAnalise(idx, nome) {{
 
     window.parent.document.body.appendChild(overlay);
 
+    // Anima a barra de progresso (para em 85% — o rerun fecha o overlay)
     var prog = 0;
     var oBar     = overlay.querySelector('#o-bar');
     var oPercent = overlay.querySelector('#o-percent');
     var oSub     = overlay.querySelector('#o-sub');
-    var oEmp     = overlay.querySelector('#o-empresa');
     var oEmpCount= overlay.querySelector('#o-emp-count');
 
     var interval = setInterval(function() {{
-        if (prog < 88) {{
+        if (prog < 85) {{
             prog += Math.random() * 7 + 2;
-            if (prog > 88) prog = 88;
+            if (prog > 85) prog = 85;
             oBar.style.width     = prog.toFixed(0) + '%';
             oPercent.textContent = prog.toFixed(0) + '%';
 
@@ -3602,18 +3611,54 @@ function triggerAnalise(idx, nome) {{
                 oSub.textContent = 'Extraindo conteúdo do site…';
             }} else if (prog >= 45 && prog < 70) {{
                 oSub.textContent = 'Enviando para o Gemini…';
-                oEmp.style.display = 'flex';
                 oEmpCount.textContent = '⏳';
             }} else if (prog >= 70) {{
                 oSub.textContent = 'Gerando relatório…';
                 oEmpCount.textContent = '✅';
             }}
         }}
+        // Para de incrementar em 85 — aguarda o rerun fechar
     }}, 380);
 
     window._mktOvInterval = interval;
 
-    // Dispara ghost button
+    // ── MutationObserver: fecha o overlay quando o Streamlit fizer rerun ──
+    // O rerun reconstrói os iframes; quando o iframe atual sumir do DOM,
+    // sabemos que a página foi recarregada e podemos remover o overlay.
+    var observer = new MutationObserver(function() {{
+        var stillHere = window.parent.document.getElementById('mkt_overlay_sites');
+        if (!stillHere) {{ observer.disconnect(); return; }}
+
+        // Verifica se o iframe atual ainda existe no parent
+        var iframes = window.parent.document.querySelectorAll('iframe');
+        var found = false;
+        for (var i = 0; i < iframes.length; i++) {{
+            try {{
+                if (iframes[i].contentWindow === window) {{ found = true; break; }}
+            }} catch(e) {{}}
+        }}
+
+        // Se o iframe sumiu, o rerun aconteceu → fecha o overlay
+        if (!found) {{
+            clearInterval(window._mktOvInterval);
+            stillHere.remove();
+            observer.disconnect();
+        }}
+    }});
+
+    observer.observe(window.parent.document.body, {{ childList: true, subtree: true }});
+
+    // Fallback de segurança: remove após 45s para não travar para sempre
+    setTimeout(function() {{
+        var ov = window.parent.document.getElementById('mkt_overlay_sites');
+        if (ov) {{
+            clearInterval(window._mktOvInterval);
+            ov.remove();
+        }}
+        observer.disconnect();
+    }}, 45000);
+
+    // Dispara o ghost button correspondente ao site
     var targetText = 'SITE_IA_' + idx;
     var btns = window.parent.document.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {{
