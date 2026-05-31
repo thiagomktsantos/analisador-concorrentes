@@ -36,10 +36,16 @@ supabase = get_supabase()
 # ---------------------------------------------------
 
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    gemini_model = genai.GenerativeModel("gemini-pro")
+    try:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        gemini_model = genai.GenerativeModel("gemini-2.5-flash")
+        st.toast("✅ Gemini conectado!", icon="✅")
+    except Exception as e:
+        st.toast(f"❌ Erro Gemini: {e}", icon="❌")
+        gemini_model = None
 else:
     gemini_model = None
+    st.toast("⚠️ GEMINI_API_KEY não encontrada nos secrets", icon="⚠️")
 
 # ---------------------------------------------------
 # LISTA ESTADOS E CIDADES
