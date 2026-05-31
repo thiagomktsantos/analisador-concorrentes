@@ -3668,16 +3668,19 @@ function syncHeight() {
 }
 
 buildCards();
+syncHeight();
 if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
 window.addEventListener('load', syncHeight);
+setTimeout(syncHeight, 100);
 setTimeout(syncHeight, 300);
 setTimeout(syncHeight, 800);
 setTimeout(syncHeight, 1500);
+setTimeout(syncHeight, 3000);
 </script>
 </body></html>"""
 
         _html_cards_final = _html_cards_template.replace("__CARDS_JSON__", cards_json)
-        components.html(_html_cards_final, height=500, scrolling=False)
+        components.html(_html_cards_final, height=1200, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA  — visual em cards
