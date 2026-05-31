@@ -2906,7 +2906,7 @@ html, body { background: transparent; overflow: hidden; }
         site_ia_triggers[idx_s] = triggered
 
     # ══════════════════════════════════════════════════════════════
-    # PROCESSAR — Análise individual
+    # PROCESSAR — Análise individual (sem spinner nativo)
     # ══════════════════════════════════════════════════════════════
     for idx_s, s in enumerate(sites_disponiveis):
         if site_ia_triggers.get(idx_s):
@@ -2914,10 +2914,9 @@ html, body { background: transparent; overflow: hidden; }
             if gemini_model is None:
                 st.session_state[f"sites_analise_{idx_s}"] = "⚠️ Configure GEMINI_API_KEY nos secrets."
             else:
-                with st.spinner(f"Analisando {s['nome']}…"):
-                    conteudo_site = extrair_conteudo_site(s["url"])
-                    try:
-                        prompt_individual = f"""
+                conteudo_site = extrair_conteudo_site(s["url"])
+                try:
+                    prompt_individual = f"""
 Você é um especialista em marketing digital e posicionamento de marca.
 Analise o conteúdo extraído do site abaixo e gere uma análise individual detalhada em português.
 
@@ -2955,27 +2954,34 @@ Liste os principais serviços ou produtos apresentados no site.
 
 Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
 """
-                        resp = gemini_model.generate_content(prompt_individual)
-                        st.session_state[f"sites_analise_{idx_s}"] = resp.text
+                    resp = gemini_model.generate_content(prompt_individual)
+                    st.session_state[f"sites_analise_{idx_s}"] = resp.text
 
-                        # ── Salva análise individual automaticamente ──
-                        titulo_auto = f"Análise Individual — {s['nome']} ({_dt.datetime.now().strftime('%d/%m/%Y %H:%M')})"
-                        if "analises_salvas" not in st.session_state:
-                            st.session_state.analises_salvas = []
-                        st.session_state.analises_salvas.append({
-                            "titulo": titulo_auto,
-                            "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                            "relatorio": resp.text,
-                            "sites": [s["nome"]],
-                            "tipo": "individual",
-                            "empresa": s["nome"],
-                        })
-                        # ── Vai para aba de análise ──
-                        st.session_state.sites_main_tab = "analise"
-                        st.rerun()
-                    except Exception as e:
-                        st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
-                        st.rerun()
+                    # ── Salva análise individual ──
+                    titulo_auto = f"Análise Individual — {s['nome']} ({_dt.datetime.now().strftime('%d/%m/%Y %H:%M')})"
+                    if "analises_salvas" not in st.session_state:
+                        st.session_state.analises_salvas = []
+                    
+                    # Evita duplicata: remove análise anterior do mesmo site
+                    st.session_state.analises_salvas = [
+                        a for a in st.session_state.analises_salvas
+                        if not (a.get("tipo") == "individual" and s["nome"] in a.get("sites", []))
+                    ]
+                    
+                    st.session_state.analises_salvas.append({
+                        "titulo": titulo_auto,
+                        "data": _dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "relatorio": resp.text,
+                        "sites": [s["nome"]],
+                        "tipo": "individual",
+                        "empresa": s["nome"],
+                        "url": s["url"],
+                    })
+                    st.session_state.sites_main_tab = "analise"
+                    st.rerun()
+                except Exception as e:
+                    st.session_state[f"sites_analise_{idx_s}"] = f"Erro: {e}"
+                    st.rerun()
 
     # ══════════════════════════════════════════════════════════════
     # PROCESSAR — Relatório geral
@@ -3021,7 +3027,7 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
             st.session_state.relatorio_gemini = relatorio
             st.session_state["sites_ultima_geracao"] = _dt.datetime.now().strftime("%d/%m/%Y %H:%M")
 
-            # ── Salva relatório geral automaticamente ──
+            # ── Salva relatório geral ──
             titulo_auto = f"Relatório Geral — {_dt.datetime.now().strftime('%d/%m/%Y %H:%M')}"
             if "analises_salvas" not in st.session_state:
                 st.session_state.analises_salvas = []
@@ -3044,7 +3050,6 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
     analises_nav = st.session_state.get("analises_salvas", [])
     qtd_total_analise = len(analises_nav)
 
-    # Controle badge NOVA
     nao_lidas = max(0, qtd_total_analise - st.session_state.sites_analise_vistas)
     if main_tab == "analise":
         st.session_state.sites_analise_vistas = qtd_total_analise
@@ -3180,8 +3185,8 @@ function triggerTab(label) {{
             avatar_letras = gerar_avatar(s["nome"])
             tem_analise = bool(st.session_state.get(f"sites_analise_{idx_s}", ""))
 
-            # Busca data da última análise individual salva para este site
             ultima_analise = ""
+            ultima_analise_url = ""
             for a in reversed(st.session_state.get("analises_salvas", [])):
                 if a.get("tipo") == "individual" and s["nome"] in a.get("sites", []):
                     ultima_analise = a.get("data", "")
@@ -3253,13 +3258,38 @@ body {{ padding-bottom:8px; }}
     width:100%;height:100%; display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:8px; background:#f3f4f6;border-radius:10px;
 }}
+
+/* ── Badge última análise como link ── */
 .analise-badge {{
     margin: 0 14px 10px;
-    padding: 7px 14px;
-    background:#f0fdf4; border:1px solid #86efac; border-radius:8px;
-    font-size:12px; font-weight:600; color:#15803d;
-    display:flex; align-items:center; gap:7px;
+    padding: 9px 14px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #15803d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
 }}
+.analise-badge:hover {{
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border-color: #4ade80;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.15);
+    transform: translateY(-1px);
+}}
+.analise-badge-left {{
+    display: flex; align-items: center; gap: 7px;
+}}
+.analise-badge-arrow {{
+    font-size: 14px; opacity: 0.7;
+}}
+
 .btn-wrap {{ padding:0 14px 16px; }}
 .btn-analisar {{
     width:100%;padding:11px 0;
@@ -3270,84 +3300,9 @@ body {{ padding-bottom:8px; }}
     display:flex;align-items:center;justify-content:center;gap:7px;
 }}
 .btn-analisar:hover {{ background:#dbeafe; }}
-
-/* ── OVERLAY de progresso ── */
-#overlay {{
-    display:none; position:fixed; inset:0;
-    background:rgba(10,20,40,0.75);
-    backdrop-filter:blur(4px);
-    z-index:9999; align-items:center; justify-content:center;
-}}
-.ov-box {{
-    background:#0e2a47; border-radius:18px; padding:32px 28px;
-    width:340px; box-shadow:0 24px 60px rgba(0,0,0,0.5);
-    border:1px solid #1e3a5f;
-}}
-.ov-header {{ display:flex; align-items:center; gap:14px; margin-bottom:6px; }}
-.ov-icon {{
-    width:44px;height:44px;border-radius:50%;
-    background:#1a4a2e;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}}
-.ov-titles {{ flex:1; min-width:0; }}
-.ov-nome {{ font-size:17px;font-weight:800;color:#fff; }}
-.ov-sub {{ font-size:13px;color:#7a9bbf;margin-top:2px; }}
-.ov-percent {{ margin-left:auto;font-size:16px;font-weight:800;color:#2ecc71;flex-shrink:0; }}
-.ov-bar-wrap {{
-    background:#1a3a5a; border-radius:99px; height:6px;
-    margin:16px 0 20px; overflow:hidden;
-}}
-.ov-bar {{
-    height:100%;width:0%;border-radius:99px;
-    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
-    transition:width 0.4s ease;
-}}
-.ov-empresa {{
-    background:#0a1f38; border-radius:10px;
-    padding:12px 16px; display:flex; align-items:center;
-    justify-content:space-between; gap:10px;
-    border:1px solid #1e3a5f;
-}}
-.ov-emp-nome {{ font-size:14px;font-weight:700;color:#e2eaf5; }}
-.ov-emp-sub {{ font-size:11px;color:#5a7a9a;margin-top:2px; }}
-.ov-emp-count {{ font-size:13px;font-weight:800;color:#3a9fd6;flex-shrink:0; }}
-.ov-footer {{ text-align:center;font-size:12px;color:#3a5a7a;margin-top:18px; }}
 </style>
 </head>
 <body>
-
-<!-- OVERLAY -->
-<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(10,20,40,0.75);
-     backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;">
-    <div class="ov-box">
-        <div class="ov-header">
-            <div class="ov-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                     stroke="#2ecc71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83
-                             M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-                </svg>
-            </div>
-            <div class="ov-titles">
-                <div id="o-nome" class="ov-nome">Analisando site…</div>
-                <div id="o-sub" class="ov-sub">Aguarde…</div>
-            </div>
-            <div id="o-percent" class="ov-percent">0%</div>
-        </div>
-        <div class="ov-bar-wrap">
-            <div id="o-bar" class="ov-bar"></div>
-        </div>
-        <div id="o-empresa" class="ov-empresa" style="display:none">
-            <div>
-                <div id="o-emp-nome" class="ov-emp-nome"></div>
-                <div id="o-emp-sub" class="ov-emp-sub"></div>
-            </div>
-            <div id="o-emp-count" class="ov-emp-count"></div>
-        </div>
-        <div class="ov-footer">Você será redirecionado automaticamente…</div>
-    </div>
-</div>
 
 <div class="outer-wrap">
     <div class="cards-grid" id="cards-grid"></div>
@@ -3403,13 +3358,18 @@ function buildCards() {{
         prevWrap.appendChild(img);
         card.appendChild(prevWrap);
 
-        // badge última análise
+        // badge última análise — agora como link clicável para aba de análise
         if (c.tem_analise && c.ultima_analise) {{
             var abadge = document.createElement('div');
             abadge.className = 'analise-badge';
+            abadge.title = 'Ver análise na aba Análise de IA';
             abadge.innerHTML =
-                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-                + 'Última análise: <b>' + c.ultima_analise + '</b>';
+                '<div class="analise-badge-left">'
+                + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+                + '<span>Última análise: <b>' + c.ultima_analise + '</b></span>'
+                + '</div>'
+                + '<span class="analise-badge-arrow">→ Ver análise</span>';
+            abadge.onclick = function() {{ triggerAnaliseTab(); }};
             card.appendChild(abadge);
         }}
 
@@ -3433,26 +3393,107 @@ function buildCards() {{
     syncHeight();
 }}
 
-function triggerAnalise(idx, nome) {{
-    // Monta overlay
-    var overlay = document.getElementById('overlay');
-    var oNome    = document.getElementById('o-nome');
-    var oSub     = document.getElementById('o-sub');
-    var oBar     = document.getElementById('o-bar');
-    var oPercent = document.getElementById('o-percent');
-    var oEmp     = document.getElementById('o-empresa');
-    var oEmpNome = document.getElementById('o-emp-nome');
-    var oEmpSub  = document.getElementById('o-emp-sub');
-    var oEmpCount= document.getElementById('o-emp-count');
+function triggerAnaliseTab() {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+        var txt = (btns[i].innerText || btns[i].textContent || '').replace(/\s+/g,' ').trim();
+        if (txt === 'analise_tab') {{ btns[i].click(); return; }}
+    }}
+}}
 
-    oNome.textContent    = 'Analisando site…';
-    oSub.textContent     = 'Acessando ' + nome + '…';
-    oBar.style.width     = '0%';
-    oPercent.textContent = '0%';
-    oEmp.style.display   = 'none';
-    overlay.style.display = 'flex';
+function triggerAnalise(idx, nome) {{
+    // Monta overlay no parent para ocupar a página toda
+    var existing = window.parent.document.getElementById('mkt_overlay_sites');
+    if (existing) existing.remove();
+
+    var overlay = window.parent.document.createElement('div');
+    overlay.id = 'mkt_overlay_sites';
+    overlay.style.cssText = [
+        'position:fixed','inset:0','background:rgba(10,20,40,0.80)',
+        'backdrop-filter:blur(6px)','z-index:99999',
+        'display:flex','align-items:center','justify-content:center',
+        'font-family:DM Sans,sans-serif'
+    ].join(';');
+
+    overlay.innerHTML = `
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap');
+#mkt_overlay_sites * {{ box-sizing:border-box; margin:0; padding:0; }}
+.ov-box {{
+    background:#0e2a47; border-radius:20px; padding:36px 32px;
+    width:360px; box-shadow:0 24px 80px rgba(0,0,0,0.6);
+    border:1px solid #1e3a5f;
+}}
+.ov-header {{ display:flex; align-items:center; gap:16px; margin-bottom:8px; }}
+.ov-icon {{
+    width:48px;height:48px;border-radius:50%;
+    background:rgba(46,204,113,0.15);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    animation: spin 2s linear infinite;
+}}
+@keyframes spin {{ 0%{{transform:rotate(0deg)}} 100%{{transform:rotate(360deg)}} }}
+.ov-titles {{ flex:1; min-width:0; }}
+.ov-nome {{ font-size:18px;font-weight:800;color:#fff; }}
+.ov-sub {{ font-size:13px;color:#7a9bbf;margin-top:3px; }}
+.ov-percent {{ margin-left:auto;font-size:18px;font-weight:800;color:#2ecc71;flex-shrink:0; }}
+.ov-bar-wrap {{
+    background:#1a3a5a; border-radius:99px; height:7px;
+    margin:18px 0 22px; overflow:hidden;
+}}
+.ov-bar {{
+    height:100%;width:0%;border-radius:99px;
+    background:linear-gradient(90deg,#3a9fd6,#2ecc71);
+    transition:width 0.4s ease;
+}}
+.ov-empresa {{
+    background:#0a1f38; border-radius:12px;
+    padding:14px 18px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px;
+    border:1px solid #1e3a5f;
+}}
+.ov-emp-nome {{ font-size:14px;font-weight:700;color:#e2eaf5; }}
+.ov-emp-sub {{ font-size:11px;color:#5a7a9a;margin-top:3px; }}
+.ov-emp-count {{ font-size:16px;font-weight:800;color:#3a9fd6;flex-shrink:0; }}
+.ov-footer {{ text-align:center;font-size:12px;color:#3a5a7a;margin-top:20px;letter-spacing:0.2px; }}
+</style>
+<div class="ov-box">
+    <div class="ov-header">
+        <div class="ov-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="#2ecc71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83
+                         M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+        </div>
+        <div class="ov-titles">
+            <div id="o-nome" class="ov-nome">Analisando site…</div>
+            <div id="o-sub" class="ov-sub">Acessando ${{nome}}…</div>
+        </div>
+        <div id="o-percent" class="ov-percent">0%</div>
+    </div>
+    <div class="ov-bar-wrap">
+        <div id="o-bar" class="ov-bar"></div>
+    </div>
+    <div id="o-empresa" class="ov-empresa" style="display:none">
+        <div>
+            <div id="o-emp-nome" class="ov-emp-nome">${{nome}}</div>
+            <div id="o-emp-sub" class="ov-emp-sub">Processando com IA…</div>
+        </div>
+        <div id="o-emp-count" class="ov-emp-count">⏳</div>
+    </div>
+    <div class="ov-footer">Você será redirecionado automaticamente…</div>
+</div>`;
+
+    window.parent.document.body.appendChild(overlay);
 
     var prog = 0;
+    var oBar     = overlay.querySelector('#o-bar');
+    var oPercent = overlay.querySelector('#o-percent');
+    var oSub     = overlay.querySelector('#o-sub');
+    var oEmp     = overlay.querySelector('#o-empresa');
+    var oEmpCount= overlay.querySelector('#o-emp-count');
+
     var interval = setInterval(function() {{
         if (prog < 88) {{
             prog += Math.random() * 7 + 2;
@@ -3465,8 +3506,6 @@ function triggerAnalise(idx, nome) {{
             }} else if (prog >= 45 && prog < 70) {{
                 oSub.textContent = 'Enviando para o Gemini…';
                 oEmp.style.display = 'flex';
-                oEmpNome.textContent = nome;
-                oEmpSub.textContent  = 'Processando com IA…';
                 oEmpCount.textContent = '⏳';
             }} else if (prog >= 70) {{
                 oSub.textContent = 'Gerando relatório…';
@@ -3475,7 +3514,7 @@ function triggerAnalise(idx, nome) {{
         }}
     }}, 380);
 
-    window._analiseInterval = interval;
+    window._mktOvInterval = interval;
 
     // Dispara ghost button
     var targetText = 'SITE_IA_' + idx;
@@ -3510,7 +3549,7 @@ setTimeout(syncHeight, 1500);
 """, height=500, scrolling=False)
 
     # ══════════════════════════════════════════════════════════════
-    # ABA: ANÁLISE DE IA
+    # ABA: ANÁLISE DE IA  — visual em cards
     # ══════════════════════════════════════════════════════════════
     elif main_tab == "analise":
 
@@ -3584,123 +3623,263 @@ setTimeout(syncHeight, 1500);
 
             st.markdown("<hr style='border:none;border-top:2px solid #e5e7eb;margin:28px 0'/>", unsafe_allow_html=True)
 
-        # ── Helper: renderiza seção de análises ──
-        def _render_analises_html(lista_analises, tipo):
-            icon = "🏢" if tipo == "individual" else "📋"
-            titulo_secao = "Análises Individuais por Site" if tipo == "individual" else "Relatórios Gerais Comparativos"
+        # ── Renderiza seções em cards visuais ──
+        def _build_analises_html(lista_individuais, lista_gerais):
 
-            itens_html = ""
-            for idx_real, analise in reversed(lista_analises):
+            def card_item(idx_real, analise):
                 titulo    = analise.get("titulo", "—")
                 data      = analise.get("data", "—")
                 empresa   = analise.get("empresa", "")
                 sites_str = ", ".join(analise.get("sites", []))
-                meta_str  = data
-                if empresa:
-                    meta_str += f" · {empresa}"
-                elif sites_str:
-                    meta_str += f" · {sites_str}"
+                tipo      = analise.get("tipo", "geral")
+                icon      = "🏢" if tipo == "individual" else "📋"
+                tag_bg    = "#eff6ff" if tipo == "individual" else "#f0fdf4"
+                tag_col   = "#1d4ed8" if tipo == "individual" else "#15803d"
+                tag_brd   = "#bfdbfe" if tipo == "individual" else "#86efac"
+                tag_txt   = "Individual" if tipo == "individual" else "Relatório Geral"
+                meta      = empresa if empresa else sites_str
 
-                relatorio_escaped = (analise.get("relatorio") or "").replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-                relatorio_html    = (analise.get("relatorio") or "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>")
+                relatorio_escaped = (analise.get("relatorio") or "").replace("\\","\\\\").replace("`","\\`").replace("${","\\${")
 
-                itens_html += f"""
-<div class="item" id="item_{idx_real}">
-    <div class="item-header" onclick="toggleItem({idx_real})">
-        <div class="item-left">
-            <span class="item-icon">{icon}</span>
-            <div style="flex:1;min-width:0">
-                <div class="item-titulo">{titulo}</div>
-                <div class="item-meta">{meta_str}</div>
+                return f"""
+<div class="analise-card" id="card_{idx_real}">
+    <div class="card-top" onclick="toggleCard({idx_real})">
+        <div class="card-icon-wrap">{icon}</div>
+        <div class="card-info">
+            <div class="card-titulo">{titulo}</div>
+            <div class="card-meta">
+                <span class="card-tag" style="background:{tag_bg};color:{tag_col};border:1px solid {tag_brd}">{tag_txt}</span>
+                <span class="card-data">🕒 {data}</span>
+                {"<span class='card-emp'>· " + meta + "</span>" if meta else ""}
             </div>
         </div>
-        <span class="item-chevron" id="chev_{idx_real}">▼</span>
+        <div class="card-chevron" id="chev_{idx_real}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
     </div>
-    <div class="item-body" id="body_{idx_real}" style="display:none">
-        <div class="item-relatorio">{relatorio_html}</div>
-        <div class="item-acoes">
-            <button class="btn-dl" onclick="baixar({idx_real}, `{relatorio_escaped}`, `{titulo.replace(' ','_')}`)">⬇️ Baixar .txt</button>
-            <button class="btn-rm" onclick="remover({idx_real})">🗑️ Remover</button>
+    <div class="card-body" id="body_{idx_real}" style="display:none">
+        <div class="card-relatorio" id="rel_{idx_real}"></div>
+        <div class="card-acoes">
+            <button class="btn-dl" onclick="baixar({idx_real}, `{relatorio_escaped}`, `{titulo.replace(' ','_')}`)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar .txt
+            </button>
+            <button class="btn-rm" onclick="remover({idx_real})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                Remover
+            </button>
         </div>
     </div>
 </div>"""
 
-            if not lista_analises:
-                itens_html = f"""
-<div style='padding:28px 24px;text-align:center;color:#9ca3af;font-size:14px;
-            border:1px dashed #d1d5db;border-radius:10px;margin:8px 0'>
-    Nenhuma {"análise individual" if tipo == "individual" else "relatório geral"} salvo ainda.
+            # Seção individuais
+            html_ind = ""
+            if lista_individuais:
+                items = "".join(card_item(i, a) for i, a in reversed(lista_individuais))
+                html_ind = f"""
+<div class="secao">
+    <div class="secao-header">
+        <div class="secao-icon ind">🏢</div>
+        <div>
+            <div class="secao-titulo">Análises Individuais</div>
+            <div class="secao-sub">{len(lista_individuais)} análise{"s" if len(lista_individuais) != 1 else ""} por site</div>
+        </div>
+        <div class="secao-count">{len(lista_individuais)}</div>
+    </div>
+    <div class="secao-cards">{items}</div>
 </div>"""
+            else:
+                html_ind = """
+<div class="secao">
+    <div class="secao-header">
+        <div class="secao-icon ind">🏢</div>
+        <div>
+            <div class="secao-titulo">Análises Individuais</div>
+            <div class="secao-sub">Análise por site específico</div>
+        </div>
+        <div class="secao-count">0</div>
+    </div>
+    <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-txt">Nenhuma análise individual ainda.<br>Vá em <b>Sites configurados</b> e clique em <b>Analisar este site com IA</b>.</div>
+    </div>
+</div>"""
+
+            # Seção gerais
+            html_ger = ""
+            if lista_gerais:
+                items = "".join(card_item(i, a) for i, a in reversed(lista_gerais))
+                html_ger = f"""
+<div class="secao">
+    <div class="secao-header">
+        <div class="secao-icon ger">📋</div>
+        <div>
+            <div class="secao-titulo">Relatórios Gerais</div>
+            <div class="secao-sub">{len(lista_gerais)} relatório{"s" if len(lista_gerais) != 1 else ""} comparativo{"s" if len(lista_gerais) != 1 else ""}</div>
+        </div>
+        <div class="secao-count">{len(lista_gerais)}</div>
+    </div>
+    <div class="secao-cards">{items}</div>
+</div>"""
+            else:
+                html_ger = """
+<div class="secao">
+    <div class="secao-header">
+        <div class="secao-icon ger">📋</div>
+        <div>
+            <div class="secao-titulo">Relatórios Gerais</div>
+            <div class="secao-sub">Comparativo entre todos os sites</div>
+        </div>
+        <div class="secao-count">0</div>
+    </div>
+    <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-txt">Nenhum relatório geral ainda.<br>Clique em <b>Gerar Relatório Geral</b> no topo da página.</div>
+    </div>
+</div>"""
+
+            # Dados para injetar no JS (conteúdo markdown por card)
+            relatorios_js = {}
+            for i, a in lista_individuais + lista_gerais:
+                relatorios_js[str(i)] = (a.get("relatorio") or "")
+
+            relatorios_json = _json_sites.dumps(relatorios_js, ensure_ascii=False)
 
             return f"""
-<div class="secao">
-    <div class="secao-titulo">{titulo_secao}</div>
-    {itens_html}
-</div>"""
-
-        html_individuais = _render_analises_html(analises_individuais, "individual")
-        html_gerais      = _render_analises_html(analises_gerais,      "geral")
-
-        analises_html = f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
-body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
-.secao {{ margin-bottom:24px; }}
-.secao-titulo {{
-    font-size:13px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.5px;
-    padding:0 0 10px 0; margin-bottom:12px;
-    border-bottom:2px solid #e5e7eb;
-    display:flex; align-items:center; gap:8px;
+body {{ background:transparent; overflow:visible; padding-bottom:16px; }}
+
+.secao {{ margin-bottom:28px; }}
+
+.secao-header {{
+    display:flex; align-items:center; gap:14px;
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:18px 20px; margin-bottom:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.04);
 }}
-.item {{ border:1px solid #e5e7eb; border-radius:10px; margin-bottom:10px; overflow:hidden; background:#fff; }}
-.item-header {{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 16px; cursor:pointer; background:#f9fafb; transition:background 0.12s;
+.secao-icon {{
+    width:44px;height:44px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;flex-shrink:0;
 }}
-.item-header:hover {{ background:#f3f4f6; }}
-.item-left {{ display:flex; align-items:center; gap:12px; flex:1; min-width:0; }}
-.item-icon {{ font-size:18px; flex-shrink:0; }}
-.item-titulo {{ font-size:14px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.item-meta {{ font-size:12px; color:#9ca3af; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.item-chevron {{ font-size:11px; color:#9ca3af; flex-shrink:0; margin-left:10px; transition:transform 0.2s; }}
-.item-chevron.open {{ transform:rotate(180deg); }}
-.item-body {{ padding:16px; border-top:1px solid #f3f4f6; }}
-.item-relatorio {{
-    font-size:13px; color:#374151; line-height:1.75;
-    max-height:400px; overflow-y:auto; padding-right:4px; margin-bottom:14px;
+.secao-icon.ind {{ background:#eff6ff; }}
+.secao-icon.ger {{ background:#f0fdf4; }}
+.secao-titulo {{ font-size:16px;font-weight:800;color:#111827; }}
+.secao-sub {{ font-size:12px;color:#9ca3af;margin-top:2px; }}
+.secao-count {{
+    margin-left:auto; min-width:32px;height:32px;
+    border-radius:50%; background:#f3f4f6;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:800;color:#6b7280;flex-shrink:0;
 }}
-.item-acoes {{ display:flex; gap:10px; padding-top:12px; border-top:1px solid #f3f4f6; }}
+
+.secao-cards {{ display:flex;flex-direction:column;gap:10px; }}
+
+.analise-card {{
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    overflow:hidden; transition:box-shadow 0.15s, border-color 0.15s;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05);
+}}
+.analise-card:hover {{ border-color:#3a9fd6; box-shadow:0 4px 16px rgba(58,159,214,0.10); }}
+
+.card-top {{
+    display:flex; align-items:center; gap:14px;
+    padding:16px 18px; cursor:pointer; background:#fafbfc;
+    transition:background 0.12s;
+}}
+.card-top:hover {{ background:#f3f4f6; }}
+
+.card-icon-wrap {{
+    font-size:22px; flex-shrink:0;
+    width:40px;height:40px;border-radius:10px;
+    background:#f3f4f6;display:flex;align-items:center;justify-content:center;
+}}
+.card-info {{ flex:1;min-width:0; }}
+.card-titulo {{
+    font-size:14px;font-weight:700;color:#111827;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:5px;
+}}
+.card-meta {{ display:flex;align-items:center;gap:8px;flex-wrap:wrap; }}
+.card-tag {{
+    font-size:11px;font-weight:700;padding:2px 8px;
+    border-radius:20px;white-space:nowrap;
+}}
+.card-data {{ font-size:12px;color:#9ca3af;white-space:nowrap; }}
+.card-emp {{ font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px; }}
+
+.card-chevron {{
+    color:#9ca3af;flex-shrink:0;transition:transform 0.2s;
+}}
+.card-chevron.open {{ transform:rotate(180deg); }}
+
+.card-body {{
+    padding:20px 18px 16px;
+    border-top:1px solid #f3f4f6;
+}}
+.card-relatorio {{
+    font-size:13px;color:#374151;line-height:1.8;
+    max-height:420px;overflow-y:auto;
+    padding:16px;border-radius:8px;
+    background:#f9fafb;border:1px solid #f3f4f6;
+    margin-bottom:14px;
+    white-space:pre-wrap;word-break:break-word;
+}}
+.card-acoes {{ display:flex;gap:10px; }}
 .btn-dl {{
-    flex:1; padding:9px; border-radius:8px;
+    flex:1; padding:10px 16px; border-radius:8px;
     border:1px solid #3a9fd6; background:#eff6ff;
     font-size:13px; font-weight:700; color:#1d4ed8;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;
+    display:flex;align-items:center;justify-content:center;gap:7px;
 }}
 .btn-dl:hover {{ background:#dbeafe; }}
 .btn-rm {{
-    padding:9px 16px; border-radius:8px;
+    padding:10px 16px; border-radius:8px;
     border:1px solid #fca5a5; background:#fef2f2;
     font-size:13px; font-weight:700; color:#dc2626;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; white-space:nowrap;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s;white-space:nowrap;
+    display:flex;align-items:center;justify-content:center;gap:7px;
 }}
 .btn-rm:hover {{ background:#fee2e2; }}
+
+.empty-state {{
+    background:#fff;border:1px dashed #d1d5db;border-radius:12px;
+    padding:36px 24px;text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+}}
+.empty-icon {{ font-size:32px; }}
+.empty-txt {{ font-size:13px;color:#9ca3af;line-height:1.7; }}
 </style>
 
-{html_individuais}
-{html_gerais}
+{html_ind}
+{html_ger}
 
 <script>
-function toggleItem(idx) {{
+var RELATORIOS = {relatorios_json};
+
+function toggleCard(idx) {{
     var body = document.getElementById('body_' + idx);
     var chev = document.getElementById('chev_' + idx);
+    var rel  = document.getElementById('rel_' + idx);
     var aberto = body.style.display !== 'none';
     body.style.display = aberto ? 'none' : 'block';
     chev.classList.toggle('open', !aberto);
-    setTimeout(ajustarAltura, 50);
+
+    // Injeta conteúdo apenas na primeira abertura
+    if (!aberto && rel && !rel.dataset.loaded) {{
+        var txt = RELATORIOS[String(idx)] || '';
+        rel.textContent = txt;
+        rel.dataset.loaded = '1';
+    }}
+    setTimeout(ajustarAltura, 60);
 }}
+
 function remover(idx) {{
     var targetText = '_rm_analise_' + idx + '_';
     var btns = window.parent.document.querySelectorAll('button');
@@ -3708,6 +3887,7 @@ function remover(idx) {{
         if ((btns[i].innerText || '').trim() === targetText) {{ btns[i].click(); return; }}
     }}
 }}
+
 function baixar(idx, conteudo, nome) {{
     var blob = new Blob([conteudo], {{type: 'text/plain;charset=utf-8'}});
     var a = document.createElement('a');
@@ -3715,6 +3895,7 @@ function baixar(idx, conteudo, nome) {{
     a.download = nome + '.txt';
     a.click();
 }}
+
 function ajustarAltura() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
@@ -3726,15 +3907,17 @@ function ajustarAltura() {{
         }} catch(e) {{}}
     }}
 }}
+
 var ro = new ResizeObserver(ajustarAltura);
 ro.observe(document.body);
 window.addEventListener('load', ajustarAltura);
 setTimeout(ajustarAltura, 200);
 setTimeout(ajustarAltura, 600);
-</script>
-"""
-        # Empty state
-        if not st.session_state.relatorio_gemini and not analises:
+setTimeout(ajustarAltura, 1200);
+</script>"""
+
+        # ── Renderiza ──
+        if not analises and not st.session_state.relatorio_gemini:
             components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3769,7 +3952,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 </script>
 """, height=300, scrolling=False)
         else:
-            components.html(analises_html, height=60, scrolling=False)
+            html_final = _build_analises_html(analises_individuais, analises_gerais)
+            components.html(html_final, height=200, scrolling=False)
 
 # ---------------------------------------------------
 # PAGINA - ADS (Biblioteca de Anúncios com Meta Ad Library API)
