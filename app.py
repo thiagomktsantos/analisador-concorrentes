@@ -4467,6 +4467,16 @@ html, body { background: transparent; overflow: hidden; }
         """, unsafe_allow_html=True)
 
     with h3_col:
+        st.markdown("""
+        <style>
+        .st-key-ads_buscar_header_btn {
+            margin-bottom: 0 !important;
+        }
+        .st-key-ads_buscar_header_btn + div {
+            margin-top: 0 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         gerar_btn_ads_header = st.button(
             "Buscar / Atualizar Anúncios",
             type="primary",
