@@ -4470,7 +4470,7 @@ html, body { background: transparent; overflow: hidden; }
         st.markdown("""
         <style>
         .st-key-ads_buscar_header_btn {
-            margin-bottom: -12px !important;
+            margin-bottom: -16px !important;
         }
         .stElementContainer:has(.st-key-ads_buscar_header_btn) {
             margin-bottom: -12px !important;
