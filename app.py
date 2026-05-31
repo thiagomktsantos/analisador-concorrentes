@@ -3643,11 +3643,6 @@ setTimeout(syncHeight, 3000);
         <div class="card-icon-wrap">{icon}</div>
         <div class="card-info">
             <div class="card-titulo">{titulo}</div>
-            <div class="card-meta">
-                <span class="card-tag" style="background:{tag_bg};color:{tag_col};border:1px solid {tag_brd}">{tag_txt}</span>
-                <span class="card-data">🕒 {data}</span>
-                {"<span class='card-emp'>· " + meta + "</span>" if meta else ""}
-            </div>
         </div>
         <div class="card-chevron" id="chev_{idx_real}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -3677,7 +3672,6 @@ setTimeout(syncHeight, 3000);
         <div class="secao-icon ind">🏢</div>
         <div>
             <div class="secao-titulo">Análises Individuais</div>
-            <div class="secao-sub">{len(lista_individuais)} análise{"s" if len(lista_individuais) != 1 else ""} por site</div>
         </div>
         <div class="secao-count">{len(lista_individuais)}</div>
     </div>
@@ -3709,7 +3703,6 @@ setTimeout(syncHeight, 3000);
         <div class="secao-icon ger">📋</div>
         <div>
             <div class="secao-titulo">Relatórios Gerais</div>
-            <div class="secao-sub">{len(lista_gerais)} relatório{"s" if len(lista_gerais) != 1 else ""} comparativo{"s" if len(lista_gerais) != 1 else ""}</div>
         </div>
         <div class="secao-count">{len(lista_gerais)}</div>
     </div>
