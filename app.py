@@ -8689,7 +8689,7 @@ function triggerTab(label) {{
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
 .main-wrap {{
-    background:#d2dde9;
+    background:#ffffff;
     border:1px solid #e5e7eb;
     border-radius:16px;
     overflow:hidden;
