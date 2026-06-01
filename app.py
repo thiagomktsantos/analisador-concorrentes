@@ -9140,9 +9140,9 @@ Como interpretar as métricas desta postagem?
             else:
                 avatar_html = f'<div class="avatar" style="background:{cor}">{avatar_letras}</div>'
 
-        tem_criativo = bool(st.session_state.get(chave_criativo, ""))
-        tem_copy     = bool(st.session_state.get(chave_copy, ""))
-        tem_geral    = bool(st.session_state.get(chave_geral, "")) 
+            tem_criativo = bool(st.session_state.get(chave_criativo, ""))
+            tem_copy     = bool(st.session_state.get(chave_copy, ""))
+            tem_geral    = bool(st.session_state.get(chave_geral, "")) 
 
             components.html(f"""
 <!DOCTYPE html><html>
