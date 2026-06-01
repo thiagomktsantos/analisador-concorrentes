@@ -2794,6 +2794,11 @@ elif st.session_state.pagina == "sites":
     emp = st.session_state.dados["minha_empresa"]
     concorrentes = st.session_state.dados["concorrentes"]
 
+    if "redes_analises_salvas" not in st.session_state:
+    st.session_state.redes_analises_salvas = []
+    if "redes_analise_vistas" not in st.session_state:
+    st.session_state.redes_analise_vistas = 0
+
     # ── Inicializar estados ────────────────────────────────────────
     if "sites_main_tab" not in st.session_state:
         st.session_state.sites_main_tab = "sites"
@@ -8527,76 +8532,94 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             st.session_state.redes_aba_ativa = i
             st.rerun()
 
+    analises_redes_para_rm = st.session_state.get("redes_analises_salvas", [])
+    acoes_rm_redes = {}
+    for i in range(len(analises_redes_para_rm)):
+        acoes_rm_redes[f"rm_{i}"] = st.button(f"_rm_redes_analise_{i}_", key=f"btn_rm_redes_analise_{i}")
+
+    rm_css_redes = "\n".join([
+        f".st-key-btn_rm_redes_analise_{i} {{ display: none !important; }}"
+        f".stElementContainer:has(.st-key-btn_rm_redes_analise_{i}) {{ display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important; }}"
+        for i in range(len(analises_redes_para_rm))
+    ])
+    st.markdown(f"<style>{rm_css_redes}</style>", unsafe_allow_html=True)
+
+    for i in range(len(analises_redes_para_rm) - 1, -1, -1):
+        if acoes_rm_redes.get(f"rm_{i}"):
+            st.session_state.redes_analises_salvas.pop(i)
+            st.rerun()
+
     main_tab = st.session_state.redes_main_tab
 
     # ══════════════════════════════════════════════════════════════════
     # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
     # ══════════════════════════════════════════════════════════════════
 
+analises_redes_nav = st.session_state.get("redes_analises_salvas", [])
+    qtd_redes_analises = len(analises_redes_nav)
+
+    nao_lidas_redes = max(0, qtd_redes_analises - st.session_state.redes_analise_vistas)
+    if main_tab == "analise":
+        st.session_state.redes_analise_vistas = qtd_redes_analises
+        nao_lidas_redes = 0
+
     components.html(f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }}
-.nav-bar {{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:12px;
-    width:100%;
-}}
+.nav-bar {{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; width:100%; }}
 .nav-item {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:14px;
-    padding:16px 20px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    gap:14px;
-    transition:all 0.15s;
-    position:relative;
-    overflow:hidden;
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:16px 20px; cursor:pointer; display:flex; align-items:center;
+    gap:14px; transition:all 0.15s; position:relative; overflow:hidden;
 }}
-.nav-item:hover {{
-    border-color:#3a9fd6;
-    box-shadow:0 2px 12px rgba(58,159,214,0.12);
-}}
+.nav-item:hover {{ border-color:#3a9fd6; box-shadow:0 2px 12px rgba(58,159,214,0.12); }}
 .nav-item.active {{
-    background:#0e2a47;
-    border-color:#0e2a47;
+    background:#0e2a47; border-color:#0e2a47;
     box-shadow:0 4px 20px rgba(14,42,71,0.22);
 }}
 .nav-item.active::after {{
-    content:'';
-    position:absolute;
-    bottom:0;left:0;right:0;
-    height:3px;
+    content:''; position:absolute; bottom:0;left:0;right:0; height:3px;
     background:linear-gradient(90deg,#3a9fd6,#2ecc71);
     border-radius:0 0 14px 14px;
 }}
 .nav-icon {{
     width:40px;height:40px;border-radius:10px;
     display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-    background:#f3f4f6;
-    transition:background 0.15s;
+    flex-shrink:0; background:#f3f4f6; transition:background 0.15s;
 }}
-.nav-item.active .nav-icon {{
-    background:rgba(255,255,255,0.12);
-}}
+.nav-item.active .nav-icon {{ background:rgba(255,255,255,0.12); }}
 .nav-icon svg {{ width:20px;height:20px; }}
 .nav-content {{ flex:1;min-width:0; }}
-.nav-title {{
-    font-size:15px;font-weight:700;color:#1a2e4a;
-    display:block;margin-bottom:2px;
-}}
+.nav-title {{ font-size:15px;font-weight:700;color:#1a2e4a; display:block;margin-bottom:2px; }}
 .nav-item.active .nav-title {{ color:#ffffff; }}
-.nav-sub {{
-    font-size:12px;color:#9ca3af;
-}}
+.nav-sub {{ font-size:12px;color:#9ca3af; }}
 .nav-item.active .nav-sub {{ color:rgba(255,255,255,0.55); }}
+.nav-right {{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }}
+.count-badge {{
+    min-width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; padding:0 5px;
+    background:#e5e7eb; color:#6b7280;
+}}
+.count-badge.has {{ background:#3a9fd6; color:#fff; }}
+.nav-item.active .count-badge {{ background:rgba(255,255,255,0.18); color:#fff; }}
+.nav-item.active .count-badge.has {{ background:rgba(58,159,214,0.5); color:#fff; }}
+.new-badge {{
+    background:#ef4444; color:#fff;
+    font-size:10px; font-weight:800;
+    padding:2px 7px; border-radius:20px;
+    letter-spacing:0.3px; text-transform:uppercase;
+    animation: pulse 1.5s infinite;
+}}
+@keyframes pulse {{
+    0%,100% {{ opacity:1; transform:scale(1); }}
+    50%      {{ opacity:0.75; transform:scale(0.95); }}
+}}
 </style>
 <div class="nav-bar">
+
     <div class="nav-item {'active' if main_tab == 'perfis' else ''}" onclick="triggerTab('perfis_tab')">
         <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'perfis' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -8610,8 +8633,11 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <span class="nav-title">Perfis configurados</span>
             <span class="nav-sub">Visualize e analise cada perfil individualmente</span>
         </div>
-        <div style="background:#3a9fd6;color:#fff;font-size:12px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{len(ok)}</div>
+        <div class="nav-right">
+            <div class="count-badge {'has' if len(ok) > 0 else ''}">{len(ok)}</div>
+        </div>
     </div>
+
     <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('analise_tab')">
         <div class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="{'#ffffff' if main_tab == 'analise' else '#6b7280'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -8620,10 +8646,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
         </div>
         <div class="nav-content">
             <span class="nav-title">Análise de IA</span>
-            <span class="nav-sub">Relatório comparativo completo</span>
+            <span class="nav-sub">Relatórios individuais e comparativos</span>
         </div>
-        <div style="background:#3a9fd6;color:#fff;font-size:12px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{len(ok)}</div>
+        <div class="nav-right">
+            <div class="count-badge {'has' if qtd_redes_analises > 0 else ''}">{qtd_redes_analises}</div>
+            {'<div class="new-badge">NOVA</div>' if nao_lidas_redes > 0 else ''}
+        </div>
     </div>
+
 </div>
 <script>
 function triggerTab(label) {{
@@ -8919,6 +8949,19 @@ Escreva uma versão melhorada da bio (máx. 150 caracteres).
 """
                         resp = gemini_model.generate_content(prompt_bio)
                         st.session_state[chave_bio_ia] = resp.text
+                        import datetime as _dt_redes
+                        st.session_state.redes_analises_salvas = [
+                            a for a in st.session_state.redes_analises_salvas
+                            if not (a.get("tipo") == "bio" and a.get("perfil") == r.get("handle"))
+                        ]
+                        st.session_state.redes_analises_salvas.append({
+                            "titulo": f"Bio — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                            "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "relatorio": resp.text,
+                            "tipo": "bio",
+                            "perfil": r.get("handle", ""),
+                            "nome": r["nome"],
+                        })
                         st.rerun()
                     except Exception as e:
                         st.session_state[chave_bio_ia] = f"Erro: {e}"
@@ -9001,6 +9044,20 @@ Como interpretar as métricas desta postagem?
 2 ações concretas para aumentar o engajamento.
 """)
                                 st.session_state[chave_post_ia] = resp_post.text
+                                import datetime as _dt_redes
+                                st.session_state.redes_analises_salvas = [
+                                    a for a in st.session_state.redes_analises_salvas
+                                    if not (a.get("tipo") == "postagem" and a.get("perfil") == r.get("handle") and a.get("post_idx") == jp)
+                                ]
+                                st.session_state.redes_analises_salvas.append({
+                                    "titulo": f"Postagem {jp+1} — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                                    "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                                    "relatorio": resp_post.text,
+                                    "tipo": "postagem",
+                                    "perfil": r.get("handle", ""),
+                                    "nome": r["nome"],
+                                    "post_idx": jp,
+                                })
                                 st.rerun()
                             except Exception as e_post:
                                 st.session_state[chave_post_ia] = f"Erro: {e_post}"
@@ -9811,6 +9868,19 @@ Responda em português com:
 Seja direto e objetivo.
 """)
                             st.session_state[chave_criativo] = resp.text
+                            import datetime as _dt_redes
+                            st.session_state.redes_analises_salvas = [
+                                a for a in st.session_state.redes_analises_salvas
+                                if not (a.get("tipo") == "criativos" and a.get("perfil") == r.get("handle"))
+                            ]
+                            st.session_state.redes_analises_salvas.append({
+                                "titulo": f"Criativos — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                                "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                                "relatorio": resp.text,
+                                "tipo": "criativos",
+                                "perfil": r.get("handle", ""),
+                                "nome": r["nome"],
+                            })
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_criativo] = f"Erro: {e}"
@@ -9834,6 +9904,19 @@ Responda em português com:
 Seja direto e objetivo.
 """)
                             st.session_state[chave_copy] = resp.text
+                            import datetime as _dt_redes
+                            st.session_state.redes_analises_salvas = [
+                                a for a in st.session_state.redes_analises_salvas
+                                if not (a.get("tipo") == "copy" and a.get("perfil") == r.get("handle"))
+                            ]
+                            st.session_state.redes_analises_salvas.append({
+                                "titulo": f"Copy — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                                "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                                "relatorio": resp.text,
+                                "tipo": "copy",
+                                "perfil": r.get("handle", ""),
+                                "nome": r["nome"],
+                            })
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_copy] = f"Erro: {e}"
@@ -9857,6 +9940,19 @@ Responda em português com:
 Seja direto e objetivo.
 """)
                             st.session_state[chave_geral] = resp.text
+                            import datetime as _dt_redes
+                            st.session_state.redes_analises_salvas = [
+                                a for a in st.session_state.redes_analises_salvas
+                                if not (a.get("tipo") == "geral_perfil" and a.get("perfil") == r.get("handle"))
+                            ]
+                            st.session_state.redes_analises_salvas.append({
+                                "titulo": f"Análise Geral — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                                "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                                "relatorio": resp.text,
+                                "tipo": "geral_perfil",
+                                "perfil": r.get("handle", ""),
+                                "nome": r["nome"],
+                            })
                             st.rerun()
                         except Exception as e:
                             st.session_state[chave_geral] = f"Erro: {e}"
@@ -9988,108 +10084,318 @@ setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight,
     # ══════════════════════════════════════════════════════════════════
  
     elif main_tab == "analise":
- 
-        if not ok:
-            st.markdown("""
-            <div style='background:#fff;border:1px dashed #d1d5db;border-radius:14px;
-                        padding:48px 32px;text-align:center;margin-top:8px'>
-                <div style='font-size:32px;margin-bottom:12px'>📊</div>
-                <div style='font-size:16px;font-weight:600;color:#374151;margin-bottom:6px'>Sem dados para análise</div>
-                <div style='font-size:14px;color:#9ca3af'>Colete dados primeiro clicando em <b>Coletar dados</b>.</div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.stop()
- 
-        chave_comp_redes = "ia_redes_comparativo"
-        if chave_comp_redes not in st.session_state:
-            st.session_state[chave_comp_redes] = ""
- 
-        st.markdown("""
+
+        import json as _json_redes
+        import datetime as _dt_redes
+
+        analises_redes = st.session_state.get("redes_analises_salvas", [])
+
+        # Marcar como vistas
+        st.session_state.redes_analise_vistas = len(analises_redes)
+
+        # Ghost buttons para gerar análises ausentes
+        tipos_pendentes = {
+            "comparativo": not any(a.get("tipo") == "comparativo" for a in analises_redes),
+        }
+        for rr in ok:
+            h = rr.get("handle", "")
+            for tipo in ["criativos", "copy", "geral_perfil"]:
+                chave_flag = f"pendente_{tipo}_{h}"
+                tipos_pendentes[chave_flag] = not any(
+                    a.get("tipo") == tipo and a.get("perfil") == h for a in analises_redes
+                )
+
+       # Ghost button comparativo
+        ghost_comp_key = "btn_redes_comp_geral"
+        st.markdown(f"""
         <style>
-        .st-key-btn_redes_comp_geral {
+        .st-key-{ghost_comp_key} {{
             position:fixed !important; top:-9999px !important; left:-9999px !important;
             width:0 !important; height:0 !important; overflow:hidden !important;
             opacity:0 !important; pointer-events:none !important; display:none !important;
-        }
-        .stElementContainer:has(.st-key-btn_redes_comp_geral) {
+        }}
+        .stElementContainer:has(.st-key-{ghost_comp_key}) {{
             display:none !important; height:0 !important; min-height:0 !important;
             max-height:0 !important; padding:0 !important; margin:0 !important; overflow:hidden !important;
-        }
+        }}
         </style>
         """, unsafe_allow_html=True)
- 
-        if st.button("redes_comparativo", key="btn_redes_comp_geral"):
+
+        if st.button("redes_comparativo", key=ghost_comp_key):
             if gemini_model is None:
-                st.session_state[chave_comp_redes] = "Configure GEMINI_API_KEY nos secrets."
+                st.toast("Configure GEMINI_API_KEY nos secrets.", icon="⚠️")
+            elif not ok:
+                st.toast("Nenhum perfil com dados disponível.", icon="⚠️")
             else:
-                resumos_comp = []
-                for rr in ok:
-                    resumos_comp.append(f"""
-Empresa: {rr['nome']} ({rr.get('handle','')})
-Bio: {rr.get('bio','')}
-Seguidores: {rr.get('seguidores',0)} | Posts: {rr.get('total_posts',0)}
-Eng. médio: {rr.get('eng_medio',0)} ({rr.get('eng_pct',0):.2f}%)
-""")
-                with st.spinner("Gerando análise comparativa…"):
+                chave_comp_redes = "ia_comp_redes_geral"
+                resumo_perfis = "\n\n".join([
+                    f"Perfil: {rr.get('handle','')} — {rr.get('nome_exibido', rr.get('nome',''))}\n"
+                    f"Seguidores: {rr.get('seguidores',0)} | Posts: {rr.get('total_posts',0)} | "
+                    f"Eng. médio: {rr.get('eng_medio',0)} ({rr.get('eng_pct',0):.2f}%)\n"
+                    f"Bio: {rr.get('bio','')}\n"
+                    f"Últimos posts:\n" + "\n".join([
+                        f"  - {p.get('date','')} | {p.get('likes',0)} curtidas "
+                        f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+                        for p in rr.get("posts", [])[:6]
+                    ])
+                    for rr in ok
+                ])
+                with st.spinner("Gerando comparativo…"):
                     try:
-                        resp = gemini_model.generate_content(f"""Você é especialista em inteligência competitiva e redes sociais.
-Compare os perfis do Instagram abaixo e gere uma análise competitiva completa em português.
- 
-{'---'.join(resumos_comp)}
- 
----
-### 🏆 Ranking de Presença no Instagram
-### 📊 Comparativo de Métricas
-### 🎯 Estratégias Comparadas
-### ✍️ Tom de Voz e Posicionamento
-### ⚔️ Análise Competitiva
-### 💡 Recomendações Estratégicas (3 ações concretas)""")
+                        resp = gemini_model.generate_content(f"""
+Você é especialista em marketing digital e redes sociais.
+Compare os perfis do Instagram abaixo e faça uma análise comparativa estratégica em português.
+
+{resumo_perfis}
+
+Responda com:
+### Visão Geral Comparativa
+Comparação resumida dos perfis em termos de presença e engajamento.
+
+### Quem se Destaca e Por Quê
+Destaque o perfil com melhor desempenho e explique os motivos.
+
+### Pontos Fortes de Cada Perfil
+Para cada perfil, 1-2 pontos fortes.
+
+### Oportunidades Identificadas
+2-3 oportunidades estratégicas para os perfis com menor desempenho.
+
+### Recomendações Finais
+3 ações concretas para melhorar a presença geral no Instagram.
+
+Seja direto, objetivo e baseado nos dados fornecidos.
+""")
                         st.session_state[chave_comp_redes] = resp.text
+                        import datetime as _dt_redes
+                        st.session_state.redes_analises_salvas = [
+                            a for a in st.session_state.redes_analises_salvas
+                            if a.get("tipo") != "comparativo"
+                        ]
+                        st.session_state.redes_analises_salvas.append({
+                            "titulo": f"Comparativo Geral — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                            "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "relatorio": resp.text,
+                            "tipo": "comparativo",
+                            "perfis": [rr.get("handle","") for rr in ok],
+                        })
                         st.rerun()
-                    except Exception as ex:
-                        st.session_state[chave_comp_redes] = f"Erro: {ex}"
-                        st.rerun()
- 
-        comp_html_redes = st.session_state.get(chave_comp_redes, "").replace("\n", "<br>")
- 
-        components.html(f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow:visible; }}
-body {{ padding-bottom:8px; }}
-.wrap {{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }}
-.hdr {{ padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }}
-.hdr-title {{ font-size:16px; font-weight:800; color:#1a2e4a; }}
-.hdr-sub {{ font-size:13px; color:#9ca3af; }}
-.body {{ padding:22px; font-size:14px; color:#374151; line-height:1.8; min-height:80px; }}
-.empty {{ text-align:center; color:#9ca3af; font-size:14px; padding:60px 24px; }}
-.footer {{ padding:16px 22px; border-top:1px solid #f3f4f6; background:#f9fafb; }}
-.btn-gerar {{
-    display:inline-flex; align-items:center; gap:8px;
-    padding:12px 28px; border:none; border-radius:10px;
-    background:#0e2a47; font-size:15px; font-weight:700; color:#fff;
-    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
-}}
-.btn-gerar:hover {{ background:#1a3a5c; }}
-</style>
-<div class="wrap">
-    <div class="hdr">
-        <div>
-            <div class="hdr-title">✨ Análise Comparativa de Redes Sociais</div>
-            <div class="hdr-sub">Comparativo inteligente de todos os perfis configurados</div>
+                    except Exception as e:
+                        st.toast(f"Erro ao gerar comparativo: {e}", icon="⚠️")
+
+        # Separar por tipo para exibição
+        por_tipo = {
+            "bio":         [(i, a) for i, a in enumerate(analises_redes) if a.get("tipo") == "bio"],
+            "postagem":    [(i, a) for i, a in enumerate(analises_redes) if a.get("tipo") == "postagem"],
+            "criativos":   [(i, a) for i, a in enumerate(analises_redes) if a.get("tipo") == "criativos"],
+            "copy":        [(i, a) for i, a in enumerate(analises_redes) if a.get("tipo") == "copy"],
+            "geral_perfil":[(i, a) for i, a in enumerate(analises_redes) if a.get("tipo") == "geral_perfil"],
+            "comparativo": [(i, a) for i, a in enumerate(analises_redes) if a.get("tipo") == "comparativo"],
+        }
+
+        relatorios_js = {str(i): a.get("relatorio", "") for i, a in enumerate(analises_redes)}
+        relatorios_json = _json_redes.dumps(relatorios_js, ensure_ascii=False)
+
+        def _card_redes(idx_real, analise):
+            titulo = analise.get("titulo", "—")
+            tipo   = analise.get("tipo", "")
+            icons  = {"bio": "👤", "postagem": "📸", "criativos": "🎨", "copy": "✍️", "geral_perfil": "📊", "comparativo": "🏆"}
+            icon   = icons.get(tipo, "📋")
+            nome_arquivo = titulo.replace(" ", "_").replace("/","_").replace("(","").replace(")","").replace(".","")
+            return f"""
+<div class="analise-card" id="card_{idx_real}">
+    <div class="card-top" onclick="toggleCard({idx_real})">
+        <div class="card-icon-wrap">{icon}</div>
+        <div class="card-info">
+            <div class="card-titulo">{titulo}</div>
+        </div>
+        <div class="card-chevron" id="chev_{idx_real}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
     </div>
-    <div class="body">
-        {'<div>' + comp_html_redes + '</div>' if comp_html_redes else '<div class="empty">Clique em <b>Gerar Análise Comparativa</b> abaixo para comparar todos os perfis com IA.</div>'}
+    <div class="card-body" id="body_{idx_real}" style="display:none">
+        <div class="card-relatorio" id="rel_{idx_real}"></div>
+        <div class="card-acoes">
+            <button class="btn-dl" onclick="baixar({idx_real}, '{nome_arquivo}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar .txt
+            </button>
+            <button class="btn-rm" onclick="remover({idx_real})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                Remover
+            </button>
+        </div>
     </div>
-    <div class="footer">
-        <button class="btn-gerar" onclick="triggerBtn('redes_comparativo')">
-            {'🔄 Regerar Análise' if comp_html_redes else '⚡ Gerar Análise Comparativa'}
-        </button>
+</div>"""
+
+        def _secao_redes(titulo_sec, icon_sec, lista, tipo_sec, btn_label=None, btn_trigger=None):
+            items_html = "".join(_card_redes(i, a) for i, a in reversed(lista)) if lista else ""
+            empty_html = ""
+            if not lista:
+                if btn_label and btn_trigger:
+                    empty_html = f"""
+<div class="empty-state">
+    <div class="empty-icon">{icon_sec}</div>
+    <div class="empty-txt">Nenhuma análise de {titulo_sec.lower()} ainda.</div>
+    <button class="btn-gerar-vazio" onclick="triggerBtn('{btn_trigger}')">{btn_label}</button>
+</div>"""
+                else:
+                    empty_html = f"""
+<div class="empty-state">
+    <div class="empty-icon">{icon_sec}</div>
+    <div class="empty-txt">Nenhuma análise de {titulo_sec.lower()} ainda.<br>Vá em <b>Perfis configurados</b> para gerar.</div>
+</div>"""
+            return f"""
+<div class="secao">
+    <div class="secao-header">
+        <div class="secao-icon-lbl">{icon_sec}</div>
+        <div class="secao-titulo">{titulo_sec}</div>
+        {'<button class="btn-regerar" onclick="triggerBtn(\'' + btn_trigger + '\')">' + btn_label + '</button>' if btn_label and btn_trigger and lista else ''}
+        <div class="secao-count {'has' if lista else ''}">{len(lista)}</div>
     </div>
-</div>
+    {'<div class="secao-cards">' + items_html + '</div>' if lista else empty_html}
+</div>"""
+
+        html_analise_redes = f"""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+body {{ background:transparent; overflow:visible; padding-bottom:16px; }}
+.secao {{ margin-bottom:20px; }}
+.secao-header {{
+    display:flex; align-items:center; gap:8px;
+    padding:0 4px 10px; border-bottom:2px solid #e5e7eb; margin-bottom:10px;
+}}
+.secao-icon-lbl {{ font-size:16px; flex-shrink:0; }}
+.secao-titulo {{
+    font-size:13px; font-weight:800; color:#6b7280;
+    text-transform:uppercase; letter-spacing:0.8px; flex:1;
+}}
+.btn-regerar {{
+    padding:4px 12px; border-radius:20px;
+    border:1px solid #3a9fd6; background:#eff6ff;
+    font-size:11px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s; white-space:nowrap;
+}}
+.btn-regerar:hover {{ background:#dbeafe; }}
+.secao-count {{
+    background:#f3f4f6; color:#9ca3af;
+    font-size:12px; font-weight:700;
+    padding:2px 10px; border-radius:20px; flex-shrink:0;
+}}
+.secao-count.has {{ background:#3a9fd6; color:#fff; }}
+.secao-cards {{
+    display:flex; flex-direction:column;
+    border:1px solid #e5e7eb; border-radius:12px;
+    overflow:hidden; background:#fff;
+}}
+.analise-card {{ border-bottom:1px solid #f3f4f6; }}
+.analise-card:last-child {{ border-bottom:none; }}
+.card-top {{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px; cursor:pointer;
+    transition:background 0.12s; user-select:none;
+}}
+.card-top:hover {{ background:#f9fafb; }}
+.card-icon-wrap {{ font-size:18px; flex-shrink:0; }}
+.card-info {{ flex:1; min-width:0; }}
+.card-titulo {{
+    font-size:14px; font-weight:600; color:#111827;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.card-chevron {{
+    color:#d1d5db; flex-shrink:0; transition:transform 0.2s, color 0.15s;
+    display:flex; align-items:center;
+}}
+.card-chevron.open {{ transform:rotate(180deg); color:#3a9fd6; }}
+.card-top:hover .card-chevron {{ color:#9ca3af; }}
+.card-body {{ padding:16px; background:#fafbfc; border-top:1px solid #f3f4f6; }}
+.card-relatorio {{
+    font-size:13px; color:#374151; line-height:1.8;
+    max-height:400px; overflow-y:auto;
+    padding:14px 16px; border-radius:8px;
+    background:#fff; border:1px solid #e5e7eb;
+    margin-bottom:12px; white-space:pre-wrap; word-break:break-word;
+}}
+.card-acoes {{ display:flex; gap:8px; }}
+.btn-dl {{
+    flex:1; padding:9px 14px; border-radius:8px;
+    border:1px solid #e5e7eb; background:#fff;
+    font-size:13px; font-weight:600; color:#374151;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+}}
+.btn-dl:hover {{ background:#eff6ff; border-color:#3a9fd6; color:#1d4ed8; }}
+.btn-rm {{
+    padding:9px 14px; border-radius:8px;
+    border:1px solid #e5e7eb; background:#fff;
+    font-size:13px; font-weight:600; color:#9ca3af;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+}}
+.btn-rm:hover {{ background:#fef2f2; border-color:#fca5a5; color:#dc2626; }}
+.empty-state {{
+    border:1px dashed #e5e7eb; border-radius:12px;
+    padding:28px 24px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:#fff;
+}}
+.empty-icon {{ font-size:24px; opacity:0.5; }}
+.empty-txt {{ font-size:13px; color:#9ca3af; line-height:1.6; }}
+.btn-gerar-vazio {{
+    margin-top:4px; padding:9px 20px; border-radius:8px;
+    border:1px solid #3a9fd6; background:#eff6ff;
+    font-size:13px; font-weight:700; color:#1d4ed8;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s;
+}}
+.btn-gerar-vazio:hover {{ background:#dbeafe; }}
+</style>
+
+{_secao_redes("Análise de Bio", "👤", por_tipo["bio"], "bio")}
+{_secao_redes("Análise de Postagens", "📸", por_tipo["postagem"], "postagem")}
+{_secao_redes("Análise de Criativos", "🎨", por_tipo["criativos"], "criativos")}
+{_secao_redes("Análise de Copy", "✍️", por_tipo["copy"], "copy")}
+{_secao_redes("Análise Geral por Perfil", "📊", por_tipo["geral_perfil"], "geral_perfil")}
+{_secao_redes("Comparativo Geral", "🏆", por_tipo["comparativo"], "comparativo",
+    btn_label="⚡ Gerar Comparativo" if por_tipo["comparativo"] else "⚡ Gerar Comparativo",
+    btn_trigger="redes_comparativo")}
+
 <script>
+var RELATORIOS = {relatorios_json};
+
+function toggleCard(idx) {{
+    var body = document.getElementById('body_' + idx);
+    var chev = document.getElementById('chev_' + idx);
+    var rel  = document.getElementById('rel_' + idx);
+    var aberto = body.style.display !== 'none';
+    body.style.display = aberto ? 'none' : 'block';
+    chev.classList.toggle('open', !aberto);
+    if (!aberto && rel && !rel.dataset.loaded) {{
+        rel.textContent = RELATORIOS[String(idx)] || '';
+        rel.dataset.loaded = '1';
+    }}
+    setTimeout(ajustarAltura, 60);
+}}
+
+function remover(idx) {{
+    var targetText = '_rm_redes_analise_' + idx + '_';
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {{
+        if ((btns[i].innerText || '').trim() === targetText) {{ btns[i].click(); return; }}
+    }}
+}}
+
+function baixar(idx, nome) {{
+    var conteudo = RELATORIOS[String(idx)] || '';
+    var blob = new Blob([conteudo], {{type: 'text/plain;charset=utf-8'}});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome + '.txt';
+    a.click();
+}}
+
 function triggerBtn(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
@@ -10097,16 +10403,57 @@ function triggerBtn(label) {{
         if (txt === label) {{ b.click(); return; }}
     }}
 }}
-function syncHeight() {{
+
+function ajustarAltura() {{
     var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var frames = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < frames.length; i++) {{
-        try {{ if (frames[i].contentWindow === window) {{ frames[i].style.height = (h + 12) + 'px'; break; }} }} catch(e) {{}}
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {{
+        try {{
+            if (iframes[i].contentWindow === window) {{
+                iframes[i].style.height = (h + 8) + 'px'; break;
+            }}
+        }} catch(e) {{}}
     }}
 }}
-if (window.ResizeObserver) new ResizeObserver(syncHeight).observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
+
+var ro = new ResizeObserver(ajustarAltura);
+ro.observe(document.body);
+window.addEventListener('load', ajustarAltura);
+setTimeout(ajustarAltura, 200);
+setTimeout(ajustarAltura, 600);
+setTimeout(ajustarAltura, 1200);
+</script>"""
+
+        if not analises_redes:
+            components.html("""
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:transparent; font-family:'DM Sans',sans-serif; overflow:hidden; }
+.empty {
+    background:#fff; border:1px dashed #d1d5db; border-radius:14px;
+    padding:64px 48px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+</style>
+<div class="empty">
+    <div style="font-size:40px">📋</div>
+    <div style="font-size:18px;font-weight:700;color:#374151">Nenhuma análise ainda</div>
+    <div style="font-size:14px;color:#9ca3af;line-height:1.7;max-width:400px">
+        Vá em <b>Perfis configurados</b>, abra um perfil e gere análises de bio,
+        postagens, criativos ou copy. O comparativo geral fica disponível aqui.
+    </div>
+</div>
+<script>
+(function() {
+    var iframes = window.parent.document.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {
+        try { if (iframes[i].contentWindow === window) {
+            iframes[i].style.height = '300px'; break;
+        } } catch(e) {}
+    }
+})();
 </script>
-""", height=200, scrolling=False)
+""", height=300, scrolling=False)
+        else:
+            components.html(html_analise_redes, height=300, scrolling=False)
