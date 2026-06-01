@@ -8610,6 +8610,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <span class="nav-title">Perfis configurados</span>
             <span class="nav-sub">Visualize e analise cada perfil individualmente</span>
         </div>
+        <div style="background:#3a9fd6;color:#fff;font-size:12px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{len(ok)}</div>
     </div>
     <div class="nav-item {'active' if main_tab == 'analise' else ''}" onclick="triggerTab('analise_tab')">
         <div class="nav-icon">
@@ -8621,6 +8622,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             <span class="nav-title">Análise de IA</span>
             <span class="nav-sub">Relatório comparativo completo</span>
         </div>
+        <div style="background:#3a9fd6;color:#fff;font-size:12px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{len(ok)}</div>
     </div>
 </div>
 <script>
@@ -8752,6 +8754,10 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     padding:3px 10px; border-radius:20px;
     font-size:11px; font-weight:700;
 }}
+.badge-minha, .badge-conc {{
+    flex-shrink: 0;
+    margin-left: auto;  /* ← adicionar */
+}}
 </style>
 <div class="main-wrap">
     <div class="cards-grid" id="cards-grid"></div>
@@ -8778,9 +8784,10 @@ function buildUI() {{
             + '</svg>'
             + '</div>'
             + '<div class="emp-info">'
-            + '<div class="emp-nome">' + e.nome + (e.handle ? ' <span class="emp-sep">|</span> <span class="emp-handle-inline">' + e.handle + '</span>' : '') + '</div>'
-            + badgeHtml
-            + '</div>';
+            + '<div class="emp-nome">' + e.nome + '</div>'
+            + (e.handle ? '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">' + e.handle + '</div>' : '')
+            + '</div>'
+            + badgeHtml; 
         card.addEventListener('click', function() {{ selectAba(e.i); }});
         grid.appendChild(card);
     }});
