@@ -8736,7 +8736,6 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
 .emp-nome {{
     font-size:14px; font-weight:700; color:#1a2e4a;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-bottom:4px;
 }}
 .emp-sep {{ color: #d1d5db; font-weight: 400; }}
 .emp-handle-inline {{ font-size: 13px; font-weight: 400; color: #9ca3af; }}
@@ -8785,7 +8784,7 @@ function buildUI() {{
             + '</div>'
             + '<div class="emp-info">'
             + '<div class="emp-nome">' + e.nome + '</div>'
-            + (e.handle ? '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">' + e.handle + '</div>' : '')
+            + (e.handle ? '<div style="font-size:12px;color:#9ca3af;">' + e.handle + '</div>' : '')
             + '</div>'
             + badgeHtml; 
         card.addEventListener('click', function() {{ selectAba(e.i); }});
