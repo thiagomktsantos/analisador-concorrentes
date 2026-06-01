@@ -2795,9 +2795,9 @@ elif st.session_state.pagina == "sites":
     concorrentes = st.session_state.dados["concorrentes"]
 
     if "redes_analises_salvas" not in st.session_state:
-    st.session_state.redes_analises_salvas = []
+        st.session_state.redes_analises_salvas = []
     if "redes_analise_vistas" not in st.session_state:
-    st.session_state.redes_analise_vistas = 0
+        st.session_state.redes_analise_vistas = 0
 
     # ── Inicializar estados ────────────────────────────────────────
     if "sites_main_tab" not in st.session_state:
