@@ -198,6 +198,7 @@ def carregar_dados_usuario(user_id: str) -> dict:
                 "concorrentes": row.get("concorrentes", []),
                 "metricas_redes": row.get("metricas_redes", {}),
                 "ads_cache": row.get("ads_cache", {}),
+                "analises_salvas": row.get("analises_salvas", []),
             }
     except Exception:
         pass
@@ -211,6 +212,7 @@ def carregar_dados_usuario(user_id: str) -> dict:
         "concorrentes": [],
         "metricas_redes": {},
         "ads_cache": {},
+        "analises_salvas": [],
     }
 
 def salvar_dados_usuario(user_id: str):
@@ -220,6 +222,7 @@ def salvar_dados_usuario(user_id: str):
             "minha_empresa": st.session_state.dados["minha_empresa"],
             "concorrentes": st.session_state.dados["concorrentes"],
             "metricas_redes": st.session_state.metricas_redes,
+            "analises_salvas": st.session_state.get("analises_salvas", []),
         }
         supabase.table("ci_dados").upsert(payload, on_conflict="user_id").execute()
     except Exception as e:
@@ -912,7 +915,8 @@ if not st.session_state.logado:
                             "concorrentes": dados_db.get("concorrentes", []),
                         }
                         st.session_state.metricas_redes = dados_db.get("metricas_redes", {})
-                        st.session_state.ads_cache = dados_db.get("ads_cache", {})  # ← CORREÇÃO
+                        st.session_state.ads_cache = dados_db.get("ads_cache", {})
+                        st.session_state.analises_salvas = dados_db.get("analises_salvas", [])  
                         st.rerun()
                     else:
                         st.error(f"Erro ao entrar: {err}")
@@ -2923,6 +2927,7 @@ html, body { background: transparent; overflow: hidden; }
     for i in range(len(analises_para_rm) - 1, -1, -1):
         if acoes_rm.get(f"rm_{i}"):
             st.session_state.analises_salvas.pop(i)
+            salvar_dados_usuario(st.session_state.user.id)
             st.rerun()
 
     # ══════════════════════════════════════════════════════════════
@@ -3095,6 +3100,8 @@ Seja direto e objetivo, baseando-se apenas no conteúdo real do site.
                         "url": s["url"],
                     })
 
+                    salvar_dados_usuario(st.session_state.user.id)
+
                     _render_modal_site("concluido", s["nome"], 100)
                     import time as _time; _time.sleep(1.5)
                     modal_site_placeholder.empty()
@@ -3256,6 +3263,8 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             "sites": nomes_com_url,
             "tipo": "geral",
         })
+
+        salvar_dados_usuario(st.session_state.user.id)
 
         _render_modal_geral("concluido", "Relatório geral pronto!", 100)
         import time as _time; _time.sleep(1.5)
