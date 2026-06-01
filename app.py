@@ -9230,20 +9230,40 @@ body{{padding-bottom:8px;}}
     text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
 }}
 
-.tabs-bar {{ display:flex; background:#f9fafb; }}
-.tab-btn {{
-    flex:1; padding:14px 0; font-size:14px; font-weight:700; color:#374151;
-    background:transparent; border:none; cursor:pointer;
-    font-family:'DM Sans',sans-serif; border-bottom:3px solid transparent;
-    transition:all 0.15s;
-    display:flex; align-items:center; justify-content:center; gap:8px;
+/* ── BARRA DE ANÁLISES (substitui tabs-bar) ── */
+.analises-bar {{
+    border-top:1px solid #e5e7eb;
+    background:#f9fafb;
+    padding:16px 20px 18px;
 }}
-.tab-btn:hover {{ color:#374151; background:#f3f4f6; }}
-.tab-btn.active {{
-    color:#1a2e4a; border-bottom:4px solid #3a9fd6;
-    background:#fff; font-weight:800; border-top:1px solid #e5e7eb;
+.analises-bar-titulo {{
+    font-size:10px; font-weight:800; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:0.8px;
+    margin-bottom:12px;
 }}
-.tab-sep {{ width:1px; background:#e5e7eb; align-self:stretch; margin:8px 0; }}
+.analises-grid {{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;
+}}
+.atalho-idle, .atalho-done {{
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:6px; padding:16px 12px;
+    border-radius:12px; border:1px solid #e5e7eb;
+    background:#fff; cursor:pointer;
+    font-family:'DM Sans',sans-serif; transition:all 0.15s;
+    text-align:center;
+}}
+.atalho-idle:hover {{
+    border-color:#3a9fd6; background:#eff6ff;
+    box-shadow:0 2px 10px rgba(58,159,214,0.1);
+}}
+.atalho-done {{
+    border-color:#bbf7d0; background:#f0fdf4;
+}}
+.atalho-done:hover {{ border-color:#22c55e; background:#dcfce7; }}
+.atalho-emoji {{ font-size:22px; }}
+.atalho-nome {{ font-size:13px; font-weight:700; color:#1a2e4a; }}
+.atalho-desc {{ font-size:11px; color:#9ca3af; }}
+.atalho-done .atalho-desc {{ color:#15803d; font-weight:600; }}
 
 .filters-bar {{
     display:flex; align-items:center; gap:10px;
@@ -9417,15 +9437,25 @@ body{{padding-bottom:8px;}}
         {bio_resultado_html}
     </div>
 
-    <div class="tabs-bar">
-        <button class="tab-btn active">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            Postagens
-        </button>
+    <div class="analises-bar">
+        <div class="analises-bar-titulo">Gerar análises para este perfil</div>
+        <div class="analises-grid">
+            <button class="{'atalho-done' if tem_criativo else 'atalho-idle'}" onclick="trigger('__criativo_{aba_ativa}__')">
+                <span class="atalho-emoji">🎨</span>
+                <span class="atalho-nome">Criativos</span>
+                <span class="atalho-desc">{'✅ Gerado' if tem_criativo else 'Analisar estilo visual'}</span>
+            </button>
+            <button class="{'atalho-done' if tem_copy else 'atalho-idle'}" onclick="trigger('__copy_{aba_ativa}__')">
+                <span class="atalho-emoji">✍️</span>
+                <span class="atalho-nome">Copy</span>
+                <span class="atalho-desc">{'✅ Gerado' if tem_copy else 'Analisar legendas'}</span>
+            </button>
+            <button class="{'atalho-done' if tem_geral else 'atalho-idle'}" onclick="trigger('__geral_{aba_ativa}__')">
+                <span class="atalho-emoji">📊</span>
+                <span class="atalho-nome">Análise Geral</span>
+                <span class="atalho-desc">{'✅ Gerado' if tem_geral else 'Visão estratégica'}</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -9776,8 +9806,7 @@ function triggerBio() {{
     }}
 }}
 
-function triggerSub(sub) {{
-    var label = 'redes_sub_{aba_ativa}_' + sub;
+function trigger(label) {{
     var btns = window.parent.document.querySelectorAll('button');
     for (var b of btns) {{
         var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
@@ -9957,98 +9986,6 @@ Seja direto e objetivo.
         tem_copy     = bool(st.session_state.get(chave_copy, ""))
         tem_geral    = bool(st.session_state.get(chave_geral, ""))
 
-        atalhos_html = f"""
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-html {{ background:transparent; font-family:'DM Sans',sans-serif; }}
-body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
-.atalhos-wrap {{
-    background:#fff; border:1px solid #e5e7eb;
-    border-top:none; border-radius:0 0 14px 14px;
-    padding:20px; display:flex; flex-direction:column; gap:12px;
-}}
-.atalhos-titulo {{
-    font-size:11px; font-weight:800; color:#9ca3af;
-    text-transform:uppercase; letter-spacing:0.8px;
-    margin-bottom:4px;
-}}
-.atalhos-grid {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }}
-.atalho-btn {{
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:8px; padding:18px 12px;
-    border-radius:12px; border:1px solid #e5e7eb;
-    background:#f9fafb; cursor:pointer;
-    font-family:'DM Sans',sans-serif; transition:all 0.15s;
-    text-align:center;
-}}
-.atalho-btn:hover {{ border-color:#3a9fd6; background:#eff6ff; box-shadow:0 2px 10px rgba(58,159,214,0.1); }}
-.atalho-btn.done {{ border-color:#bbf7d0; background:#f0fdf4; }}
-.atalho-btn.done:hover {{ border-color:#22c55e; background:#dcfce7; }}
-.atalho-icon {{ font-size:24px; }}
-.atalho-lbl {{ font-size:13px; font-weight:700; color:#1a2e4a; }}
-.atalho-sub {{ font-size:11px; color:#9ca3af; }}
-.atalho-btn.done .atalho-sub {{ color:#15803d; font-weight:600; }}
-.ver-btn {{
-    width:100%; padding:11px; border-radius:8px;
-    border:1px solid #0e2a47; background:#0e2a47;
-    font-size:13px; font-weight:700; color:#fff;
-    cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:background 0.15s; text-align:center;
-}}
-.ver-btn:hover {{ background:#1a3a5c; }}
-</style>
-<div class="atalhos-wrap">
-    <div class="atalhos-titulo">Gerar análises para este perfil</div>
-    <div class="atalhos-grid">
-        <button class="atalho-btn {'done' if tem_criativo else ''}" onclick="trigger('__criativo_{aba_ativa}__')">
-            <span class="atalho-icon">🎨</span>
-            <span class="atalho-lbl">Criativos</span>
-            <span class="atalho-sub">{'✅ Gerado' if tem_criativo else 'Analisar estilo visual'}</span>
-        </button>
-        <button class="atalho-btn {'done' if tem_copy else ''}" onclick="trigger('__copy_{aba_ativa}__')">
-            <span class="atalho-icon">✍️</span>
-            <span class="atalho-lbl">Copy</span>
-            <span class="atalho-sub">{'✅ Gerado' if tem_copy else 'Analisar legendas'}</span>
-        </button>
-        <button class="atalho-btn {'done' if tem_geral else ''}" onclick="trigger('__geral_{aba_ativa}__')">
-            <span class="atalho-icon">📊</span>
-            <span class="atalho-lbl">Análise Geral</span>
-            <span class="atalho-sub">{'✅ Gerado' if tem_geral else 'Visão estratégica'}</span>
-        </button>
-    </div>
-    <button class="ver-btn" onclick="irParaAnalise()">Ver todas as análises salvas →</button>
-</div>
-<script>
-function trigger(label) {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === label) {{ b.click(); return; }}
-    }}
-}}
-function irParaAnalise() {{
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
-        if (txt === 'analise_tab') {{ b.click(); return; }}
-    }}
-}}
-function syncH() {{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    var iframes = window.parent.document.querySelectorAll('iframe');
-    for (var i = 0; i < iframes.length; i++) {{
-        try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+8)+'px'; break; }} }} catch(e) {{}}
-    }}
-}}
-var ro = new ResizeObserver(syncH);
-ro.observe(document.body);
-window.addEventListener('load', syncH);
-setTimeout(syncH, 100);
-</script>
-"""
-        components.html(atalhos_html, height=220, scrolling=False)
- 
     # ══════════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA — Comparativo geral
     # ══════════════════════════════════════════════════════════════════
