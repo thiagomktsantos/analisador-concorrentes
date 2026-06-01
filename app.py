@@ -9140,6 +9140,10 @@ Como interpretar as métricas desta postagem?
             else:
                 avatar_html = f'<div class="avatar" style="background:{cor}">{avatar_letras}</div>'
 
+        tem_criativo = bool(st.session_state.get(chave_criativo, ""))
+        tem_copy     = bool(st.session_state.get(chave_copy, ""))
+        tem_geral    = bool(st.session_state.get(chave_geral, "")) 
+
             components.html(f"""
 <!DOCTYPE html><html>
 <head>
@@ -9860,10 +9864,6 @@ setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight,
         for ch in [chave_criativo, chave_copy, chave_geral]:
             if ch not in st.session_state:
                 st.session_state[ch] = ""
-
-        tem_criativo = bool(st.session_state.get(chave_criativo, ""))
-        tem_copy     = bool(st.session_state.get(chave_copy, ""))
-        tem_geral    = bool(st.session_state.get(chave_geral, "")) 
 
         resumo_posts = "\n".join([
             f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
