@@ -8555,7 +8555,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
     # BARRA DE NAVEGAÇÃO PRINCIPAL (2 abas)
     # ══════════════════════════════════════════════════════════════════
 
-analises_redes_nav = st.session_state.get("redes_analises_salvas", [])
+    analises_redes_nav = st.session_state.get("redes_analises_salvas", [])
     qtd_redes_analises = len(analises_redes_nav)
 
     nao_lidas_redes = max(0, qtd_redes_analises - st.session_state.redes_analise_vistas)
