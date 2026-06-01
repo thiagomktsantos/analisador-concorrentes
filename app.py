@@ -8480,7 +8480,7 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
 
     # ── Estado de navegação ─────────────────────────────────────────
-        if "redes_main_tab" not in st.session_state:
+    if "redes_main_tab" not in st.session_state:
         st.session_state.redes_main_tab = "perfis"
     if "redes_aba_ativa" not in st.session_state:
         st.session_state.redes_aba_ativa = 0
