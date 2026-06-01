@@ -8887,7 +8887,7 @@ setTimeout(syncHeight, 200); setTimeout(syncHeight, 600);
         subtab_atual = st.session_state.get(redes_subtab_key, "postagens")
 
         # ── Ghost buttons subtabs ───────────────────────────────────
-        for sub in ["postagens", "ia"]:
+        for sub in ["postagens"]:
             ghost_k = f"btn_redes_sub_{aba_ativa}_{sub}"
             st.markdown(f"""
             <style>
@@ -9418,21 +9418,13 @@ body{{padding-bottom:8px;}}
     </div>
 
     <div class="tabs-bar">
-        <button class="tab-btn {'active' if subtab_atual == 'postagens' else ''}" onclick="triggerSub('postagens')">
+        <button class="tab-btn active">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
             </svg>
             Postagens
-        </button>
-        <div class="tab-sep"></div>
-        <button class="tab-btn {'active' if subtab_atual == 'ia' else ''}" onclick="triggerSub('ia')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-            </svg>
-            Análise de IA
         </button>
     </div>
 </div>
@@ -9819,47 +9811,47 @@ setTimeout(syncHeight, 300); setTimeout(syncHeight, 800); setTimeout(syncHeight,
         # ══════════════════════════════════════════════════════════════
         # SUB-ABA: ANÁLISE DE IA
         # ══════════════════════════════════════════════════════════════
-        else:
-            chave_criativo = f"ia_criativo_{r['handle']}"
-            chave_copy     = f"ia_copy_{r['handle']}"
-            chave_geral    = f"ia_geral_{r['handle']}"
-            for ch in [chave_criativo, chave_copy, chave_geral]:
-                if ch not in st.session_state:
-                    st.session_state[ch] = ""
- 
-            resumo_posts = "\n".join([
-                f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
-                f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
-                for p in posts_list[:12]
-            ]) if posts_list else "Sem posts disponíveis."
- 
-            perfil_ctx = f"""
+        # ── Ghost buttons análises do perfil (criativos, copy, geral) ──
+        for btn_sfx in ["criativo", "copy", "geral"]:
+            ghost_k_ia = f"btn_{btn_sfx}_{aba_ativa}_ia"
+            st.markdown(f"""
+            <style>
+            .st-key-{ghost_k_ia} {{
+                position:fixed !important; top:-9999px !important; left:-9999px !important;
+                width:1px !important; height:1px !important; overflow:hidden !important;
+                opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+
+        chave_criativo = f"ia_criativo_{r['handle']}"
+        chave_copy     = f"ia_copy_{r['handle']}"
+        chave_geral    = f"ia_geral_{r['handle']}"
+        for ch in [chave_criativo, chave_copy, chave_geral]:
+            if ch not in st.session_state:
+                st.session_state[ch] = ""
+
+        resumo_posts = "\n".join([
+            f"- {p.get('date','')} | {p.get('likes',0)} curtidas "
+            f"{p.get('comments',0)} comentários | {p.get('caption','')[:80]}"
+            for p in posts_list[:12]
+        ]) if posts_list else "Sem posts disponíveis."
+
+        perfil_ctx = f"""
 Perfil: {r.get('handle','')} — {r.get('nome_exibido','')}
 Bio: {r.get('bio','')}
 Seguidores: {r.get('seguidores',0)} | Posts: {r.get('total_posts',0)} | Eng. médio: {r.get('eng_medio',0)} ({r.get('eng_pct',0):.2f}%)
 Últimos posts:
 {resumo_posts}
 """
- 
-            for btn_sfx in ["criativo", "copy", "geral"]:
-                ghost_k_ia = f"btn_{btn_sfx}_{aba_ativa}_ia"
-                st.markdown(f"""
-                <style>
-                .st-key-{ghost_k_ia} {{
-                    position:fixed !important; top:-9999px !important; left:-9999px !important;
-                    width:1px !important; height:1px !important; overflow:hidden !important;
-                    opacity:0 !important; pointer-events:none !important; visibility:hidden !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
- 
-            if st.button(f"__criativo_{aba_ativa}__", key=f"btn_criativo_{aba_ativa}_ia"):
-                if gemini_model is None:
-                    st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Analisando criativos…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""
+
+        if st.button(f"__criativo_{aba_ativa}__", key=f"btn_criativo_{aba_ativa}_ia"):
+            if gemini_model is None:
+                st.session_state[chave_criativo] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                with st.spinner("Analisando criativos…"):
+                    try:
+                        resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise os CRIATIVOS (imagens/vídeos) deste perfil com base nas legendas e métricas.
 Responda em português com:
@@ -9871,31 +9863,31 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                            st.session_state[chave_criativo] = resp.text
-                            import datetime as _dt_redes
-                            st.session_state.redes_analises_salvas = [
-                                a for a in st.session_state.redes_analises_salvas
-                                if not (a.get("tipo") == "criativos" and a.get("perfil") == r.get("handle"))
-                            ]
-                            st.session_state.redes_analises_salvas.append({
-                                "titulo": f"Criativos — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
-                                "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                                "relatorio": resp.text,
-                                "tipo": "criativos",
-                                "perfil": r.get("handle", ""),
-                                "nome": r["nome"],
-                            })
-                            st.rerun()
-                        except Exception as e:
-                            st.session_state[chave_criativo] = f"Erro: {e}"
- 
-            if st.button(f"__copy_{aba_ativa}__", key=f"btn_copy_{aba_ativa}_ia"):
-                if gemini_model is None:
-                    st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Analisando copies…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""
+                        st.session_state[chave_criativo] = resp.text
+                        import datetime as _dt_redes
+                        st.session_state.redes_analises_salvas = [
+                            a for a in st.session_state.redes_analises_salvas
+                            if not (a.get("tipo") == "criativos" and a.get("perfil") == r.get("handle"))
+                        ]
+                        st.session_state.redes_analises_salvas.append({
+                            "titulo": f"Criativos — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                            "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "relatorio": resp.text,
+                            "tipo": "criativos",
+                            "perfil": r.get("handle", ""),
+                            "nome": r["nome"],
+                        })
+                        st.rerun()
+                    except Exception as e:
+                        st.session_state[chave_criativo] = f"Erro: {e}"
+
+        if st.button(f"__copy_{aba_ativa}__", key=f"btn_copy_{aba_ativa}_ia"):
+            if gemini_model is None:
+                st.session_state[chave_copy] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                with st.spinner("Analisando copies…"):
+                    try:
+                        resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Analise as LEGENDAS (copy) deste perfil Instagram.
 Responda em português com:
@@ -9907,31 +9899,31 @@ Responda em português com:
 **O que melhorar:** (2 pontos)
 Seja direto e objetivo.
 """)
-                            st.session_state[chave_copy] = resp.text
-                            import datetime as _dt_redes
-                            st.session_state.redes_analises_salvas = [
-                                a for a in st.session_state.redes_analises_salvas
-                                if not (a.get("tipo") == "copy" and a.get("perfil") == r.get("handle"))
-                            ]
-                            st.session_state.redes_analises_salvas.append({
-                                "titulo": f"Copy — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
-                                "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                                "relatorio": resp.text,
-                                "tipo": "copy",
-                                "perfil": r.get("handle", ""),
-                                "nome": r["nome"],
-                            })
-                            st.rerun()
-                        except Exception as e:
-                            st.session_state[chave_copy] = f"Erro: {e}"
- 
-            if st.button(f"__geral_{aba_ativa}__", key=f"btn_geral_{aba_ativa}_ia"):
-                if gemini_model is None:
-                    st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
-                else:
-                    with st.spinner("Gerando análise geral…"):
-                        try:
-                            resp = gemini_model.generate_content(f"""
+                        st.session_state[chave_copy] = resp.text
+                        import datetime as _dt_redes
+                        st.session_state.redes_analises_salvas = [
+                            a for a in st.session_state.redes_analises_salvas
+                            if not (a.get("tipo") == "copy" and a.get("perfil") == r.get("handle"))
+                        ]
+                        st.session_state.redes_analises_salvas.append({
+                            "titulo": f"Copy — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                            "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "relatorio": resp.text,
+                            "tipo": "copy",
+                            "perfil": r.get("handle", ""),
+                            "nome": r["nome"],
+                        })
+                        st.rerun()
+                    except Exception as e:
+                        st.session_state[chave_copy] = f"Erro: {e}"
+
+        if st.button(f"__geral_{aba_ativa}__", key=f"btn_geral_{aba_ativa}_ia"):
+            if gemini_model is None:
+                st.session_state[chave_geral] = "Configure GEMINI_API_KEY nos secrets."
+            else:
+                with st.spinner("Gerando análise geral…"):
+                    try:
+                        resp = gemini_model.generate_content(f"""
 {perfil_ctx}
 Faça uma análise geral estratégica deste perfil Instagram.
 Responda em português com:
@@ -9943,145 +9935,119 @@ Responda em português com:
 ### Recomendações Estratégicas (3 ações concretas)
 Seja direto e objetivo.
 """)
-                            st.session_state[chave_geral] = resp.text
-                            import datetime as _dt_redes
-                            st.session_state.redes_analises_salvas = [
-                                a for a in st.session_state.redes_analises_salvas
-                                if not (a.get("tipo") == "geral_perfil" and a.get("perfil") == r.get("handle"))
-                            ]
-                            st.session_state.redes_analises_salvas.append({
-                                "titulo": f"Análise Geral — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
-                                "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
-                                "relatorio": resp.text,
-                                "tipo": "geral_perfil",
-                                "perfil": r.get("handle", ""),
-                                "nome": r["nome"],
-                            })
-                            st.rerun()
-                        except Exception as e:
-                            st.session_state[chave_geral] = f"Erro: {e}"
- 
-            criativo_html = st.session_state.get(chave_criativo, "").replace(chr(10), "<br>")
-            copy_html     = st.session_state.get(chave_copy, "").replace(chr(10), "<br>")
-            geral_html_ia = st.session_state.get(chave_geral, "").replace(chr(10), "<br>")
- 
-            def _panel_ia_redes(html_content, btn_label, btn_trigger):
-                btn_html = f"""
-                    <div style="padding:16px 18px;border-top:1px solid #f3f4f6">
-                        <button onclick="
-                            const btns = window.parent.document.querySelectorAll('button');
-                            for (const b of btns) {{
-                                if ((b.innerText||b.textContent||'').split(/\s+/).join(' ').trim() === '{btn_trigger}') {{
-                                    b.click(); break;
-                                }}
-                            }}
-                        " style="
-                            width:100%;padding:10px;border:1px solid #3a9fd6;border-radius:8px;
-                            background:#eff6ff;font-size:14px;font-weight:700;color:#1d4ed8;
-                            cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;
-                        "
-                        onmouseover="this.style.background='#dbeafe'"
-                        onmouseout="this.style.background='#eff6ff'">
-                            {btn_label}
-                        </button>
-                    </div>
-                """
-                if html_content:
-                    return (
-                        f'<div style="padding:16px 18px;font-size:14px;color:#374151;line-height:1.75">'
-                        f'{html_content}</div>'
-                        f'{btn_html}'
-                    )
-                return (
-                    f'<div style="padding:24px 18px;text-align:center;font-size:14px;color:#9ca3af">'
-                    f'Clique no botão abaixo para gerar a análise.</div>'
-                    f'{btn_html}'
-                )
- 
-            ia_html = f"""
+                        st.session_state[chave_geral] = resp.text
+                        import datetime as _dt_redes
+                        st.session_state.redes_analises_salvas = [
+                            a for a in st.session_state.redes_analises_salvas
+                            if not (a.get("tipo") == "geral_perfil" and a.get("perfil") == r.get("handle"))
+                        ]
+                        st.session_state.redes_analises_salvas.append({
+                            "titulo": f"Análise Geral — {r['nome']} ({r.get('handle','')}) — {_dt_redes.datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                            "data": _dt_redes.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                            "relatorio": resp.text,
+                            "tipo": "geral_perfil",
+                            "perfil": r.get("handle", ""),
+                            "nome": r["nome"],
+                        })
+                        st.rerun()
+                    except Exception as e:
+                        st.session_state[chave_geral] = f"Erro: {e}"
+
+        tem_criativo = bool(st.session_state.get(chave_criativo, ""))
+        tem_copy     = bool(st.session_state.get(chave_copy, ""))
+        tem_geral    = bool(st.session_state.get(chave_geral, ""))
+
+        atalhos_html = f"""
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
-html {{ background:transparent; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; }}
+html {{ background:transparent; font-family:'DM Sans',sans-serif; }}
 body {{ background:transparent; overflow:visible; padding-bottom:8px; }}
-.ia-wrap {{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-top:none;
-    border-radius:0 0 12px 12px;
-    overflow:hidden;
-    margin-top:-4px;
+.atalhos-wrap {{
+    background:#fff; border:1px solid #e5e7eb;
+    border-top:none; border-radius:0 0 14px 14px;
+    padding:20px; display:flex; flex-direction:column; gap:12px;
 }}
-.ia-header {{
-    padding:14px 18px;
-    font-size:14px; font-weight:800; color:#1a2e4a;
-    text-transform:uppercase; letter-spacing:0.3px;
-    border-bottom:1px solid #e5e7eb;
-    background:#fff;
+.atalhos-titulo {{
+    font-size:11px; font-weight:800; color:#9ca3af;
+    text-transform:uppercase; letter-spacing:0.8px;
+    margin-bottom:4px;
 }}
-.tabs {{
-    display:flex;
-    border-bottom:1px solid #e5e7eb;
-    background:#f9fafb;
+.atalhos-grid {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }}
+.atalho-btn {{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; padding:18px 12px;
+    border-radius:12px; border:1px solid #e5e7eb;
+    background:#f9fafb; cursor:pointer;
+    font-family:'DM Sans',sans-serif; transition:all 0.15s;
+    text-align:center;
 }}
-.tab {{
-    flex:1; padding:11px 0; text-align:center;
-    font-size:14px; font-weight:600; color:#9ca3af;
-    cursor:pointer; border:none; background:transparent;
-    border-bottom:2px solid transparent; margin-bottom:-1px;
-    font-family:'DM Sans',sans-serif; transition:color 0.15s;
+.atalho-btn:hover {{ border-color:#3a9fd6; background:#eff6ff; box-shadow:0 2px 10px rgba(58,159,214,0.1); }}
+.atalho-btn.done {{ border-color:#bbf7d0; background:#f0fdf4; }}
+.atalho-btn.done:hover {{ border-color:#22c55e; background:#dcfce7; }}
+.atalho-icon {{ font-size:24px; }}
+.atalho-lbl {{ font-size:13px; font-weight:700; color:#1a2e4a; }}
+.atalho-sub {{ font-size:11px; color:#9ca3af; }}
+.atalho-btn.done .atalho-sub {{ color:#15803d; font-weight:600; }}
+.ver-btn {{
+    width:100%; padding:11px; border-radius:8px;
+    border:1px solid #0e2a47; background:#0e2a47;
+    font-size:13px; font-weight:700; color:#fff;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background 0.15s; text-align:center;
 }}
-.tab:hover {{ color:#374151; background:#f3f4f6; }}
-.tab.active {{
-    color:#1a2e4a;
-    border-bottom:2px solid #3a9fd6;
-    background:#fff;
-}}
-.panel {{ display:none; }}
-.panel.active {{ display:block; }}
+.ver-btn:hover {{ background:#1a3a5c; }}
 </style>
- 
-<div class="ia-wrap">
-    <div class="ia-header">Análise de Conteúdos</div>
-    <div class="tabs">
-        <button class="tab active" onclick="showTab('geral',this)">Analisar Postagens 🖼️</button>
-        <button class="tab"        onclick="showTab('criativo',this)">Analisar Criativos 🎨</button>
-        <button class="tab"        onclick="showTab('copy',this)">Analisar Copys 📝</button>
+<div class="atalhos-wrap">
+    <div class="atalhos-titulo">Gerar análises para este perfil</div>
+    <div class="atalhos-grid">
+        <button class="atalho-btn {'done' if tem_criativo else ''}" onclick="trigger('__criativo_{aba_ativa}__')">
+            <span class="atalho-icon">🎨</span>
+            <span class="atalho-lbl">Criativos</span>
+            <span class="atalho-sub">{'✅ Gerado' if tem_criativo else 'Analisar estilo visual'}</span>
+        </button>
+        <button class="atalho-btn {'done' if tem_copy else ''}" onclick="trigger('__copy_{aba_ativa}__')">
+            <span class="atalho-icon">✍️</span>
+            <span class="atalho-lbl">Copy</span>
+            <span class="atalho-sub">{'✅ Gerado' if tem_copy else 'Analisar legendas'}</span>
+        </button>
+        <button class="atalho-btn {'done' if tem_geral else ''}" onclick="trigger('__geral_{aba_ativa}__')">
+            <span class="atalho-icon">📊</span>
+            <span class="atalho-lbl">Análise Geral</span>
+            <span class="atalho-sub">{'✅ Gerado' if tem_geral else 'Visão estratégica'}</span>
+        </button>
     </div>
-    <div id="panel-geral" class="panel active">
-        {_panel_ia_redes(geral_html_ia, "Gerar Análise de Postagens 🤖", f"__geral_{aba_ativa}__")}
-    </div>
-    <div id="panel-criativo" class="panel">
-        {_panel_ia_redes(criativo_html, "Gerar Análise de Criativos 🤖", f"__criativo_{aba_ativa}__")}
-    </div>
-    <div id="panel-copy" class="panel">
-        {_panel_ia_redes(copy_html, "Gerar Análise de Copys 🤖", f"__copy_{aba_ativa}__")}
-    </div>
+    <button class="ver-btn" onclick="irParaAnalise()">Ver todas as análises salvas →</button>
 </div>
- 
 <script>
-function syncHeight() {{
-    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+function trigger(label) {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === label) {{ b.click(); return; }}
+    }}
+}}
+function irParaAnalise() {{
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        var txt = (b.textContent || b.innerText || '').split(/\s+/).join(' ').trim();
+        if (txt === 'analise_tab') {{ b.click(); return; }}
+    }}
+}}
+function syncH() {{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
     var iframes = window.parent.document.querySelectorAll('iframe');
     for (var i = 0; i < iframes.length; i++) {{
         try {{ if (iframes[i].contentWindow === window) {{ iframes[i].style.height = (h+8)+'px'; break; }} }} catch(e) {{}}
     }}
 }}
-function showTab(name, el) {{
-    document.querySelectorAll('.tab').forEach(function(t) {{ t.classList.remove('active'); }});
-    document.querySelectorAll('.panel').forEach(function(p) {{ p.classList.remove('active'); }});
-    document.getElementById('panel-' + name).classList.add('active');
-    el.classList.add('active');
-    setTimeout(syncHeight, 50);
-}}
-var ro = new ResizeObserver(syncHeight);
+var ro = new ResizeObserver(syncH);
 ro.observe(document.body);
-document.addEventListener('DOMContentLoaded', syncHeight);
-window.addEventListener('load', syncHeight);
-setTimeout(syncHeight, 100); setTimeout(syncHeight, 500); setTimeout(syncHeight, 1000);
+window.addEventListener('load', syncH);
+setTimeout(syncH, 100);
 </script>
 """
-            components.html(ia_html, height=420, scrolling=False)
+        components.html(atalhos_html, height=220, scrolling=False)
  
     # ══════════════════════════════════════════════════════════════════
     # ABA: ANÁLISE DE IA — Comparativo geral
