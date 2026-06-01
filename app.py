@@ -8480,10 +8480,14 @@ html, body {{ background:transparent; font-family:'DM Sans',sans-serif; overflow
             st.warning(f"⚠️ {r['nome']}: {r['erro']}")
 
     # ── Estado de navegação ─────────────────────────────────────────
-    if "redes_main_tab" not in st.session_state:
+        if "redes_main_tab" not in st.session_state:
         st.session_state.redes_main_tab = "perfis"
     if "redes_aba_ativa" not in st.session_state:
         st.session_state.redes_aba_ativa = 0
+    if "redes_analise_vistas" not in st.session_state:
+        st.session_state.redes_analise_vistas = 0
+    if "redes_analises_salvas" not in st.session_state:
+        st.session_state.redes_analises_salvas = []
 
     # ── Ghost buttons — abas principais ────────────────────────────
     st.markdown("""
